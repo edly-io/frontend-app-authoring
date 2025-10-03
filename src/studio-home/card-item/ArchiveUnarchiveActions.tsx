@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, Dropdown, ModalDialog } from '@openedx/paragon';
 import { useIntl } from '@edx/frontend-platform/i18n';
-import messages from '../messages';
+import messages from 'edly/messages/ArchiveUnarchiveActions';
 
 type NullableString = string | null | undefined;
 
