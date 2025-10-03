@@ -77,6 +77,26 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.organization.input.no-options',
     defaultMessage: 'No options',
   },
+  confirmDialogTitle: {
+    id: 'course-authoring.studio-home.confirm-dialog.title',
+    defaultMessage: 'Are you sure?',
+  },
+  confirmDialogCancelBtn: {
+    id: 'course-authoring.studio-home.confirm-dialog.btn.cancel',
+    defaultMessage: 'No',
+  },
+  confirmDialogConfirmBtn: {
+    id: 'course-authoring.studio-home.confirm-dialog.btn.confirm',
+    defaultMessage: 'Yes',
+  },
+  archiveConfirmMessage: {
+    id: 'course-authoring.studio-home.archive.confirm-message',
+    defaultMessage: 'Courses are archived by default when they pass their end date. Are you sure you want to archive this course anyway?',
+  },
+  unarchiveConfirmMessage: {
+    id: 'course-authoring.studio-home.unarchive.confirm-message',
+    defaultMessage: 'Are you sure you want to unarchive this course? End date for this course will be changed to 1 year from now. This course will still have to be published.',
+  },
 });
 
 export default messages;
