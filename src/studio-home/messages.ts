@@ -49,14 +49,6 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.btn.view-live.text',
     defaultMessage: 'View live',
   },
-  archiveBtnText: {
-    id: 'course-authoring.studio-home.btn.archive.text',
-    defaultMessage: 'Archive',
-  },
-  unarchiveBtnText: {
-    id: 'course-authoring.studio-home.btn.unarchive.text',
-    defaultMessage: 'Unarchive',
-  },
   organizationTitle: {
     id: 'course-authoring.studio-home.organization.title',
     defaultMessage: 'Organization and library settings',
