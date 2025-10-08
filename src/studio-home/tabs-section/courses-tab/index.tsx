@@ -35,6 +35,8 @@ interface Props {
     rerunLink: string | null;
     run: string;
     url: string;
+    archiveLink: string | null;
+    unarchiveLink: string | null;
   }[];
   showNewCourseContainer: boolean;
   onClickNewCourse: () => void;
@@ -153,6 +155,8 @@ const CoursesTab: React.FC<Props> = ({
                 lmsLink,
                 org,
                 rerunLink,
+                archiveLink,
+                unarchiveLink,
                 number,
                 run,
                 url,
@@ -168,6 +172,8 @@ const CoursesTab: React.FC<Props> = ({
                   run={run}
                   url={url}
                   isPaginated={isEnabledPagination}
+                  archiveLink={archiveLink}
+                  unarchiveLink={unarchiveLink}
                 />
               ),
             )}
