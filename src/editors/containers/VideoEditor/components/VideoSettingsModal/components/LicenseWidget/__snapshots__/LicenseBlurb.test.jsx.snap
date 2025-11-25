@@ -121,9 +121,9 @@ exports[`LicenseBlurb snapshots snapshots: renders as expected when details.attr
     className="small mx-1.5"
   >
     <FormattedMessage
-      defaultMessage="Some Rights Reserved"
-      description="Label for row of creative common icons"
-      id="authoring.videoeditor.license.creativeCommonsIcons.label"
+      defaultMessage="CC-by-sa 4.0"
+      description="License text shown when using share-alike Creative Commons license types."
+      id="authoring.videoeditor.license.creativeCommons.shareAlike.text"
     />
   </div>
 </div>

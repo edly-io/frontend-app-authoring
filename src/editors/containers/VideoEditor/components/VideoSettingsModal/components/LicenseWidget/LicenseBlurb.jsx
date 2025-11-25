@@ -33,8 +33,10 @@ const LicenseBlurb = ({
       ? <div className="small mx-1.5"><FormattedMessage {...messages.allRightsReservedIconsLabel} /></div>
       : null}
     {license === LicenseTypes.creativeCommons
-      ? <div className="small mx-1.5"><FormattedMessage {...messages.creativeCommonsIconsLabel} /></div>
-      : null}
+      ? (details.shareAlike ?
+            <div className="small mx-1.5"><FormattedMessage {...messages.creativeCommonsSAIconsLabel} /></div> :
+            <div className="small mx-1.5"><FormattedMessage {...messages.creativeCommonsIconsLabel} /></div>)
+        : null}
   </div>
 );
 
