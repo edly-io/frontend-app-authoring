@@ -74,9 +74,16 @@ const LicenseIcons = ({ licenseType, licenseDetails, licenseURL }) => (
         </span>
       )}
       {licenseType === LICENSE_TYPE.creativeCommons && (
-        <span className="small text-gray-700">
-          <FormattedMessage {...messages.creativeCommonsReservedLabel} />
-        </span>
+        licenseDetails?.shareAlike ? (
+          <span className="small text-gray-700">
+            <FormattedMessage {...messages.creativeCommonsSAReservedLabel} />
+          </span>
+        )
+          : (
+            <span className="small text-gray-700">
+              <FormattedMessage {...messages.creativeCommonsReservedLabel} />
+            </span>
+          )
       )}
     </Stack>
   </ApplyWrapper>

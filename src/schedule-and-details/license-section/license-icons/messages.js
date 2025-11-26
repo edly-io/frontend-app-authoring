@@ -9,6 +9,11 @@ const messages = defineMessages({
     id: 'course-authoring.schedule-section.license.creative-commons.label',
     defaultMessage: 'Some rights reserved',
   },
+  creativeCommonsSAReservedLabel: {
+    id: 'course-authoring.schedule-section.creativeCommons.shareAlike.text',
+    defaultMessage: 'CC-by-sa 4.0',
+    description: 'License text shown when using share-alike Creative Commons license types.',
+  },
 });
 
 export default messages;

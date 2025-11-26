@@ -42,6 +42,11 @@ const messages = defineMessages({
     defaultMessage: 'Some Rights Reserved',
     description: 'Label for row of creative common icons',
   },
+  creativeCommonsSAIconsLabel: {
+    id: 'authoring.videoeditor.license.creativeCommons.shareAlike.text',
+    defaultMessage: 'CC-by-sa 4.0',
+    description: 'License text shown when using share-alike Creative Commons license types.',
+  },
   viewLicenseDetailsLabel: {
     id: 'authoring.videoeditor.license.viewLicenseDetailsLabel.label',
     defaultMessage: 'View license details',
