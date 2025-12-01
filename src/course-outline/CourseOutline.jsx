@@ -21,7 +21,9 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
+import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
+import { getConfig } from '@edx/frontend-platform';
 import { CourseAuthoringOutlineSidebarSlot } from '../plugin-slots/CourseAuthoringOutlineSidebarSlot';
 
 import { LoadingSpinner } from '../generic/Loading';
@@ -120,6 +122,16 @@ const CourseOutline = ({ courseId }) => {
     handleUnitDragAndDrop,
     errors,
   } = useCourseOutline({ courseId });
+
+  const { courseId: courseIdFromUrl } = useParams();
+  const [courseFont, setCourseFont] = useState('');
+
+  useEffect(() => {
+    const url = `${getConfig().LMS_BASE_URL}/wikimedia_general/api/v0/wiki_metadata/${courseIdFromUrl}`;
+    getAuthenticatedHttpClient().get(url).then(({ data }) => {
+      setCourseFont(data.course_font);
+    });
+  }, [courseIdFromUrl]);
 
   // Use `setToastMessage` to show the toast.
   const [toastMessage, setToastMessage] = useState(/** @type{null|string} */ (null));
@@ -259,7 +271,7 @@ const CourseOutline = ({ courseId }) => {
         <title>{getPageHeadTitle(courseName, intl.formatMessage(messages.headingTitle))}</title>
       </Helmet>
       <Container size="xl" className="px-4">
-        <section className="course-outline-container mb-4 mt-5">
+        <section id="main-content" className={`course-outline-container mb-4 mt-5 ${courseFont}`}>
           <PageAlerts
             courseId={courseId}
             notificationDismissUrl={notificationDismissUrl}
