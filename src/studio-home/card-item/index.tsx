@@ -17,6 +17,7 @@ import { COURSE_CREATOR_STATES } from '../../constants';
 import { getStudioHomeData } from '../data/selectors';
 import messages from '../messages';
 import { trimSlashes } from './utils';
+import ArchiveUnarchiveActions from './ArchiveUnarchiveActions';
 
 interface BaseProps {
   displayName: string;
@@ -25,6 +26,8 @@ interface BaseProps {
   run?: string;
   lmsLink?: string | null;
   rerunLink?: string | null;
+  archiveLink?: string | null;
+  unarchiveLink?: string | null;
   courseKey?: string;
   isLibraries?: boolean;
   isPaginated?: boolean;
@@ -46,6 +49,8 @@ const CardItem: React.FC<Props> = ({
   displayName,
   lmsLink = '',
   rerunLink = '',
+  archiveLink = '',
+  unarchiveLink = '',
   org,
   number,
   run = '',
@@ -112,6 +117,10 @@ const CardItem: React.FC<Props> = ({
                 <Dropdown.Item href={lmsLink}>
                   {intl.formatMessage(messages.viewLiveBtnText)}
                 </Dropdown.Item>
+                <ArchiveUnarchiveActions
+                  archiveLink={archiveLink}
+                  unarchiveLink={unarchiveLink}
+                />
               </Dropdown.Menu>
             </Dropdown>
           ) : (
