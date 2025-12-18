@@ -21,6 +21,18 @@ const messages = defineMessages({
     id: 'course-authoring.schedule-section.details.dropdown.empty',
     defaultMessage: 'Select language',
   },
+  topicDropdownLabel: {
+    id: 'authoring.details.topic.label',
+    defaultMessage: 'Course Topic',
+  },
+  topicDropdownEmpty: {
+    id: 'authoring.details.topic.empty',
+    defaultMessage: 'Select a topic',
+  },
+  topicDropdownHelpText: {
+    id: 'authoring.details.topic.help',
+    defaultMessage: 'Choose the primary topic for this course',
+  },
 });
 
 export default messages;
