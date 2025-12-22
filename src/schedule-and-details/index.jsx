@@ -60,6 +60,7 @@ const ScheduleAndDetails = ({ intl, courseId }) => {
     isCreditCourse,
     upgradeDeadline,
     languageOptions,
+    topicOptions,
     marketingEnabled,
     licensingEnabled,
     aboutPageEditable,
@@ -115,6 +116,7 @@ const ScheduleAndDetails = ({ intl, courseId }) => {
     endDate,
     license,
     language,
+    topic,
     subtitle,
     overview,
     duration,
@@ -271,6 +273,8 @@ const ScheduleAndDetails = ({ intl, courseId }) => {
                     <DetailsSection
                       language={language}
                       languageOptions={languageOptions}
+                      topic={topic}
+                      topicOptions={topicOptions}
                       onChange={handleValuesChange}
                     />
                   )}
