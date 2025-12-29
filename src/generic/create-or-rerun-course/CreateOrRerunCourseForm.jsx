@@ -52,13 +52,25 @@ const CreateOrRerunCourseForm = ({
     setFieldValue,
   } = useCreateOrRerunCourse(initialValues);
 
+  // Transform languageOptions from [["aa", "Afar"], ...] to array of names for TypeaheadDropdown
+  const languageOptions = initialValues.languageOptions || [];
+  const languageNames = languageOptions.map((option) => option[1]); // Extract language names
+  const getLanguageCodeByName = (name) => {
+    const option = languageOptions.find((opt) => opt[1] === name);
+    return option ? option[0] : '';
+  };
+  const getLanguageNameByCode = (code) => {
+    const option = languageOptions.find((opt) => opt[0] === code);
+    return option ? option[1] : '';
+  };
+
   const newCourseFields = [
     {
       label: intl.formatMessage(messages.courseDisplayNameLabel),
       helpText: intl.formatMessage(
         isCreateNewCourse
           ? messages.courseDisplayNameCreateHelpText
-          : messages.courseDisplayNameRerunHelpText,
+          : messages.courseDisplayNameRerunHelpText
       ),
       name: 'displayName',
       value: values.displayName,
@@ -70,18 +82,22 @@ const CreateOrRerunCourseForm = ({
       label: intl.formatMessage(messages.courseOrgLabel),
       helpText: isCreateNewCourse
         ? intl.formatMessage(messages.courseOrgCreateHelpText, {
-          strong: <strong>{intl.formatMessage(messages.courseNoteOrgNameIsPartStrong)}</strong>,
-        })
-        : intl.formatMessage(messages.courseOrgRerunHelpText, {
-          strong: (
-            <>
-              <br />
+            strong: (
               <strong>
-                {intl.formatMessage(messages.courseNoteNoSpaceAllowedStrong)}
+                {intl.formatMessage(messages.courseNoteOrgNameIsPartStrong)}
               </strong>
-            </>
-          ),
-        }),
+            ),
+          })
+        : intl.formatMessage(messages.courseOrgRerunHelpText, {
+            strong: (
+              <>
+                <br />
+                <strong>
+                  {intl.formatMessage(messages.courseNoteNoSpaceAllowedStrong)}
+                </strong>
+              </>
+            ),
+          }),
       name: 'org',
       value: values.org,
       options: organizations,
@@ -92,12 +108,12 @@ const CreateOrRerunCourseForm = ({
       label: intl.formatMessage(messages.courseNumberLabel),
       helpText: isCreateNewCourse
         ? intl.formatMessage(messages.courseNumberCreateHelpText, {
-          strong: (
-            <strong>
-              {intl.formatMessage(messages.courseNotePartCourseURLRequireStrong)}
-            </strong>
-          ),
-        })
+            strong: (
+              <strong>
+                {intl.formatMessage(messages.courseNotePartCourseURLRequireStrong)}
+              </strong>
+            ),
+          })
         : intl.formatMessage(messages.courseNumberRerunHelpText),
       name: 'number',
       value: values.number,
@@ -108,22 +124,22 @@ const CreateOrRerunCourseForm = ({
       label: intl.formatMessage(messages.courseRunLabel),
       helpText: isCreateNewCourse
         ? intl.formatMessage(messages.courseRunCreateHelpText, {
-          strong: (
-            <strong>
-              {intl.formatMessage(messages.courseNotePartCourseURLRequireStrong)}
-            </strong>
-          ),
-        })
-        : intl.formatMessage(messages.courseRunRerunHelpText, {
-          strong: (
-            <>
-              <br />
+            strong: (
               <strong>
-                {intl.formatMessage(messages.courseNoteNoSpaceAllowedStrong)}
+                {intl.formatMessage(messages.courseNotePartCourseURLRequireStrong)}
               </strong>
-            </>
-          ),
-        }),
+            ),
+          })
+        : intl.formatMessage(messages.courseRunRerunHelpText, {
+            strong: (
+              <>
+                <br />
+                <strong>
+                  {intl.formatMessage(messages.courseNoteNoSpaceAllowedStrong)}
+                </strong>
+              </>
+            ),
+          }),
       name: 'run',
       value: values.run,
       placeholder: intl.formatMessage(messages.courseRunPlaceholder),
@@ -136,14 +152,27 @@ const CreateOrRerunCourseForm = ({
 
   const createButtonState = {
     labels: {
-      default: intl.formatMessage(isCreateNewCourse ? messages.createButton : messages.rerunCreateButton),
-      pending: intl.formatMessage(isCreateNewCourse ? messages.creatingButton : messages.rerunningCreateButton),
+      default: intl.formatMessage(
+        isCreateNewCourse ? messages.createButton : messages.rerunCreateButton
+      ),
+      pending: intl.formatMessage(
+        isCreateNewCourse ? messages.creatingButton : messages.rerunningCreateButton
+      ),
     },
     disabledStates: [STATEFUL_BUTTON_STATES.pending],
   };
 
   const handleOnClickCreate = () => {
-    const courseData = isCreateNewCourse ? values : { ...values, sourceCourseKey: courseId };
+    const courseData = {
+      ...values,
+      isTranslatedRerun: values.isTranslatedRerun || false,
+      ...(values.isTranslatedRerun && values.language
+        ? { language: values.language }
+        : {}),
+    };
+    if (!isCreateNewCourse) {
+      courseData.sourceCourseKey = courseId;
+    }
     dispatch(updateCreateOrRerunCourseQuery(courseData));
   };
 
@@ -159,38 +188,48 @@ const CreateOrRerunCourseForm = ({
     handleBlur(e);
   };
 
-  const renderOrgField = (field) => (allowToCreateNewOrg ? (
-    <TypeaheadDropdown
-      readOnly={false}
-      name={field.name}
-      value={field.value}
-      controlClassName={classNames({ 'is-invalid': hasErrorField(field.name) })}
-      options={field.options}
-      placeholder={field.placeholder}
-      handleBlur={handleCustomBlurForDropdown}
-      handleChange={(value) => setFieldValue(field.name, value)}
-      noOptionsMessage={intl.formatMessage(messages.courseOrgNoOptions)}
-      helpMessage=""
-      errorMessage=""
-      floatingLabel=""
-    />
-  ) : (
-    <Dropdown className="mr-2">
-      <Dropdown.Toggle id={`${field.name}-dropdown`} variant="outline-primary">
-        {field.value || intl.formatMessage(messages.courseOrgNoOptions)}
-      </Dropdown.Toggle>
-      <Dropdown.Menu>
-        {field.options?.map((value) => (
-          <Dropdown.Item
-            key={value}
-            onClick={() => setFieldValue(field.name, value)}
-          >
-            {value}
-          </Dropdown.Item>
-        ))}
-      </Dropdown.Menu>
-    </Dropdown>
-  ));
+  const handleLanguageBlur = (e) => {
+    // For TypeaheadDropdown, the value is the language name, convert to code
+    const { value } = e.target;
+    if (value) {
+      const code = getLanguageCodeByName(value);
+      if (code) {
+        setFieldValue('language', code);
+      }
+    }
+    handleBlur(e);
+  };
+
+  const renderOrgField = (field) =>
+    allowToCreateNewOrg ? (
+      <TypeaheadDropdown
+        readOnly={false}
+        name={field.name}
+        value={field.value}
+        controlClassName={classNames({ 'is-invalid': hasErrorField(field.name) })}
+        options={field.options}
+        placeholder={field.placeholder}
+        handleBlur={handleCustomBlurForDropdown}
+        handleChange={(value) => setFieldValue(field.name, value)}
+        noOptionsMessage={intl.formatMessage(messages.courseOrgNoOptions)}
+        helpMessage=""
+        errorMessage=""
+        floatingLabel=""
+      />
+    ) : (
+      <Dropdown className="mr-2">
+        <Dropdown.Toggle id={`${field.name}-dropdown`} variant="outline-primary">
+          {field.value || intl.formatMessage(messages.courseOrgNoOptions)}
+        </Dropdown.Toggle>
+        <Dropdown.Menu>
+          {field.options?.map((value) => (
+            <Dropdown.Item key={value} onClick={() => setFieldValue(field.name, value)}>
+              {value}
+            </Dropdown.Item>
+          ))}
+        </Dropdown.Menu>
+      </Dropdown>
+    );
 
   useEffect(() => {
     // it needs to display the initial focus for the field depending on the current page
@@ -204,17 +243,17 @@ const CreateOrRerunCourseForm = ({
   return (
     <div className="create-or-rerun-course-form">
       <TransitionReplace>
-        {(errors[TOTAL_LENGTH_KEY] || showErrorBanner) ? (
+        {errors[TOTAL_LENGTH_KEY] || showErrorBanner ? (
           <AlertMessage
             variant="danger"
             icon={InfoIcon}
             title={errorMessage}
             aria-hidden="true"
             aria-labelledby={intl.formatMessage(
-              messages.alertErrorExistsAriaLabelledBy,
+              messages.alertErrorExistsAriaLabelledBy
             )}
             aria-describedby={intl.formatMessage(
-              messages.alertErrorExistsAriaDescribedBy,
+              messages.alertErrorExistsAriaDescribedBy
             )}
           />
         ) : null}
@@ -240,7 +279,9 @@ const CreateOrRerunCourseForm = ({
                 disabled={field.disabled}
                 ref={field?.ref}
               />
-            ) : renderOrgField(field)}
+            ) : (
+              renderOrgField(field)
+            )}
             <Form.Text>{field.helpText}</Form.Text>
             {hasErrorField(field.name) && (
               <Form.Control.Feedback
@@ -253,11 +294,71 @@ const CreateOrRerunCourseForm = ({
             )}
           </Form.Group>
         ))}
+        {!isCreateNewCourse && !initialValues.isTranslatedRerun && (
+          <Form.Group className="form-group-custom mb-3">
+            <Form.Label>
+              {intl.formatMessage(messages.translationOptionsLabel)}
+            </Form.Label>
+            <div>
+              <Form.Check
+                type="radio"
+                id="standard-rerun"
+                name="isTranslatedRerun"
+                label={intl.formatMessage(messages.standardRerunLabel)}
+                checked={!values.isTranslatedRerun}
+                onChange={() => setFieldValue('isTranslatedRerun', false)}
+              />
+              <Form.Check
+                type="radio"
+                id="translated-rerun"
+                name="isTranslatedRerun"
+                label={intl.formatMessage(messages.translatedRerunLabel)}
+                checked={!!values.isTranslatedRerun}
+                onChange={() => setFieldValue('isTranslatedRerun', true)}
+              />
+            </div>
+            <Form.Text>
+              {intl.formatMessage(messages.translationOptionsHelpText)}
+            </Form.Text>
+            {values.isTranslatedRerun && (
+              <div className="mt-3">
+                <Form.Label>{intl.formatMessage(messages.languageLabel)}</Form.Label>
+                <TypeaheadDropdown
+                  readOnly={false}
+                  name="language"
+                  value={getLanguageNameByCode(values.language) || ''}
+                  controlClassName={classNames({
+                    'is-invalid': hasErrorField('language'),
+                  })}
+                  options={languageNames}
+                  placeholder={intl.formatMessage(messages.languagePlaceholder)}
+                  handleBlur={handleLanguageBlur}
+                  handleChange={(selectedName) => {
+                    const code = getLanguageCodeByName(selectedName);
+                    if (code) {
+                      setFieldValue('language', code);
+                    }
+                  }}
+                  noOptionsMessage={intl.formatMessage(messages.languageNoOptions)}
+                  helpMessage=""
+                  errorMessage=""
+                  floatingLabel=""
+                />
+                {hasErrorField('language') && (
+                  <Form.Control.Feedback
+                    className="feedback-error"
+                    type="invalid"
+                    hasIcon={false}
+                  >
+                    {errors.language}
+                  </Form.Control.Feedback>
+                )}
+              </div>
+            )}
+          </Form.Group>
+        )}
         <ActionRow className="justify-content-start">
-          <Button
-            variant="outline-primary"
-            onClick={handleOnClickCancel}
-          >
+          <Button variant="outline-primary" onClick={handleOnClickCancel}>
             {intl.formatMessage(messages.cancelButton)}
           </Button>
           <StatefulButton
@@ -290,6 +391,7 @@ CreateOrRerunCourseForm.propTypes = {
     org: PropTypes.string.isRequired,
     number: PropTypes.string.isRequired,
     run: PropTypes.string.isRequired,
+    isTranslatedRerun: PropTypes.bool,
   }).isRequired,
   isCreateNewCourse: PropTypes.bool,
   onClickCancel: PropTypes.func.isRequired,

@@ -35,47 +35,60 @@ const useCreateOrRerunCourse = (initialValues) => {
   const organizations = canCreateOrganizations ? allOrganizations : allowedOrganizations;
 
   const { specialCharsRule, noSpaceRule } = REGEX_RULES;
-  const validationSchema = Yup.object().shape({
-    displayName: Yup.string().required(
-      intl.formatMessage(messages.requiredFieldError),
-    ),
-    org: Yup.string()
-      .required(intl.formatMessage(messages.requiredFieldError))
-      .matches(
-        specialCharsRule,
-        intl.formatMessage(messages.disallowedCharsError),
-      )
-      .matches(noSpaceRule, intl.formatMessage(messages.noSpaceError)),
-    number: Yup.string()
-      .required(intl.formatMessage(messages.requiredFieldError))
-      .matches(
-        specialCharsRule,
-        intl.formatMessage(messages.disallowedCharsError),
-      )
-      .matches(noSpaceRule, intl.formatMessage(messages.noSpaceError)),
-    run: Yup.string()
-      .required(intl.formatMessage(messages.requiredFieldError))
-      .matches(
-        specialCharsRule,
-        intl.formatMessage(messages.disallowedCharsError),
-      )
-      .matches(noSpaceRule, intl.formatMessage(messages.noSpaceError)),
-  }).test(TOTAL_LENGTH_KEY, intl.formatMessage(messages.totalLengthError), function validateTotalLength() {
-    const { org, number, run } = this?.options.originalValue || {};
-    if ((org?.length || 0) + (number?.length || 0) + (run?.length || 0) > MAX_TOTAL_LENGTH) {
-      return this.createError({ path: TOTAL_LENGTH_KEY, message: intl.formatMessage(messages.totalLengthError) });
-    }
-    return true;
-  });
+  const validationSchema = Yup.object()
+    .shape({
+      displayName: Yup.string().required(
+        intl.formatMessage(messages.requiredFieldError)
+      ),
+      org: Yup.string()
+        .required(intl.formatMessage(messages.requiredFieldError))
+        .matches(specialCharsRule, intl.formatMessage(messages.disallowedCharsError))
+        .matches(noSpaceRule, intl.formatMessage(messages.noSpaceError)),
+      number: Yup.string()
+        .required(intl.formatMessage(messages.requiredFieldError))
+        .matches(specialCharsRule, intl.formatMessage(messages.disallowedCharsError))
+        .matches(noSpaceRule, intl.formatMessage(messages.noSpaceError)),
+      run: Yup.string()
+        .required(intl.formatMessage(messages.requiredFieldError))
+        .matches(specialCharsRule, intl.formatMessage(messages.disallowedCharsError))
+        .matches(noSpaceRule, intl.formatMessage(messages.noSpaceError)),
+      isTranslatedRerun: Yup.boolean(),
+      language: Yup.string().when('isTranslatedRerun', {
+        is: true,
+        then: (schema) =>
+          schema.required(intl.formatMessage(messages.languageRequiredError)),
+        otherwise: (schema) => schema,
+      }),
+    })
+    .test(
+      TOTAL_LENGTH_KEY,
+      intl.formatMessage(messages.totalLengthError),
+      function validateTotalLength() {
+        const { org, number, run } = this?.options.originalValue || {};
+        if (
+          (org?.length || 0) + (number?.length || 0) + (run?.length || 0) >
+          MAX_TOTAL_LENGTH
+        ) {
+          return this.createError({
+            path: TOTAL_LENGTH_KEY,
+            message: intl.formatMessage(messages.totalLengthError),
+          });
+        }
+        return true;
+      }
+    );
 
-  const {
-    values, errors, touched, handleChange, handleBlur, setFieldValue,
-  } = useFormik({
-    initialValues,
-    enableReinitialize: true,
-    validateOnBlur: false,
-    validationSchema,
-  });
+  const { values, errors, touched, handleChange, handleBlur, setFieldValue } =
+    useFormik({
+      initialValues: {
+        ...initialValues,
+        isTranslatedRerun: initialValues.isTranslatedRerun ?? false,
+        language: initialValues.language ?? '',
+      },
+      enableReinitialize: true,
+      validateOnBlur: false,
+      validationSchema,
+    });
 
   useEffect(() => {
     if (canCreateOrganizations) {
@@ -85,9 +98,7 @@ const useCreateOrRerunCourse = (initialValues) => {
 
   useEffect(() => {
     setFormFilled(
-      Object.entries(values)
-        ?.filter(([key]) => key !== 'undefined')
-        .every(([, value]) => value),
+      ['displayName', 'org', 'number', 'run'].every((fieldName) => values[fieldName])
     );
     dispatch(updatePostErrors({}));
   }, [values]);

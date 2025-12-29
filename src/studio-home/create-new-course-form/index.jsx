@@ -12,6 +12,7 @@ const CreateNewCourseForm = ({ handleOnClickCancel }) => {
     org: '',
     number: '',
     run: '',
+    isTranslatedRerun: false,
   };
 
   return (
