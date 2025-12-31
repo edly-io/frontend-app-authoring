@@ -25,6 +25,7 @@ import CreateNewCourseForm from './create-new-course-form';
 import messages from './messages';
 import { useStudioHome } from './hooks';
 import AlertMessage from '../generic/alert-message';
+import { useTranslationButtons } from './useTranslationButtons';
 
 const StudioHome = () => {
   const intl = useIntl();
@@ -58,7 +59,15 @@ const StudioHome = () => {
     studioRequestEmail,
     showNewLibraryButton,
     showNewLibraryV2Button,
+    courseBlocksSendFetchUrl,
+    showMetaApiButtons,
   } = studioHomeData;
+
+  // Get translation buttons from custom hook
+  const translationButtons = useTranslationButtons({
+    courseBlocksSendFetchUrl,
+    showMetaApiButtons,
+  });
 
   const getHeaderButtons = useCallback(() => {
     const headerButtons: JSX.Element[] = [];
@@ -72,6 +81,8 @@ const StudioHome = () => {
         <MailtoLink to={studioRequestEmail}>{intl.formatMessage(messages.emailStaffBtnText)}</MailtoLink>,
       );
     }
+    // Add translation buttons
+    headerButtons.push(...translationButtons);
 
     if (hasAbilityToCreateNewCourse) {
       headerButtons.push(
