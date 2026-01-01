@@ -61,7 +61,6 @@ export function fetchCourseOutlineIndexQuery(courseId) {
 
     try {
       const outlineIndex = await getCourseOutlineIndex(courseId);
-      console.log('outlineIndex', outlineIndex);
       const {
         courseReleaseDate,
         courseStructure: {
