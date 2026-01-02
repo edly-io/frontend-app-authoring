@@ -1,6 +1,7 @@
 // @ts-check
 import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
+import { useSelector } from 'react-redux';
 import classNames from 'classnames';
 import { getConfig } from '@edx/frontend-platform';
 import { useIntl } from '@edx/frontend-platform/i18n';
@@ -12,6 +13,9 @@ import {
   Icon,
   IconButton,
   IconButtonWithTooltip,
+  ModalDialog,
+  Button,
+  ActionRow,
   useToggle,
 } from '@openedx/paragon';
 import {
@@ -26,6 +30,7 @@ import TagCount from '../../generic/tag-count';
 import { useEscapeClick } from '../../hooks';
 import { ITEM_BADGE_STATUS } from '../constants';
 import { scrollToElement } from '../utils';
+import { getStatusBarData } from '../data/selectors';
 import CardStatus from './CardStatus';
 import messages from './messages';
 
@@ -66,6 +71,11 @@ const CardHeader = ({
   const [titleValue, setTitleValue] = useState(title);
   const cardHeaderRef = useRef(null);
   const [isManageTagsDrawerOpen, openManageTagsDrawer, closeManageTagsDrawer] = useToggle(false);
+  // wikimedia changes
+  const [isConfirmModalOpen, openConfirmModal, closeConfirmModal] = useToggle(false);
+  const [confirmModalConfig, setConfirmModalConfig] = useState(null);
+  const statusBarData = useSelector(getStatusBarData);
+  const { isTranslatedOrBaseCourse } = statusBarData;
 
   // Use studio url as base if proctoringExamConfigurationLink is a relative link
   const fullProctoringExamConfigurationLink = () => (
@@ -107,6 +117,48 @@ const CardHeader = ({
     dependency: title,
   });
 
+  const handleEditSubmit = (titleValue) => {
+    // Prevent multiple submissions if modal is already open
+    if (isConfirmModalOpen) {
+      return;
+    }
+
+    const checkBoxId = `${cardId}_checkboxTranslation`;
+    const checkboxElement = document.getElementById(checkBoxId);
+    // @ts-ignore - checkbox element may be HTMLInputElement
+    const isCheckboxChecked = checkboxElement && checkboxElement.checked;
+    const isBaseCourse = isTranslatedOrBaseCourse && isTranslatedOrBaseCourse.toUpperCase() === 'BASE';
+
+    if (isCheckboxChecked) {
+      // Show warning for translated rerun edit
+      setConfirmModalConfig(/** @type {any} */ ({
+        title: intl.formatMessage(messages.editTranslatedRerunTitle),
+        body: intl.formatMessage(messages.editTranslatedRerunBody),
+        onConfirm: () => {
+          closeConfirmModal();
+          setConfirmModalConfig(null);
+          onEditSubmit(titleValue);
+        },
+      }));
+      openConfirmModal();
+    } else if (isBaseCourse) {
+      // Show warning for base course edit
+      setConfirmModalConfig(/** @type {any} */ ({
+        title: intl.formatMessage(messages.editBaseCourseTitle),
+        body: intl.formatMessage(messages.editBaseCourseBody),
+        onConfirm: () => {
+          closeConfirmModal();
+          setConfirmModalConfig(null);
+          onEditSubmit(titleValue);
+        },
+      }));
+      openConfirmModal();
+    } else {
+      // No confirmation needed, proceed with edit
+      onEditSubmit(titleValue);
+    }
+  };
+
   return (
     <>
       <div
@@ -123,10 +175,17 @@ const CardHeader = ({
               name="displayName"
               onChange={(e) => setTitleValue(e.target.value)}
               aria-label="edit field"
-              onBlur={() => onEditSubmit(titleValue)}
+              onBlur={() => {
+                if (!isConfirmModalOpen) {
+                  handleEditSubmit(titleValue);
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  onEditSubmit(titleValue);
+                  e.preventDefault();
+                  if (!isConfirmModalOpen) {
+                    handleEditSubmit(titleValue);
+                  }
                 }
               }}
               disabled={isDisabledEditField}
@@ -272,6 +331,53 @@ const CardHeader = ({
         onClose={/* istanbul ignore next */ () => closeManageTagsDrawer()}
         showSheet={isManageTagsDrawerOpen}
       />
+      {confirmModalConfig && (
+        <ModalDialog
+          isOpen={isConfirmModalOpen}
+          onClose={() => {
+            closeConfirmModal();
+            setConfirmModalConfig(null);
+            setTitleValue(title);
+            closeForm();
+          }}
+          hasCloseButton
+          isFullscreenOnMobile
+          variant="warning"
+          // @ts-ignore - confirmModalConfig has title property
+          title={confirmModalConfig.title}
+          isOverflowVisible={false}
+        >
+          <ModalDialog.Header>
+            <ModalDialog.Title>
+              {/* @ts-ignore - confirmModalConfig has title property */}
+              {confirmModalConfig.title}
+            </ModalDialog.Title>
+          </ModalDialog.Header>
+          <ModalDialog.Body>
+            {/* @ts-ignore - confirmModalConfig has body property */}
+            <p>{confirmModalConfig.body}</p>
+          </ModalDialog.Body>
+          <ModalDialog.Footer>
+            <ActionRow>
+              <ModalDialog.CloseButton
+                variant="tertiary"
+                onClick={() => {
+                  closeConfirmModal();
+                  setConfirmModalConfig(null);
+                  setTitleValue(title);
+                  closeForm();
+                }}
+              >
+                {intl.formatMessage(messages.cancelButton)}
+              </ModalDialog.CloseButton>
+              {/* @ts-ignore - confirmModalConfig has onConfirm property */}
+              <Button onClick={confirmModalConfig.onConfirm}>
+                {intl.formatMessage(messages.continueEditingButton)}
+              </Button>
+            </ActionRow>
+          </ModalDialog.Footer>
+        </ModalDialog>
+      )}
     </>
   );
 };
