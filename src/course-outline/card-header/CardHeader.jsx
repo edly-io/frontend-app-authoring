@@ -13,10 +13,6 @@ import {
   Icon,
   IconButton,
   IconButtonWithTooltip,
-  ModalDialog,
-  Button,
-  ActionRow,
-  useToggle,
 } from '@openedx/paragon';
 import {
   MoreVert as MoveVertIcon,
@@ -27,6 +23,8 @@ import {
 import { useContentTagsCount } from '../../generic/data/apiHooks';
 import { ContentTagsDrawerSheet } from '../../content-tags-drawer';
 import TagCount from '../../generic/tag-count';
+import EditWarningModal from '../../generic/translation-warning/EditWarningModal';
+import { useEditWarningModal } from '../../generic/translation-warning/useEditWarningModal';
 import { useEscapeClick } from '../../hooks';
 import { ITEM_BADGE_STATUS } from '../constants';
 import { scrollToElement } from '../utils';
@@ -70,10 +68,17 @@ const CardHeader = ({
   const [searchParams] = useSearchParams();
   const [titleValue, setTitleValue] = useState(title);
   const cardHeaderRef = useRef(null);
-  const [isManageTagsDrawerOpen, openManageTagsDrawer, closeManageTagsDrawer] = useToggle(false);
-  // wikimedia changes
-  const [isConfirmModalOpen, openConfirmModal, closeConfirmModal] = useToggle(false);
-  const [confirmModalConfig, setConfirmModalConfig] = useState(null);
+  const [isManageTagsDrawerOpen, setIsManageTagsDrawerOpen] = useState(false);
+  const openManageTagsDrawer = () => setIsManageTagsDrawerOpen(true);
+  const closeManageTagsDrawer = () => setIsManageTagsDrawerOpen(false);
+  // wikimedia changes - using shared translation warning components
+  const {
+    isConfirmModalOpen,
+    confirmModalConfig,
+    determineWarningType,
+    showWarningModal,
+    handleCloseModal,
+  } = useEditWarningModal();
   const statusBarData = useSelector(getStatusBarData);
   const { isTranslatedOrBaseCourse } = statusBarData;
 
@@ -127,32 +132,15 @@ const CardHeader = ({
     const checkboxElement = document.getElementById(checkBoxId);
     // @ts-ignore - checkbox element may be HTMLInputElement
     const isCheckboxChecked = checkboxElement && checkboxElement.checked;
-    const isBaseCourse = isTranslatedOrBaseCourse && isTranslatedOrBaseCourse.toUpperCase() === 'BASE';
 
-    if (isCheckboxChecked) {
-      // Show warning for translated rerun edit
-      setConfirmModalConfig(/** @type {any} */ ({
-        title: intl.formatMessage(messages.editTranslatedRerunTitle),
-        body: intl.formatMessage(messages.editTranslatedRerunBody),
-        onConfirm: () => {
-          closeConfirmModal();
-          setConfirmModalConfig(null);
-          onEditSubmit(titleValue);
-        },
-      }));
-      openConfirmModal();
-    } else if (isBaseCourse) {
-      // Show warning for base course edit
-      setConfirmModalConfig(/** @type {any} */ ({
-        title: intl.formatMessage(messages.editBaseCourseTitle),
-        body: intl.formatMessage(messages.editBaseCourseBody),
-        onConfirm: () => {
-          closeConfirmModal();
-          setConfirmModalConfig(null);
-          onEditSubmit(titleValue);
-        },
-      }));
-      openConfirmModal();
+    // Determine if we need to show a warning
+    const warningType = determineWarningType(isTranslatedOrBaseCourse, isCheckboxChecked);
+
+    if (warningType) {
+      // Show appropriate warning modal
+      showWarningModal(warningType, () => {
+        onEditSubmit(titleValue);
+      });
     } else {
       // No confirmation needed, proceed with edit
       onEditSubmit(titleValue);
@@ -331,53 +319,16 @@ const CardHeader = ({
         onClose={/* istanbul ignore next */ () => closeManageTagsDrawer()}
         showSheet={isManageTagsDrawerOpen}
       />
-      {confirmModalConfig && (
-        <ModalDialog
-          isOpen={isConfirmModalOpen}
-          onClose={() => {
-            closeConfirmModal();
-            setConfirmModalConfig(null);
+      <EditWarningModal
+        isOpen={isConfirmModalOpen}
+        config={confirmModalConfig}
+        onClose={() => {
+          handleCloseModal(() => {
             setTitleValue(title);
             closeForm();
-          }}
-          hasCloseButton
-          isFullscreenOnMobile
-          variant="warning"
-          // @ts-ignore - confirmModalConfig has title property
-          title={confirmModalConfig.title}
-          isOverflowVisible={false}
-        >
-          <ModalDialog.Header>
-            <ModalDialog.Title>
-              {/* @ts-ignore - confirmModalConfig has title property */}
-              {confirmModalConfig.title}
-            </ModalDialog.Title>
-          </ModalDialog.Header>
-          <ModalDialog.Body>
-            {/* @ts-ignore - confirmModalConfig has body property */}
-            <p>{confirmModalConfig.body}</p>
-          </ModalDialog.Body>
-          <ModalDialog.Footer>
-            <ActionRow>
-              <ModalDialog.CloseButton
-                variant="tertiary"
-                onClick={() => {
-                  closeConfirmModal();
-                  setConfirmModalConfig(null);
-                  setTitleValue(title);
-                  closeForm();
-                }}
-              >
-                {intl.formatMessage(messages.cancelButton)}
-              </ModalDialog.CloseButton>
-              {/* @ts-ignore - confirmModalConfig has onConfirm property */}
-              <Button onClick={confirmModalConfig.onConfirm}>
-                {intl.formatMessage(messages.continueEditingButton)}
-              </Button>
-            </ActionRow>
-          </ModalDialog.Footer>
-        </ModalDialog>
-      )}
+          });
+        }}
+      />
     </>
   );
 };
