@@ -217,6 +217,27 @@ const config = {
         },
       ],
     },
+    'org.openedx.frontend.layout.studio_header_search_button_slot.v1': {
+      keepDefault: true,
+      plugins: [
+        {
+          op: PLUGIN_OPERATIONS.Insert,
+          widget: {
+            priority: 10,
+            id: 'translations-nav-link',
+            type: DIRECT_PLUGIN,
+            RenderWidget: () => (
+              <a
+                className="nav-link"
+                href={`${getConfig().STUDIO_BASE_URL}/meta_translations/`}
+              >
+                Translations
+              </a>
+            ),
+          },
+        },
+      ],
+    },
   },
 };
 
