@@ -87,10 +87,10 @@ const CardItem: React.FC<Props> = ({
             className="card-item-title"
             to={destinationUrl}
           >
-              {hasDisplayName}
-            </Link>
-          ) : (
-            <span className="card-item-title">{displayName}</span>
+            {hasDisplayName}
+          </Link>
+        ) : (
+          <span className="card-item-title">{displayName}</span>
         )}
         subtitle={subtitle}
         actions={

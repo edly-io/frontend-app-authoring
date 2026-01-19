@@ -70,7 +70,7 @@ const CreateOrRerunCourseForm = ({
       helpText: intl.formatMessage(
         isCreateNewCourse
           ? messages.courseDisplayNameCreateHelpText
-          : messages.courseDisplayNameRerunHelpText
+          : messages.courseDisplayNameRerunHelpText,
       ),
       name: 'displayName',
       value: values.displayName,
@@ -82,22 +82,18 @@ const CreateOrRerunCourseForm = ({
       label: intl.formatMessage(messages.courseOrgLabel),
       helpText: isCreateNewCourse
         ? intl.formatMessage(messages.courseOrgCreateHelpText, {
-            strong: (
-              <strong>
-                {intl.formatMessage(messages.courseNoteOrgNameIsPartStrong)}
-              </strong>
-            ),
-          })
+          strong: <strong>{intl.formatMessage(messages.courseNoteOrgNameIsPartStrong)}</strong>,
+        })
         : intl.formatMessage(messages.courseOrgRerunHelpText, {
-            strong: (
-              <>
-                <br />
-                <strong>
-                  {intl.formatMessage(messages.courseNoteNoSpaceAllowedStrong)}
-                </strong>
-              </>
-            ),
-          }),
+          strong: (
+            <>
+              <br />
+              <strong>
+                {intl.formatMessage(messages.courseNoteNoSpaceAllowedStrong)}
+              </strong>
+            </>
+          ),
+        }),
       name: 'org',
       value: values.org,
       options: organizations,
@@ -108,12 +104,12 @@ const CreateOrRerunCourseForm = ({
       label: intl.formatMessage(messages.courseNumberLabel),
       helpText: isCreateNewCourse
         ? intl.formatMessage(messages.courseNumberCreateHelpText, {
-            strong: (
-              <strong>
-                {intl.formatMessage(messages.courseNotePartCourseURLRequireStrong)}
-              </strong>
-            ),
-          })
+          strong: (
+            <strong>
+              {intl.formatMessage(messages.courseNotePartCourseURLRequireStrong)}
+            </strong>
+          ),
+        })
         : intl.formatMessage(messages.courseNumberRerunHelpText),
       name: 'number',
       value: values.number,
@@ -124,22 +120,22 @@ const CreateOrRerunCourseForm = ({
       label: intl.formatMessage(messages.courseRunLabel),
       helpText: isCreateNewCourse
         ? intl.formatMessage(messages.courseRunCreateHelpText, {
-            strong: (
-              <strong>
-                {intl.formatMessage(messages.courseNotePartCourseURLRequireStrong)}
-              </strong>
-            ),
-          })
+          strong: (
+            <strong>
+              {intl.formatMessage(messages.courseNotePartCourseURLRequireStrong)}
+            </strong>
+          ),
+        })
         : intl.formatMessage(messages.courseRunRerunHelpText, {
-            strong: (
-              <>
-                <br />
-                <strong>
-                  {intl.formatMessage(messages.courseNoteNoSpaceAllowedStrong)}
-                </strong>
-              </>
-            ),
-          }),
+          strong: (
+            <>
+              <br />
+              <strong>
+                {intl.formatMessage(messages.courseNoteNoSpaceAllowedStrong)}
+              </strong>
+            </>
+          ),
+        }),
       name: 'run',
       value: values.run,
       placeholder: intl.formatMessage(messages.courseRunPlaceholder),
@@ -152,12 +148,8 @@ const CreateOrRerunCourseForm = ({
 
   const createButtonState = {
     labels: {
-      default: intl.formatMessage(
-        isCreateNewCourse ? messages.createButton : messages.rerunCreateButton
-      ),
-      pending: intl.formatMessage(
-        isCreateNewCourse ? messages.creatingButton : messages.rerunningCreateButton
-      ),
+      default: intl.formatMessage(isCreateNewCourse ? messages.createButton : messages.rerunCreateButton),
+      pending: intl.formatMessage(isCreateNewCourse ? messages.creatingButton : messages.rerunningCreateButton),
     },
     disabledStates: [STATEFUL_BUTTON_STATES.pending],
   };
@@ -200,36 +192,38 @@ const CreateOrRerunCourseForm = ({
     handleBlur(e);
   };
 
-  const renderOrgField = (field) =>
-    allowToCreateNewOrg ? (
-      <TypeaheadDropdown
-        readOnly={false}
-        name={field.name}
-        value={field.value}
-        controlClassName={classNames({ 'is-invalid': hasErrorField(field.name) })}
-        options={field.options}
-        placeholder={field.placeholder}
-        handleBlur={handleCustomBlurForDropdown}
-        handleChange={(value) => setFieldValue(field.name, value)}
-        noOptionsMessage={intl.formatMessage(messages.courseOrgNoOptions)}
-        helpMessage=""
-        errorMessage=""
-        floatingLabel=""
-      />
-    ) : (
-      <Dropdown className="mr-2">
-        <Dropdown.Toggle id={`${field.name}-dropdown`} variant="outline-primary">
-          {field.value || intl.formatMessage(messages.courseOrgNoOptions)}
-        </Dropdown.Toggle>
-        <Dropdown.Menu>
-          {field.options?.map((value) => (
-            <Dropdown.Item key={value} onClick={() => setFieldValue(field.name, value)}>
-              {value}
-            </Dropdown.Item>
-          ))}
-        </Dropdown.Menu>
-      </Dropdown>
-    );
+  const renderOrgField = (field) => (allowToCreateNewOrg ? (
+    <TypeaheadDropdown
+      readOnly={false}
+      name={field.name}
+      value={field.value}
+      controlClassName={classNames({ 'is-invalid': hasErrorField(field.name) })}
+      options={field.options}
+      placeholder={field.placeholder}
+      handleBlur={handleCustomBlurForDropdown}
+      handleChange={(value) => setFieldValue(field.name, value)}
+      noOptionsMessage={intl.formatMessage(messages.courseOrgNoOptions)}
+      helpMessage=""
+      errorMessage=""
+      floatingLabel=""
+    />
+  ) : (
+    <Dropdown className="mr-2">
+      <Dropdown.Toggle id={`${field.name}-dropdown`} variant="outline-primary">
+        {field.value || intl.formatMessage(messages.courseOrgNoOptions)}
+      </Dropdown.Toggle>
+      <Dropdown.Menu>
+        {field.options?.map((value) => (
+          <Dropdown.Item
+            key={value}
+            onClick={() => setFieldValue(field.name, value)}
+          >
+            {value}
+          </Dropdown.Item>
+        ))}
+      </Dropdown.Menu>
+    </Dropdown>
+  ));
 
   useEffect(() => {
     // it needs to display the initial focus for the field depending on the current page
@@ -243,17 +237,17 @@ const CreateOrRerunCourseForm = ({
   return (
     <div className="create-or-rerun-course-form">
       <TransitionReplace>
-        {errors[TOTAL_LENGTH_KEY] || showErrorBanner ? (
+        {(errors[TOTAL_LENGTH_KEY] || showErrorBanner) ? (
           <AlertMessage
             variant="danger"
             icon={InfoIcon}
             title={errorMessage}
             aria-hidden="true"
             aria-labelledby={intl.formatMessage(
-              messages.alertErrorExistsAriaLabelledBy
+              messages.alertErrorExistsAriaLabelledBy,
             )}
             aria-describedby={intl.formatMessage(
-              messages.alertErrorExistsAriaDescribedBy
+              messages.alertErrorExistsAriaDescribedBy,
             )}
           />
         ) : null}
@@ -279,9 +273,7 @@ const CreateOrRerunCourseForm = ({
                 disabled={field.disabled}
                 ref={field?.ref}
               />
-            ) : (
-              renderOrgField(field)
-            )}
+            ) : renderOrgField(field)}
             <Form.Text>{field.helpText}</Form.Text>
             {hasErrorField(field.name) && (
               <Form.Control.Feedback
@@ -358,7 +350,10 @@ const CreateOrRerunCourseForm = ({
           </Form.Group>
         )}
         <ActionRow className="justify-content-start">
-          <Button variant="outline-primary" onClick={handleOnClickCancel}>
+          <Button
+            variant="outline-primary"
+            onClick={handleOnClickCancel}
+          >
             {intl.formatMessage(messages.cancelButton)}
           </Button>
           <StatefulButton

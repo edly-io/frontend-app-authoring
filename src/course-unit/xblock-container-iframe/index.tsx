@@ -67,6 +67,7 @@ const XBlockContainerIframe: FC<XBlockContainerIframeProps> = ({
   const [configureXBlockId, setConfigureXBlockId] = useState<string | null>(null);
   const [showLegacyEditModal, setShowLegacyEditModal] = useState<boolean>(false);
   const [isManageTagsOpen, openManageTagsModal, closeManageTagsModal] = useToggle(false);
+  
   const iframeUrl = useMemo(() => getIframeUrl(blockId), [blockId]);
   const legacyEditModalUrl = useMemo(() => getLegacyEditModalUrl(configureXBlockId), [configureXBlockId]);
 

@@ -13,6 +13,7 @@ import {
   Icon,
   IconButton,
   IconButtonWithTooltip,
+  useToggle,
 } from '@openedx/paragon';
 import {
   MoreVert as MoveVertIcon,
@@ -68,9 +69,7 @@ const CardHeader = ({
   const [searchParams] = useSearchParams();
   const [titleValue, setTitleValue] = useState(title);
   const cardHeaderRef = useRef(null);
-  const [isManageTagsDrawerOpen, setIsManageTagsDrawerOpen] = useState(false);
-  const openManageTagsDrawer = () => setIsManageTagsDrawerOpen(true);
-  const closeManageTagsDrawer = () => setIsManageTagsDrawerOpen(false);
+  const [isManageTagsDrawerOpen, openManageTagsDrawer, closeManageTagsDrawer] = useToggle(false);
   // wikimedia changes - using shared translation warning components
   const {
     isConfirmModalOpen,
