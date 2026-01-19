@@ -158,7 +158,7 @@ const CreateOrRerunCourseForm = ({
     const courseData = {
       ...values,
       isTranslatedRerun: values.isTranslatedRerun || false,
-      ...(values.isTranslatedRerun && values.language
+      ...((isCreateNewCourse || values.isTranslatedRerun) && values.language
         ? { language: values.language }
         : {}),
     };
@@ -286,6 +286,45 @@ const CreateOrRerunCourseForm = ({
             )}
           </Form.Group>
         ))}
+        {isCreateNewCourse && (
+          <Form.Group
+            className={classNames('form-group-custom', {
+              'form-group-custom_isInvalid': hasErrorField('language'),
+            })}
+          >
+            <Form.Label>{intl.formatMessage(messages.languageLabel)}</Form.Label>
+            <TypeaheadDropdown
+              readOnly={false}
+              name="language"
+              value={getLanguageNameByCode(values.language) || ''}
+              controlClassName={classNames({
+                'is-invalid': hasErrorField('language'),
+              })}
+              options={languageNames}
+              placeholder={intl.formatMessage(messages.languagePlaceholder)}
+              handleBlur={handleLanguageBlur}
+              handleChange={(selectedName) => {
+                const code = getLanguageCodeByName(selectedName);
+                if (code) {
+                  setFieldValue('language', code);
+                }
+              }}
+              noOptionsMessage={intl.formatMessage(messages.languageNoOptions)}
+              helpMessage=""
+              errorMessage=""
+              floatingLabel=""
+            />
+            {hasErrorField('language') && (
+              <Form.Control.Feedback
+                className="feedback-error"
+                type="invalid"
+                hasIcon={false}
+              >
+                {errors.language}
+              </Form.Control.Feedback>
+            )}
+          </Form.Group>
+        )}
         {!isCreateNewCourse && !initialValues.isTranslatedRerun && (
           <Form.Group className="form-group-custom mb-3">
             <Form.Label>
