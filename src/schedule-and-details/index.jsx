@@ -36,6 +36,7 @@ import DetailsSection from './details-section';
 import IntroducingSection from './introducing-section';
 import PacingSection from './pacing-section';
 import ScheduleSection from './schedule-section';
+import CourseDirectionSection from './course-direction-section';
 import LearningOutcomesSection from './learning-outcomes-section';
 import InstructorsSection from './instructors-section';
 import RequirementsSection from './requirements-section';
@@ -138,6 +139,7 @@ const ScheduleAndDetails = ({ intl, courseId }) => {
     entranceExamMinimumScorePct,
     certificatesDisplayBehavior,
     videoThumbnailImageAssetPath,
+    isDestinationCourse,
   } = editedValues;
 
   useScrollToHashElement({ isLoading });
@@ -267,6 +269,10 @@ const ScheduleAndDetails = ({ intl, courseId }) => {
                     certificateAvailableDate={certificateAvailableDate}
                     certificatesDisplayBehavior={certificatesDisplayBehavior}
                     canShowCertificateAvailableDateField={canShowCertificateAvailableDateField}
+                    onChange={handleValuesChange}
+                  />
+                  <CourseDirectionSection
+                    isDestinationCourse={isDestinationCourse}
                     onChange={handleValuesChange}
                   />
                   {aboutPageEditable && (

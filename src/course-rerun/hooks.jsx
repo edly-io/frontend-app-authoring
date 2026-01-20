@@ -24,6 +24,8 @@ const useCourseRerun = (courseId) => {
     org = '',
     run = '',
     number = '',
+    isTranslatedRerun = false,
+    languageOptions = [],
   } = courseRerunData;
   const originalCourseData = `${org} ${number} ${run}`;
   const initialFormValues = {
@@ -31,6 +33,8 @@ const useCourseRerun = (courseId) => {
     org,
     number,
     run: '',
+    isTranslatedRerun,
+    languageOptions,
   };
 
   useEffect(() => {

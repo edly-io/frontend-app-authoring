@@ -1,0 +1,92 @@
+.course-direction-section {
+  .course-direction-toggle-container {
+    margin-top: 1rem;
+  }
+
+  .course-direction-toggle-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .course-direction-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+    margin: 0;
+    cursor: pointer;
+
+    input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+
+      &:checked + .course-direction-slider {
+        background-color: $primary-500;
+      }
+
+      &:disabled + .course-direction-slider {
+        background-color: $gray-500;
+        cursor: not-allowed;
+      }
+
+      &:checked + .course-direction-slider .course-direction-tick {
+        display: block;
+      }
+
+      &:checked + .course-direction-slider .course-direction-cross {
+        display: none;
+      }
+    }
+  }
+
+  .course-direction-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #dc3545;
+    transition: 0.4s;
+    border-radius: 34px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+
+    &::before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+  }
+
+  .course-direction-switch input:checked + .course-direction-slider::before {
+    transform: translateX(26px);
+  }
+
+  .course-direction-tick {
+    display: none;
+    width: 14px;
+    height: 14px;
+    margin-left: auto;
+  }
+
+  .course-direction-cross {
+    display: block;
+    width: 14px;
+    height: 14px;
+  }
+
+  .course-direction-switch input:disabled + .course-direction-slider {
+    cursor: not-allowed;
+  }
+}
+

@@ -35,6 +35,7 @@ interface Props {
     rerunLink: string | null;
     run: string;
     url: string;
+    translationInfo: string;
   }[];
   showNewCourseContainer: boolean;
   onClickNewCourse: () => void;
@@ -156,6 +157,7 @@ const CoursesTab: React.FC<Props> = ({
                 number,
                 run,
                 url,
+                translationInfo,
               }) => (
                 <CardItem
                   key={courseKey}
@@ -167,6 +169,7 @@ const CoursesTab: React.FC<Props> = ({
                   number={number}
                   run={run}
                   url={url}
+                  translationInfo={translationInfo}
                   isPaginated={isEnabledPagination}
                 />
               ),

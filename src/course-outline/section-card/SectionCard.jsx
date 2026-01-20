@@ -18,6 +18,7 @@ import { DragContext } from '../drag-helper/DragContextProvider';
 import TitleButton from '../card-header/TitleButton';
 import XBlockStatus from '../xblock-status/XBlockStatus';
 import { getItemStatus, getItemStatusBorder, scrollToElement } from '../utils';
+import CourseOutlineSectionCardExtraActionsSlot from '../../plugin-slots/CourseOutlineSectionCardExtraActionsSlot';
 import messages from './messages';
 
 const SectionCard = ({
@@ -178,6 +179,12 @@ const SectionCard = ({
     />
   );
 
+  const extraActionsComponent = (
+    <CourseOutlineSectionCardExtraActionsSlot
+      section={section}
+    />
+  );
+
   const isDraggable = actions.draggable && (actions.allowMoveUp || actions.allowMoveDown);
 
   return (
@@ -218,6 +225,7 @@ const SectionCard = ({
               titleComponent={titleComponent}
               namePrefix={namePrefix}
               actions={actions}
+              extraActionsComponent={extraActionsComponent}
             />
           )}
           <div className="section-card__content" data-testid="section-card__content">

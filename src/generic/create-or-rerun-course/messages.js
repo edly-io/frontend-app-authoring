@@ -130,6 +130,39 @@ const messages = defineMessages({
     id: 'course-authoring.create-or-rerun-course.error.already-exists.aria.describedBy',
     defaultMessage: 'alert-confirmation-description',
   },
+  translationOptionsLabel: {
+    id: 'course-authoring.create-or-rerun-course.translation-options.label',
+    defaultMessage: 'Re-run type',
+  },
+  standardRerunLabel: {
+    id: 'course-authoring.create-or-rerun-course.translation-options.standard.label',
+    defaultMessage: 'Basic re-run',
+  },
+  translatedRerunLabel: {
+    id: 'course-authoring.create-or-rerun-course.translation-options.translated.label',
+    defaultMessage: 'Translated Course re-run',
+  },
+  languageLabel: {
+    id: 'course-authoring.create-or-rerun-course.language.label',
+    defaultMessage: 'Course language',
+  },
+  languagePlaceholder: {
+    id: 'course-authoring.create-or-rerun-course.language.placeholder',
+    defaultMessage: 'Select a language',
+  },
+  languageRequiredError: {
+    id: 'course-authoring.create-or-rerun-course.language.required.error',
+    defaultMessage: 'Please select a language for the translated re-run.',
+  },
+  languageNoOptions: {
+    id: 'course-authoring.create-or-rerun-course.language.no-options',
+    defaultMessage: 'No language options available',
+  },
+  translationOptionsHelpText: {
+    id: 'course-authoring.create-or-rerun-course.translation-options.help-text',
+    defaultMessage:
+      'Choose whether to create a standard re-run or a translated re-run. A translated re-run allows you to create a version of the course in a different language.',
+  },
 });
 
 export default messages;

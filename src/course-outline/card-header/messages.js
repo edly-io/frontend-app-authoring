@@ -87,6 +87,11 @@ const messages = defineMessages({
     defaultMessage: 'This object was added from a library, so it cannot be edited.',
     description: 'Tooltip text of button when the object was added from a library.',
   },
+  cancelButton: {
+    id: 'course-authoring.course-outline.card.edit.cancel.button',
+    defaultMessage: 'Cancel',
+    description: 'Button label to cancel editing.',
+  },
 });
 
 export default messages;

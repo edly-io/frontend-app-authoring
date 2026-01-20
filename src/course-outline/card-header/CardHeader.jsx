@@ -1,6 +1,7 @@
 // @ts-check
 import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
+import { useSelector } from 'react-redux';
 import classNames from 'classnames';
 import { getConfig } from '@edx/frontend-platform';
 import { useIntl } from '@edx/frontend-platform/i18n';
@@ -23,9 +24,12 @@ import {
 import { useContentTagsCount } from '../../generic/data/apiHooks';
 import { ContentTagsDrawerSheet } from '../../content-tags-drawer';
 import TagCount from '../../generic/tag-count';
+import EditWarningModal from '../../generic/translation-warning/EditWarningModal';
+import { useEditWarningModal } from '../../generic/translation-warning/useEditWarningModal';
 import { useEscapeClick } from '../../hooks';
 import { ITEM_BADGE_STATUS } from '../constants';
 import { scrollToElement } from '../utils';
+import { getStatusBarData } from '../data/selectors';
 import CardStatus from './CardStatus';
 import messages from './messages';
 
@@ -66,6 +70,16 @@ const CardHeader = ({
   const [titleValue, setTitleValue] = useState(title);
   const cardHeaderRef = useRef(null);
   const [isManageTagsDrawerOpen, openManageTagsDrawer, closeManageTagsDrawer] = useToggle(false);
+  // wikimedia changes - using shared translation warning components
+  const {
+    isConfirmModalOpen,
+    confirmModalConfig,
+    determineWarningType,
+    showWarningModal,
+    handleCloseModal,
+  } = useEditWarningModal();
+  const statusBarData = useSelector(getStatusBarData);
+  const { isTranslatedOrBaseCourse } = statusBarData;
 
   // Use studio url as base if proctoringExamConfigurationLink is a relative link
   const fullProctoringExamConfigurationLink = () => (
@@ -107,6 +121,31 @@ const CardHeader = ({
     dependency: title,
   });
 
+  const handleEditSubmit = (titleValue) => {
+    // Prevent multiple submissions if modal is already open
+    if (isConfirmModalOpen) {
+      return;
+    }
+
+    const checkBoxId = `${cardId}_checkboxTranslation`;
+    const checkboxElement = document.getElementById(checkBoxId);
+    // @ts-ignore - checkbox element may be HTMLInputElement
+    const isCheckboxChecked = checkboxElement && checkboxElement.checked;
+
+    // Determine if we need to show a warning
+    const warningType = determineWarningType(isTranslatedOrBaseCourse, isCheckboxChecked);
+
+    if (warningType) {
+      // Show appropriate warning modal
+      showWarningModal(warningType, () => {
+        onEditSubmit(titleValue);
+      });
+    } else {
+      // No confirmation needed, proceed with edit
+      onEditSubmit(titleValue);
+    }
+  };
+
   return (
     <>
       <div
@@ -123,10 +162,17 @@ const CardHeader = ({
               name="displayName"
               onChange={(e) => setTitleValue(e.target.value)}
               aria-label="edit field"
-              onBlur={() => onEditSubmit(titleValue)}
+              onBlur={() => {
+                if (!isConfirmModalOpen) {
+                  handleEditSubmit(titleValue);
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  onEditSubmit(titleValue);
+                  e.preventDefault();
+                  if (!isConfirmModalOpen) {
+                    handleEditSubmit(titleValue);
+                  }
                 }
               }}
               disabled={isDisabledEditField}
@@ -271,6 +317,16 @@ const CardHeader = ({
         id={cardId}
         onClose={/* istanbul ignore next */ () => closeManageTagsDrawer()}
         showSheet={isManageTagsDrawerOpen}
+      />
+      <EditWarningModal
+        isOpen={isConfirmModalOpen}
+        config={confirmModalConfig}
+        onClose={() => {
+          handleCloseModal(() => {
+            setTitleValue(title);
+            closeForm();
+          });
+        }}
       />
     </>
   );

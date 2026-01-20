@@ -28,6 +28,7 @@ interface BaseProps {
   courseKey?: string;
   isLibraries?: boolean;
   isPaginated?: boolean;
+  translationInfo: string;
 }
 type Props = BaseProps & (
   /** If we should open this course/library in this MFE, this is the path to the edit page, e.g. '/course/foo' */
@@ -54,6 +55,7 @@ const CardItem: React.FC<Props> = ({
   isPaginated = false,
   path,
   url,
+  translationInfo,
 }) => {
   const intl = useIntl();
   const {
@@ -91,29 +93,37 @@ const CardItem: React.FC<Props> = ({
           <span className="card-item-title">{displayName}</span>
         )}
         subtitle={subtitle}
-        actions={showActions && (
-          isPaginated ? (
-            <Dropdown>
-              <Dropdown.Toggle
-                as={IconButton}
-                iconAs={MoreHoriz}
-                variant="primary"
-                data-testid="toggle-dropdown"
-              />
-              <Dropdown.Menu>
-                {isShowRerunLink && (
-                  <Dropdown.Item
-                    as={Link}
-                    to={rerunLink ?? ''}
-                  >
-                    {messages.btnReRunText.defaultMessage}
+        actions={
+          showActions &&
+          (isPaginated ? (
+            <React.Fragment key="course-actions">
+              <div className="course-badge">
+                <span
+                  className="badge badge-info"
+                  title={`${translationInfo}`}
+                >
+                  {translationInfo}
+                </span>
+              </div>
+              <Dropdown>
+                <Dropdown.Toggle
+                  as={IconButton}
+                  iconAs={MoreHoriz}
+                  variant="primary"
+                  data-testid="toggle-dropdown"
+                />
+                <Dropdown.Menu>
+                  {isShowRerunLink && (
+                    <Dropdown.Item as={Link} to={rerunLink ?? ''}>
+                      {messages.btnReRunText.defaultMessage}
+                    </Dropdown.Item>
+                  )}
+                  <Dropdown.Item href={lmsLink}>
+                    {intl.formatMessage(messages.viewLiveBtnText)}
                   </Dropdown.Item>
-                )}
-                <Dropdown.Item href={lmsLink}>
-                  {intl.formatMessage(messages.viewLiveBtnText)}
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
+                </Dropdown.Menu>
+              </Dropdown>
+            </React.Fragment>
           ) : (
             <ActionRow>
               {isShowRerunLink && (
@@ -133,8 +143,8 @@ const CardItem: React.FC<Props> = ({
                 {intl.formatMessage(messages.viewLiveBtnText)}
               </Hyperlink>
             </ActionRow>
-          )
-        )}
+          ))
+        }
       />
     </Card>
   );

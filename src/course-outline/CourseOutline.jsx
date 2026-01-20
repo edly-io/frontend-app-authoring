@@ -33,6 +33,7 @@ import SubHeader from '../generic/sub-header/SubHeader';
 import ProcessingNotification from '../generic/processing-notification';
 import InternetConnectionAlert from '../generic/internet-connection-alert';
 import DeleteModal from '../generic/delete-modal/DeleteModal';
+import { getDeleteModalDescription } from '../generic/delete-modal/DeleteModalDescription';
 import ConfigureModal from '../generic/configure-modal/ConfigureModal';
 import AlertMessage from '../generic/alert-message';
 import getPageHeadTitle from '../generic/utils';
@@ -504,6 +505,11 @@ const CourseOutline = ({ courseId }) => {
           isOpen={isDeleteModalOpen}
           close={closeDeleteModal}
           onDeleteSubmit={handleDeleteItemSubmit}
+          description={getDeleteModalDescription({
+            intl,
+            category: deleteCategory,
+            isTranslatedOrBaseCourse: statusBarData?.isTranslatedOrBaseCourse,
+          })}
         />
       </Container>
       <div className="alert-toast">

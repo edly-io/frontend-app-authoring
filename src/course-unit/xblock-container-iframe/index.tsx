@@ -39,6 +39,8 @@ import VideoSelectorPage from '../../editors/VideoSelectorPage';
 import EditorPage from '../../editors/EditorPage';
 import { RequestStatus } from '../../data/constants';
 
+import { getCourseSectionVertical } from '../data/selectors';
+
 const XBlockContainerIframe: FC<XBlockContainerIframeProps> = ({
   courseId,
   blockId,
@@ -57,6 +59,7 @@ const XBlockContainerIframe: FC<XBlockContainerIframeProps> = ({
   const [isXBlockEditorModalOpen, showXBlockEditorModal, closeXBlockEditorModal] = useToggle();
   const [blockType, setBlockType] = useState<string>('');
   const { useVideoGalleryFlow, useReactMarkdownEditor } = useSelector(getWaffleFlags);
+  const { isTranslatedOrBaseCourse } = useSelector(getCourseSectionVertical);
   const [newBlockId, setNewBlockId] = useState<string>('');
   const [accessManagedXBlockData, setAccessManagedXBlockData] = useState<AccessManagedXBlockDataTypes | {}>({});
   const [iframeOffset, setIframeOffset] = useState(0);
@@ -64,7 +67,7 @@ const XBlockContainerIframe: FC<XBlockContainerIframeProps> = ({
   const [configureXBlockId, setConfigureXBlockId] = useState<string | null>(null);
   const [showLegacyEditModal, setShowLegacyEditModal] = useState<boolean>(false);
   const [isManageTagsOpen, openManageTagsModal, closeManageTagsModal] = useToggle(false);
-
+  
   const iframeUrl = useMemo(() => getIframeUrl(blockId), [blockId]);
   const legacyEditModalUrl = useMemo(() => getLegacyEditModalUrl(configureXBlockId), [configureXBlockId]);
 
@@ -249,6 +252,8 @@ const XBlockContainerIframe: FC<XBlockContainerIframeProps> = ({
             blockType={blockType}
             blockId={newBlockId}
             isMarkdownEditorEnabledForCourse={useReactMarkdownEditor}
+            isTranslatedOrBaseCourse={isTranslatedOrBaseCourse}
+            courseVerticalChildren={courseVerticalChildren}
             studioEndpointUrl={getConfig().STUDIO_BASE_URL}
             lmsEndpointUrl={getConfig().LMS_BASE_URL}
             onClose={closeXBlockEditorModal}

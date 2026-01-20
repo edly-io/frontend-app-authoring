@@ -21,6 +21,10 @@ const messages = defineMessages({
     id: 'course-authoring.course-outline.delete-modal.button.cancel',
     defaultMessage: 'Cancel',
   },
+  translatedRerunNote: {
+    id: 'course-authoring.course-outline.delete-modal.translated-rerun-note',
+    defaultMessage: 'Note that any linked translated rerun blocks mapping will be lost.',
+  },
 });
 
 export default messages;

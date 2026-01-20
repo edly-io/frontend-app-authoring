@@ -68,7 +68,10 @@ export function fetchCourseOutlineIndexQuery(courseId) {
           videoSharingEnabled,
           videoSharingOptions,
           actions,
+          mappingMessage,
         },
+        courseBlocksMappingUrl,
+        isTranslatedOrBaseCourse,
       } = outlineIndex;
       dispatch(fetchOutlineIndexSuccess(outlineIndex));
       dispatch(updateStatusBar({
@@ -76,6 +79,9 @@ export function fetchCourseOutlineIndexQuery(courseId) {
         highlightsEnabledForMessaging,
         videoSharingOptions,
         videoSharingEnabled,
+        courseBlocksMappingUrl,
+        isTranslatedOrBaseCourse,
+        mappingMessage,
       }));
       dispatch(updateCourseActions(actions));
 

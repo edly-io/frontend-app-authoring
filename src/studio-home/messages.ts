@@ -69,6 +69,22 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.organization.input.no-options',
     defaultMessage: 'No options',
   },
+  sendTranslationsBtnText: {
+    id: 'course-authoring.studio-home.send-translations.btn.text',
+    defaultMessage: 'Send Translations',
+  },
+  fetchTranslationsBtnText: {
+    id: 'course-authoring.studio-home.fetch-translations.btn.text',
+    defaultMessage: 'Fetch Translations',
+  },
+  sendingTranslationsMessage: {
+    id: 'course-authoring.studio-home.sending-translations.message',
+    defaultMessage: 'Sending Translations',
+  },
+  fetchingTranslationsMessage: {
+    id: 'course-authoring.studio-home.fetching-translations.message',
+    defaultMessage: 'Fetching Translations',
+  },
 });
 
 export default messages;

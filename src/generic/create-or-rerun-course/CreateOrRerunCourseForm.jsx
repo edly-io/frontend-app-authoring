@@ -52,6 +52,18 @@ const CreateOrRerunCourseForm = ({
     setFieldValue,
   } = useCreateOrRerunCourse(initialValues);
 
+  // Transform languageOptions from [["aa", "Afar"], ...] to array of names for TypeaheadDropdown
+  const languageOptions = initialValues.languageOptions || [];
+  const languageNames = languageOptions.map((option) => option[1]); // Extract language names
+  const getLanguageCodeByName = (name) => {
+    const option = languageOptions.find((opt) => opt[1] === name);
+    return option ? option[0] : '';
+  };
+  const getLanguageNameByCode = (code) => {
+    const option = languageOptions.find((opt) => opt[0] === code);
+    return option ? option[1] : '';
+  };
+
   const newCourseFields = [
     {
       label: intl.formatMessage(messages.courseDisplayNameLabel),
@@ -143,7 +155,16 @@ const CreateOrRerunCourseForm = ({
   };
 
   const handleOnClickCreate = () => {
-    const courseData = isCreateNewCourse ? values : { ...values, sourceCourseKey: courseId };
+    const courseData = {
+      ...values,
+      isTranslatedRerun: values.isTranslatedRerun || false,
+      ...((isCreateNewCourse || values.isTranslatedRerun) && values.language
+        ? { language: values.language }
+        : {}),
+    };
+    if (!isCreateNewCourse) {
+      courseData.sourceCourseKey = courseId;
+    }
     dispatch(updateCreateOrRerunCourseQuery(courseData));
   };
 
@@ -156,6 +177,18 @@ const CreateOrRerunCourseForm = ({
     // it needs to correct handleOnChange Form.Autosuggest
     const { value, name } = e.target;
     setFieldValue(name, value);
+    handleBlur(e);
+  };
+
+  const handleLanguageBlur = (e) => {
+    // For TypeaheadDropdown, the value is the language name, convert to code
+    const { value } = e.target;
+    if (value) {
+      const code = getLanguageCodeByName(value);
+      if (code) {
+        setFieldValue('language', code);
+      }
+    }
     handleBlur(e);
   };
 
@@ -253,6 +286,108 @@ const CreateOrRerunCourseForm = ({
             )}
           </Form.Group>
         ))}
+        {isCreateNewCourse && (
+          <Form.Group
+            className={classNames('form-group-custom', {
+              'form-group-custom_isInvalid': hasErrorField('language'),
+            })}
+          >
+            <Form.Label>{intl.formatMessage(messages.languageLabel)}</Form.Label>
+            <TypeaheadDropdown
+              readOnly={false}
+              name="language"
+              value={getLanguageNameByCode(values.language) || ''}
+              controlClassName={classNames({
+                'is-invalid': hasErrorField('language'),
+              })}
+              options={languageNames}
+              placeholder={intl.formatMessage(messages.languagePlaceholder)}
+              handleBlur={handleLanguageBlur}
+              handleChange={(selectedName) => {
+                const code = getLanguageCodeByName(selectedName);
+                if (code) {
+                  setFieldValue('language', code);
+                }
+              }}
+              noOptionsMessage={intl.formatMessage(messages.languageNoOptions)}
+              helpMessage=""
+              errorMessage=""
+              floatingLabel=""
+            />
+            {hasErrorField('language') && (
+              <Form.Control.Feedback
+                className="feedback-error"
+                type="invalid"
+                hasIcon={false}
+              >
+                {errors.language}
+              </Form.Control.Feedback>
+            )}
+          </Form.Group>
+        )}
+        {!isCreateNewCourse && !initialValues.isTranslatedRerun && (
+          <Form.Group className="form-group-custom mb-3">
+            <Form.Label>
+              {intl.formatMessage(messages.translationOptionsLabel)}
+            </Form.Label>
+            <div>
+              <Form.Check
+                type="radio"
+                id="standard-rerun"
+                name="isTranslatedRerun"
+                label={intl.formatMessage(messages.standardRerunLabel)}
+                checked={!values.isTranslatedRerun}
+                onChange={() => setFieldValue('isTranslatedRerun', false)}
+              />
+              <Form.Check
+                type="radio"
+                id="translated-rerun"
+                name="isTranslatedRerun"
+                label={intl.formatMessage(messages.translatedRerunLabel)}
+                checked={!!values.isTranslatedRerun}
+                onChange={() => setFieldValue('isTranslatedRerun', true)}
+              />
+            </div>
+            <Form.Text>
+              {intl.formatMessage(messages.translationOptionsHelpText)}
+            </Form.Text>
+            {values.isTranslatedRerun && (
+              <div className="mt-3">
+                <Form.Label>{intl.formatMessage(messages.languageLabel)}</Form.Label>
+                <TypeaheadDropdown
+                  readOnly={false}
+                  name="language"
+                  value={getLanguageNameByCode(values.language) || ''}
+                  controlClassName={classNames({
+                    'is-invalid': hasErrorField('language'),
+                  })}
+                  options={languageNames}
+                  placeholder={intl.formatMessage(messages.languagePlaceholder)}
+                  handleBlur={handleLanguageBlur}
+                  handleChange={(selectedName) => {
+                    const code = getLanguageCodeByName(selectedName);
+                    if (code) {
+                      setFieldValue('language', code);
+                    }
+                  }}
+                  noOptionsMessage={intl.formatMessage(messages.languageNoOptions)}
+                  helpMessage=""
+                  errorMessage=""
+                  floatingLabel=""
+                />
+                {hasErrorField('language') && (
+                  <Form.Control.Feedback
+                    className="feedback-error"
+                    type="invalid"
+                    hasIcon={false}
+                  >
+                    {errors.language}
+                  </Form.Control.Feedback>
+                )}
+              </div>
+            )}
+          </Form.Group>
+        )}
         <ActionRow className="justify-content-start">
           <Button
             variant="outline-primary"
@@ -290,6 +425,7 @@ CreateOrRerunCourseForm.propTypes = {
     org: PropTypes.string.isRequired,
     number: PropTypes.string.isRequired,
     run: PropTypes.string.isRequired,
+    isTranslatedRerun: PropTypes.bool,
   }).isRequired,
   isCreateNewCourse: PropTypes.bool,
   onClickCancel: PropTypes.func.isRequired,

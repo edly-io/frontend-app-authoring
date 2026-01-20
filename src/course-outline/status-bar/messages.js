@@ -71,6 +71,14 @@ const messages = defineMessages({
     id: 'course-authoring.course-outline.status-bar.video-sharing.allOn.text',
     defaultMessage: 'All Videos',
   },
+  courseBlocksMappingTitle: {
+    id: 'course-authoring.course-outline.status-bar.course-blocks-mapping.title',
+    defaultMessage: 'Course Blocks mapping',
+  },
+  courseBlocksMappingButton: {
+    id: 'course-authoring.course-outline.status-bar.course-blocks-mapping.button',
+    defaultMessage: 'Map blocks',
+  },
 });
 
 export default messages;

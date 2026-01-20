@@ -60,6 +60,13 @@ const useCreateOrRerunCourse = (initialValues) => {
         intl.formatMessage(messages.disallowedCharsError),
       )
       .matches(noSpaceRule, intl.formatMessage(messages.noSpaceError)),
+      isTranslatedRerun: Yup.boolean(),
+      language: Yup.string().when('isTranslatedRerun', {
+        is: true,
+        then: (schema) =>
+          schema.required(intl.formatMessage(messages.languageRequiredError)),
+        otherwise: (schema) => schema,
+      }),
   }).test(TOTAL_LENGTH_KEY, intl.formatMessage(messages.totalLengthError), function validateTotalLength() {
     const { org, number, run } = this?.options.originalValue || {};
     if ((org?.length || 0) + (number?.length || 0) + (run?.length || 0) > MAX_TOTAL_LENGTH) {
@@ -71,7 +78,11 @@ const useCreateOrRerunCourse = (initialValues) => {
   const {
     values, errors, touched, handleChange, handleBlur, setFieldValue,
   } = useFormik({
-    initialValues,
+    initialValues: {
+      ...initialValues,
+      isTranslatedRerun: initialValues.isTranslatedRerun ?? false,
+      language: initialValues.language ?? '',
+    },
     enableReinitialize: true,
     validateOnBlur: false,
     validationSchema,
@@ -85,9 +96,7 @@ const useCreateOrRerunCourse = (initialValues) => {
 
   useEffect(() => {
     setFormFilled(
-      Object.entries(values)
-        ?.filter(([key]) => key !== 'undefined')
-        .every(([, value]) => value),
+      ['displayName', 'org', 'number', 'run'].every((fieldName) => values[fieldName])
     );
     dispatch(updatePostErrors({}));
   }, [values]);

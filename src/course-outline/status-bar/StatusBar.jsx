@@ -19,6 +19,8 @@ import { useContentTagsCount } from '../../generic/data/apiHooks';
 import messages from './messages';
 import { getVideoSharingOptionText } from '../utils';
 
+import CourseBlocksMapping from './CourseBlocksMapping';
+
 const StatusBarItem = ({ title, children }) => (
   <div className="d-flex flex-column justify-content-between">
     <h5>{title}</h5>
@@ -55,6 +57,9 @@ const StatusBar = ({
     isSelfPaced,
     videoSharingEnabled,
     videoSharingOptions,
+    courseBlocksMappingUrl,
+    isTranslatedOrBaseCourse,
+    mappingMessage,
   } = statusBarData;
 
   const {
@@ -188,6 +193,12 @@ const StatusBar = ({
           </Form.Group>
 
         )}
+        <CourseBlocksMapping
+          courseId={courseId}
+          courseBlocksMappingUrl={courseBlocksMappingUrl}
+          isTranslatedOrBaseCourse={isTranslatedOrBaseCourse}
+          mappingMessage={mappingMessage}
+        />
       </Stack>
       <ContentTagsDrawerSheet
         id={courseId}
@@ -215,6 +226,9 @@ StatusBar.propTypes = {
     highlightsEnabledForMessaging: PropTypes.bool.isRequired,
     videoSharingEnabled: PropTypes.bool.isRequired,
     videoSharingOptions: PropTypes.string.isRequired,
+    courseBlocksMappingUrl: PropTypes.string,
+    isTranslatedOrBaseCourse: PropTypes.string,
+    mappingMessage: PropTypes.string,
   }).isRequired,
 };
 

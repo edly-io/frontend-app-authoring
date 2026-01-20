@@ -3,6 +3,7 @@
 ## Course Outline Page
 * [`org.openedx.frontend.authoring.course_outline_header_actions.v1`](./CourseOutlineHeaderActionsSlot/)
 * [`org.openedx.frontend.authoring.course_outline_sidebar.v1`](./CourseAuthoringOutlineSidebarSlot/)
+* [`org.openedx.frontend.authoring.course_outline_section_card_extra_actions.v1`](./CourseOutlineSectionCardExtraActionsSlot/)
 * [`org.openedx.frontend.authoring.course_outline_subsection_card_extra_actions.v1`](./CourseOutlineSubsectionCardExtraActionsSlot)
 * [`org.openedx.frontend.authoring.course_outline_unit_card_extra_actions.v1`](./CourseOutlineUnitCardExtraActionsSlot)
 
