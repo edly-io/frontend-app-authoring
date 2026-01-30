@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { getConfig } from '@edx/frontend-platform/config';
-import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
+import React, { useState, useEffect } from 'react';
+import { getConfig, camelCaseObject } from '@edx/frontend-platform';
+import { getAuthenticatedHttpClient, getAuthenticatedUser } from "@edx/frontend-platform/auth";
+import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
 import { DIRECT_PLUGIN, PLUGIN_OPERATIONS } from '@openedx/frontend-plugin-framework';
 import {
   ActionRow,
@@ -146,6 +147,102 @@ const TranslationCheckbox = ({ subsection, section, unit }) => {
   );
 };
 
+const LanguageWidget = ({ intl }) => {
+  const [options, setOptions] = useState([]);
+  const [showWidget, setShowWidget] = useState(false);
+
+
+  // API functions
+  const getLanguageOptions = async () => {
+    const url = new URL(`${getConfig().LMS_BASE_URL}/wikimedia_general/api/v0/released_languages`);
+    const { data } = await getAuthenticatedHttpClient().get(url.href, {});
+    const options = data.released_languages.map((language) => ({
+      value: language[0],
+      label: language[1]
+    }));
+    return options;
+  }
+
+  const getShowLanguageWidget = async () => {
+    const url = new URL(`${getConfig().LMS_BASE_URL}/wikimedia_general/api/v0/language_selector_is_enabled`);
+    const { data } = await getAuthenticatedHttpClient().get(url.href);
+    return camelCaseObject(data);
+  }
+
+  const postLanguageOptions = async (payload) => {
+    const { username } = getAuthenticatedUser();
+    const config = {
+      headers: {
+        'Content-Type': 'application/merge-patch+json',
+      },
+    };
+    const url = new URL(`${getConfig().LMS_BASE_URL}/api/user/v1/preferences/${username}`);
+    const { data } = await getAuthenticatedHttpClient().patch(url.href, payload, config);
+    return camelCaseObject(data);
+  }
+
+  useEffect(() => {
+    // Check if widget should be shown
+    getShowLanguageWidget()
+      .then((response) => {
+        if (response.languageSelectorIsEnabled) {
+          setShowWidget(true);
+          // Fetch language options
+          return getLanguageOptions();
+        }
+        return [];
+      })
+      .then((data) => {
+        setOptions(data);
+      })
+      .catch((error) => {
+        console.error('Unable to load language widget', error);
+      });
+  }, []);
+
+  const handleChange = (e) => {
+    e.preventDefault();
+    const payload = {
+      'pref-lang': e.target.value,
+    };
+    postLanguageOptions(payload)
+      .then(() => {
+        // Reload the page for the language to take effect
+        window.location.reload();
+      })
+      .catch((error) => {
+        console.error('Unable to patch user preference', error);
+      });
+  };
+
+  // Don't render if widget shouldn't be shown or no options
+  if (!showWidget || !options.length) {
+    return null;
+  }
+
+  return (
+    <select
+      id="language-select"
+      className="select-dropdown mx-2"
+      onChange={handleChange}
+      value={intl.locale}
+      aria-label="Select language"
+    >
+      {options.map(({ value, label }) => (
+        <option key={value} value={value}>
+          {label}
+        </option>
+      ))}
+    </select>
+  );
+};
+
+LanguageWidget.propTypes = {
+  intl: intlShape.isRequired,
+};
+
+const LanguageWidgetIntl = injectIntl(LanguageWidget);
+
 const config = {
   pluginSlots: {
     'org.openedx.frontend.authoring.course_outline_section_card_extra_actions.v1': {
@@ -220,6 +317,15 @@ const config = {
     'org.openedx.frontend.layout.studio_header_search_button_slot.v1': {
       keepDefault: true,
       plugins: [
+        {
+           op: PLUGIN_OPERATIONS.Insert,
+           widget: {
+              id: 'language_selector_widget',
+              type: DIRECT_PLUGIN,
+              priority: 9,
+              RenderWidget: LanguageWidgetIntl,
+           },
+        },
         {
           op: PLUGIN_OPERATIONS.Insert,
           widget: {
