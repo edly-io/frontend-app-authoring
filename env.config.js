@@ -147,6 +147,14 @@ const TranslationCheckbox = ({ subsection, section, unit }) => {
   );
 };
 
+
+const languageSelectStyle = {
+    position: 'absolute',
+    top: '100%',
+    right: '0',
+    marginTop: '8px',
+};
+
 const LanguageWidget = ({ intl }) => {
   const [options, setOptions] = useState([]);
   const [showWidget, setShowWidget] = useState(false);
@@ -224,6 +232,7 @@ const LanguageWidget = ({ intl }) => {
     <select
       id="language-select"
       className="select-dropdown mx-2"
+      style={languageSelectStyle}
       onChange={handleChange}
       value={intl.locale}
       aria-label="Select language"
