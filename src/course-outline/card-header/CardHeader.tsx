@@ -70,6 +70,7 @@ interface CardHeaderProps {
   onClickSync?: () => void;
   readyToSync?: boolean;
   savingStatus?: RequestStatusType;
+  canPublish?: boolean;
 }
 
 const CardHeader = ({
@@ -104,6 +105,7 @@ const CardHeader = ({
   onClickSync,
   readyToSync,
   savingStatus,
+  canPublish,
 }: CardHeaderProps) => {
   const intl = useIntl();
   const [searchParams] = useSearchParams();
@@ -118,6 +120,10 @@ const CardHeader = ({
 
   const isDisabledPublish = (status === ITEM_BADGE_STATUS.live
     || status === ITEM_BADGE_STATUS.publishedNotLive) && !hasChanges;
+
+  // Show the Publish menu item only when the lifecycle system explicitly grants permission.
+  // undefined (not in lifecycle or not yet fetched) → hidden; false (not approved) → hidden.
+  const showPublishItem = canPublish === true;
 
   const { data: contentTagCount } = useContentTagsCount(cardId);
   const isSaving = savingStatus === RequestStatus.IN_PROGRESS;
@@ -231,13 +237,15 @@ const CardHeader = ({
                   {intl.formatMessage(messages.menuProctoringLinkText)}
                 </Dropdown.Item>
               )}
-              <Dropdown.Item
-                data-testid={`${namePrefix}-card-header__menu-publish-button`}
-                disabled={isDisabledPublish}
-                onClick={onClickPublish}
-              >
-                {intl.formatMessage(messages.menuPublish)}
-              </Dropdown.Item>
+              {showPublishItem && (
+                <Dropdown.Item
+                  data-testid={`${namePrefix}-card-header__menu-publish-button`}
+                  disabled={isDisabledPublish}
+                  onClick={onClickPublish}
+                >
+                  {intl.formatMessage(messages.menuPublish)}
+                </Dropdown.Item>
+              )}
               <Dropdown.Item
                 data-testid={`${namePrefix}-card-header__menu-configure-button`}
                 disabled={isSaving}

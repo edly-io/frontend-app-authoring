@@ -24,6 +24,7 @@ import { UpstreamInfoIcon } from '@src/generic/upstream-info-icon';
 import { PreviewLibraryXBlockChanges } from '@src/course-unit/preview-changes';
 import { invalidateLinksQuery } from '@src/course-libraries/data/apiHooks';
 import type { XBlock } from '@src/data/types';
+import { useBlockState } from '@src/course-lifecycle/data/apiHooks';
 
 interface UnitCardProps {
   unit: XBlock;
@@ -93,6 +94,11 @@ const UnitCard = ({
     discussionEnabled,
     upstreamInfo,
   } = unit;
+
+  // Fetch lifecycle state to determine publish permission for this unit.
+  // canPublish encodes: state===APPROVED AND is_publishable.
+  // React Query caches per usage key; undefined when block is not in lifecycle system (404).
+  const { data: blockLifecycleState } = useBlockState(id);
 
   const blockSyncData = useMemo(() => {
     if (!upstreamInfo?.readyToSync) {
@@ -259,6 +265,7 @@ const UnitCard = ({
             parentInfo={parentInfo}
             extraActionsComponent={extraActionsComponent}
             readyToSync={upstreamInfo?.readyToSync}
+            canPublish={blockLifecycleState?.canPublish}
           />
           <div className="unit-card__content item-children" data-testid="unit-card__content">
             <XBlockStatus

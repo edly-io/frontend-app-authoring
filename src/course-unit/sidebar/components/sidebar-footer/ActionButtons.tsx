@@ -10,11 +10,15 @@ import messages from '../../messages';
 interface ActionButtonsProps {
   openDiscardModal: () => void,
   handlePublishing: () => void,
+  hideCopyButton?: boolean,
+  hidePublishButton?: boolean,
 }
 
 const ActionButtons = ({
   openDiscardModal,
   handlePublishing,
+  hideCopyButton = false,
+  hidePublishButton = false,
 }: ActionButtonsProps) => {
   const intl = useIntl();
   const {
@@ -28,7 +32,7 @@ const ActionButtons = ({
 
   return (
     <>
-      {(!published || hasChanges) && (
+      {!hidePublishButton && (!published || hasChanges) && (
         <Button
           size="sm"
           className="mt-3.5"

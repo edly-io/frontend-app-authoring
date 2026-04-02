@@ -28,6 +28,7 @@ import { PreviewLibraryXBlockChanges } from '@src/course-unit/preview-changes';
 import { UpstreamInfoIcon } from '@src/generic/upstream-info-icon';
 import type { XBlock } from '@src/data/types';
 import { invalidateLinksQuery } from '@src/course-libraries/data/apiHooks';
+import { useBlockState } from '@src/course-lifecycle/data/apiHooks';
 import messages from './messages';
 
 interface SectionCardProps {
@@ -134,6 +135,8 @@ const SectionCard = ({
     isHeaderVisible = true,
     upstreamInfo,
   } = section;
+
+  const { data: blockLifecycleState } = useBlockState(id);
 
   const blockSyncData = useMemo(() => {
     if (!upstreamInfo?.readyToSync) {
@@ -309,6 +312,7 @@ const SectionCard = ({
                 namePrefix={namePrefix}
                 actions={actions}
                 readyToSync={upstreamInfo?.readyToSync}
+                canPublish={blockLifecycleState?.canPublish}
               />
             )}
             <div className="section-card__content" data-testid="section-card__content">

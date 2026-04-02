@@ -29,6 +29,7 @@ import OutlineAddChildButtons from '@src/course-outline/OutlineAddChildButtons';
 import { PreviewLibraryXBlockChanges } from '@src/course-unit/preview-changes';
 import type { XBlock } from '@src/data/types';
 import { invalidateLinksQuery } from '@src/course-libraries/data/apiHooks';
+import { useBlockState } from '@src/course-lifecycle/data/apiHooks';
 import messages from './messages';
 
 interface SubsectionCardProps {
@@ -116,6 +117,8 @@ const SubsectionCard = ({
     proctoringExamConfigurationLink,
     upstreamInfo,
   } = subsection;
+
+  const { data: blockLifecycleState } = useBlockState(id);
 
   const blockSyncData = useMemo(() => {
     if (!upstreamInfo?.readyToSync) {
@@ -314,6 +317,7 @@ const SubsectionCard = ({
                 isSequential
                 extraActionsComponent={extraActionsComponent}
                 readyToSync={upstreamInfo?.readyToSync}
+                canPublish={blockLifecycleState?.canPublish}
               />
               <div className="subsection-card__content item-children" data-testid="subsection-card__content">
                 <XBlockStatus
