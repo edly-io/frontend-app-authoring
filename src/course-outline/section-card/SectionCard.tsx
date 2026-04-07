@@ -29,6 +29,7 @@ import { UpstreamInfoIcon } from '@src/generic/upstream-info-icon';
 import type { XBlock } from '@src/data/types';
 import { invalidateLinksQuery } from '@src/course-libraries/data/apiHooks';
 import { useBlockState } from '@src/course-lifecycle/data/apiHooks';
+import { LifecycleModal } from '@src/course-lifecycle/components/LifecycleModal';
 import messages from './messages';
 
 interface SectionCardProps {
@@ -117,6 +118,7 @@ const SectionCard = ({
   const [isExpanded, setIsExpanded] = useState(containsSearchResult() || isSectionsExpanded);
   const [isFormOpen, openForm, closeForm] = useToggle(false);
   const [isSyncModalOpen, openSyncModal, closeSyncModal] = useToggle(false);
+  const [isLifecycleModalOpen, openLifecycleModal, closeLifecycleModal] = useToggle(false);
   const namePrefix = 'section';
 
   useEffect(() => {
@@ -137,6 +139,22 @@ const SectionCard = ({
   } = section;
 
   const { data: blockLifecycleState } = useBlockState(id);
+
+  // Reactively refresh the Redux outline state when this block is published via the lifecycle
+  // system. useEffect is used instead of a mutation callback because TanStack Query captures
+  // useMutation options at hook-init time, making callbacks unreliable after re-renders.
+  const prevLifecycleStateRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    const curr = blockLifecycleState?.state;
+    if (
+      prevLifecycleStateRef.current !== undefined
+      && prevLifecycleStateRef.current !== 'published'
+      && curr === 'published'
+    ) {
+      dispatch(fetchCourseSectionQuery([id]));
+    }
+    prevLifecycleStateRef.current = curr;
+  }, [blockLifecycleState?.state]);
 
   const blockSyncData = useMemo(() => {
     if (!upstreamInfo?.readyToSync) {
@@ -313,6 +331,8 @@ const SectionCard = ({
                 actions={actions}
                 readyToSync={upstreamInfo?.readyToSync}
                 canPublish={blockLifecycleState?.canPublish}
+                lifecycleState={blockLifecycleState?.state}
+                onClickLifecycle={openLifecycleModal}
               />
             )}
             <div className="section-card__content" data-testid="section-card__content">
@@ -374,6 +394,15 @@ const SectionCard = ({
           isModalOpen={isSyncModalOpen}
           closeModal={closeSyncModal}
           postChange={handleOnPostChangeSync}
+        />
+      )}
+      {blockLifecycleState && (
+        <LifecycleModal
+          isOpen={isLifecycleModalOpen}
+          onClose={closeLifecycleModal}
+          blockId={id}
+          displayName={displayName}
+          hasChanges={hasChanges}
         />
       )}
     </>

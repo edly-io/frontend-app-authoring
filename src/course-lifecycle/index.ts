@@ -1,6 +1,7 @@
 export { LifecycleSection } from './components/LifecycleSection';
 export { LifecycleBadge } from './components/LifecycleBadge';
 export { LifecycleActionButtons } from './components/LifecycleActionButtons';
+export { LifecycleModal } from './components/LifecycleModal';
 export { BlockCommentsPanel } from './components/BlockCommentsPanel';
 export { CourseCommentsPanel } from './components/CourseCommentsPanel';
 export { CourseLifecycleSection } from './components/CourseLifecycleSection';

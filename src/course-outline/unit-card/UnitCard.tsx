@@ -25,6 +25,7 @@ import { PreviewLibraryXBlockChanges } from '@src/course-unit/preview-changes';
 import { invalidateLinksQuery } from '@src/course-libraries/data/apiHooks';
 import type { XBlock } from '@src/data/types';
 import { useBlockState } from '@src/course-lifecycle/data/apiHooks';
+import { LifecycleModal } from '@src/course-lifecycle/components/LifecycleModal';
 
 interface UnitCardProps {
   unit: XBlock;
@@ -75,6 +76,7 @@ const UnitCard = ({
   const isScrolledToElement = locatorId === unit.id;
   const [isFormOpen, openForm, closeForm] = useToggle(false);
   const [isSyncModalOpen, openSyncModal, closeSyncModal] = useToggle(false);
+  const [isLifecycleModalOpen, openLifecycleModal, closeLifecycleModal] = useToggle(false);
   const namePrefix = 'unit';
 
   const { copyToClipboard } = useClipboard();
@@ -99,6 +101,19 @@ const UnitCard = ({
   // canPublish encodes: state===APPROVED AND is_publishable.
   // React Query caches per usage key; undefined when block is not in lifecycle system (404).
   const { data: blockLifecycleState } = useBlockState(id);
+
+  const prevLifecycleStateRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    const curr = blockLifecycleState?.state;
+    if (
+      prevLifecycleStateRef.current !== undefined
+      && prevLifecycleStateRef.current !== 'published'
+      && curr === 'published'
+    ) {
+      dispatch(fetchCourseSectionQuery([section.id]));
+    }
+    prevLifecycleStateRef.current = curr;
+  }, [blockLifecycleState?.state]);
 
   const blockSyncData = useMemo(() => {
     if (!upstreamInfo?.readyToSync) {
@@ -266,6 +281,8 @@ const UnitCard = ({
             extraActionsComponent={extraActionsComponent}
             readyToSync={upstreamInfo?.readyToSync}
             canPublish={blockLifecycleState?.canPublish}
+            lifecycleState={blockLifecycleState?.state}
+            onClickLifecycle={openLifecycleModal}
           />
           <div className="unit-card__content item-children" data-testid="unit-card__content">
             <XBlockStatus
@@ -282,6 +299,15 @@ const UnitCard = ({
           isModalOpen={isSyncModalOpen}
           closeModal={closeSyncModal}
           postChange={handleOnPostChangeSync}
+        />
+      )}
+      {blockLifecycleState && (
+        <LifecycleModal
+          isOpen={isLifecycleModalOpen}
+          onClose={closeLifecycleModal}
+          blockId={id}
+          displayName={displayName}
+          hasChanges={hasChanges}
         />
       )}
     </>

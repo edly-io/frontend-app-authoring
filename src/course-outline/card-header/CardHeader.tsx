@@ -25,6 +25,8 @@ import TagCount from '@src/generic/tag-count';
 import { useEscapeClick } from '@src/hooks';
 import { XBlockActions } from '@src/data/types';
 import { RequestStatus, RequestStatusType } from '@src/data/constants';
+import { LifecycleBadge } from '@src/course-lifecycle/components/LifecycleBadge';
+import type { LifecycleState } from '@src/course-lifecycle/data/types';
 import { ITEM_BADGE_STATUS } from '../constants';
 import { scrollToElement } from '../utils';
 import CardStatus from './CardStatus';
@@ -71,6 +73,8 @@ interface CardHeaderProps {
   readyToSync?: boolean;
   savingStatus?: RequestStatusType;
   canPublish?: boolean;
+  lifecycleState?: LifecycleState;
+  onClickLifecycle?: () => void;
 }
 
 const CardHeader = ({
@@ -106,6 +110,8 @@ const CardHeader = ({
   readyToSync,
   savingStatus,
   canPublish,
+  lifecycleState,
+  onClickLifecycle,
 }: CardHeaderProps) => {
   const intl = useIntl();
   const [searchParams] = useSearchParams();
@@ -198,9 +204,20 @@ const CardHeader = ({
             />
           </>
         )}
-        <div className="ml-auto d-flex">
+        <div className="ml-auto d-flex align-items-center">
           {(isVertical || isSequential) && (
             <CardStatus status={status} showDiscussionsEnabledBadge={showDiscussionsEnabledBadge || false} />
+          )}
+          {lifecycleState && (
+            // eslint-disable-next-line jsx-a11y/interactive-supports-focus
+            <span
+              role="button"
+              className="mr-1 cursor-pointer"
+              onClick={onClickLifecycle}
+              onKeyDown={(e) => { if (e.key === 'Enter') { onClickLifecycle?.(); } }}
+            >
+              <LifecycleBadge state={lifecycleState} />
+            </span>
           )}
           { getConfig().ENABLE_TAGGING_TAXONOMY_PAGES === 'true' && !!contentTagCount && (
             <TagCount count={contentTagCount} onClick={openManageTagsDrawer} />

@@ -38,7 +38,8 @@ export const useSubmitCourseForReview = (courseId: string) => {
   return useMutation({
     mutationFn: () => submitCourseForReview(courseId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: lifecycleQueryKeys.courseState(courseId) });
+      // Invalidate all lifecycle queries so every block badge re-fetches its state.
+      queryClient.invalidateQueries({ queryKey: ['lifecycle'] });
     },
   });
 };
@@ -48,7 +49,7 @@ export const useApproveCourse = (courseId: string) => {
   return useMutation({
     mutationFn: () => approveCourse(courseId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: lifecycleQueryKeys.courseState(courseId) });
+      queryClient.invalidateQueries({ queryKey: ['lifecycle'] });
     },
   });
 };
@@ -58,7 +59,7 @@ export const useRequestCourseChanges = (courseId: string) => {
   return useMutation({
     mutationFn: () => requestCourseChanges(courseId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: lifecycleQueryKeys.courseState(courseId) });
+      queryClient.invalidateQueries({ queryKey: ['lifecycle'] });
     },
   });
 };
@@ -68,8 +69,7 @@ export const usePublishCourse = (courseId: string) => {
   return useMutation({
     mutationFn: () => publishCourse(courseId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: lifecycleQueryKeys.courseState(courseId) });
-      // Refresh all outline blocks so their published/draft badges update without a page reload.
+      queryClient.invalidateQueries({ queryKey: ['lifecycle'] });
       queryClient.invalidateQueries({ queryKey: courseOutlineQueryKeys.course(courseId) });
     },
   });
