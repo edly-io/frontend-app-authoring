@@ -11,6 +11,7 @@ import { fetchStudioHomeData } from '../../../data/thunks';
 import { LoadingSpinner } from '../../../../generic/Loading';
 import CoursesTypesFilterMenu from './courses-types-filter-menu';
 import CoursesOrderFilterMenu from './courses-order-filter-menu';
+import CoursesLifecycleFilterMenu from './courses-lifecycle-filter-menu';
 import './index.scss';
 import messages from './messages';
 
@@ -73,6 +74,11 @@ const CoursesFilters = ({
     dispatch(fetchStudioHomeData(locationValue, false, { page: 1, ...customParams }, true));
   };
 
+  const handleLifecycleFilterSelected = (filterValue) => {
+    const lifecycleFilter = filterValue === 'allLifecycleStates' ? undefined : filterValue;
+    dispatch(updateStudioHomeCoursesCustomParams({ lifecycleFilter, isFiltered: true }));
+  };
+
   const handleSearchCourses = (searchValueDebounced) => {
     const valueFormatted = searchValueDebounced.trim();
     const filterParams = {
@@ -122,6 +128,7 @@ const CoursesFilters = ({
 
       <CoursesTypesFilterMenu onItemMenuSelected={handleMenuFilterItemSelected} />
       <CoursesOrderFilterMenu onItemMenuSelected={handleMenuFilterItemSelected} />
+      <CoursesLifecycleFilterMenu onItemMenuSelected={handleLifecycleFilterSelected} />
     </div>
   );
 };

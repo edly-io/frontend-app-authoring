@@ -12,6 +12,7 @@ export interface Params {
   activeOnly?: boolean;
   isFiltered?: boolean;
   cleanFilters?: boolean;
+  lifecycleFilter?: string;
 }
 
 export const studioHomeCoursesRequestParamsDefault: Params = {
@@ -22,6 +23,7 @@ export const studioHomeCoursesRequestParamsDefault: Params = {
   activeOnly: undefined,
   isFiltered: false,
   cleanFilters: false,
+  lifecycleFilter: undefined,
 };
 
 const slice = createSlice({

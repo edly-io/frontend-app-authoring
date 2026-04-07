@@ -12,6 +12,7 @@ import {
 import { Error } from '@openedx/paragon/icons';
 
 import { COURSE_CREATOR_STATES } from '@src/constants';
+import { useBulkCourseAggregateStates } from '@src/course-lifecycle/data/apiHooks';
 import { getStudioHomeData, getStudioHomeCoursesParams } from '@src/studio-home/data/selectors';
 import { resetStudioHomeCoursesCustomParams, updateStudioHomeCoursesCustomParams } from '@src/studio-home/data/slice';
 import { fetchStudioHomeData } from '@src/studio-home/data/thunks';
@@ -63,7 +64,10 @@ const CoursesTab: React.FC<Props> = ({
     optimizationEnabled,
   } = useSelector(getStudioHomeData);
   const studioHomeCoursesParams = useSelector(getStudioHomeCoursesParams);
-  const { currentPage, isFiltered } = studioHomeCoursesParams;
+  const { currentPage, isFiltered, lifecycleFilter } = studioHomeCoursesParams;
+
+  const courseKeys = coursesDataItems.map((c) => c.courseKey);
+  const { data: bulkLifecycleStates = {}, isLoading: isLifecycleLoading } = useBulkCourseAggregateStates(courseKeys);
   const hasAbilityToCreateCourse = courseCreatorStatus === COURSE_CREATOR_STATES.granted;
   const showCollapsible = [
     COURSE_CREATOR_STATES.denied,
@@ -98,6 +102,10 @@ const CoursesTab: React.FC<Props> = ({
 
   const isNotFilteringCourses = !isFiltered && !isLoading;
   const hasCourses = coursesDataItems?.length > 0;
+  const visibleCoursesCount = lifecycleFilter
+    ? coursesDataItems.filter(({ courseKey }) => bulkLifecycleStates[courseKey] === lifecycleFilter).length
+    : coursesDataItems.length;
+  const hasVisibleCourses = visibleCoursesCount > 0;
 
   if (isLoading && !isFiltered) {
     return (
@@ -153,6 +161,8 @@ const CoursesTab: React.FC<Props> = ({
                   number={number}
                   run={run}
                   url={url}
+                  lifecycleState={bulkLifecycleStates[courseKey]}
+                  lifecycleFilter={lifecycleFilter}
                 />
               ),
             )}
@@ -176,7 +186,7 @@ const CoursesTab: React.FC<Props> = ({
         )
         )}
 
-        {isFiltered && !hasCourses && !isLoading && (
+        {isFiltered && !hasVisibleCourses && !isLoading && !isLifecycleLoading && (
           <Alert className="mt-4">
             <Alert.Heading>
               {intl.formatMessage(messages.coursesTabCourseNotFoundAlertTitle)}

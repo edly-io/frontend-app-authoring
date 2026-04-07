@@ -16,4 +16,6 @@ export {
   usePublishCourse,
   lifecycleQueryKeys,
 } from './data/apiHooks';
-export type { BlockReviewState, BlockReviewComment, LifecycleState, CourseAggregateState } from './data/types';
+export type {
+  BlockReviewState, BlockReviewComment, LifecycleState, CourseAggregateState,
+} from './data/types';

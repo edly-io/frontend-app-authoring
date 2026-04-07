@@ -8,7 +8,9 @@ import {
 } from '@openedx/paragon';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 
-import { useBlockComments, useCreateComment, useDeleteComment, useResolveComment } from '../data/apiHooks';
+import {
+  useBlockComments, useCreateComment, useDeleteComment, useResolveComment,
+} from '../data/apiHooks';
 
 interface Props {
   usageKey: string;

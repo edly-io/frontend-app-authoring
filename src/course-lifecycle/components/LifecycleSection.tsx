@@ -48,7 +48,12 @@ export const LifecycleSection = ({
       {!isLoading && blockState && effectiveState && (
         <>
           <LifecycleBadge state={effectiveState} />
-          <LifecycleActionButtons usageKey={usageKey} blockState={blockState} hasChanges={hasChanges} onPublishSuccess={onPublishSuccess} />
+          <LifecycleActionButtons
+            usageKey={usageKey}
+            blockState={blockState}
+            hasChanges={hasChanges}
+            onPublishSuccess={onPublishSuccess}
+          />
           <BlockCommentsPanel usageKey={usageKey} readOnly={effectiveState === 'published'} />
         </>
       )}

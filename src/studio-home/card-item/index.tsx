@@ -17,6 +17,7 @@ import { useWaffleFlags } from '@src/data/apiHooks';
 import { COURSE_CREATOR_STATES } from '@src/constants';
 import { parseLibraryKey } from '@src/generic/key-utils';
 import classNames from 'classnames';
+import { LifecycleBadge } from '@src/course-lifecycle/components/LifecycleBadge';
 import { getStudioHomeData } from '../data/selectors';
 import messages from '../messages';
 
@@ -145,6 +146,8 @@ interface BaseProps {
   isSelected?: boolean;
   itemId?: string;
   scrollIntoView?: boolean;
+  lifecycleState?: string;
+  lifecycleFilter?: string;
 }
 
 type Props = BaseProps & (
@@ -179,6 +182,8 @@ const CardItem: React.FC<Props> = ({
   migratedToTitle,
   migratedToCollectionKey,
   scrollIntoView = false,
+  lifecycleState,
+  lifecycleFilter,
 }) => {
   const intl = useIntl();
   const {
@@ -230,6 +235,10 @@ const CardItem: React.FC<Props> = ({
     }
   }, [scrollIntoView]);
 
+  if (lifecycleFilter && lifecycleState !== lifecycleFilter) {
+    return null;
+  }
+
   return (
     <div ref={cardRef} className="w-100">
       <Card className={classNames('card-item', {
@@ -251,28 +260,35 @@ const CardItem: React.FC<Props> = ({
             />
           )}
           subtitle={getSubtitle()}
-          actions={showActions && (
-          <Dropdown>
-            <Dropdown.Toggle
-              as={IconButton}
-              iconAs={MoreHoriz}
-              variant="primary"
-              aria-label={intl.formatMessage(messages.btnDropDownText)}
-            />
-            <Dropdown.Menu>
-              {isShowRerunLink && (
-                <Dropdown.Item
-                  as={Link}
-                  to={rerunLink ?? ''}
-                >
-                  {messages.btnReRunText.defaultMessage}
-                </Dropdown.Item>
+          actions={(
+            <Stack direction="horizontal" gap={2} className="align-items-center">
+              {!isLibraries && lifecycleState && lifecycleState !== 'published' && (
+                <LifecycleBadge state={lifecycleState} />
               )}
-              <Dropdown.Item href={lmsLink}>
-                {intl.formatMessage(messages.viewLiveBtnText)}
-              </Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown>
+              {showActions && (
+                <Dropdown>
+                  <Dropdown.Toggle
+                    as={IconButton}
+                    iconAs={MoreHoriz}
+                    variant="primary"
+                    aria-label={intl.formatMessage(messages.btnDropDownText)}
+                  />
+                  <Dropdown.Menu>
+                    {isShowRerunLink && (
+                      <Dropdown.Item
+                        as={Link}
+                        to={rerunLink ?? ''}
+                      >
+                        {messages.btnReRunText.defaultMessage}
+                      </Dropdown.Item>
+                    )}
+                    <Dropdown.Item href={lmsLink}>
+                      {intl.formatMessage(messages.viewLiveBtnText)}
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
+              )}
+            </Stack>
           )}
         />
         {isMigrated && migratedToKey

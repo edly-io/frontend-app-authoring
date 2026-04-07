@@ -52,7 +52,7 @@ const ActionButtons = ({
           {intl.formatMessage(messages.actionButtonDiscardChangesTitle)}
         </Button>
       )}
-      {enableCopyPasteUnits && canEdit && (
+      {!hideCopyButton && enableCopyPasteUnits && canEdit && (
         <>
           <Divider className="course-unit-sidebar-footer__divider" />
           <Button

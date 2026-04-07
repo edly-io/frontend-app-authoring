@@ -20,6 +20,14 @@ export async function getCourseAggregateState(courseId: string): Promise<CourseA
   return camelCaseObject(data) as CourseAggregateState;
 }
 
+export async function getBulkCourseAggregateStates(courseIds: string[]): Promise<Record<string, string>> {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getLifecycleBaseUrl()}/v1/courses/states`,
+    { params: { course_ids: courseIds.join(',') } },
+  );
+  return data as Record<string, string>;
+}
+
 export async function submitForReview(usageKey: string): Promise<BlockReviewState> {
   const { data } = await getAuthenticatedHttpClient().post(
     `${getLifecycleBaseUrl()}/v1/blocks/${encodeURIComponent(usageKey)}/submit`,

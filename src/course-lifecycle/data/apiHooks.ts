@@ -10,6 +10,7 @@ import {
   deleteComment,
   getBlockComments,
   getBlockState,
+  getBulkCourseAggregateStates,
   getCourseAggregateState,
   getCourseComments,
   publishBlock,
@@ -26,11 +27,23 @@ export const lifecycleQueryKeys = {
   blockComments: (usageKey: string) => ['lifecycle', 'block', usageKey, 'comments'],
   courseState: (courseId: string) => ['lifecycle', 'course', courseId, 'state'],
   courseComments: (courseId: string) => ['lifecycle', 'course', courseId, 'comments'],
+  bulkCourseStates: (courseIds: string[]) => ['lifecycle', 'courses', 'bulk', ...courseIds],
 };
 
-export const useCourseAggregateState = (courseId: string) => useQuery({
+export const useBulkCourseAggregateStates = (courseIds: string[]) => useQuery({
+  queryKey: lifecycleQueryKeys.bulkCourseStates(courseIds),
+  queryFn: () => getBulkCourseAggregateStates(courseIds),
+  enabled: courseIds.length > 0,
+});
+
+export const useCourseAggregateState = (courseId: string, options?: { enabled?: boolean }) => useQuery({
   queryKey: lifecycleQueryKeys.courseState(courseId),
   queryFn: () => getCourseAggregateState(courseId),
+  enabled: options?.enabled ?? true,
+  retry: (failureCount, error: any) => {
+    if (error?.response?.status === 404) { return false; }
+    return failureCount < 3;
+  },
 });
 
 export const useSubmitCourseForReview = (courseId: string) => {
