@@ -83,7 +83,7 @@ export const usePublishCourse = (courseId: string) => {
     mutationFn: () => publishCourse(courseId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lifecycle'] });
-      queryClient.invalidateQueries({ queryKey: courseOutlineQueryKeys.course(courseId) });
+      queryClient.invalidateQueries({ queryKey: courseOutlineQueryKeys.contentLibrary(courseId) });
     },
   });
 };
@@ -147,7 +147,7 @@ export const usePublishBlock = (usageKey: string, options?: { onSuccess?: () => 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lifecycle'] });
       // Refresh all outline blocks for this course so status badges update without a page reload.
-      queryClient.invalidateQueries({ queryKey: courseOutlineQueryKeys.course(getCourseKey(usageKey)) });
+      queryClient.invalidateQueries({ queryKey: courseOutlineQueryKeys.contentLibrary(getCourseKey(usageKey)) });
       // Allows the unit page to re-fetch its Redux state after a lifecycle publish (see UnitInfoSidebar).
       options?.onSuccess?.();
     },

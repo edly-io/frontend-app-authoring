@@ -127,9 +127,10 @@ const CardHeader = ({
   const isDisabledPublish = (status === ITEM_BADGE_STATUS.live
     || status === ITEM_BADGE_STATUS.publishedNotLive) && !hasChanges;
 
-  // Show the Publish menu item only when the lifecycle system explicitly grants permission.
-  // undefined (not in lifecycle or not yet fetched) → hidden; false (not approved) → hidden.
-  const showPublishItem = canPublish === true;
+  // Show the Publish menu item by default; hide only when the lifecycle system explicitly
+  // denies permission (false = in lifecycle but not approved).
+  // undefined (not in lifecycle) → show; false (not approved) → hide; true (approved) → show.
+  const showPublishItem = canPublish !== false;
 
   const { data: contentTagCount } = useContentTagsCount(cardId);
   const isSaving = savingStatus === RequestStatus.IN_PROGRESS;

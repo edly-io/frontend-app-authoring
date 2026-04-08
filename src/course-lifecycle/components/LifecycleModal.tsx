@@ -24,6 +24,7 @@ export const LifecycleModal = ({
 
   return (
     <ModalDialog
+      title={`Review Status: ${displayName}`}
       className="lifecycle-modal"
       isOpen={isOpen}
       onClose={onClose}

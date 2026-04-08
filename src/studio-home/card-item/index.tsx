@@ -18,6 +18,7 @@ import { COURSE_CREATOR_STATES } from '@src/constants';
 import { parseLibraryKey } from '@src/generic/key-utils';
 import classNames from 'classnames';
 import { LifecycleBadge } from '@src/course-lifecycle/components/LifecycleBadge';
+import type { LifecycleState } from '@src/course-lifecycle/data/types';
 import { getStudioHomeData } from '../data/selectors';
 import messages from '../messages';
 
@@ -146,7 +147,7 @@ interface BaseProps {
   isSelected?: boolean;
   itemId?: string;
   scrollIntoView?: boolean;
-  lifecycleState?: string;
+  lifecycleState?: LifecycleState;
   lifecycleFilter?: string;
 }
 

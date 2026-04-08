@@ -13,6 +13,7 @@ import { Error } from '@openedx/paragon/icons';
 
 import { COURSE_CREATOR_STATES } from '@src/constants';
 import { useBulkCourseAggregateStates } from '@src/course-lifecycle/data/apiHooks';
+import type { LifecycleState } from '@src/course-lifecycle/data/types';
 import { getStudioHomeData, getStudioHomeCoursesParams } from '@src/studio-home/data/selectors';
 import { resetStudioHomeCoursesCustomParams, updateStudioHomeCoursesCustomParams } from '@src/studio-home/data/slice';
 import { fetchStudioHomeData } from '@src/studio-home/data/thunks';
@@ -66,7 +67,7 @@ const CoursesTab: React.FC<Props> = ({
   const studioHomeCoursesParams = useSelector(getStudioHomeCoursesParams);
   const { currentPage, isFiltered, lifecycleFilter } = studioHomeCoursesParams;
 
-  const courseKeys = coursesDataItems.map((c) => c.courseKey);
+  const courseKeys = coursesDataItems?.map((c) => c.courseKey) ?? [];
   const { data: bulkLifecycleStates = {}, isLoading: isLifecycleLoading } = useBulkCourseAggregateStates(courseKeys);
   const hasAbilityToCreateCourse = courseCreatorStatus === COURSE_CREATOR_STATES.granted;
   const showCollapsible = [
@@ -103,8 +104,8 @@ const CoursesTab: React.FC<Props> = ({
   const isNotFilteringCourses = !isFiltered && !isLoading;
   const hasCourses = coursesDataItems?.length > 0;
   const visibleCoursesCount = lifecycleFilter
-    ? coursesDataItems.filter(({ courseKey }) => bulkLifecycleStates[courseKey] === lifecycleFilter).length
-    : coursesDataItems.length;
+    ? (coursesDataItems?.filter(({ courseKey }) => bulkLifecycleStates[courseKey] === lifecycleFilter).length ?? 0)
+    : (coursesDataItems?.length ?? 0);
   const hasVisibleCourses = visibleCoursesCount > 0;
 
   if (isLoading && !isFiltered) {
@@ -161,7 +162,7 @@ const CoursesTab: React.FC<Props> = ({
                   number={number}
                   run={run}
                   url={url}
-                  lifecycleState={bulkLifecycleStates[courseKey]}
+                  lifecycleState={bulkLifecycleStates[courseKey] as LifecycleState}
                   lifecycleFilter={lifecycleFilter}
                 />
               ),

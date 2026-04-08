@@ -40,7 +40,7 @@ export const CourseLifecycleSection = ({ courseId }: Props) => {
   // Reactively refresh the Redux outline when the course aggregate state transitions to
   // 'published'. Using useEffect instead of a mutation callback avoids stale-closure
   // issues caused by TanStack Query capturing useMutation options at hook-init time.
-  const prevAggStateRef = useRef<string | undefined>(undefined);
+  const prevAggStateRef = useRef<string | null | undefined>(undefined);
   useEffect(() => {
     const curr = data?.aggregateState;
     if (
