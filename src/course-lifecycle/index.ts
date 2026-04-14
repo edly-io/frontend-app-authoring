@@ -19,3 +19,4 @@ export {
 export type {
   BlockReviewState, BlockReviewComment, LifecycleState, CourseAggregateState,
 } from './data/types';
+export { useRefreshOnPublish } from './hooks';

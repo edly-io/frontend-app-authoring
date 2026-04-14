@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
 import {
   Badge, Button, Form, Spinner,
 } from '@openedx/paragon';
@@ -15,6 +14,7 @@ import {
 import type { LifecycleState } from '../data/types';
 import { LifecycleBadge } from './LifecycleBadge';
 import { CourseCommentsPanel } from './CourseCommentsPanel';
+import { useRefreshOnPublish, useRequestChangesForm } from '../hooks';
 
 // Surface non-published states in the block count breakdown.
 const BREAKDOWN_STATES: LifecycleState[] = [
@@ -35,8 +35,6 @@ interface Props {
 
 export const CourseLifecycleSection = ({ courseId }: Props) => {
   const dispatch = useDispatch();
-  const [showRequestForm, setShowRequestForm] = useState(false);
-  const [requestComment, setRequestComment] = useState('');
 
   const { data, isLoading, error } = useCourseAggregateState(courseId);
   const submitMutation = useSubmitCourseForReview(courseId);
@@ -44,32 +42,11 @@ export const CourseLifecycleSection = ({ courseId }: Props) => {
   const requestChangesMutation = useRequestCourseChanges(courseId);
   const publishMutation = usePublishCourse(courseId);
 
-  // Reactively refresh the Redux outline when the course aggregate state transitions to
-  // 'published'. Using useEffect instead of a mutation callback avoids stale-closure
-  // issues caused by TanStack Query capturing useMutation options at hook-init time.
-  const prevAggStateRef = useRef<string | null | undefined>(undefined);
-  useEffect(() => {
-    const curr = data?.aggregateState;
-    if (
-      prevAggStateRef.current !== undefined
-      && prevAggStateRef.current !== 'published'
-      && curr === 'published'
-    ) {
-      dispatch(fetchCourseOutlineIndexQuery(courseId));
-    }
-    prevAggStateRef.current = curr;
-  }, [data?.aggregateState]);
+  useRefreshOnPublish(data?.aggregateState, () => dispatch(fetchCourseOutlineIndexQuery(courseId)));
 
-  const handleSubmitChanges = () => {
-    const trimmed = requestComment.trim();
-    if (!trimmed) { return; }
-    requestChangesMutation.mutate([trimmed], {
-      onSuccess: () => {
-        setShowRequestForm(false);
-        setRequestComment('');
-      },
-    });
-  };
+  const {
+    showRequestForm, requestComment, setRequestComment, open, cancel, submit,
+  } = useRequestChangesForm(requestChangesMutation);
 
   return (
     <div className="lifecycle-section">
@@ -136,7 +113,7 @@ export const CourseLifecycleSection = ({ courseId }: Props) => {
                     variant="outline-danger"
                     size="sm"
                     className="w-100"
-                    onClick={() => setShowRequestForm(true)}
+                    onClick={open}
                   >
                     Request Changes
                   </Button>
@@ -152,21 +129,14 @@ export const CourseLifecycleSection = ({ courseId }: Props) => {
                       className="mb-2"
                     />
                     <div className="d-flex gap-1">
-                      <Button
-                        variant="outline-secondary"
-                        size="sm"
-                        onClick={() => {
-                          setShowRequestForm(false);
-                          setRequestComment('');
-                        }}
-                      >
+                      <Button variant="outline-secondary" size="sm" onClick={cancel}>
                         Cancel
                       </Button>
                       <Button
                         variant="danger"
                         size="sm"
                         disabled={!requestComment.trim() || requestChangesMutation.isPending}
-                        onClick={handleSubmitChanges}
+                        onClick={submit}
                       >
                         {requestChangesMutation.isPending
                           ? <Spinner animation="border" size="sm" />

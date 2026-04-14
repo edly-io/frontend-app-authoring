@@ -1,19 +1,16 @@
 import {
-  useCallback,
   useEffect,
-  useMemo,
   useRef,
 } from 'react';
 import { useDispatch } from 'react-redux';
 import { useToggle } from '@openedx/paragon';
 import { isEmpty } from 'lodash';
-import { useParams, useSearchParams } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 
 import CourseOutlineUnitCardExtraActionsSlot from '@src/plugin-slots/CourseOutlineUnitCardExtraActionsSlot';
 import { setCurrentItem, setCurrentSection, setCurrentSubsection } from '@src/course-outline/data/slice';
 import { fetchCourseSectionQuery } from '@src/course-outline/data/thunk';
-import { RequestStatus, RequestStatusType } from '@src/data/constants';
+import { RequestStatusType } from '@src/data/constants';
 import CardHeader from '@src/course-outline/card-header/CardHeader';
 import SortableItem from '@src/course-outline/drag-helper/SortableItem';
 import TitleLink from '@src/course-outline/card-header/TitleLink';
@@ -22,10 +19,11 @@ import { getItemStatus, getItemStatusBorder, scrollToElement } from '@src/course
 import { useClipboard } from '@src/generic/clipboard';
 import { UpstreamInfoIcon } from '@src/generic/upstream-info-icon';
 import { PreviewLibraryXBlockChanges } from '@src/course-unit/preview-changes';
-import { invalidateLinksQuery } from '@src/course-libraries/data/apiHooks';
+import { useBlockSyncData, usePostSyncCallback, useSaveStatusCloseForm } from '@src/course-outline/hooks';
 import type { XBlock } from '@src/data/types';
 import { useBlockState } from '@src/course-lifecycle/data/apiHooks';
 import { LifecycleModal } from '@src/course-lifecycle/components/LifecycleModal';
+import { useRefreshOnPublish } from '@src/course-lifecycle/hooks';
 
 interface UnitCardProps {
   unit: XBlock;
@@ -80,8 +78,6 @@ const UnitCard = ({
   const namePrefix = 'unit';
 
   const { copyToClipboard } = useClipboard();
-  const { courseId } = useParams();
-  const queryClient = useQueryClient();
 
   const {
     id,
@@ -102,33 +98,9 @@ const UnitCard = ({
   // React Query caches per usage key; undefined when block is not in lifecycle system (404).
   const { data: blockLifecycleState } = useBlockState(id);
 
-  const prevLifecycleStateRef = useRef<string | undefined>(undefined);
-  useEffect(() => {
-    const curr = blockLifecycleState?.state;
-    if (
-      prevLifecycleStateRef.current !== undefined
-      && prevLifecycleStateRef.current !== 'published'
-      && curr === 'published'
-    ) {
-      dispatch(fetchCourseSectionQuery([section.id]));
-    }
-    prevLifecycleStateRef.current = curr;
-  }, [blockLifecycleState?.state]);
+  useRefreshOnPublish(blockLifecycleState?.state, () => dispatch(fetchCourseSectionQuery([section.id])));
 
-  const blockSyncData = useMemo(() => {
-    if (!upstreamInfo?.readyToSync) {
-      return undefined;
-    }
-    return {
-      displayName,
-      downstreamBlockId: id,
-      upstreamBlockId: upstreamInfo.upstreamRef,
-      upstreamBlockVersionSynced: upstreamInfo.versionSynced,
-      isReadyToSyncIndividually: upstreamInfo.isReadyToSyncIndividually,
-      isContainer: true,
-      blockType: 'unit',
-    };
-  }, [upstreamInfo]);
+  const blockSyncData = useBlockSyncData(id, upstreamInfo, displayName, 'unit');
 
   // re-create actions object for customizations
   const actions = { ...unitActions };
@@ -179,12 +151,7 @@ const UnitCard = ({
     copyToClipboard(id);
   };
 
-  const handleOnPostChangeSync = useCallback(() => {
-    dispatch(fetchCourseSectionQuery([section.id]));
-    if (courseId) {
-      invalidateLinksQuery(queryClient, courseId);
-    }
-  }, [dispatch, section, queryClient, courseId]);
+  const handleOnPostChangeSync = usePostSyncCallback(section.id);
 
   const titleComponent = (
     <TitleLink
@@ -212,11 +179,7 @@ const UnitCard = ({
     }
   }, [isScrolledToElement]);
 
-  useEffect(() => {
-    if (savingStatus === RequestStatus.SUCCESSFUL) {
-      closeForm();
-    }
-  }, [savingStatus]);
+  useSaveStatusCloseForm(savingStatus, closeForm);
 
   if (!isHeaderVisible) {
     return null;

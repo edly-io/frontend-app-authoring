@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Button, Form, Spinner } from '@openedx/paragon';
 
 import type { BlockReviewState } from '../data/types';
@@ -8,6 +7,7 @@ import {
   useRequestChanges,
   useSubmitForReview,
 } from '../data/apiHooks';
+import { useRequestChangesForm } from '../hooks';
 
 interface Props {
   usageKey: string;
@@ -20,13 +20,14 @@ interface Props {
 export const LifecycleActionButtons = ({
   usageKey, blockState, hasChanges, onPublishSuccess,
 }: Props) => {
-  const [showRequestForm, setShowRequestForm] = useState(false);
-  const [requestComment, setRequestComment] = useState('');
-
   const submitMutation = useSubmitForReview(usageKey);
   const approveMutation = useApproveBlock(usageKey);
   const requestChangesMutation = useRequestChanges(usageKey);
   const publishMutation = usePublishBlock(usageKey, { onSuccess: onPublishSuccess });
+
+  const {
+    showRequestForm, requestComment, setRequestComment, open, cancel, submit,
+  } = useRequestChangesForm(requestChangesMutation);
 
   const {
     canSubmit, canApprove, canRequestChanges, canPublish,
@@ -43,17 +44,6 @@ export const LifecycleActionButtons = ({
   if (!canSubmit && !canApprove && !canRequestChanges && !canPublish) {
     return null;
   }
-
-  const handleSubmitChanges = () => {
-    const trimmed = requestComment.trim();
-    if (!trimmed) { return; }
-    requestChangesMutation.mutate([trimmed], {
-      onSuccess: () => {
-        setShowRequestForm(false);
-        setRequestComment('');
-      },
-    });
-  };
 
   return (
     <div className="d-flex flex-column gap-1 mt-2">
@@ -84,7 +74,7 @@ export const LifecycleActionButtons = ({
           variant="outline-danger"
           size="sm"
           className="w-100 my-1"
-          onClick={() => setShowRequestForm(true)}
+          onClick={open}
         >
           Request Changes
         </Button>
@@ -100,21 +90,14 @@ export const LifecycleActionButtons = ({
             className="mb-2"
           />
           <div className="d-flex gap-1">
-            <Button
-              variant="outline-secondary"
-              size="sm"
-              onClick={() => {
-                setShowRequestForm(false);
-                setRequestComment('');
-              }}
-            >
+            <Button variant="outline-secondary" size="sm" onClick={cancel}>
               Cancel
             </Button>
             <Button
               variant="danger"
               size="sm"
               disabled={!requestComment.trim() || requestChangesMutation.isPending}
-              onClick={handleSubmitChanges}
+              onClick={submit}
             >
               {requestChangesMutation.isPending
                 ? <Spinner animation="border" size="sm" />
