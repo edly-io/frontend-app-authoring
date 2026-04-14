@@ -1,5 +1,7 @@
-import { useEffect, useRef } from 'react';
-import { Badge, Button, Spinner } from '@openedx/paragon';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Badge, Button, Form, Spinner,
+} from '@openedx/paragon';
 import { useDispatch } from 'react-redux';
 
 import { fetchCourseOutlineIndexQuery } from '@src/course-outline/data/thunk';
@@ -14,12 +16,14 @@ import type { LifecycleState } from '../data/types';
 import { LifecycleBadge } from './LifecycleBadge';
 import { CourseCommentsPanel } from './CourseCommentsPanel';
 
-// Only surface non-published states in the block count breakdown.
-// Published is the expected clean state and doesn't need to be called out.
-const BREAKDOWN_STATES: LifecycleState[] = ['draft', 'for_review', 'approved'];
+// Surface non-published states in the block count breakdown.
+const BREAKDOWN_STATES: LifecycleState[] = [
+  'draft', 'changes_requested', 'for_review', 'approved',
+];
 
 const STATE_LABELS: Record<LifecycleState, string> = {
   draft: 'Draft',
+  changes_requested: 'Changes Requested',
   for_review: 'For Review',
   approved: 'Approved',
   published: 'Published',
@@ -31,6 +35,9 @@ interface Props {
 
 export const CourseLifecycleSection = ({ courseId }: Props) => {
   const dispatch = useDispatch();
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [requestComment, setRequestComment] = useState('');
+
   const { data, isLoading, error } = useCourseAggregateState(courseId);
   const submitMutation = useSubmitCourseForReview(courseId);
   const approveMutation = useApproveCourse(courseId);
@@ -52,6 +59,17 @@ export const CourseLifecycleSection = ({ courseId }: Props) => {
     }
     prevAggStateRef.current = curr;
   }, [data?.aggregateState]);
+
+  const handleSubmitChanges = () => {
+    const trimmed = requestComment.trim();
+    if (!trimmed) { return; }
+    requestChangesMutation.mutate([trimmed], {
+      onSuccess: () => {
+        setShowRequestForm(false);
+        setRequestComment('');
+      },
+    });
+  };
 
   return (
     <div className="lifecycle-section">
@@ -113,16 +131,49 @@ export const CourseLifecycleSection = ({ courseId }: Props) => {
                     {approveMutation.isPending ? <Spinner animation="border" size="sm" /> : 'Approve All'}
                   </Button>
                 )}
-                {data.canRequestChanges && (
+                {data.canRequestChanges && !showRequestForm && (
                   <Button
                     variant="outline-danger"
                     size="sm"
                     className="w-100"
-                    disabled={requestChangesMutation.isPending}
-                    onClick={() => requestChangesMutation.mutate()}
+                    onClick={() => setShowRequestForm(true)}
                   >
-                    {requestChangesMutation.isPending ? <Spinner animation="border" size="sm" /> : 'Request Changes'}
+                    Request Changes
                   </Button>
+                )}
+                {data.canRequestChanges && showRequestForm && (
+                  <div>
+                    <Form.Control
+                      as="textarea"
+                      rows={3}
+                      placeholder="Describe the changes needed..."
+                      value={requestComment}
+                      onChange={(e) => setRequestComment(e.target.value)}
+                      className="mb-2"
+                    />
+                    <div className="d-flex gap-1">
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        onClick={() => {
+                          setShowRequestForm(false);
+                          setRequestComment('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        disabled={!requestComment.trim() || requestChangesMutation.isPending}
+                        onClick={handleSubmitChanges}
+                      >
+                        {requestChangesMutation.isPending
+                          ? <Spinner animation="border" size="sm" />
+                          : 'Submit Changes'}
+                      </Button>
+                    </div>
+                  </div>
                 )}
                 {data.canPublish && (
                   <Button

@@ -1,4 +1,5 @@
-import { Button, Spinner } from '@openedx/paragon';
+import { useState } from 'react';
+import { Button, Form, Spinner } from '@openedx/paragon';
 
 import type { BlockReviewState } from '../data/types';
 import {
@@ -19,6 +20,9 @@ interface Props {
 export const LifecycleActionButtons = ({
   usageKey, blockState, hasChanges, onPublishSuccess,
 }: Props) => {
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [requestComment, setRequestComment] = useState('');
+
   const submitMutation = useSubmitForReview(usageKey);
   const approveMutation = useApproveBlock(usageKey);
   const requestChangesMutation = useRequestChanges(usageKey);
@@ -39,6 +43,17 @@ export const LifecycleActionButtons = ({
   if (!canSubmit && !canApprove && !canRequestChanges && !canPublish) {
     return null;
   }
+
+  const handleSubmitChanges = () => {
+    const trimmed = requestComment.trim();
+    if (!trimmed) { return; }
+    requestChangesMutation.mutate([trimmed], {
+      onSuccess: () => {
+        setShowRequestForm(false);
+        setRequestComment('');
+      },
+    });
+  };
 
   return (
     <div className="d-flex flex-column gap-1 mt-2">
@@ -64,16 +79,49 @@ export const LifecycleActionButtons = ({
           {approveMutation.isPending ? <Spinner animation="border" size="sm" /> : 'Approve'}
         </Button>
       )}
-      {showWorkflowButtons && canRequestChanges && (
+      {showWorkflowButtons && canRequestChanges && !showRequestForm && (
         <Button
           variant="outline-danger"
           size="sm"
           className="w-100 my-1"
-          disabled={requestChangesMutation.isPending}
-          onClick={() => requestChangesMutation.mutate()}
+          onClick={() => setShowRequestForm(true)}
         >
-          {requestChangesMutation.isPending ? <Spinner animation="border" size="sm" /> : 'Request Changes'}
+          Request Changes
         </Button>
+      )}
+      {showWorkflowButtons && canRequestChanges && showRequestForm && (
+        <div className="mt-1">
+          <Form.Control
+            as="textarea"
+            rows={3}
+            placeholder="Describe the changes needed..."
+            value={requestComment}
+            onChange={(e) => setRequestComment(e.target.value)}
+            className="mb-2"
+          />
+          <div className="d-flex gap-1">
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              onClick={() => {
+                setShowRequestForm(false);
+                setRequestComment('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              disabled={!requestComment.trim() || requestChangesMutation.isPending}
+              onClick={handleSubmitChanges}
+            >
+              {requestChangesMutation.isPending
+                ? <Spinner animation="border" size="sm" />
+                : 'Submit Changes'}
+            </Button>
+          </div>
+        </div>
       )}
       {canPublish && (
         <Button

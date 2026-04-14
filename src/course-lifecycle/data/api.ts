@@ -42,9 +42,10 @@ export async function approveBlock(usageKey: string): Promise<BlockReviewState> 
   return camelCaseObject(data) as BlockReviewState;
 }
 
-export async function requestChanges(usageKey: string): Promise<BlockReviewState> {
+export async function requestChanges(usageKey: string, comments: string[]): Promise<BlockReviewState> {
   const { data } = await getAuthenticatedHttpClient().post(
     `${getLifecycleBaseUrl()}/v1/blocks/${encodeURIComponent(usageKey)}/request-changes`,
+    { comments },
   );
   return camelCaseObject(data) as BlockReviewState;
 }
@@ -70,9 +71,10 @@ export async function approveCourse(courseId: string): Promise<{ transitioned: n
   return data;
 }
 
-export async function requestCourseChanges(courseId: string): Promise<{ transitioned: number }> {
+export async function requestCourseChanges(courseId: string, comments: string[]): Promise<{ transitioned: number }> {
   const { data } = await getAuthenticatedHttpClient().post(
     `${getLifecycleBaseUrl()}/v1/courses/${encodeURIComponent(courseId)}/request-changes`,
+    { comments },
   );
   return data;
 }
@@ -91,14 +93,6 @@ export async function getCourseComments(courseId: string): Promise<BlockReviewCo
   return camelCaseObject(data) as BlockReviewComment[];
 }
 
-export async function createCourseComment(courseId: string, comment: string): Promise<BlockReviewComment> {
-  const { data } = await getAuthenticatedHttpClient().post(
-    `${getLifecycleBaseUrl()}/v1/courses/${encodeURIComponent(courseId)}/comments`,
-    { comment },
-  );
-  return camelCaseObject(data) as BlockReviewComment;
-}
-
 export async function getBlockComments(usageKey: string): Promise<BlockReviewComment[]> {
   const { data } = await getAuthenticatedHttpClient().get(
     `${getLifecycleBaseUrl()}/v1/blocks/${encodeURIComponent(usageKey)}/comments`,
@@ -106,9 +100,9 @@ export async function getBlockComments(usageKey: string): Promise<BlockReviewCom
   return camelCaseObject(data) as BlockReviewComment[];
 }
 
-export async function createComment(usageKey: string, comment: string): Promise<BlockReviewComment> {
+export async function addReply(commentId: number, comment: string): Promise<BlockReviewComment> {
   const { data } = await getAuthenticatedHttpClient().post(
-    `${getLifecycleBaseUrl()}/v1/blocks/${encodeURIComponent(usageKey)}/comments`,
+    `${getLifecycleBaseUrl()}/v1/comments/${commentId}/replies`,
     { comment },
   );
   return camelCaseObject(data) as BlockReviewComment;

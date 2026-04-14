@@ -1,4 +1,6 @@
-export type LifecycleState = 'draft' | 'for_review' | 'approved' | 'published';
+export type LifecycleState = 'draft' | 'changes_requested' | 'for_review' | 'approved' | 'published';
+
+export type CommentType = 'requested_change' | 'reply';
 
 export interface BlockReviewState {
   usageKey: string;
@@ -33,6 +35,9 @@ export interface BlockReviewComment {
   courseId: string;
   author: string;
   comment: string;
+  commentType: CommentType;
+  parent: number | null;
+  replies: BlockReviewComment[];
   resolved: boolean;
   resolvedBy: string | null;
   resolvedAt: string | null;

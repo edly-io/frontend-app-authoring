@@ -22,6 +22,7 @@ export const mockCourseAggregateState = (overrides: Partial<CourseAggregateState
   aggregateState: 'draft',
   blockCounts: {
     draft: 3,
+    changes_requested: 0,
     for_review: 1,
     approved: 1,
     published: 0,
@@ -40,6 +41,9 @@ export const mockBlockReviewComment = (overrides: Partial<BlockReviewComment> = 
   courseId: 'course-v1:TestOrg+TestCourse+2025_T1',
   author: 'abc123',
   comment: 'Needs revision',
+  commentType: 'requested_change',
+  parent: null,
+  replies: [],
   resolved: false,
   resolvedBy: null,
   resolvedAt: null,

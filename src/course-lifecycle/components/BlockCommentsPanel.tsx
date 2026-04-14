@@ -8,31 +8,147 @@ import {
 } from '@openedx/paragon';
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 
+import type { BlockReviewComment } from '../data/types';
 import {
-  useBlockComments, useCreateComment, useDeleteComment, useResolveComment,
+  useAddReply,
+  useBlockComments,
+  useDeleteComment,
+  useResolveComment,
 } from '../data/apiHooks';
 
-interface Props {
+interface ReplyFormProps {
+  commentId: number;
   usageKey: string;
-  readOnly?: boolean;
+  onCancel: () => void;
 }
 
-export const BlockCommentsPanel = ({ usageKey, readOnly = false }: Props) => {
-  const [newComment, setNewComment] = useState('');
-  const currentUsername = getAuthenticatedUser()?.username;
-  const { data: comments, isLoading } = useBlockComments(usageKey);
-  const createMutation = useCreateComment(usageKey);
+const ReplyForm = ({ commentId, usageKey, onCancel }: ReplyFormProps) => {
+  const [text, setText] = useState('');
+  const replyMutation = useAddReply(usageKey);
+
+  const handleSubmit = () => {
+    const trimmed = text.trim();
+    if (!trimmed) { return; }
+    replyMutation.mutate({ commentId, comment: trimmed }, {
+      onSuccess: () => {
+        setText('');
+        onCancel();
+      },
+    });
+  };
+
+  return (
+    <div className="mt-2 ms-3">
+      <Form.Control
+        as="textarea"
+        rows={2}
+        placeholder="Write a reply..."
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        className="mb-1"
+      />
+      <div className="d-flex gap-1">
+        <Button variant="outline-secondary" size="sm" onClick={onCancel}>Cancel</Button>
+        <Button
+          variant="primary"
+          size="sm"
+          disabled={!text.trim() || replyMutation.isPending}
+          onClick={handleSubmit}
+        >
+          {replyMutation.isPending ? <Spinner animation="border" size="sm" /> : 'Add Reply'}
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+interface CommentRowProps {
+  comment: BlockReviewComment;
+  usageKey: string;
+  currentUsername: string | undefined;
+  isReply?: boolean;
+}
+
+const CommentRow = ({
+  comment, usageKey, currentUsername, isReply = false,
+}: CommentRowProps) => {
+  const [showReplyForm, setShowReplyForm] = useState(false);
   const resolveMutation = useResolveComment(usageKey);
   const deleteMutation = useDeleteComment(usageKey);
 
-  const handleAdd = () => {
-    if (!newComment.trim()) {
-      return;
-    }
-    createMutation.mutate(newComment.trim(), {
-      onSuccess: () => setNewComment(''),
-    });
-  };
+  return (
+    <div className={`lifecycle-comment mb-2 p-2 border rounded ${comment.resolved ? 'text-muted' : ''} ${isReply ? 'ms-3' : ''}`}>
+      <div className="d-flex justify-content-between align-items-start">
+        <span className="small font-weight-bold">{comment.author}</span>
+        <div className="d-flex gap-1 align-items-center">
+          {comment.resolved && <Badge variant="light" className="small">Resolved</Badge>}
+          {!isReply && !comment.resolved && (
+            <Button
+              variant="link"
+              size="sm"
+              className="p-0"
+              disabled={resolveMutation.isPending}
+              onClick={() => resolveMutation.mutate(comment.id)}
+            >
+              Resolve
+            </Button>
+          )}
+          {comment.author === currentUsername && (
+            <Button
+              variant="link"
+              size="sm"
+              className="p-0 text-danger"
+              disabled={deleteMutation.isPending}
+              onClick={() => deleteMutation.mutate(comment.id)}
+            >
+              Delete
+            </Button>
+          )}
+        </div>
+      </div>
+      <p className="small mb-1">{comment.comment}</p>
+      <span className="x-small text-muted">{new Date(comment.created).toLocaleDateString()}</span>
+
+      {/* Replies (only for top-level comments) */}
+      {!isReply && comment.replies?.map((reply) => (
+        <CommentRow
+          key={reply.id}
+          comment={reply}
+          usageKey={usageKey}
+          currentUsername={currentUsername}
+          isReply
+        />
+      ))}
+
+      {/* Reply button + form (only for top-level comments) */}
+      {!isReply && !showReplyForm && (
+        <Button
+          variant="link"
+          size="sm"
+          className="p-0 mt-1"
+          onClick={() => setShowReplyForm(true)}
+        >
+          Reply
+        </Button>
+      )}
+      {!isReply && showReplyForm && (
+        <ReplyForm
+          commentId={comment.id}
+          usageKey={usageKey}
+          onCancel={() => setShowReplyForm(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+interface Props {
+  usageKey: string;
+}
+
+export const BlockCommentsPanel = ({ usageKey }: Props) => {
+  const currentUsername = getAuthenticatedUser()?.username;
+  const { data: comments, isLoading } = useBlockComments(usageKey);
 
   return (
     <Collapsible title="Comments" className="lifecycle-comments mt-3">
@@ -48,64 +164,13 @@ export const BlockCommentsPanel = ({ usageKey, readOnly = false }: Props) => {
           <p className="small text-muted mb-2">No comments yet.</p>
         )}
         {comments?.map((c) => (
-          <div
+          <CommentRow
             key={c.id}
-            className={`lifecycle-comment mb-2 p-2 border rounded ${c.resolved ? 'text-muted' : ''}`}
-          >
-            <div className="d-flex justify-content-between align-items-start">
-              <span className="small font-weight-bold">{c.author}</span>
-              <div className="d-flex gap-1 align-items-center">
-                {c.resolved && <Badge variant="light" className="small">Resolved</Badge>}
-                {!c.resolved && (
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="p-0"
-                    disabled={resolveMutation.isPending}
-                    onClick={() => resolveMutation.mutate(c.id)}
-                  >
-                    Resolve
-                  </Button>
-                )}
-                {c.author === currentUsername && (
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="p-0 text-danger"
-                    disabled={deleteMutation.isPending}
-                    onClick={() => deleteMutation.mutate(c.id)}
-                  >
-                    Delete
-                  </Button>
-                )}
-              </div>
-            </div>
-            <p className="small mb-1">{c.comment}</p>
-            <span className="x-small text-muted">{new Date(c.created).toLocaleDateString()}</span>
-          </div>
+            comment={c}
+            usageKey={usageKey}
+            currentUsername={currentUsername}
+          />
         ))}
-        {!readOnly && (
-          <>
-            <Form.Group className="mt-2">
-              <Form.Control
-                as="textarea"
-                rows={2}
-                placeholder="Add a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-              />
-            </Form.Group>
-            <Button
-              variant="outline-primary"
-              size="sm"
-              className="mt-1"
-              disabled={!newComment.trim() || createMutation.isPending}
-              onClick={handleAdd}
-            >
-              {createMutation.isPending ? <Spinner animation="border" size="sm" /> : 'Add Comment'}
-            </Button>
-          </>
-        )}
       </Collapsible.Body>
     </Collapsible>
   );

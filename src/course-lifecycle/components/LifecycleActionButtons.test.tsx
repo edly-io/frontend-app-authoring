@@ -92,17 +92,51 @@ describe('<LifecycleActionButtons />', () => {
     expect(mockApproveMutate).toHaveBeenCalledTimes(1);
   });
 
-  it('calls requestChangesMutation.mutate() when Request Changes button is clicked', () => {
-    const blockState = mockBlockReviewState({ canSubmit: false, canRequestChanges: true });
-    render(<LifecycleActionButtons usageKey={usageKey} blockState={blockState} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Request Changes' }));
-    expect(mockRequestChangesMutate).toHaveBeenCalledTimes(1);
-  });
-
   it('calls publishMutation.mutate() when Publish button is clicked', () => {
     const blockState = mockBlockReviewState({ canSubmit: false, canPublish: true });
     render(<LifecycleActionButtons usageKey={usageKey} blockState={blockState} />);
     fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
     expect(mockPublishMutate).toHaveBeenCalledTimes(1);
+  });
+
+  it('clicking "Request Changes" shows the inline comment form', () => {
+    const blockState = mockBlockReviewState({ canSubmit: false, canRequestChanges: true });
+    render(<LifecycleActionButtons usageKey={usageKey} blockState={blockState} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Request Changes' }));
+    expect(screen.getByPlaceholderText('Describe the changes needed...')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Submit Changes' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+  });
+
+  it('"Submit Changes" button is disabled when textarea is empty', () => {
+    const blockState = mockBlockReviewState({ canSubmit: false, canRequestChanges: true });
+    render(<LifecycleActionButtons usageKey={usageKey} blockState={blockState} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Request Changes' }));
+    expect(screen.getByRole('button', { name: 'Submit Changes' })).toBeDisabled();
+  });
+
+  it('calls requestChangesMutation.mutate() with comment when Submit Changes is clicked', () => {
+    const blockState = mockBlockReviewState({ canSubmit: false, canRequestChanges: true });
+    render(<LifecycleActionButtons usageKey={usageKey} blockState={blockState} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Request Changes' }));
+    fireEvent.change(
+      screen.getByPlaceholderText('Describe the changes needed...'),
+      { target: { value: 'Please fix the introduction section' } },
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Submit Changes' }));
+    expect(mockRequestChangesMutate).toHaveBeenCalledWith(
+      ['Please fix the introduction section'],
+      expect.any(Object),
+    );
+  });
+
+  it('Cancel hides the request changes form', () => {
+    const blockState = mockBlockReviewState({ canSubmit: false, canRequestChanges: true });
+    render(<LifecycleActionButtons usageKey={usageKey} blockState={blockState} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Request Changes' }));
+    expect(screen.getByPlaceholderText('Describe the changes needed...')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByPlaceholderText('Describe the changes needed...')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Request Changes' })).toBeInTheDocument();
   });
 });

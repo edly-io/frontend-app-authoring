@@ -3,10 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { courseOutlineQueryKeys } from '@src/course-outline/data/apiHooks';
 import { getCourseKey } from '@src/generic/key-utils';
 import {
+  addReply,
   approveCourse,
   approveBlock,
-  createComment,
-  createCourseComment,
   deleteComment,
   getBlockComments,
   getBlockState,
@@ -70,7 +69,7 @@ export const useApproveCourse = (courseId: string) => {
 export const useRequestCourseChanges = (courseId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => requestCourseChanges(courseId),
+    mutationFn: (comments: string[]) => requestCourseChanges(courseId, comments),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lifecycle'] });
     },
@@ -133,7 +132,7 @@ export const useApproveBlock = (usageKey: string) => {
 export const useRequestChanges = (usageKey: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => requestChanges(usageKey),
+    mutationFn: (comments: string[]) => requestChanges(usageKey, comments),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lifecycle'] });
     },
@@ -154,20 +153,24 @@ export const usePublishBlock = (usageKey: string, options?: { onSuccess?: () => 
   });
 };
 
-export const useCreateComment = (usageKey: string) => {
+export const useAddReply = (usageKey: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (comment: string) => createComment(usageKey, comment),
+    mutationFn: ({ commentId, comment }: { commentId: number; comment: string }) => (
+      addReply(commentId, comment)
+    ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: lifecycleQueryKeys.blockComments(usageKey) });
     },
   });
 };
 
-export const useCreateCourseComment = (courseId: string) => {
+export const useAddCourseReply = (courseId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (comment: string) => createCourseComment(courseId, comment),
+    mutationFn: ({ commentId, comment }: { commentId: number; comment: string }) => (
+      addReply(commentId, comment)
+    ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: lifecycleQueryKeys.courseComments(courseId) });
     },

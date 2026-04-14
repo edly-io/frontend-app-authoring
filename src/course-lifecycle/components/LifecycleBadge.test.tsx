@@ -26,6 +26,11 @@ describe('<LifecycleBadge />', () => {
     expect(screen.getByText('Published')).toBeInTheDocument();
   });
 
+  it('renders "Changes Requested" badge for changes_requested state', () => {
+    render(<LifecycleBadge state="changes_requested" />);
+    expect(screen.getByText('Changes Requested')).toBeInTheDocument();
+  });
+
   it('adds lifecycle-badge class to every state', () => {
     const { container } = render(<LifecycleBadge state="approved" />);
     expect(container.querySelector('.lifecycle-badge')).toBeInTheDocument();

@@ -5,13 +5,13 @@ import { CourseCommentsPanel } from './CourseCommentsPanel';
 import { mockBlockReviewComment } from '../data/api.mock';
 
 const mockUseCourseComments = jest.fn();
-const mockCreateCourseMutate = jest.fn();
 const mockResolveComment = jest.fn();
 const mockDeleteComment = jest.fn();
+const mockAddCourseReplyMutate = jest.fn();
 
 jest.mock('@src/course-lifecycle/data/apiHooks', () => ({
   useCourseComments: (...args: any[]) => mockUseCourseComments(...args),
-  useCreateCourseComment: () => ({ mutate: mockCreateCourseMutate, isPending: false }),
+  useAddCourseReply: () => ({ mutate: mockAddCourseReplyMutate, isPending: false }),
   lifecycleQueryKeys: {
     courseComments: (id: string) => ['lifecycle', 'course', id, 'comments'],
   },
@@ -110,25 +110,60 @@ describe('<CourseCommentsPanel />', () => {
     await waitFor(() => expect(mockDeleteComment).toHaveBeenCalledWith(7));
   });
 
-  it('calls createMutation.mutate with trimmed text when Add Comment is clicked', () => {
+  it('does not show standalone Add Comment form', () => {
     render(<CourseCommentsPanel courseId={courseId} />);
     expandPanel();
-    const textarea = screen.getByPlaceholderText('Add a comment...');
-    fireEvent.change(textarea, { target: { value: '  Course feedback  ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add Comment' }));
-    expect(mockCreateCourseMutate).toHaveBeenCalledWith('Course feedback', expect.any(Object));
+    expect(screen.queryByPlaceholderText('Add a comment...')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add Comment' })).not.toBeInTheDocument();
   });
 
-  it('"Add Comment" button is disabled when textarea is empty', () => {
+  it('shows a Reply button for each top-level comment', () => {
+    const comment = mockBlockReviewComment({ id: 1, commentType: 'requested_change' });
+    mockUseCourseComments.mockReturnValue({ data: [comment], isLoading: false });
     render(<CourseCommentsPanel courseId={courseId} />);
     expandPanel();
-    expect(screen.getByRole('button', { name: 'Add Comment' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Reply' })).toBeInTheDocument();
   });
 
-  it('always shows the Add Comment form (no readOnly mode)', () => {
+  it('clicking Reply shows the reply textarea and Add Reply button', () => {
+    const comment = mockBlockReviewComment({ id: 1, commentType: 'requested_change' });
+    mockUseCourseComments.mockReturnValue({ data: [comment], isLoading: false });
     render(<CourseCommentsPanel courseId={courseId} />);
     expandPanel();
-    expect(screen.getByPlaceholderText('Add a comment...')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Add Comment' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Reply' }));
+    expect(screen.getByPlaceholderText('Write a reply...')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add Reply' })).toBeInTheDocument();
+  });
+
+  it('calls addCourseReplyMutation.mutate with commentId and text when Add Reply is clicked', () => {
+    const comment = mockBlockReviewComment({ id: 5, commentType: 'requested_change' });
+    mockUseCourseComments.mockReturnValue({ data: [comment], isLoading: false });
+    render(<CourseCommentsPanel courseId={courseId} />);
+    expandPanel();
+    fireEvent.click(screen.getByRole('button', { name: 'Reply' }));
+    fireEvent.change(screen.getByPlaceholderText('Write a reply...'), {
+      target: { value: 'Updated the course description' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add Reply' }));
+    expect(mockAddCourseReplyMutate).toHaveBeenCalledWith(
+      { commentId: 5, comment: 'Updated the course description' },
+      expect.any(Object),
+    );
+  });
+
+  it('renders nested replies under their parent comment', () => {
+    const reply = mockBlockReviewComment({
+      id: 2,
+      author: 'staff_user',
+      comment: 'Done, added more examples',
+      commentType: 'reply',
+      parent: 1,
+    });
+    const comment = mockBlockReviewComment({ id: 1, replies: [reply] });
+    mockUseCourseComments.mockReturnValue({ data: [comment], isLoading: false });
+    render(<CourseCommentsPanel courseId={courseId} />);
+    expandPanel();
+    expect(screen.getByText('Done, added more examples')).toBeInTheDocument();
+    expect(screen.getByText('staff_user')).toBeInTheDocument();
   });
 });

@@ -54,7 +54,7 @@ export const LifecycleSection = ({
             hasChanges={hasChanges}
             onPublishSuccess={onPublishSuccess}
           />
-          <BlockCommentsPanel usageKey={usageKey} readOnly={effectiveState === 'published'} />
+          <BlockCommentsPanel usageKey={usageKey} />
         </>
       )}
     </div>

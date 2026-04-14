@@ -51,7 +51,7 @@ export const LifecycleModal = ({
               hasChanges={hasChanges}
               onPublishSuccess={() => { onPublishSuccess?.(); onClose(); }}
             />
-            <BlockCommentsPanel usageKey={blockId} readOnly={effectiveState === 'published'} />
+            <BlockCommentsPanel usageKey={blockId} />
           </>
         )}
       </ModalDialog.Body>

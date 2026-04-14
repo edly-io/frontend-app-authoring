@@ -16,9 +16,9 @@ jest.mock('@src/course-lifecycle/data/apiHooks', () => ({
   useApproveCourse: () => ({ mutate: mockApproveCourseMutate, isPending: false }),
   useRequestCourseChanges: () => ({ mutate: mockRequestCourseChangesMutate, isPending: false }),
   usePublishCourse: () => ({ mutate: mockPublishCourseMutate, isPending: false }),
-  // useCourseComments + useCreateCourseComment needed by CourseCommentsPanel child
+  // useCourseComments + useAddCourseReply needed by CourseCommentsPanel child
   useCourseComments: () => ({ data: [], isLoading: false }),
-  useCreateCourseComment: () => ({ mutate: jest.fn(), isPending: false }),
+  useAddCourseReply: () => ({ mutate: jest.fn(), isPending: false }),
   lifecycleQueryKeys: {
     courseComments: (id: string) => ['lifecycle', 'course', id, 'comments'],
   },
@@ -133,6 +133,37 @@ describe('<CourseLifecycleSection />', () => {
     });
     render(<CourseLifecycleSection courseId={courseId} />);
     expect(screen.getByRole('button', { name: 'Request Changes' })).toBeInTheDocument();
+  });
+
+  it('clicking "Request Changes" shows the inline comment form', () => {
+    mockUseCourseAggregateState.mockReturnValue({
+      data: mockCourseAggregateState({ canSubmit: false, canRequestChanges: true }),
+      isLoading: false,
+      error: null,
+    });
+    render(<CourseLifecycleSection courseId={courseId} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Request Changes' }));
+    expect(screen.getByPlaceholderText('Describe the changes needed...')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Submit Changes' })).toBeInTheDocument();
+  });
+
+  it('calls requestChangesMutation.mutate() with comments when Submit Changes is clicked', () => {
+    mockUseCourseAggregateState.mockReturnValue({
+      data: mockCourseAggregateState({ canSubmit: false, canRequestChanges: true }),
+      isLoading: false,
+      error: null,
+    });
+    render(<CourseLifecycleSection courseId={courseId} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Request Changes' }));
+    fireEvent.change(
+      screen.getByPlaceholderText('Describe the changes needed...'),
+      { target: { value: 'Please revise the intro' } },
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Submit Changes' }));
+    expect(mockRequestCourseChangesMutate).toHaveBeenCalledWith(
+      ['Please revise the intro'],
+      expect.any(Object),
+    );
   });
 
   it('renders "Publish Course" button when canPublish=true', () => {

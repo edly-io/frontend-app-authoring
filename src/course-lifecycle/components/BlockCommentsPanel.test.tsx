@@ -5,15 +5,15 @@ import { BlockCommentsPanel } from './BlockCommentsPanel';
 import { mockBlockReviewComment } from '../data/api.mock';
 
 const mockUseBlockComments = jest.fn();
-const mockCreateMutate = jest.fn();
 const mockResolveMutate = jest.fn();
 const mockDeleteMutate = jest.fn();
+const mockAddReplyMutate = jest.fn();
 
 jest.mock('@src/course-lifecycle/data/apiHooks', () => ({
   useBlockComments: (...args: any[]) => mockUseBlockComments(...args),
-  useCreateComment: () => ({ mutate: mockCreateMutate, isPending: false }),
   useResolveComment: () => ({ mutate: mockResolveMutate, isPending: false }),
   useDeleteComment: () => ({ mutate: mockDeleteMutate, isPending: false }),
+  useAddReply: () => ({ mutate: mockAddReplyMutate, isPending: false }),
 }));
 
 const usageKey = 'block-v1:TestOrg+TestCourse+2025_T1+type@vertical+block@unit1';
@@ -51,7 +51,7 @@ describe('<BlockCommentsPanel />', () => {
     expect(screen.getByText('Please fix this issue')).toBeInTheDocument();
   });
 
-  it('shows "Resolve" button for unresolved comment', () => {
+  it('shows "Resolve" button for unresolved top-level comment', () => {
     const comment = mockBlockReviewComment({ resolved: false });
     mockUseBlockComments.mockReturnValue({ data: [comment], isLoading: false });
     render(<BlockCommentsPanel usageKey={usageKey} />);
@@ -69,7 +69,6 @@ describe('<BlockCommentsPanel />', () => {
   });
 
   it('shows "Delete" button for comment authored by the current user (abc123)', () => {
-    // Default initializeMocks user is { username: 'abc123' }
     const comment = mockBlockReviewComment({ author: 'abc123' });
     mockUseBlockComments.mockReturnValue({ data: [comment], isLoading: false });
     render(<BlockCommentsPanel usageKey={usageKey} />);
@@ -103,34 +102,70 @@ describe('<BlockCommentsPanel />', () => {
     expect(mockDeleteMutate).toHaveBeenCalledWith(42);
   });
 
-  it('calls createMutation.mutate with trimmed text when Add Comment is clicked', () => {
+  it('does not show standalone Add Comment form', () => {
     render(<BlockCommentsPanel usageKey={usageKey} />);
-    expandPanel();
-    const textarea = screen.getByPlaceholderText('Add a comment...');
-    fireEvent.change(textarea, { target: { value: '  Review this block  ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add Comment' }));
-    expect(mockCreateMutate).toHaveBeenCalledWith('Review this block', expect.any(Object));
-  });
-
-  it('"Add Comment" button is disabled when textarea is empty', () => {
-    render(<BlockCommentsPanel usageKey={usageKey} />);
-    expandPanel();
-    expect(screen.getByRole('button', { name: 'Add Comment' })).toBeDisabled();
-  });
-
-  it('"Add Comment" button becomes enabled when textarea has content', () => {
-    render(<BlockCommentsPanel usageKey={usageKey} />);
-    expandPanel();
-    const textarea = screen.getByPlaceholderText('Add a comment...');
-    fireEvent.change(textarea, { target: { value: 'A new comment' } });
-    expect(screen.getByRole('button', { name: 'Add Comment' })).not.toBeDisabled();
-  });
-
-  it('hides the Add Comment form in readOnly mode', () => {
-    render(<BlockCommentsPanel usageKey={usageKey} readOnly />);
     expandPanel();
     expect(screen.queryByPlaceholderText('Add a comment...')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Add Comment' })).not.toBeInTheDocument();
+  });
+
+  it('shows a Reply button for each top-level comment', () => {
+    const comment = mockBlockReviewComment({ id: 1, commentType: 'requested_change' });
+    mockUseBlockComments.mockReturnValue({ data: [comment], isLoading: false });
+    render(<BlockCommentsPanel usageKey={usageKey} />);
+    expandPanel();
+    expect(screen.getByRole('button', { name: 'Reply' })).toBeInTheDocument();
+  });
+
+  it('clicking Reply shows the reply textarea and Add Reply button', () => {
+    const comment = mockBlockReviewComment({ id: 1, commentType: 'requested_change' });
+    mockUseBlockComments.mockReturnValue({ data: [comment], isLoading: false });
+    render(<BlockCommentsPanel usageKey={usageKey} />);
+    expandPanel();
+    fireEvent.click(screen.getByRole('button', { name: 'Reply' }));
+    expect(screen.getByPlaceholderText('Write a reply...')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add Reply' })).toBeInTheDocument();
+  });
+
+  it('"Add Reply" button is disabled when reply textarea is empty', () => {
+    const comment = mockBlockReviewComment({ id: 1, commentType: 'requested_change' });
+    mockUseBlockComments.mockReturnValue({ data: [comment], isLoading: false });
+    render(<BlockCommentsPanel usageKey={usageKey} />);
+    expandPanel();
+    fireEvent.click(screen.getByRole('button', { name: 'Reply' }));
+    expect(screen.getByRole('button', { name: 'Add Reply' })).toBeDisabled();
+  });
+
+  it('calls addReplyMutation.mutate with commentId and text when Add Reply is clicked', () => {
+    const comment = mockBlockReviewComment({ id: 5, commentType: 'requested_change' });
+    mockUseBlockComments.mockReturnValue({ data: [comment], isLoading: false });
+    render(<BlockCommentsPanel usageKey={usageKey} />);
+    expandPanel();
+    fireEvent.click(screen.getByRole('button', { name: 'Reply' }));
+    fireEvent.change(screen.getByPlaceholderText('Write a reply...'), {
+      target: { value: 'I have addressed this' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add Reply' }));
+    expect(mockAddReplyMutate).toHaveBeenCalledWith(
+      { commentId: 5, comment: 'I have addressed this' },
+      expect.any(Object),
+    );
+  });
+
+  it('renders nested replies under their parent comment', () => {
+    const reply = mockBlockReviewComment({
+      id: 2,
+      author: 'staff_user',
+      comment: 'Fixed the issue',
+      commentType: 'reply',
+      parent: 1,
+    });
+    const comment = mockBlockReviewComment({ id: 1, replies: [reply] });
+    mockUseBlockComments.mockReturnValue({ data: [comment], isLoading: false });
+    render(<BlockCommentsPanel usageKey={usageKey} />);
+    expandPanel();
+    expect(screen.getByText('Fixed the issue')).toBeInTheDocument();
+    expect(screen.getByText('staff_user')).toBeInTheDocument();
   });
 
   it('renders multiple comments in the panel body', () => {
