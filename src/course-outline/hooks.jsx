@@ -1,15 +1,19 @@
-import { useEffect, useState } from 'react';
+import {
+  useCallback, useEffect, useMemo, useRef, useState,
+} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useToggle } from '@openedx/paragon';
 import { getConfig } from '@edx/frontend-platform';
 import { useQueryClient } from '@tanstack/react-query';
 
-import moment from 'moment';
+import { invalidateLinksQuery } from '@src/course-libraries/data/apiHooks';
+import { RequestStatus } from '@src/data/constants';
 import { getSavingStatus as getGenericSavingStatus } from '@src/generic/data/selectors';
 import { useWaffleFlags } from '@src/data/apiHooks';
-import { RequestStatus } from '@src/data/constants';
 import { useUnlinkDownstream } from '@src/generic/unlink-modal';
+
+import moment from 'moment';
 
 import { COURSE_BLOCK_NAMES } from './constants';
 import {
@@ -49,6 +53,7 @@ import {
   fetchCourseBestPracticesQuery,
   fetchCourseLaunchQuery,
   fetchCourseOutlineIndexQuery,
+  fetchCourseSectionQuery,
   fetchCourseReindexQuery,
   publishCourseItemQuery,
   updateCourseSectionHighlightsQuery,
@@ -66,6 +71,56 @@ import {
 import { useCreateCourseBlock } from './data/apiHooks';
 import { getCourseItem } from './data/api';
 import { containerComparisonQueryKeys } from '../container-comparison/data/apiHooks';
+
+/**
+ * Returns a memoized callback that refreshes the section query and invalidates the
+ * links cache after a library-sync. Typically passed as `postChange` to PreviewLibraryXBlockChanges.
+ */
+const usePostSyncCallback = (sectionId) => {
+  const dispatch = useDispatch();
+  const { courseId } = useParams();
+  const queryClient = useQueryClient();
+
+  return useCallback(() => {
+    dispatch(fetchCourseSectionQuery([sectionId]));
+    if (courseId) {
+      invalidateLinksQuery(queryClient, courseId);
+    }
+  }, [dispatch, sectionId, courseId, queryClient]);
+};
+
+/**
+ * Closes the inline title-edit form when a save request completes successfully.
+ */
+const useSaveStatusCloseForm = (savingStatus, closeForm) => {
+  const closeFormRef = useRef(closeForm);
+  closeFormRef.current = closeForm;
+
+  useEffect(() => {
+    if (savingStatus === RequestStatus.SUCCESSFUL) {
+      closeFormRef.current();
+    }
+  }, [savingStatus]);
+};
+
+/**
+ * Returns the block-sync data object required by PreviewLibraryXBlockChanges,
+ * or undefined when there is no pending upstream sync.
+ */
+const useBlockSyncData = (id, upstreamInfo, displayName, blockType) => useMemo(() => {
+  if (!upstreamInfo?.readyToSync) {
+    return undefined;
+  }
+  return {
+    displayName,
+    downstreamBlockId: id,
+    upstreamBlockId: upstreamInfo.upstreamRef,
+    upstreamBlockVersionSynced: upstreamInfo.versionSynced,
+    isReadyToSyncIndividually: upstreamInfo.isReadyToSyncIndividually,
+    isContainer: true,
+    blockType,
+  };
+}, [upstreamInfo, id, displayName, blockType]);
 
 const useCourseOutline = ({ courseId }) => {
   const dispatch = useDispatch();
@@ -438,4 +493,9 @@ const useCourseOutline = ({ courseId }) => {
   };
 };
 
-export { useCourseOutline };
+export {
+  useBlockSyncData,
+  useCourseOutline,
+  usePostSyncCallback,
+  useSaveStatusCloseForm,
+};

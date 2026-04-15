@@ -12,6 +12,8 @@ interface SidebarFooterProps {
   openVisibleModal: () => void,
   handlePublishing: () => void,
   visibleToStaffOnly: boolean,
+  hideCopyButton?: boolean,
+  hidePublishButton?: boolean,
 }
 
 const SidebarFooter = ({
@@ -21,6 +23,8 @@ const SidebarFooter = ({
   openDiscardModal,
   visibleToStaffOnly,
   displayUnitLocation = false,
+  hideCopyButton = false,
+  hidePublishButton = false,
 }: SidebarFooterProps) => {
   const intl = useIntl();
 
@@ -40,6 +44,8 @@ const SidebarFooter = ({
             <ActionButtons
               openDiscardModal={openDiscardModal}
               handlePublishing={handlePublishing}
+              hideCopyButton={hideCopyButton}
+              hidePublishButton={hidePublishButton}
             />
           </>
         )}

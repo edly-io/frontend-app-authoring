@@ -1,17 +1,16 @@
 import {
-  useContext, useEffect, useState, useRef, useCallback, ReactNode, useMemo,
+  useContext, useEffect, useState, useRef, useCallback, ReactNode,
 } from 'react';
 import { useDispatch } from 'react-redux';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import {
   Bubble, Button, StandardModal, useToggle,
 } from '@openedx/paragon';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import classNames from 'classnames';
-import { useQueryClient } from '@tanstack/react-query';
 
 import { setCurrentItem, setCurrentSection } from '@src/course-outline/data/slice';
-import { RequestStatus, RequestStatusType } from '@src/data/constants';
+import { RequestStatusType } from '@src/data/constants';
 import CardHeader from '@src/course-outline/card-header/CardHeader';
 import SortableItem from '@src/course-outline/drag-helper/SortableItem';
 import { DragContext } from '@src/course-outline/drag-helper/DragContextProvider';
@@ -27,7 +26,10 @@ import { COMPONENT_TYPES } from '@src/generic/block-type-utils/constants';
 import { PreviewLibraryXBlockChanges } from '@src/course-unit/preview-changes';
 import { UpstreamInfoIcon } from '@src/generic/upstream-info-icon';
 import type { XBlock } from '@src/data/types';
-import { invalidateLinksQuery } from '@src/course-libraries/data/apiHooks';
+import { useBlockSyncData, usePostSyncCallback, useSaveStatusCloseForm } from '@src/course-outline/hooks';
+import { useBlockState } from '@src/course-lifecycle/data/apiHooks';
+import { LifecycleModal } from '@src/course-lifecycle/components/LifecycleModal';
+import { useRefreshOnPublish } from '@src/course-lifecycle/hooks';
 import messages from './messages';
 
 interface SectionCardProps {
@@ -85,9 +87,6 @@ const SectionCard = ({
     openAddLibrarySubsectionModal,
     closeAddLibrarySubsectionModal,
   ] = useToggle(false);
-  const { courseId } = useParams();
-  const queryClient = useQueryClient();
-
   // Expand the section if a search result should be shown/scrolled to
   const containsSearchResult = () => {
     if (locatorId) {
@@ -116,6 +115,7 @@ const SectionCard = ({
   const [isExpanded, setIsExpanded] = useState(containsSearchResult() || isSectionsExpanded);
   const [isFormOpen, openForm, closeForm] = useToggle(false);
   const [isSyncModalOpen, openSyncModal, closeSyncModal] = useToggle(false);
+  const [isLifecycleModalOpen, openLifecycleModal, closeLifecycleModal] = useToggle(false);
   const namePrefix = 'section';
 
   useEffect(() => {
@@ -135,20 +135,11 @@ const SectionCard = ({
     upstreamInfo,
   } = section;
 
-  const blockSyncData = useMemo(() => {
-    if (!upstreamInfo?.readyToSync) {
-      return undefined;
-    }
-    return {
-      displayName,
-      downstreamBlockId: id,
-      upstreamBlockId: upstreamInfo.upstreamRef,
-      upstreamBlockVersionSynced: upstreamInfo.versionSynced,
-      isReadyToSyncIndividually: upstreamInfo.isReadyToSyncIndividually,
-      isContainer: true,
-      blockType: 'section',
-    };
-  }, [upstreamInfo]);
+  const { data: blockLifecycleState } = useBlockState(id);
+
+  useRefreshOnPublish(blockLifecycleState?.state, () => dispatch(fetchCourseSectionQuery([id])));
+
+  const blockSyncData = useBlockSyncData(id, upstreamInfo, displayName, 'section');
 
   useEffect(() => {
     if (activeId === id && isExpanded) {
@@ -173,12 +164,7 @@ const SectionCard = ({
     setIsExpanded((prevState) => containsSearchResult() || prevState);
   }, [locatorId, setIsExpanded]);
 
-  const handleOnPostChangeSync = useCallback(() => {
-    dispatch(fetchCourseSectionQuery([section.id]));
-    if (courseId) {
-      invalidateLinksQuery(queryClient, courseId);
-    }
-  }, [dispatch, section, courseId, queryClient]);
+  const handleOnPostChangeSync = usePostSyncCallback(section.id);
 
   // re-create actions object for customizations
   const actions = { ...sectionActions };
@@ -245,11 +231,7 @@ const SectionCard = ({
     closeAddLibrarySubsectionModal();
   }, [id, onAddSubsectionFromLibrary, closeAddLibrarySubsectionModal]);
 
-  useEffect(() => {
-    if (savingStatus === RequestStatus.SUCCESSFUL) {
-      closeForm();
-    }
-  }, [savingStatus]);
+  useSaveStatusCloseForm(savingStatus, closeForm);
 
   const titleComponent = (
     <TitleButton
@@ -309,6 +291,9 @@ const SectionCard = ({
                 namePrefix={namePrefix}
                 actions={actions}
                 readyToSync={upstreamInfo?.readyToSync}
+                canPublish={blockLifecycleState?.canPublish}
+                lifecycleState={blockLifecycleState?.state}
+                onClickLifecycle={openLifecycleModal}
               />
             )}
             <div className="section-card__content" data-testid="section-card__content">
@@ -370,6 +355,15 @@ const SectionCard = ({
           isModalOpen={isSyncModalOpen}
           closeModal={closeSyncModal}
           postChange={handleOnPostChangeSync}
+        />
+      )}
+      {blockLifecycleState && (
+        <LifecycleModal
+          isOpen={isLifecycleModalOpen}
+          onClose={closeLifecycleModal}
+          blockId={id}
+          displayName={displayName}
+          hasChanges={hasChanges}
         />
       )}
     </>

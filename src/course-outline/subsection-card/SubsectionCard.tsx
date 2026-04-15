@@ -1,17 +1,16 @@
 import React, {
-  useContext, useEffect, useState, useRef, useCallback, ReactNode, useMemo,
+  useContext, useEffect, useState, useRef, useCallback, ReactNode,
 } from 'react';
 import { useDispatch } from 'react-redux';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { StandardModal, useToggle } from '@openedx/paragon';
-import { useQueryClient } from '@tanstack/react-query';
 import classNames from 'classnames';
 import { isEmpty } from 'lodash';
 
 import CourseOutlineSubsectionCardExtraActionsSlot from '@src/plugin-slots/CourseOutlineSubsectionCardExtraActionsSlot';
 import { setCurrentItem, setCurrentSection, setCurrentSubsection } from '@src/course-outline/data/slice';
-import { RequestStatus, RequestStatusType } from '@src/data/constants';
+import { RequestStatusType } from '@src/data/constants';
 import CardHeader from '@src/course-outline/card-header/CardHeader';
 import SortableItem from '@src/course-outline/drag-helper/SortableItem';
 import { DragContext } from '@src/course-outline/drag-helper/DragContextProvider';
@@ -28,7 +27,10 @@ import { ContentType } from '@src/library-authoring/routes';
 import OutlineAddChildButtons from '@src/course-outline/OutlineAddChildButtons';
 import { PreviewLibraryXBlockChanges } from '@src/course-unit/preview-changes';
 import type { XBlock } from '@src/data/types';
-import { invalidateLinksQuery } from '@src/course-libraries/data/apiHooks';
+import { useBlockSyncData, usePostSyncCallback, useSaveStatusCloseForm } from '@src/course-outline/hooks';
+import { useBlockState } from '@src/course-lifecycle/data/apiHooks';
+import { LifecycleModal } from '@src/course-lifecycle/components/LifecycleModal';
+import { useRefreshOnPublish } from '@src/course-lifecycle/hooks';
 import messages from './messages';
 
 interface SubsectionCardProps {
@@ -93,6 +95,7 @@ const SubsectionCard = ({
   const isScrolledToElement = locatorId === subsection.id;
   const [isFormOpen, openForm, closeForm] = useToggle(false);
   const [isSyncModalOpen, openSyncModal, closeSyncModal] = useToggle(false);
+  const [isLifecycleModalOpen, openLifecycleModal, closeLifecycleModal] = useToggle(false);
   const namePrefix = 'subsection';
   const { sharedClipboardData, showPasteUnit } = useClipboard();
   const [
@@ -100,9 +103,6 @@ const SubsectionCard = ({
     openAddLibraryUnitModal,
     closeAddLibraryUnitModal,
   ] = useToggle(false);
-  const { courseId } = useParams();
-  const queryClient = useQueryClient();
-
   const {
     id,
     category,
@@ -117,20 +117,11 @@ const SubsectionCard = ({
     upstreamInfo,
   } = subsection;
 
-  const blockSyncData = useMemo(() => {
-    if (!upstreamInfo?.readyToSync) {
-      return undefined;
-    }
-    return {
-      displayName,
-      downstreamBlockId: id,
-      upstreamBlockId: upstreamInfo.upstreamRef,
-      upstreamBlockVersionSynced: upstreamInfo.versionSynced,
-      isReadyToSyncIndividually: upstreamInfo.isReadyToSyncIndividually,
-      isContainer: true,
-      blockType: 'subsection',
-    };
-  }, [upstreamInfo]);
+  const { data: blockLifecycleState } = useBlockState(id);
+
+  useRefreshOnPublish(blockLifecycleState?.state, () => dispatch(fetchCourseSectionQuery([section.id])));
+
+  const blockSyncData = useBlockSyncData(id, upstreamInfo, displayName, 'subsection');
 
   // re-create actions object for customizations
   const actions = { ...subsectionActions };
@@ -172,12 +163,7 @@ const SubsectionCard = ({
     dispatch(setCurrentItem(subsection));
   };
 
-  const handleOnPostChangeSync = useCallback(() => {
-    dispatch(fetchCourseSectionQuery([section.id]));
-    if (courseId) {
-      invalidateLinksQuery(queryClient, courseId);
-    }
-  }, [dispatch, section, queryClient, courseId]);
+  const handleOnPostChangeSync = usePostSyncCallback(section.id);
 
   const handleEditSubmit = (titleValue: string) => {
     if (displayName !== titleValue) {
@@ -240,11 +226,7 @@ const SubsectionCard = ({
     setIsExpanded((prevState) => (containsSearchResult() || prevState));
   }, [locatorId, setIsExpanded]);
 
-  useEffect(() => {
-    if (savingStatus === RequestStatus.SUCCESSFUL) {
-      closeForm();
-    }
-  }, [savingStatus]);
+  useSaveStatusCloseForm(savingStatus, closeForm);
 
   const isDraggable = (
     actions.draggable
@@ -314,6 +296,9 @@ const SubsectionCard = ({
                 isSequential
                 extraActionsComponent={extraActionsComponent}
                 readyToSync={upstreamInfo?.readyToSync}
+                canPublish={blockLifecycleState?.canPublish}
+                lifecycleState={blockLifecycleState?.state}
+                onClickLifecycle={openLifecycleModal}
               />
               <div className="subsection-card__content item-children" data-testid="subsection-card__content">
                 <XBlockStatus
@@ -372,6 +357,15 @@ const SubsectionCard = ({
           isModalOpen={isSyncModalOpen}
           closeModal={closeSyncModal}
           postChange={handleOnPostChangeSync}
+        />
+      )}
+      {blockLifecycleState && (
+        <LifecycleModal
+          isOpen={isLifecycleModalOpen}
+          onClose={closeLifecycleModal}
+          blockId={id}
+          displayName={displayName}
+          hasChanges={hasChanges}
         />
       )}
     </>
