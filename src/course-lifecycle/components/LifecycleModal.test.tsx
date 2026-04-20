@@ -10,8 +10,6 @@ const mockUseBlockState = jest.fn();
 const mockSubmitMutate = jest.fn();
 const mockApproveMutate = jest.fn();
 const mockRequestChangesMutate = jest.fn();
-const mockPublishMutate = jest.fn();
-
 // Mocks for BlockCommentsPanel child
 const mockUseBlockComments = jest.fn();
 const mockResolveMutate = jest.fn();
@@ -25,7 +23,6 @@ jest.mock('@src/course-lifecycle/data/apiHooks', () => ({
   useSubmitForReview: () => ({ mutate: mockSubmitMutate, isPending: false }),
   useApproveBlock: () => ({ mutate: mockApproveMutate, isPending: false }),
   useRequestChanges: () => ({ mutate: mockRequestChangesMutate, isPending: false }),
-  usePublishBlock: () => ({ mutate: mockPublishMutate, isPending: false }),
   useBlockComments: (...args: any[]) => mockUseBlockComments(...args),
   useResolveComment: () => ({ mutate: mockResolveMutate, isPending: false }),
   useDeleteComment: () => ({ mutate: mockDeleteMutate, isPending: false }),
