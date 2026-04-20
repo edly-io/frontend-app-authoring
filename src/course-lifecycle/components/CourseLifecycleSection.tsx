@@ -9,7 +9,6 @@ import {
   useSubmitCourseForReview,
   useApproveCourse,
   useRequestCourseChanges,
-  usePublishCourse,
 } from '../data/apiHooks';
 import type { LifecycleState } from '../data/types';
 import { LifecycleBadge } from './LifecycleBadge';
@@ -40,7 +39,6 @@ export const CourseLifecycleSection = ({ courseId }: Props) => {
   const submitMutation = useSubmitCourseForReview(courseId);
   const approveMutation = useApproveCourse(courseId);
   const requestChangesMutation = useRequestCourseChanges(courseId);
-  const publishMutation = usePublishCourse(courseId);
 
   useRefreshOnPublish(data?.aggregateState, () => dispatch(fetchCourseOutlineIndexQuery(courseId)));
 
@@ -82,7 +80,7 @@ export const CourseLifecycleSection = ({ courseId }: Props) => {
             </>
           )}
 
-          {(data.canSubmit || data.canApprove || data.canRequestChanges || data.canPublish) && (
+          {(data.canSubmit || data.canApprove || data.canRequestChanges) && (
             <>
               <p className="x-small text-uppercase text-muted font-weight-bold mb-1 mt-3">Actions</p>
               <div className="d-flex flex-column gap-1">
@@ -105,7 +103,7 @@ export const CourseLifecycleSection = ({ courseId }: Props) => {
                     disabled={approveMutation.isPending}
                     onClick={() => approveMutation.mutate()}
                   >
-                    {approveMutation.isPending ? <Spinner animation="border" size="sm" /> : 'Approve All'}
+                    {approveMutation.isPending ? <Spinner animation="border" size="sm" /> : 'Approve & Publish All'}
                   </Button>
                 )}
                 {data.canRequestChanges && !showRequestForm && (
@@ -144,17 +142,6 @@ export const CourseLifecycleSection = ({ courseId }: Props) => {
                       </Button>
                     </div>
                   </div>
-                )}
-                {data.canPublish && (
-                  <Button
-                    variant="success"
-                    size="sm"
-                    className="w-100"
-                    disabled={publishMutation.isPending}
-                    onClick={() => publishMutation.mutate()}
-                  >
-                    {publishMutation.isPending ? <Spinner animation="border" size="sm" /> : 'Publish Course'}
-                  </Button>
                 )}
               </div>
             </>

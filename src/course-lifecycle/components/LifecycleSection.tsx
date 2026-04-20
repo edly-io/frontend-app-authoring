@@ -11,12 +11,10 @@ interface Props {
   usageKey: string;
   title?: string;
   hasChanges?: boolean;
-  /** Optional callback forwarded to LifecycleActionButtons — lets the host page react to a publish. */
-  onPublishSuccess?: () => void;
 }
 
 export const LifecycleSection = ({
-  usageKey, title = 'Review Status', hasChanges, onPublishSuccess,
+  usageKey, title = 'Review Status', hasChanges,
 }: Props) => {
   const queryClient = useQueryClient();
   const { data: blockState, isLoading, error } = useBlockState(usageKey);
@@ -52,7 +50,6 @@ export const LifecycleSection = ({
             usageKey={usageKey}
             blockState={blockState}
             hasChanges={hasChanges}
-            onPublishSuccess={onPublishSuccess}
           />
           <BlockCommentsPanel usageKey={usageKey} />
         </>

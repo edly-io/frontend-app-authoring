@@ -7,13 +7,11 @@ import { mockBlockReviewState } from '../data/api.mock';
 const mockSubmitMutate = jest.fn();
 const mockApproveMutate = jest.fn();
 const mockRequestChangesMutate = jest.fn();
-const mockPublishMutate = jest.fn();
 
 jest.mock('@src/course-lifecycle/data/apiHooks', () => ({
   useSubmitForReview: () => ({ mutate: mockSubmitMutate, isPending: false }),
   useApproveBlock: () => ({ mutate: mockApproveMutate, isPending: false }),
   useRequestChanges: () => ({ mutate: mockRequestChangesMutate, isPending: false }),
-  usePublishBlock: () => ({ mutate: mockPublishMutate, isPending: false }),
 }));
 
 const usageKey = 'block-v1:TestOrg+TestCourse+2025_T1+type@vertical+block@unit1';
@@ -25,37 +23,34 @@ describe('<LifecycleActionButtons />', () => {
 
   it('renders no buttons when all capability flags are false', () => {
     const blockState = mockBlockReviewState({
-      canSubmit: false, canApprove: false, canRequestChanges: false, canPublish: false,
+      canSubmit: false, canApprove: false, canRequestChanges: false,
     });
     render(<LifecycleActionButtons usageKey={usageKey} blockState={blockState} />);
     expect(screen.queryByRole('button', { name: 'Submit for Review' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Approve' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Approve & Publish' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Request Changes' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Publish' })).not.toBeInTheDocument();
   });
 
-  it('renders no buttons when hasChanges=false and canPublish=false', () => {
+  it('renders no buttons when hasChanges=false', () => {
     const blockState = mockBlockReviewState({
-      canSubmit: true, canApprove: false, canRequestChanges: false, canPublish: false,
+      canSubmit: true, canApprove: false, canRequestChanges: false,
     });
     render(<LifecycleActionButtons usageKey={usageKey} blockState={blockState} hasChanges={false} />);
     expect(screen.queryByRole('button', { name: 'Submit for Review' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Publish' })).not.toBeInTheDocument();
   });
 
   it('renders "Submit for Review" button when canSubmit=true', () => {
     const blockState = mockBlockReviewState({ canSubmit: true });
     render(<LifecycleActionButtons usageKey={usageKey} blockState={blockState} />);
     expect(screen.getByRole('button', { name: 'Submit for Review' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Approve' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Approve & Publish' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Request Changes' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Publish' })).not.toBeInTheDocument();
   });
 
-  it('renders "Approve" button when canApprove=true', () => {
+  it('renders "Approve & Publish" button when canApprove=true', () => {
     const blockState = mockBlockReviewState({ canSubmit: false, canApprove: true });
     render(<LifecycleActionButtons usageKey={usageKey} blockState={blockState} />);
-    expect(screen.getByRole('button', { name: 'Approve' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Approve & Publish' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Submit for Review' })).not.toBeInTheDocument();
   });
 
@@ -65,19 +60,6 @@ describe('<LifecycleActionButtons />', () => {
     expect(screen.getByRole('button', { name: 'Request Changes' })).toBeInTheDocument();
   });
 
-  it('renders "Publish" button when canPublish=true', () => {
-    const blockState = mockBlockReviewState({ canSubmit: false, canPublish: true });
-    render(<LifecycleActionButtons usageKey={usageKey} blockState={blockState} />);
-    expect(screen.getByRole('button', { name: 'Publish' })).toBeInTheDocument();
-  });
-
-  it('hides workflow buttons but shows Publish when hasChanges=false and canPublish=true', () => {
-    const blockState = mockBlockReviewState({ canSubmit: true, canPublish: true });
-    render(<LifecycleActionButtons usageKey={usageKey} blockState={blockState} hasChanges={false} />);
-    expect(screen.queryByRole('button', { name: 'Submit for Review' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Publish' })).toBeInTheDocument();
-  });
-
   it('calls submitMutation.mutate() when Submit for Review button is clicked', () => {
     const blockState = mockBlockReviewState({ canSubmit: true });
     render(<LifecycleActionButtons usageKey={usageKey} blockState={blockState} />);
@@ -85,18 +67,11 @@ describe('<LifecycleActionButtons />', () => {
     expect(mockSubmitMutate).toHaveBeenCalledTimes(1);
   });
 
-  it('calls approveMutation.mutate() when Approve button is clicked', () => {
+  it('calls approveMutation.mutate() when Approve & Publish button is clicked', () => {
     const blockState = mockBlockReviewState({ canSubmit: false, canApprove: true });
     render(<LifecycleActionButtons usageKey={usageKey} blockState={blockState} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Approve & Publish' }));
     expect(mockApproveMutate).toHaveBeenCalledTimes(1);
-  });
-
-  it('calls publishMutation.mutate() when Publish button is clicked', () => {
-    const blockState = mockBlockReviewState({ canSubmit: false, canPublish: true });
-    render(<LifecycleActionButtons usageKey={usageKey} blockState={blockState} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
-    expect(mockPublishMutate).toHaveBeenCalledTimes(1);
   });
 
   it('clicking "Request Changes" shows the inline comment form', () => {

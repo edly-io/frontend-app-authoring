@@ -37,7 +37,7 @@ export async function submitForReview(usageKey: string): Promise<BlockReviewStat
 
 export async function approveBlock(usageKey: string): Promise<BlockReviewState> {
   const { data } = await getAuthenticatedHttpClient().post(
-    `${getLifecycleBaseUrl()}/v1/blocks/${encodeURIComponent(usageKey)}/approve`,
+    `${getLifecycleBaseUrl()}/v1/blocks/${encodeURIComponent(usageKey)}/approve-and-publish`,
   );
   return camelCaseObject(data) as BlockReviewState;
 }
@@ -46,13 +46,6 @@ export async function requestChanges(usageKey: string, comments: string[]): Prom
   const { data } = await getAuthenticatedHttpClient().post(
     `${getLifecycleBaseUrl()}/v1/blocks/${encodeURIComponent(usageKey)}/request-changes`,
     { comments },
-  );
-  return camelCaseObject(data) as BlockReviewState;
-}
-
-export async function publishBlock(usageKey: string): Promise<BlockReviewState> {
-  const { data } = await getAuthenticatedHttpClient().post(
-    `${getLifecycleBaseUrl()}/v1/blocks/${encodeURIComponent(usageKey)}/publish`,
   );
   return camelCaseObject(data) as BlockReviewState;
 }
@@ -66,7 +59,7 @@ export async function submitCourseForReview(courseId: string): Promise<{ transit
 
 export async function approveCourse(courseId: string): Promise<{ transitioned: number }> {
   const { data } = await getAuthenticatedHttpClient().post(
-    `${getLifecycleBaseUrl()}/v1/courses/${encodeURIComponent(courseId)}/approve`,
+    `${getLifecycleBaseUrl()}/v1/courses/${encodeURIComponent(courseId)}/approve-and-publish`,
   );
   return data;
 }
@@ -75,13 +68,6 @@ export async function requestCourseChanges(courseId: string, comments: string[])
   const { data } = await getAuthenticatedHttpClient().post(
     `${getLifecycleBaseUrl()}/v1/courses/${encodeURIComponent(courseId)}/request-changes`,
     { comments },
-  );
-  return data;
-}
-
-export async function publishCourse(courseId: string): Promise<{ status: string }> {
-  const { data } = await getAuthenticatedHttpClient().post(
-    `${getLifecycleBaseUrl()}/v1/courses/${encodeURIComponent(courseId)}/publish`,
   );
   return data;
 }

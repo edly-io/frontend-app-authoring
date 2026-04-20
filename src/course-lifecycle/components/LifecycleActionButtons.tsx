@@ -3,7 +3,6 @@ import { Button, Form, Spinner } from '@openedx/paragon';
 import type { BlockReviewState } from '../data/types';
 import {
   useApproveBlock,
-  usePublishBlock,
   useRequestChanges,
   useSubmitForReview,
 } from '../data/apiHooks';
@@ -13,35 +12,30 @@ interface Props {
   usageKey: string;
   blockState: BlockReviewState;
   hasChanges?: boolean;
-  /** Called after a successful lifecycle publish — used by the unit page to refresh its Redux state. */
-  onPublishSuccess?: () => void;
 }
 
 export const LifecycleActionButtons = ({
-  usageKey, blockState, hasChanges, onPublishSuccess,
+  usageKey, blockState, hasChanges,
 }: Props) => {
   const submitMutation = useSubmitForReview(usageKey);
   const approveMutation = useApproveBlock(usageKey);
   const requestChangesMutation = useRequestChanges(usageKey);
-  const publishMutation = usePublishBlock(usageKey, { onSuccess: onPublishSuccess });
 
   const {
     showRequestForm, requestComment, setRequestComment, open, cancel, submit,
   } = useRequestChangesForm(requestChangesMutation);
 
   const {
-    canSubmit, canApprove, canRequestChanges, canPublish,
+    canSubmit, canApprove, canRequestChanges,
   } = blockState;
 
-  // When there are no pending changes, workflow buttons (submit/approve/request-changes)
-  // are irrelevant, but the Publish button must still show if the block is approved.
   const showWorkflowButtons = hasChanges !== false;
 
-  if (!showWorkflowButtons && !canPublish) {
+  if (!showWorkflowButtons) {
     return null;
   }
 
-  if (!canSubmit && !canApprove && !canRequestChanges && !canPublish) {
+  if (!canSubmit && !canApprove && !canRequestChanges) {
     return null;
   }
 
@@ -66,7 +60,7 @@ export const LifecycleActionButtons = ({
           disabled={approveMutation.isPending}
           onClick={() => approveMutation.mutate()}
         >
-          {approveMutation.isPending ? <Spinner animation="border" size="sm" /> : 'Approve'}
+          {approveMutation.isPending ? <Spinner animation="border" size="sm" /> : 'Approve & Publish'}
         </Button>
       )}
       {showWorkflowButtons && canRequestChanges && !showRequestForm && (
@@ -105,17 +99,6 @@ export const LifecycleActionButtons = ({
             </Button>
           </div>
         </div>
-      )}
-      {canPublish && (
-        <Button
-          variant="success"
-          size="sm"
-          className="w-100 my-1"
-          disabled={publishMutation.isPending}
-          onClick={() => publishMutation.mutate()}
-        >
-          {publishMutation.isPending ? <Spinner animation="border" size="sm" /> : 'Publish'}
-        </Button>
       )}
     </div>
   );

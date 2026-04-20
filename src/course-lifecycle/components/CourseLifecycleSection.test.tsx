@@ -8,14 +8,12 @@ const mockUseCourseAggregateState = jest.fn();
 const mockSubmitCourseMutate = jest.fn();
 const mockApproveCourseMutate = jest.fn();
 const mockRequestCourseChangesMutate = jest.fn();
-const mockPublishCourseMutate = jest.fn();
 
 jest.mock('@src/course-lifecycle/data/apiHooks', () => ({
   useCourseAggregateState: (...args: any[]) => mockUseCourseAggregateState(...args),
   useSubmitCourseForReview: () => ({ mutate: mockSubmitCourseMutate, isPending: false }),
   useApproveCourse: () => ({ mutate: mockApproveCourseMutate, isPending: false }),
   useRequestCourseChanges: () => ({ mutate: mockRequestCourseChangesMutate, isPending: false }),
-  usePublishCourse: () => ({ mutate: mockPublishCourseMutate, isPending: false }),
   // useCourseComments + useAddCourseReply needed by CourseCommentsPanel child
   useCourseComments: () => ({ data: [], isLoading: false }),
   useAddCourseReply: () => ({ mutate: jest.fn(), isPending: false }),
@@ -115,14 +113,14 @@ describe('<CourseLifecycleSection />', () => {
     expect(screen.getByRole('button', { name: 'Submit All for Review' })).toBeInTheDocument();
   });
 
-  it('renders "Approve All" button when canApprove=true', () => {
+  it('renders "Approve & Publish All" button when canApprove=true', () => {
     mockUseCourseAggregateState.mockReturnValue({
       data: mockCourseAggregateState({ canSubmit: false, canApprove: true }),
       isLoading: false,
       error: null,
     });
     render(<CourseLifecycleSection courseId={courseId} />);
-    expect(screen.getByRole('button', { name: 'Approve All' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Approve & Publish All' })).toBeInTheDocument();
   });
 
   it('renders "Request Changes" button when canRequestChanges=true', () => {
@@ -166,16 +164,6 @@ describe('<CourseLifecycleSection />', () => {
     );
   });
 
-  it('renders "Publish Course" button when canPublish=true', () => {
-    mockUseCourseAggregateState.mockReturnValue({
-      data: mockCourseAggregateState({ canSubmit: false, canPublish: true }),
-      isLoading: false,
-      error: null,
-    });
-    render(<CourseLifecycleSection courseId={courseId} />);
-    expect(screen.getByRole('button', { name: 'Publish Course' })).toBeInTheDocument();
-  });
-
   it('does not render action buttons when no action is allowed', () => {
     mockUseCourseAggregateState.mockReturnValue({
       data: mockCourseAggregateState({
@@ -186,8 +174,7 @@ describe('<CourseLifecycleSection />', () => {
     });
     render(<CourseLifecycleSection courseId={courseId} />);
     expect(screen.queryByRole('button', { name: 'Submit All for Review' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Approve All' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Publish Course' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Approve & Publish All' })).not.toBeInTheDocument();
   });
 
   it('calls submitMutation.mutate() when Submit All for Review is clicked', () => {
@@ -201,26 +188,15 @@ describe('<CourseLifecycleSection />', () => {
     expect(mockSubmitCourseMutate).toHaveBeenCalledTimes(1);
   });
 
-  it('calls approveMutation.mutate() when Approve All is clicked', () => {
+  it('calls approveMutation.mutate() when Approve & Publish All is clicked', () => {
     mockUseCourseAggregateState.mockReturnValue({
       data: mockCourseAggregateState({ canSubmit: false, canApprove: true }),
       isLoading: false,
       error: null,
     });
     render(<CourseLifecycleSection courseId={courseId} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Approve All' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Approve & Publish All' }));
     expect(mockApproveCourseMutate).toHaveBeenCalledTimes(1);
-  });
-
-  it('calls publishMutation.mutate() when Publish Course is clicked', () => {
-    mockUseCourseAggregateState.mockReturnValue({
-      data: mockCourseAggregateState({ canSubmit: false, canPublish: true }),
-      isLoading: false,
-      error: null,
-    });
-    render(<CourseLifecycleSection courseId={courseId} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Publish Course' }));
-    expect(mockPublishCourseMutate).toHaveBeenCalledTimes(1);
   });
 
   it('renders the CourseCommentsPanel when data is loaded', () => {

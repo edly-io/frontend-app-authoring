@@ -11,12 +11,10 @@ interface Props {
   blockId: string;
   displayName: string;
   hasChanges?: boolean;
-  /** Called after a successful lifecycle publish — used to refresh Redux outline state. */
-  onPublishSuccess?: () => void;
 }
 
 export const LifecycleModal = ({
-  isOpen, onClose, blockId, displayName, hasChanges, onPublishSuccess,
+  isOpen, onClose, blockId, displayName, hasChanges,
 }: Props) => {
   const { data: blockState, isLoading } = useBlockState(blockId);
 
@@ -49,7 +47,6 @@ export const LifecycleModal = ({
               usageKey={blockId}
               blockState={blockState}
               hasChanges={hasChanges}
-              onPublishSuccess={() => { onPublishSuccess?.(); onClose(); }}
             />
             <BlockCommentsPanel usageKey={blockId} />
           </>

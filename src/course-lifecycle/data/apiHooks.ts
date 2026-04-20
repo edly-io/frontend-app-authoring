@@ -12,8 +12,6 @@ import {
   getBulkCourseAggregateStates,
   getCourseAggregateState,
   getCourseComments,
-  publishBlock,
-  publishCourse,
   requestChanges,
   requestCourseChanges,
   resolveComment,
@@ -62,6 +60,7 @@ export const useApproveCourse = (courseId: string) => {
     mutationFn: () => approveCourse(courseId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lifecycle'] });
+      queryClient.invalidateQueries({ queryKey: courseOutlineQueryKeys.contentLibrary(courseId) });
     },
   });
 };
@@ -72,17 +71,6 @@ export const useRequestCourseChanges = (courseId: string) => {
     mutationFn: (comments: string[]) => requestCourseChanges(courseId, comments),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lifecycle'] });
-    },
-  });
-};
-
-export const usePublishCourse = (courseId: string) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: () => publishCourse(courseId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lifecycle'] });
-      queryClient.invalidateQueries({ queryKey: courseOutlineQueryKeys.contentLibrary(courseId) });
     },
   });
 };
@@ -125,6 +113,7 @@ export const useApproveBlock = (usageKey: string) => {
     mutationFn: () => approveBlock(usageKey),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lifecycle'] });
+      queryClient.invalidateQueries({ queryKey: courseOutlineQueryKeys.contentLibrary(getCourseKey(usageKey)) });
     },
   });
 };
@@ -135,20 +124,6 @@ export const useRequestChanges = (usageKey: string) => {
     mutationFn: (comments: string[]) => requestChanges(usageKey, comments),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lifecycle'] });
-    },
-  });
-};
-
-export const usePublishBlock = (usageKey: string, options?: { onSuccess?: () => void }) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: () => publishBlock(usageKey),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lifecycle'] });
-      // Refresh all outline blocks for this course so status badges update without a page reload.
-      queryClient.invalidateQueries({ queryKey: courseOutlineQueryKeys.contentLibrary(getCourseKey(usageKey)) });
-      // Allows the unit page to re-fetch its Redux state after a lifecycle publish (see UnitInfoSidebar).
-      options?.onSuccess?.();
     },
   });
 };

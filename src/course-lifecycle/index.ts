@@ -13,7 +13,6 @@ export {
   useSubmitCourseForReview,
   useApproveCourse,
   useRequestCourseChanges,
-  usePublishCourse,
   lifecycleQueryKeys,
 } from './data/apiHooks';
 export type {
