@@ -18,7 +18,7 @@ import { updateSavingStatus, updatePostErrors } from '../data/slice';
 import { fetchOrganizationsQuery } from '../data/thunks';
 import messages from './messages';
 
-const useCreateOrRerunCourse = (initialValues) => {
+const useCreateOrRerunCourse = (initialValues, onAfterCreate = null) => {
   const intl = useIntl();
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -98,22 +98,32 @@ const useCreateOrRerunCourse = (initialValues) => {
 
   useEffect(() => {
     if (createOrRerunCourseSavingStatus === RequestStatus.SUCCESSFUL) {
-      dispatch(updateSavingStatus({ status: '' }));
-      const { url, destinationCourseKey } = redirectUrlObj;
-      // New courses' url to the outline page is provided in the url. However, for course
-      // re-runs the url is /course/. The actual destination for the rer-run's  outline
-      // is in the destionationCourseKey attribute from the api.
-      if (url) {
-        if (destinationCourseKey) {
-          navigate(`${url}${destinationCourseKey}`);
-        } else {
-          navigate(url);
+      (async () => {
+        dispatch(updateSavingStatus({ status: '' }));
+        const { url, destinationCourseKey } = redirectUrlObj;
+        // New courses: url is the full outline path e.g. /course/course-v1:Org+Num+Run,
+        // destinationCourseKey is absent. Reruns: url is /course/ and the key is in
+        // destinationCourseKey. Extract the key from url as a fallback so onAfterCreate
+        // is always called with a valid course key.
+        const courseKey = destinationCourseKey
+          ?? (url?.startsWith('/course/') ? url.slice('/course/'.length) || null : null);
+        if (onAfterCreate && courseKey) {
+          try {
+            await onAfterCreate(courseKey);
+          } catch { /* ignore — course was created, audience assignment is best-effort */ }
         }
-      }
+        if (url) {
+          if (destinationCourseKey) {
+            navigate(`${url}${destinationCourseKey}`);
+          } else {
+            navigate(url);
+          }
+        }
+      })();
     } else if (createOrRerunCourseSavingStatus === RequestStatus.FAILED) {
       dispatch(updateSavingStatus({ status: '' }));
     }
-  }, [createOrRerunCourseSavingStatus]);
+  }, [createOrRerunCourseSavingStatus, onAfterCreate]);
 
   const hasErrorField = (fieldName) => !!errors[fieldName] && !!touched[fieldName];
   const isFormInvalid = Object.keys(errors).length;

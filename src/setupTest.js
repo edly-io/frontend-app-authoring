@@ -68,5 +68,8 @@ class ResizeObserver {
 
 window.ResizeObserver = ResizeObserver;
 
+// scrollIntoView is not implemented in JSDOM
+Element.prototype.scrollIntoView = jest.fn();
+
 // Mock the plugins repo so jest will stop complaining about ES6 syntax
 jest.mock('frontend-components-tinymce-advanced-plugins', () => {});

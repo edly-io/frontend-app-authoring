@@ -21,6 +21,7 @@ import TabsSection from './tabs-section';
 import OrganizationSection from './organization-section';
 import VerifyEmailLayout from './verify-email-layout';
 import CreateNewCourseForm from './create-new-course-form';
+import CreateNewProgramForm from './create-new-program-form';
 import messages from './messages';
 import { useStudioHome } from './hooks';
 import AlertMessage from '../generic/alert-message';
@@ -39,10 +40,12 @@ const StudioHome = () => {
     isShowEmailStaff,
     anyQueryIsPending,
     showNewCourseContainer,
+    showNewProgramContainer,
     isShowOrganizationDropdown,
     hasAbilityToCreateNewCourse,
     isFiltered,
     setShowNewCourseContainer,
+    setShowNewProgramContainer,
     librariesV1Enabled,
     librariesV2Enabled,
   } = useStudioHome();
@@ -70,6 +73,18 @@ const StudioHome = () => {
         <MailtoLink to={studioRequestEmail}>{intl.formatMessage(messages.emailStaffBtnText)}</MailtoLink>,
       );
     }
+
+    headerButtons.push(
+      <Button
+        variant="outline-primary"
+        iconBefore={AddIcon}
+        size="sm"
+        disabled={showNewProgramContainer}
+        onClick={() => setShowNewProgramContainer(true)}
+      >
+        {intl.formatMessage(messages.addNewProgramBtnText)}
+      </Button>,
+    );
 
     if (hasAbilityToCreateNewCourse) {
       headerButtons.push(
@@ -144,6 +159,9 @@ const StudioHome = () => {
             {showNewCourseContainer && (
               <CreateNewCourseForm handleOnClickCancel={() => setShowNewCourseContainer(false)} />
             )}
+            {showNewProgramContainer && (
+              <CreateNewProgramForm handleOnClickCancel={() => setShowNewProgramContainer(false)} />
+            )}
             {isShowOrganizationDropdown && <OrganizationSection />}
             <TabsSection
               showNewCourseContainer={showNewCourseContainer}
@@ -151,6 +169,7 @@ const StudioHome = () => {
               isShowProcessing={Boolean(isShowProcessing) && !isFiltered}
               librariesV1Enabled={librariesV1Enabled}
               librariesV2Enabled={librariesV2Enabled}
+              showNewProgramContainer={showNewProgramContainer}
             />
           </section>
         </Layout.Element>
