@@ -45,6 +45,10 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.courses.tab.course.not.found.alert.clean.filters.button',
     defaultMessage: 'Clear filters',
   },
+  programsTabTitle: {
+    id: 'course-authoring.studio-home.programs.tab.title',
+    defaultMessage: 'Programs',
+  },
   taxonomiesTabTitle: {
     id: 'course-authoring.studio-home.taxonomies.tab.title',
     defaultMessage: 'Taxonomies',

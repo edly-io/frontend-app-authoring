@@ -40,6 +40,7 @@ import LearningOutcomesSection from './learning-outcomes-section';
 import InstructorsSection from './instructors-section';
 import RequirementsSection from './requirements-section';
 import LicenseSection from './license-section';
+import TargetAudienceSection from './target-audience-section';
 import ScheduleSidebar from './schedule-sidebar';
 import messages from './messages';
 import { useLoadValuesPrompt, useSaveValuesPrompt } from './hooks';
@@ -279,6 +280,7 @@ const ScheduleAndDetails = ({ courseId }) => {
                       onChange={handleValuesChange}
                     />
                   )}
+                  <TargetAudienceSection courseId={courseId} />
                   <IntroducingSection
                     title={title}
                     overview={initialOverview}

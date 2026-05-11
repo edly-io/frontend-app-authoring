@@ -29,6 +29,8 @@ const CreateOrRerunCourseForm = ({
   isCreateNewCourse,
   initialValues,
   onClickCancel,
+  onAfterCreate,
+  extraFields,
 }) => {
   const { courseId } = useParams();
   const savingStatus = useSelector(getSavingStatus);
@@ -50,7 +52,7 @@ const CreateOrRerunCourseForm = ({
     handleChange,
     hasErrorField,
     setFieldValue,
-  } = useCreateOrRerunCourse(initialValues);
+  } = useCreateOrRerunCourse(initialValues, onAfterCreate);
 
   const newCourseFields = [
     {
@@ -253,6 +255,7 @@ const CreateOrRerunCourseForm = ({
             )}
           </Form.Group>
         ))}
+        {extraFields}
         <ActionRow className="justify-content-start">
           <Button
             variant="outline-primary"
@@ -281,6 +284,8 @@ const CreateOrRerunCourseForm = ({
 CreateOrRerunCourseForm.defaultProps = {
   title: '',
   isCreateNewCourse: false,
+  onAfterCreate: undefined,
+  extraFields: null,
 };
 
 CreateOrRerunCourseForm.propTypes = {
@@ -293,6 +298,8 @@ CreateOrRerunCourseForm.propTypes = {
   }).isRequired,
   isCreateNewCourse: PropTypes.bool,
   onClickCancel: PropTypes.func.isRequired,
+  onAfterCreate: PropTypes.func,
+  extraFields: PropTypes.node,
 };
 
 export default CreateOrRerunCourseForm;
