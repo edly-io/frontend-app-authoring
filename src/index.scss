@@ -1,6 +1,16 @@
 @use "@openedx/paragon/styles/css/core/custom-media-breakpoints.css" as paragonCustomMediaBreakpoints;
 
 @import "~@edx/frontend-component-header/dist/index";
+
+.studio-header .logo {
+  max-width: 160px;
+}
+.studio-header .course-title-lockup {
+  width: auto;
+  flex: 1;
+  min-width: 0;
+}
+
 @import "assets/scss/variables";
 @import "assets/scss/form";
 @import "assets/scss/utilities";
