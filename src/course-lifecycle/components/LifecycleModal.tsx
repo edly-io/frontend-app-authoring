@@ -16,9 +16,15 @@ interface Props {
 export const LifecycleModal = ({
   isOpen, onClose, blockId, displayName, hasChanges,
 }: Props) => {
-  const { data: blockState, isLoading } = useBlockState(blockId);
+  const {
+    data: blockState, isLoading, isAccessPending, isAccessDenied,
+  } = useBlockState(blockId, { enabled: isOpen });
 
   const effectiveState = (!hasChanges && blockState?.state === 'draft') ? 'published' : blockState?.state;
+
+  if (isAccessPending || isAccessDenied) {
+    return null;
+  }
 
   return (
     <ModalDialog

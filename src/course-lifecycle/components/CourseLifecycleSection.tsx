@@ -35,7 +35,9 @@ interface Props {
 export const CourseLifecycleSection = ({ courseId }: Props) => {
   const dispatch = useDispatch();
 
-  const { data, isLoading, error } = useCourseAggregateState(courseId);
+  const {
+    data, isLoading, error, isAccessPending, isAccessDenied,
+  } = useCourseAggregateState(courseId);
   const submitMutation = useSubmitCourseForReview(courseId);
   const approveMutation = useApproveCourse(courseId);
   const requestChangesMutation = useRequestCourseChanges(courseId);
@@ -46,11 +48,20 @@ export const CourseLifecycleSection = ({ courseId }: Props) => {
     showRequestForm, requestComment, setRequestComment, open, cancel, submit,
   } = useRequestChangesForm(requestChangesMutation);
 
+  if (isAccessPending || isAccessDenied || (error as any)?.response?.status === 403) {
+    return null;
+  }
+
+  const errorStatus = (error as any)?.response?.status;
+
   return (
     <div className="lifecycle-section">
       {isLoading && <Spinner animation="border" size="sm" className="my-1" />}
-      {!isLoading && (error || !data) && (
+      {!isLoading && (errorStatus === 404 || (!error && !data)) && (
         <p className="x-small text-muted mb-0">This course is not enrolled in the review workflow.</p>
+      )}
+      {!isLoading && error && errorStatus !== 404 && (
+        <p className="x-small text-muted mb-0">Could not load course review status.</p>
       )}
       {!isLoading && data && (
         <>

@@ -6,10 +6,12 @@ import { useIntl } from '@edx/frontend-platform/i18n';
 import { HelpSidebar } from '../../generic/help-sidebar';
 import { useHelpUrls } from '../../help-urls/hooks';
 import { CourseLifecycleSection } from '../../course-lifecycle';
+import { useLifecycleAccess } from '../../course-lifecycle/data/accessHooks';
 import { getFormattedSidebarMessages } from './utils';
 
 const OutlineSideBar = ({ courseId }) => {
   const intl = useIntl();
+  const { capabilities } = useLifecycleAccess();
   const {
     visibility: learnMoreVisibilityUrl,
     grading: learnMoreGradingUrl,
@@ -32,11 +34,13 @@ const OutlineSideBar = ({ courseId }) => {
       className="outline-sidebar mt-4"
       data-testid="outline-sidebar"
     >
-      <div className="outline-sidebar-section mb-3">
-        <h4 className="help-sidebar-about-title">Course Review Status</h4>
-        <CourseLifecycleSection courseId={courseId} />
-        <hr className="my-3.5" />
-      </div>
+      {capabilities.canAccessLifecycle && (
+        <div className="outline-sidebar-section mb-3">
+          <h4 className="help-sidebar-about-title">Course Review Status</h4>
+          <CourseLifecycleSection courseId={courseId} />
+          <hr className="my-3.5" />
+        </div>
+      )}
       {sidebarMessages.map(({ title, descriptions, link }, index) => {
         const isLastSection = index === sidebarMessages.length - 1;
 

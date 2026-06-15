@@ -68,7 +68,13 @@ const CoursesTab: React.FC<Props> = ({
   const { currentPage, isFiltered, lifecycleFilter } = studioHomeCoursesParams;
 
   const courseKeys = coursesDataItems?.map((c) => c.courseKey) ?? [];
-  const { data: bulkLifecycleStates = {}, isLoading: isLifecycleLoading } = useBulkCourseAggregateStates(courseKeys);
+  const {
+    data: bulkLifecycleStates = {},
+    isLoading: isLifecycleLoading,
+    isAccessPending: isLifecycleAccessPending,
+    isAccessDenied: isLifecycleAccessDenied,
+  } = useBulkCourseAggregateStates(courseKeys);
+  const canAccessLifecycle = !isLifecycleAccessPending && !isLifecycleAccessDenied;
   const hasAbilityToCreateCourse = courseCreatorStatus === COURSE_CREATOR_STATES.granted;
   const showCollapsible = [
     COURSE_CREATOR_STATES.denied,
@@ -103,7 +109,8 @@ const CoursesTab: React.FC<Props> = ({
 
   const isNotFilteringCourses = !isFiltered && !isLoading;
   const hasCourses = coursesDataItems?.length > 0;
-  const visibleCoursesCount = lifecycleFilter
+  const activeLifecycleFilter = canAccessLifecycle ? lifecycleFilter : undefined;
+  const visibleCoursesCount = activeLifecycleFilter
     ? (coursesDataItems?.filter(({ courseKey }) => bulkLifecycleStates[courseKey] === lifecycleFilter).length ?? 0)
     : (coursesDataItems?.length ?? 0);
   const hasVisibleCourses = visibleCoursesCount > 0;
@@ -131,7 +138,12 @@ const CoursesTab: React.FC<Props> = ({
       <div className="courses-tab-container">
         <div className="d-flex flex-row align-items-center justify-content-between my-4">
           {isShowProcessing && <ProcessingCourses />}
-          <CoursesFilters dispatch={dispatch} locationValue={locationValue} isLoading={isLoading} />
+          <CoursesFilters
+            dispatch={dispatch}
+            locationValue={locationValue}
+            isLoading={isLoading}
+            showLifecycleFilter={canAccessLifecycle}
+          />
           <p data-testid="pagination-info" className="my-0">
             {intl.formatMessage(messages.coursesPaginationInfo, {
               length: coursesDataItems.length,
@@ -162,8 +174,10 @@ const CoursesTab: React.FC<Props> = ({
                   number={number}
                   run={run}
                   url={url}
-                  lifecycleState={bulkLifecycleStates[courseKey] as LifecycleState}
-                  lifecycleFilter={lifecycleFilter}
+                  lifecycleState={canAccessLifecycle
+                    ? bulkLifecycleStates[courseKey] as LifecycleState
+                    : undefined}
+                  lifecycleFilter={activeLifecycleFilter}
                 />
               ),
             )}
