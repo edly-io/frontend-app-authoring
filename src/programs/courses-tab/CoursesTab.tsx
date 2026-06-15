@@ -26,9 +26,10 @@ const messages = defineMessages({
 interface CoursesTabProps {
   program: Program;
   programId: string;
+  canManage?: boolean;
 }
 
-const CoursesTab: React.FC<CoursesTabProps> = ({ program, programId }) => {
+const CoursesTab: React.FC<CoursesTabProps> = ({ program, programId, canManage = true }) => {
   const intl = useIntl();
   const [isModalOpen, openModal, closeModal] = useToggle(false);
   const [confirmCourseId, setConfirmCourseId] = useState<string | null>(null);
@@ -47,14 +48,16 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ program, programId }) => {
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
         </div>
-        <Button
-          variant="outline-primary"
-          iconBefore={Add}
-          size="sm"
-          onClick={openModal}
-        >
-          {intl.formatMessage(messages.addCourseBtn)}
-        </Button>
+        {canManage && (
+          <Button
+            variant="outline-primary"
+            iconBefore={Add}
+            size="sm"
+            onClick={openModal}
+          >
+            {intl.formatMessage(messages.addCourseBtn)}
+          </Button>
+        )}
       </div>
 
       {/* Course list */}
@@ -96,43 +99,49 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ program, programId }) => {
                 </Stack>
               </div>
 
-              <Button
-                variant="outline-danger"
-                size="sm"
-                onClick={() => setConfirmCourseId(course.id)}
-                disabled={confirmCourseId !== null}
-              >
-                {intl.formatMessage(messages.removeBtn)}
-              </Button>
+              {canManage && (
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  onClick={() => setConfirmCourseId(course.id)}
+                  disabled={confirmCourseId !== null}
+                >
+                  {intl.formatMessage(messages.removeBtn)}
+                </Button>
+              )}
             </div>
           ))}
         </div>
       )}
 
-      <AddCourseModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        programId={programId}
-        alreadyAddedIds={courseIds}
-      />
+      {canManage && (
+        <>
+          <AddCourseModal
+            isOpen={isModalOpen}
+            onClose={closeModal}
+            programId={programId}
+            alreadyAddedIds={courseIds}
+          />
 
-      <DeleteModal
-        isOpen={!!confirmCourseId}
-        close={() => setConfirmCourseId(null)}
-        title={intl.formatMessage(messages.confirmRemoveTitle)}
-        description={(
-          <>
-            <strong>{confirmCourse?.displayName}</strong>
-            <br />
-            {intl.formatMessage(messages.confirmRemoveDesc)}
-          </>
-        )}
-        btnLabel={intl.formatMessage(messages.confirmRemoveBtn)}
-        onDeleteSubmit={async () => {
-          await removeCourse.mutateAsync({ programId, courseId: confirmCourseId! });
-          setConfirmCourseId(null);
-        }}
-      />
+          <DeleteModal
+            isOpen={!!confirmCourseId}
+            close={() => setConfirmCourseId(null)}
+            title={intl.formatMessage(messages.confirmRemoveTitle)}
+            description={(
+              <>
+                <strong>{confirmCourse?.displayName}</strong>
+                <br />
+                {intl.formatMessage(messages.confirmRemoveDesc)}
+              </>
+            )}
+            btnLabel={intl.formatMessage(messages.confirmRemoveBtn)}
+            onDeleteSubmit={async () => {
+              await removeCourse.mutateAsync({ programId, courseId: confirmCourseId! });
+              setConfirmCourseId(null);
+            }}
+          />
+        </>
+      )}
     </div>
   );
 };

@@ -5,7 +5,10 @@ import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import type {
   Batch,
+  CityOption,
   Course,
+  CreateProgramInput,
+  FbrUserProfile,
   Instructor,
   Learner,
   PaginatedCourses,
@@ -16,6 +19,24 @@ import type {
 } from './types';
 
 const getProgramsBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/programs`;
+export const getCurrentFbrProfileUrl = () => `${getConfig().LMS_BASE_URL}/fbr/api/biodata/v1/users/me/`;
+export const getFbrCitiesUrl = () => `${getConfig().LMS_BASE_URL}/fbr/api/biodata/v1/users/cities/`;
+
+export const getCurrentFbrProfile = async (): Promise<FbrUserProfile> => {
+  const { data } = await getAuthenticatedHttpClient().get(getCurrentFbrProfileUrl());
+  return {
+    id: data.id,
+    fullName: data.full_name,
+    email: data.email,
+    roles: Array.isArray(data.roles) ? data.roles : [],
+    city: data.city ?? null,
+  };
+};
+
+export const getFbrCities = async (): Promise<CityOption[]> => {
+  const { data } = await getAuthenticatedHttpClient().get(getFbrCitiesUrl());
+  return Array.isArray(data) ? data : [];
+};
 
 // ── Response → Course type transformation ────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -78,12 +99,13 @@ export const getProgramDetail = async (programId: string): Promise<ProgramDetail
 };
 
 // ── Create — POST /fbr/api/programs/ ────────────────────────────────────────
-export const createProgram = async (input: Omit<Program, 'id'>): Promise<Program> => {
+export const createProgram = async (input: CreateProgramInput): Promise<Program> => {
   const payload = {
     name: input.displayName,
     organization: input.org,
     program_type: input.programType,
     batch: input.run,
+    ...(input.cityId !== undefined ? { city: input.cityId } : {}),
   };
   const { data } = await getAuthenticatedHttpClient().post(`${getProgramsBaseUrl()}/`, payload);
   return toProgram(data);

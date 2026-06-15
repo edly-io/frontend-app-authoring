@@ -10,13 +10,21 @@ import {
 } from '@openedx/paragon';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { useNavigate } from 'react-router-dom';
-import { useProgramsConfig, useCreateProgram } from '../../programs/data/apiHooks';
+import {
+  useCreateProgram,
+  useFbrCities,
+  useProgramAccess,
+  useProgramsConfig,
+} from '../../programs/data/apiHooks';
 import messages from './messages';
 
 const CreateNewProgramForm = ({ handleOnClickCancel }) => {
   const intl = useIntl();
   const navigate = useNavigate();
   const { data: config } = useProgramsConfig();
+  const { profile } = useProgramAccess();
+  const isSuperAdmin = profile?.roles?.includes('super_admin') ?? false;
+  const { data: cities = [] } = useFbrCities(isSuperAdmin);
   const { mutateAsync: createProgram, isPending } = useCreateProgram();
 
   const orgs = config?.orgs ?? [];
@@ -27,12 +35,19 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
     org: Yup.string().required(intl.formatMessage(messages.orgRequired)),
     programType: Yup.string().required(intl.formatMessage(messages.programTypeRequired)),
     run: Yup.string().trim().required(intl.formatMessage(messages.programRunRequired)),
+    cityId: isSuperAdmin
+      ? Yup.string().required(intl.formatMessage(messages.cityRequired))
+      : Yup.string().notRequired(),
   });
 
   const handleSubmit = async (values, { setStatus }) => {
     try {
       const created = await createProgram({
-        ...values, targetAudience: '', status: 'draft', isFeatured: false,
+        displayName: values.displayName,
+        org: values.org,
+        programType: values.programType,
+        run: values.run,
+        ...(isSuperAdmin ? { cityId: Number(values.cityId) } : {}),
       });
       navigate(`/programs/${created.id}`);
     } catch (e) {
@@ -56,6 +71,7 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
           org: '',
           programType: '',
           run: '',
+          cityId: '',
         }}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
@@ -109,6 +125,30 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
                 <Form.Control.Feedback type="invalid">{errors.org}</Form.Control.Feedback>
               )}
             </Form.Group>
+
+            {isSuperAdmin && (
+              <Form.Group isInvalid={touched.cityId && !!errors.cityId}>
+                <Form.Label>
+                  {intl.formatMessage(messages.cityLabel)}
+                  <span className="text-muted small ml-1">(non-editable after creation)</span>
+                </Form.Label>
+                <Form.Control
+                  as="select"
+                  name="cityId"
+                  value={values.cityId}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                >
+                  <option value="">{intl.formatMessage(messages.selectPlaceholder)}</option>
+                  {cities.map((city) => (
+                    <option key={city.id} value={city.id}>{city.name}</option>
+                  ))}
+                </Form.Control>
+                {touched.cityId && errors.cityId && (
+                  <Form.Control.Feedback type="invalid">{errors.cityId}</Form.Control.Feedback>
+                )}
+              </Form.Group>
+            )}
 
             {/* Program Type — non-editable after creation */}
             <Form.Group isInvalid={touched.programType && !!errors.programType}>

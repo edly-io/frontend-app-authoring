@@ -8,7 +8,7 @@ import {
 import { Check } from '@openedx/paragon/icons';
 import { useIntl, defineMessages } from '@edx/frontend-platform/i18n';
 import { LoadingSpinner } from '@src/generic/Loading';
-import { usePrograms } from '../../../programs/data/apiHooks';
+import { useProgramAccess, usePrograms } from '../../../programs/data/apiHooks';
 import ProgramCard from './ProgramCard';
 
 const messages = defineMessages({
@@ -28,6 +28,10 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.programs.tab.empty',
     defaultMessage: 'No programs yet. Click "New program" to create one.',
   },
+  emptyReadOnlyState: {
+    id: 'course-authoring.studio-home.programs.tab.empty.read-only',
+    defaultMessage: 'No programs are available to you.',
+  },
   emptySearch: {
     id: 'course-authoring.studio-home.programs.tab.empty-search',
     defaultMessage: 'No programs match your search.',
@@ -40,6 +44,7 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
   const intl = useIntl();
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('az');
+  const { capabilities } = useProgramAccess();
 
   // Treat API errors the same as empty — don't show a jarring error banner for the list
   const { data: programs = [], isLoading } = usePrograms();
@@ -118,7 +123,9 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
         <p className="text-muted">
           {search.trim()
             ? intl.formatMessage(messages.emptySearch)
-            : intl.formatMessage(messages.emptyState)}
+            : intl.formatMessage(
+              capabilities.canCreateProgram ? messages.emptyState : messages.emptyReadOnlyState,
+            )}
         </p>
       ) : (
         filteredPrograms.map((program) => (

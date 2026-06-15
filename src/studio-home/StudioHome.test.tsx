@@ -12,6 +12,7 @@ import { RequestStatus } from '../data/constants';
 import { COURSE_CREATOR_STATES } from '../constants';
 import studioHomeMock from './__mocks__/studioHomeMock';
 import { getStudioHomeApiUrl } from './data/api';
+import { getCurrentFbrProfileUrl } from '../programs/data/api';
 import { StudioHome } from '.';
 
 const {
@@ -59,6 +60,13 @@ describe('<StudioHome />', () => {
     beforeEach(async () => {
       const mocks = initializeMocks();
       mocks.axiosMock.onGet(getStudioHomeApiUrl()).reply(200, studioHomeMock);
+      mocks.axiosMock.onGet(getCurrentFbrProfileUrl()).reply(200, {
+        id: 1,
+        full_name: 'Super Admin',
+        email: 'admin@example.com',
+        roles: ['super_admin'],
+        city: null,
+      });
       mockUseSelector.mockReturnValue(studioHomeMock);
     });
 
@@ -89,6 +97,33 @@ describe('<StudioHome />', () => {
       render(<StudioHome />, { path: '/home' });
       const header = getHeaderElement();
       within(header).getByRole('button', { name: 'New course' }); // will error if not found
+    });
+
+    it('shows New program for Super Admins', async () => {
+      render(<StudioHome />, { path: '/home' });
+
+      await waitFor(() => {
+        expect(within(getHeaderElement()).getByRole('button', { name: 'New program' })).toBeInTheDocument();
+      });
+    });
+
+    it('hides New program for Data Admins', async () => {
+      const mocks = initializeMocks();
+      mocks.axiosMock.onGet(getStudioHomeApiUrl()).reply(200, studioHomeMock);
+      mocks.axiosMock.onGet(getCurrentFbrProfileUrl()).reply(200, {
+        id: 2,
+        full_name: 'Data Admin',
+        email: 'data@example.com',
+        roles: ['data_admin'],
+        city: { id: 1, name: 'Karachi' },
+      });
+      mockUseSelector.mockReturnValue(studioHomeMock);
+
+      render(<StudioHome />, { path: '/home' });
+
+      await waitFor(() => {
+        expect(within(getHeaderElement()).queryByRole('button', { name: 'New program' })).not.toBeInTheDocument();
+      });
     });
 
     it('should show verify email layout if user inactive', async () => {

@@ -47,6 +47,48 @@ export interface ProgramConfig {
   statuses: string[];
 }
 
+export interface CityOption {
+  id: number;
+  name: string;
+}
+
+export interface CreateProgramInput {
+  displayName: string;
+  org: string;
+  programType: string;
+  run: string;
+  cityId?: number;
+}
+
+export type FbrRole =
+  | 'super_admin'
+  | 'middle_admin'
+  | 'data_admin'
+  | 'instructor'
+  | 'trainee';
+
+export interface FbrUserProfile {
+  id: number;
+  fullName: string;
+  email: string;
+  roles: FbrRole[];
+  city: {
+    id: number;
+    name: string;
+  } | null;
+}
+
+export interface ProgramCapabilities {
+  canAccessPrograms: boolean;
+  canCreateProgram: boolean;
+  canEditProgram: boolean;
+  canArchiveProgram: boolean;
+  canManageCourses: boolean;
+  canManageEnrollment: boolean;
+  canManageInstructors: boolean;
+  isReadOnly: boolean;
+}
+
 export interface ProgramDetailResponse {
   program: Program;
   /** All target audiences available system-wide — used for the dropdown options. */

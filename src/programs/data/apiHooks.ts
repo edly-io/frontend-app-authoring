@@ -3,6 +3,8 @@ import {
 } from '@tanstack/react-query';
 import {
   getProgramsConfig,
+  getCurrentFbrProfile,
+  getFbrCities,
   getPrograms,
   getProgramDetail,
   createProgram,
@@ -27,6 +29,29 @@ import {
   type GetLearnersParams,
 } from './api';
 import type { Program } from './types';
+import { getProgramCapabilities } from './permissions';
+
+export const useProgramAccess = () => {
+  const query = useQuery({
+    queryKey: ['currentFbrProfile'],
+    queryFn: getCurrentFbrProfile,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  return {
+    ...query,
+    profile: query.data,
+    capabilities: getProgramCapabilities(query.data?.roles),
+  };
+};
+
+export const useFbrCities = (enabled = true) => useQuery({
+  queryKey: ['fbrCities'],
+  queryFn: getFbrCities,
+  staleTime: 10 * 60 * 1000,
+  enabled,
+});
 
 export const useProgramsConfig = () => useQuery({
   queryKey: ['programsConfig'],
@@ -38,10 +63,10 @@ export const usePrograms = () => useQuery({
   queryFn: getPrograms,
 });
 
-export const useProgramDetail = (programId: string) => useQuery({
+export const useProgramDetail = (programId: string, enabled = true) => useQuery({
   queryKey: ['program', programId],
   queryFn: () => getProgramDetail(programId),
-  enabled: !!programId,
+  enabled: !!programId && enabled,
 });
 
 export const useCreateProgram = () => {
