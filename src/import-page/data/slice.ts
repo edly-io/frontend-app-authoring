@@ -10,6 +10,7 @@ const initialState = {
   loadingStatus: '',
   savingStatus: '',
   successDate: null,
+  enableDraftState: false,
 };
 
 const slice = createSlice({
@@ -43,6 +44,9 @@ const slice = createSlice({
     updateSuccessDate: (state, { payload }) => {
       state.successDate = payload;
     },
+    updateEnableDraftState: (state, { payload }) => {
+      state.enableDraftState = payload;
+    },
   },
 });
 
@@ -56,6 +60,7 @@ export const {
   updateLoadingStatus,
   updateSavingStatus,
   updateSuccessDate,
+  updateEnableDraftState,
 } = slice.actions;
 
 export const {

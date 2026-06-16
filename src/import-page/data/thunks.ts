@@ -5,7 +5,7 @@ import { RequestStatus } from '../../data/constants';
 import { setImportCookie } from '../utils';
 import { getImportStatus, startCourseImporting } from './api';
 import {
-  reset, updateCurrentStage, updateError, updateFileName, updateProgress,
+  reset, updateCurrentStage, updateEnableDraftState, updateError, updateFileName, updateProgress,
   updateImportTriggered, updateLoadingStatus, updateSavingStatus, updateSuccessDate,
 } from './slice';
 import { IMPORT_STAGES, LAST_IMPORT_COOKIE_NAME } from './constants';
@@ -41,11 +41,13 @@ export function fetchImportStatus(courseId, fileName) {
   };
 }
 
-export function handleProcessUpload(courseId, fileData, requestConfig, handleError) {
+export function handleProcessUpload(courseId, fileData, requestConfig, handleError, enableDraftState = false) {
   return async (dispatch) => {
     try {
       const file = fileData.get('file');
       dispatch(reset());
+      // Restore enableDraftState after reset so the checkbox stays checked during the import.
+      dispatch(updateEnableDraftState(enableDraftState));
       dispatch(updateSavingStatus(RequestStatus.PENDING));
       dispatch(updateFileName(file.name));
       dispatch(updateImportTriggered(true));
@@ -54,6 +56,7 @@ export function handleProcessUpload(courseId, fileData, requestConfig, handleErr
         file,
         requestConfig,
         (percent) => dispatch(updateProgress(percent)),
+        enableDraftState,
       );
       dispatch(updateCurrentStage(importStatus));
       setImportCookie(moment().valueOf(), importStatus === IMPORT_STAGES.SUCCESS, file.name);

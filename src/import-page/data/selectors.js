@@ -6,3 +6,4 @@ export const getError = (state) => state.courseImport.error;
 export const getLoadingStatus = (state) => state.courseImport.loadingStatus;
 export const getSavingStatus = (state) => state.courseImport.savingStatus;
 export const getSuccessDate = (state) => state.courseImport.successDate;
+export const getEnableDraftState = (state) => state.courseImport.enableDraftState;
