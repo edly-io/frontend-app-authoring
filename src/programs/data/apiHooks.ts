@@ -1,9 +1,9 @@
 import {
   useQuery, useMutation, useQueryClient, keepPreviousData,
 } from '@tanstack/react-query';
+import { useCurrentFbrProfile } from '@src/fbr-access/apiHooks';
 import {
   getProgramsConfig,
-  getCurrentFbrProfile,
   getFbrCities,
   getPrograms,
   getProgramDetail,
@@ -32,12 +32,7 @@ import type { Program } from './types';
 import { getProgramCapabilities } from './permissions';
 
 export const useProgramAccess = () => {
-  const query = useQuery({
-    queryKey: ['currentFbrProfile'],
-    queryFn: getCurrentFbrProfile,
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
+  const query = useCurrentFbrProfile();
 
   return {
     ...query,

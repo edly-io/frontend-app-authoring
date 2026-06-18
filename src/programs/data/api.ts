@@ -8,7 +8,6 @@ import type {
   CityOption,
   Course,
   CreateProgramInput,
-  FbrUserProfile,
   Instructor,
   Learner,
   PaginatedCourses,
@@ -18,20 +17,10 @@ import type {
   ProgramDetailResponse,
 } from './types';
 
-const getProgramsBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/programs`;
-export const getCurrentFbrProfileUrl = () => `${getConfig().LMS_BASE_URL}/fbr/api/biodata/v1/users/me/`;
-export const getFbrCitiesUrl = () => `${getConfig().LMS_BASE_URL}/fbr/api/biodata/v1/users/cities/`;
+export { getCurrentFbrProfile, getCurrentFbrProfileUrl } from '@src/fbr-access/api';
 
-export const getCurrentFbrProfile = async (): Promise<FbrUserProfile> => {
-  const { data } = await getAuthenticatedHttpClient().get(getCurrentFbrProfileUrl());
-  return {
-    id: data.id,
-    fullName: data.full_name,
-    email: data.email,
-    roles: Array.isArray(data.roles) ? data.roles : [],
-    city: data.city ?? null,
-  };
-};
+const getProgramsBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/programs`;
+export const getFbrCitiesUrl = () => `${getConfig().LMS_BASE_URL}/fbr/api/biodata/v1/users/cities/`;
 
 export const getFbrCities = async (): Promise<CityOption[]> => {
   const { data } = await getAuthenticatedHttpClient().get(getFbrCitiesUrl());

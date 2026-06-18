@@ -25,6 +25,7 @@ const CoursesFilters = ({
   locationValue,
   onSubmitSearchField,
   isLoading,
+  showLifecycleFilter,
 }) => {
   const studioHomeCoursesParams = useSelector(getStudioHomeCoursesParams);
   const {
@@ -128,7 +129,9 @@ const CoursesFilters = ({
 
       <CoursesTypesFilterMenu onItemMenuSelected={handleMenuFilterItemSelected} />
       <CoursesOrderFilterMenu onItemMenuSelected={handleMenuFilterItemSelected} />
-      <CoursesLifecycleFilterMenu onItemMenuSelected={handleLifecycleFilterSelected} />
+      {showLifecycleFilter && (
+        <CoursesLifecycleFilterMenu onItemMenuSelected={handleLifecycleFilterSelected} />
+      )}
     </div>
   );
 };
@@ -137,6 +140,7 @@ CoursesFilters.defaultProps = {
   locationValue: '',
   onSubmitSearchField: () => {},
   isLoading: false,
+  showLifecycleFilter: false,
 };
 
 CoursesFilters.propTypes = {
@@ -144,6 +148,7 @@ CoursesFilters.propTypes = {
   locationValue: PropTypes.string,
   onSubmitSearchField: PropTypes.func,
   isLoading: PropTypes.bool,
+  showLifecycleFilter: PropTypes.bool,
 };
 
 export default CoursesFilters;

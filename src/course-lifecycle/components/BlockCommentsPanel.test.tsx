@@ -76,12 +76,12 @@ describe('<BlockCommentsPanel />', () => {
     expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
   });
 
-  it('does not show "Delete" button for comment authored by another user', () => {
+  it('shows "Delete" button for another user comment because Instructor+ may moderate comments', () => {
     const comment = mockBlockReviewComment({ author: 'some_other_user' });
     mockUseBlockComments.mockReturnValue({ data: [comment], isLoading: false });
     render(<BlockCommentsPanel usageKey={usageKey} />);
     expandPanel();
-    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
   });
 
   it('calls resolveMutation.mutate with comment id when Resolve is clicked', () => {
