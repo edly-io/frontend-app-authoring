@@ -26,7 +26,9 @@ const ProgramCard: React.FC<Props> = ({ program }) => {
           subtitle={`${org} / ${programType} / ${run}`}
           actions={(
             <Stack direction="horizontal" gap={2} className="align-items-center">
-              <Icon src={ArrowForward} size="sm" />
+              <Link to={`/programs/${id}`}>
+                <Icon src={ArrowForward} size="sm" />
+              </Link>
             </Stack>
           )}
         />
