@@ -4,6 +4,8 @@ import {
 import AddLearnerModal from './AddLearnerModal';
 import { mockLearner, mockPaginatedLearners } from '../data/api.mock';
 
+window.HTMLElement.prototype.scrollIntoView = jest.fn();
+
 const mockEnrollMutate = jest.fn();
 const mockUseLearners = jest.fn();
 

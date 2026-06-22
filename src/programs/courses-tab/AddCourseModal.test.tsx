@@ -4,6 +4,8 @@ import {
 import AddCourseModal from './AddCourseModal';
 import { mockCourse, mockPaginatedCourses } from '../data/api.mock';
 
+window.HTMLElement.prototype.scrollIntoView = jest.fn();
+
 const mockAddMutate = jest.fn();
 const mockUseCourses = jest.fn();
 

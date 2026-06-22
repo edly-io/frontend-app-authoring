@@ -138,4 +138,3 @@ export const useProgramEnrollments = (programId: string, params: GetLearnersPara
   placeholderData: keepPreviousData,
   staleTime: 0,
 });
-

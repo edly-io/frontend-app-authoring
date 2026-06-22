@@ -246,4 +246,3 @@ export const removeCourseFromProgram = async (programId: string, courseId: strin
     { params: { course_id: courseId } },
   );
 };
-
