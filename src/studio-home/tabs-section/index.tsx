@@ -79,15 +79,17 @@ const TabsSection = ({
   // the correct operation of iterating over child elements inside the Paragon Tabs component.
   const visibleTabs = useMemo(() => {
     const tabs: JSX.Element[] = [];
-    tabs.push(
-      <Tab
-        key={TABS_LIST.programs}
-        eventKey={TABS_LIST.programs}
-        title={intl.formatMessage(messages.programsTabTitle)}
-      >
-        <ProgramsTab showNewProgramContainer={showNewProgramContainer} />
-      </Tab>,
-    );
+    if (getConfig().ENABLE_PROGRAMS) {
+      tabs.push(
+        <Tab
+          key={TABS_LIST.programs}
+          eventKey={TABS_LIST.programs}
+          title={intl.formatMessage(messages.programsTabTitle)}
+        >
+          <ProgramsTab showNewProgramContainer={showNewProgramContainer} />
+        </Tab>,
+      );
+    }
 
     tabs.push(
       <Tab

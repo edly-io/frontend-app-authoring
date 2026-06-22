@@ -8,6 +8,7 @@ import {
   Row,
 } from '@openedx/paragon';
 import { Add as AddIcon, Error } from '@openedx/paragon/icons';
+import { getConfig } from '@edx/frontend-platform';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { StudioFooterSlot } from '@edx/frontend-component-footer';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -86,17 +87,19 @@ const StudioHome = () => {
           {intl.formatMessage(messages.addNewCourseBtnText)}
         </Button>,
       );
-      headerButtons.push(
-        <Button
-          variant="outline-primary"
-          iconBefore={AddIcon}
-          size="sm"
-          disabled={showNewProgramContainer}
-          onClick={() => setShowNewProgramContainer(true)}
-        >
-          {intl.formatMessage(messages.addNewProgramBtnText)}
-        </Button>,
-      );
+      if (getConfig().ENABLE_PROGRAMS) {
+        headerButtons.push(
+          <Button
+            variant="outline-primary"
+            iconBefore={AddIcon}
+            size="sm"
+            disabled={showNewProgramContainer}
+            onClick={() => setShowNewProgramContainer(true)}
+          >
+            {intl.formatMessage(messages.addNewProgramBtnText)}
+          </Button>,
+        );
+      }
     }
 
     if ((showNewLibraryButton && !showV2LibraryURL) || (showV2LibraryURL && showNewLibraryV2Button)) {
