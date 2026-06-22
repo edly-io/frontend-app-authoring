@@ -19,6 +19,7 @@ import LibrariesV2List from './libraries-v2-tab/index';
 import CoursesTab from './courses-tab';
 import ProgramsTab from './programs-tab';
 import { WelcomeLibrariesV2Alert } from './libraries-v2-tab/WelcomeLibrariesV2Alert';
+import { usePrograms } from '../../programs/data/apiHooks';
 
 const TabsSection = ({
   showNewCourseContainer,
@@ -68,6 +69,10 @@ const TabsSection = ({
     setTabKey(initTabKeyState(pathname));
   }, [pathname]);
 
+  const { error: programsError } = usePrograms();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isProgramAdmin = (programsError as any)?.response?.status !== 403;
+
   const { courses, numPages, coursesCount } = useSelector(getStudioHomeData);
   const {
     courseLoadingStatus,
@@ -79,15 +84,17 @@ const TabsSection = ({
   // the correct operation of iterating over child elements inside the Paragon Tabs component.
   const visibleTabs = useMemo(() => {
     const tabs: JSX.Element[] = [];
-    tabs.push(
-      <Tab
-        key={TABS_LIST.programs}
-        eventKey={TABS_LIST.programs}
-        title={intl.formatMessage(messages.programsTabTitle)}
-      >
-        <ProgramsTab showNewProgramContainer={showNewProgramContainer} />
-      </Tab>,
-    );
+    if (isProgramAdmin) {
+      tabs.push(
+        <Tab
+          key={TABS_LIST.programs}
+          eventKey={TABS_LIST.programs}
+          title={intl.formatMessage(messages.programsTabTitle)}
+        >
+          <ProgramsTab showNewProgramContainer={showNewProgramContainer} />
+        </Tab>,
+      );
+    }
 
     tabs.push(
       <Tab
@@ -158,7 +165,7 @@ const TabsSection = ({
     }
 
     return tabs;
-  }, [showNewCourseContainer, showNewProgramContainer, isLoadingCourses, migrationFilter]);
+  }, [showNewCourseContainer, showNewProgramContainer, isLoadingCourses, migrationFilter, isProgramAdmin]);
 
   const handleSelectTab = (tab: TabKeyType) => {
     if (tab === TABS_LIST.courses) {

@@ -27,7 +27,7 @@ const defaultProps = {
   onClose: jest.fn(),
   courseId: 'course-v1:Org+X+2025',
   courseName: 'CS 101',
-  alreadyAddedEmails: [],
+  alreadyAddedUsernames: [],
 };
 
 describe('<AddInstructorModal />', () => {
@@ -53,7 +53,7 @@ describe('<AddInstructorModal />', () => {
       isLoading: false,
       isFetching: false,
     });
-    render(<AddInstructorModal {...defaultProps} alreadyAddedEmails={['john@example.com']} />);
+    render(<AddInstructorModal {...defaultProps} alreadyAddedUsernames={['prof.john']} />);
     expect(screen.getByText('Added')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^Add$/i })).not.toBeInTheDocument();
   });
@@ -73,7 +73,7 @@ describe('<AddInstructorModal />', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Add$/i }));
     await waitFor(() => expect(mockAddMutate).toHaveBeenCalledWith({
       courseId: 'course-v1:Org+X+2025',
-      email: 'jane@example.com',
+      username: 'prof.john',
     }));
   });
 

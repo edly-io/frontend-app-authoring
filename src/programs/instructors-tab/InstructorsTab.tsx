@@ -46,7 +46,7 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program }) => {
   const { data: team, isLoading: isTeamLoading } = useCourseTeam(selectedCourseId, !!selectedCourseId);
   const removeInstructor = useRemoveInstructorFromCourse();
 
-  const teamEmails = team?.map((i) => i.email) ?? [];
+  const teamUsernames = team?.map((i) => i.username) ?? [];
   const selectedCourse = courses.find((c) => c.id === selectedCourseId);
 
   const handleCourseChange = useCallback((courseId: string) => {
@@ -156,7 +156,7 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program }) => {
         onClose={closeModal}
         courseId={selectedCourseId}
         courseName={selectedCourse?.displayName ?? ''}
-        alreadyAddedEmails={teamEmails}
+        alreadyAddedUsernames={teamUsernames}
       />
 
       <DeleteModal

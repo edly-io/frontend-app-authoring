@@ -184,6 +184,7 @@ export interface GetInstructorsParams {
 export interface GetLearnersParams {
   page?: number;
   search?: string;
+  programKey?: string;
 }
 
 // Shared mapping from UserSerializer response ({id, username, email, first_name, last_name})
@@ -208,6 +209,7 @@ export const getPlatformUsers = async (
         page: params.page ?? 1,
         page_size: pageSize,
         ...(params.search ? { search: params.search } : {}),
+        ...(params.role === 'learner' && params.programKey ? { program_key: params.programKey } : {}),
       },
     },
   );
@@ -220,26 +222,26 @@ export const getPlatformUsers = async (
   };
 };
 
-// ── Course team — GET ${STUDIO_BASE_URL}/api/contentstore/v1/course_team/<id> ─
+// ── Course team — GET /fbr/api/programs/courses/<course_key>/team/ ─────────
 export const getCourseTeam = async (courseId: string): Promise<Instructor[]> => {
   const { data } = await getAuthenticatedHttpClient().get(
-    `${getConfig().STUDIO_BASE_URL}/api/contentstore/v1/course_team/${courseId}`,
+    `${getProgramsBaseUrl()}/courses/${encodeURIComponent(courseId)}/team/`,
   );
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data.users ?? []).map((u: any) => ({
+  return (Array.isArray(data) ? data : (data.results ?? [])).map((u: any) => ({
     id: u.username,
     username: u.username,
     email: u.email,
     role: u.role,
-    name: u.username,
+    name: [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username,
   }));
 };
 
-// ── Add instructor to course — POST ${STUDIO_BASE_URL}/course_team/<id>/<email>
-export const addInstructorToCourse = async (courseId: string, email: string): Promise<void> => {
+// ── Add instructor to course — POST /fbr/api/programs/courses/<course_key>/team/
+export const addInstructorToCourse = async (courseId: string, username: string): Promise<void> => {
   await getAuthenticatedHttpClient().post(
-    `${getConfig().STUDIO_BASE_URL}/course_team/${courseId}/${email}`,
-    { role: 'staff' },
+    `${getProgramsBaseUrl()}/courses/${encodeURIComponent(courseId)}/team/`,
+    { username },
   );
 };
 
