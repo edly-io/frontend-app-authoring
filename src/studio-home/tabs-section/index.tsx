@@ -17,10 +17,12 @@ import messages from './messages';
 import { BaseFilterState, Filter, LibrariesList } from './libraries-tab';
 import LibrariesV2List from './libraries-v2-tab/index';
 import CoursesTab from './courses-tab';
+import ProgramsTab from './programs-tab';
 import { WelcomeLibrariesV2Alert } from './libraries-v2-tab/WelcomeLibrariesV2Alert';
 
 const TabsSection = ({
   showNewCourseContainer,
+  showNewProgramContainer,
   onClickNewCourse,
   isShowProcessing,
   librariesV1Enabled,
@@ -32,6 +34,7 @@ const TabsSection = ({
   const [migrationFilter, setMigrationFilter] = useState<Filter[]>(BaseFilterState);
   const TABS_LIST = {
     courses: 'courses',
+    programs: 'programs',
     libraries: 'libraries',
     legacyLibraries: 'legacyLibraries',
     archived: 'archived',
@@ -48,6 +51,10 @@ const TabsSection = ({
       return librariesV2Enabled
         ? TABS_LIST.libraries
         : TABS_LIST.legacyLibraries;
+    }
+
+    if (pname.includes('/programs')) {
+      return TABS_LIST.programs;
     }
 
     // Default to courses tab
@@ -72,6 +79,18 @@ const TabsSection = ({
   // the correct operation of iterating over child elements inside the Paragon Tabs component.
   const visibleTabs = useMemo(() => {
     const tabs: JSX.Element[] = [];
+    if (getConfig().ENABLE_PROGRAMS) {
+      tabs.push(
+        <Tab
+          key={TABS_LIST.programs}
+          eventKey={TABS_LIST.programs}
+          title={intl.formatMessage(messages.programsTabTitle)}
+        >
+          <ProgramsTab showNewProgramContainer={showNewProgramContainer} />
+        </Tab>,
+      );
+    }
+
     tabs.push(
       <Tab
         key={TABS_LIST.courses}
@@ -141,11 +160,13 @@ const TabsSection = ({
     }
 
     return tabs;
-  }, [showNewCourseContainer, isLoadingCourses, migrationFilter]);
+  }, [showNewCourseContainer, showNewProgramContainer, isLoadingCourses, migrationFilter]);
 
   const handleSelectTab = (tab: TabKeyType) => {
     if (tab === TABS_LIST.courses) {
       navigate('/home');
+    } else if (tab === TABS_LIST.programs) {
+      navigate('/programs');
     } else if (tab === TABS_LIST.legacyLibraries) {
       navigate('/libraries-v1');
     } else if (tab === TABS_LIST.libraries) {
@@ -174,6 +195,7 @@ TabsSection.propTypes = {
   isShowProcessing: PropTypes.bool.isRequired,
   librariesV1Enabled: PropTypes.bool,
   librariesV2Enabled: PropTypes.bool,
+  showNewProgramContainer: PropTypes.bool,
 };
 
 export default TabsSection;

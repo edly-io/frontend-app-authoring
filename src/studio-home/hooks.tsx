@@ -28,6 +28,7 @@ const useStudioHome = () => {
     deleteNotificationSavingStatus,
   } = useSelector(getSavingStatuses);
   const [showNewCourseContainer, setShowNewCourseContainer] = useState(false);
+  const [showNewProgramContainer, setShowNewProgramContainer] = useState(false);
   const isLoadingPage = studioHomeLoadingStatus === RequestStatus.IN_PROGRESS;
   const isFailedLoadingPage = studioHomeLoadingStatus === RequestStatus.FAILED;
 
@@ -104,11 +105,13 @@ const useStudioHome = () => {
     isShowEmailStaff,
     anyQueryIsPending,
     showNewCourseContainer,
+    showNewProgramContainer,
     courseCreatorSavingStatus,
     isShowOrganizationDropdown,
     hasAbilityToCreateNewCourse,
     isFiltered,
     setShowNewCourseContainer,
+    setShowNewProgramContainer,
     librariesV1Enabled,
     librariesV2Enabled,
   };

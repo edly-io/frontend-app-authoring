@@ -8,6 +8,7 @@ import {
   Row,
 } from '@openedx/paragon';
 import { Add as AddIcon, Error } from '@openedx/paragon/icons';
+import { getConfig } from '@edx/frontend-platform';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { StudioFooterSlot } from '@edx/frontend-component-footer';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -21,6 +22,7 @@ import TabsSection from './tabs-section';
 import OrganizationSection from './organization-section';
 import VerifyEmailLayout from './verify-email-layout';
 import CreateNewCourseForm from './create-new-course-form';
+import CreateNewProgramForm from './create-new-program-form';
 import messages from './messages';
 import { useStudioHome } from './hooks';
 import AlertMessage from '../generic/alert-message';
@@ -39,10 +41,12 @@ const StudioHome = () => {
     isShowEmailStaff,
     anyQueryIsPending,
     showNewCourseContainer,
+    showNewProgramContainer,
     isShowOrganizationDropdown,
     hasAbilityToCreateNewCourse,
     isFiltered,
     setShowNewCourseContainer,
+    setShowNewProgramContainer,
     librariesV1Enabled,
     librariesV2Enabled,
   } = useStudioHome();
@@ -83,6 +87,19 @@ const StudioHome = () => {
           {intl.formatMessage(messages.addNewCourseBtnText)}
         </Button>,
       );
+      if (getConfig().ENABLE_PROGRAMS) {
+        headerButtons.push(
+          <Button
+            variant="outline-primary"
+            iconBefore={AddIcon}
+            size="sm"
+            disabled={showNewProgramContainer}
+            onClick={() => setShowNewProgramContainer(true)}
+          >
+            {intl.formatMessage(messages.addNewProgramBtnText)}
+          </Button>,
+        );
+      }
     }
 
     if ((showNewLibraryButton && !showV2LibraryURL) || (showV2LibraryURL && showNewLibraryV2Button)) {
@@ -144,9 +161,13 @@ const StudioHome = () => {
             {showNewCourseContainer && (
               <CreateNewCourseForm handleOnClickCancel={() => setShowNewCourseContainer(false)} />
             )}
+            {showNewProgramContainer && (
+              <CreateNewProgramForm handleOnClickCancel={() => setShowNewProgramContainer(false)} />
+            )}
             {isShowOrganizationDropdown && <OrganizationSection />}
             <TabsSection
               showNewCourseContainer={showNewCourseContainer}
+              showNewProgramContainer={showNewProgramContainer}
               onClickNewCourse={() => setShowNewCourseContainer(true)}
               isShowProcessing={Boolean(isShowProcessing) && !isFiltered}
               librariesV1Enabled={librariesV1Enabled}
