@@ -12,6 +12,7 @@ import { useIntl } from '@edx/frontend-platform/i18n';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import { RequestStatus } from '@src/data/constants';
+import { COURSE_CREATOR_STATES } from '@src/constants';
 import { getLoadingStatuses, getStudioHomeData } from '../data/selectors';
 import messages from './messages';
 import { BaseFilterState, Filter, LibrariesList } from './libraries-tab';
@@ -68,7 +69,8 @@ const TabsSection = ({
     setTabKey(initTabKeyState(pathname));
   }, [pathname]);
 
-  const { courses, numPages, coursesCount } = useSelector(getStudioHomeData);
+  const { courses, numPages, coursesCount, courseCreatorStatus } = useSelector(getStudioHomeData);
+  const isProgramAdmin = courseCreatorStatus === COURSE_CREATOR_STATES.granted;
   const {
     courseLoadingStatus,
   } = useSelector(getLoadingStatuses);
@@ -79,15 +81,17 @@ const TabsSection = ({
   // the correct operation of iterating over child elements inside the Paragon Tabs component.
   const visibleTabs = useMemo(() => {
     const tabs: JSX.Element[] = [];
-    tabs.push(
-      <Tab
-        key={TABS_LIST.programs}
-        eventKey={TABS_LIST.programs}
-        title={intl.formatMessage(messages.programsTabTitle)}
-      >
-        <ProgramsTab showNewProgramContainer={showNewProgramContainer} />
-      </Tab>,
-    );
+    if (isProgramAdmin) {
+      tabs.push(
+        <Tab
+          key={TABS_LIST.programs}
+          eventKey={TABS_LIST.programs}
+          title={intl.formatMessage(messages.programsTabTitle)}
+        >
+          <ProgramsTab showNewProgramContainer={showNewProgramContainer} />
+        </Tab>,
+      );
+    }
 
     tabs.push(
       <Tab
@@ -158,7 +162,7 @@ const TabsSection = ({
     }
 
     return tabs;
-  }, [showNewCourseContainer, showNewProgramContainer, isLoadingCourses, migrationFilter]);
+  }, [showNewCourseContainer, showNewProgramContainer, isLoadingCourses, migrationFilter, isProgramAdmin]);
 
   const handleSelectTab = (tab: TabKeyType) => {
     if (tab === TABS_LIST.courses) {

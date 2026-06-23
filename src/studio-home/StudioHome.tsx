@@ -74,17 +74,19 @@ const StudioHome = () => {
       );
     }
 
-    headerButtons.push(
-      <Button
-        variant="outline-primary"
-        iconBefore={AddIcon}
-        size="sm"
-        disabled={showNewProgramContainer}
-        onClick={() => setShowNewProgramContainer(true)}
-      >
-        {intl.formatMessage(messages.addNewProgramBtnText)}
-      </Button>,
-    );
+    if (hasAbilityToCreateNewCourse) {
+      headerButtons.push(
+        <Button
+          variant="outline-primary"
+          iconBefore={AddIcon}
+          size="sm"
+          disabled={showNewProgramContainer}
+          onClick={() => setShowNewProgramContainer(true)}
+        >
+          {intl.formatMessage(messages.addNewProgramBtnText)}
+        </Button>,
+      );
+    }
 
     if (hasAbilityToCreateNewCourse) {
       headerButtons.push(
@@ -122,7 +124,7 @@ const StudioHome = () => {
     }
 
     return headerButtons;
-  }, [location, userIsActive, isFailedLoadingPage]);
+  }, [location, userIsActive, isFailedLoadingPage, hasAbilityToCreateNewCourse, showNewProgramContainer]);
 
   const headerButtons = userIsActive ? getHeaderButtons() : [];
   if (isLoadingPage && !isFiltered) {

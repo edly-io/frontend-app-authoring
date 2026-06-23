@@ -32,21 +32,22 @@ interface AddInstructorModalProps {
   onClose: () => void;
   courseId: string;
   courseName: string;
-  alreadyAddedEmails: string[];
+  alreadyAddedUsernames: string[];
+  programId: string;
 }
 
 const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
-  isOpen, onClose, courseId, courseName, alreadyAddedEmails,
+  isOpen, onClose, courseId, courseName, alreadyAddedUsernames, programId,
 }) => {
   const intl = useIntl();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [addingId, setAddingId] = useState<string | null>(null);
-  const [addError, setAddError] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isFetching } = useInstructors(
-    { page: currentPage, search: searchQuery },
+    { page: currentPage, search: searchQuery, programKey: programId },
     isOpen,
   );
   const { mutateAsync: addInstructor } = useAddInstructorToCourse();
@@ -60,13 +61,15 @@ const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
     setCurrentPage(1);
   }, []);
 
-  const handleAdd = async (email: string) => {
-    setAddingId(email);
-    setAddError(false);
+  const handleAdd = async (username: string) => {
+    setAddingId(username);
+    setAddError(null);
     try {
-      await addInstructor({ courseId, email });
-    } catch {
-      setAddError(true);
+      await addInstructor({ courseId, username });
+    } catch (err: any) {
+      setAddError(
+        err?.response?.data?.detail ?? intl.formatMessage(messages.addError),
+      );
     } finally {
       setAddingId(null);
     }
@@ -75,7 +78,7 @@ const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
   const handleClose = () => {
     setSearchQuery('');
     setCurrentPage(1);
-    setAddError(false);
+    setAddError(null);
     onClose();
   };
 
@@ -103,9 +106,7 @@ const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
 
       <ModalDialog.Body>
         {addError && (
-          <Alert variant="danger" className="mb-3">
-            {intl.formatMessage(messages.addError)}
-          </Alert>
+          <Alert variant="danger" className="mb-3">{addError}</Alert>
         )}
         {isLoading && (
           <div className="d-flex justify-content-center py-4">
@@ -118,8 +119,8 @@ const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
         <div ref={listRef} />
         <div style={{ opacity: isFetching && !isLoading ? 0.4 : 1, transition: 'opacity 0.15s' }}>
           {!isLoading && data?.results.map((instructor) => {
-            const isAdded = alreadyAddedEmails.includes(instructor.email);
-            const isAdding = addingId === instructor.email;
+            const isAdded = alreadyAddedUsernames.includes(instructor.username);
+            const isAdding = addingId === instructor.username;
             return (
               <div
                 key={instructor.id}
@@ -136,7 +137,7 @@ const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={() => handleAdd(instructor.email)}
+                    onClick={() => handleAdd(instructor.username)}
                     disabled={isAdding || !!addingId}
                   >
                     {isAdding ? intl.formatMessage(messages.addingBtn) : intl.formatMessage(messages.addBtn)}

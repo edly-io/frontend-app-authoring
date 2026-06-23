@@ -55,6 +55,7 @@ const messages = defineMessages({
   fieldShortDescHint: { id: 'programs.detail.field.short-desc.hint', defaultMessage: 'Appears in program listings and cards. Keep it concise.' },
   fieldDetailedDesc: { id: 'programs.detail.field.long-desc', defaultMessage: 'Detailed Description' },
   fieldDetailedDescHint: { id: 'programs.detail.field.long-desc.hint', defaultMessage: 'Appears on the program detail page. Provide comprehensive information.' },
+  fieldCity: { id: 'programs.detail.field.city', defaultMessage: 'City' },
   fieldAudience: { id: 'programs.detail.field.audience', defaultMessage: 'Target Audience' },
   fieldAudienceHint: { id: 'programs.detail.field.audience.hint', defaultMessage: 'Choose an existing type or type a new one to create it.' },
   fieldAudiencePlaceholder: { id: 'programs.detail.field.audience.placeholder', defaultMessage: 'Select or add audience type...' },
@@ -142,6 +143,7 @@ const ProgramDetailPage: React.FC = () => {
 
   const { data, isLoading, isError } = useProgramDetail(programId ?? '');
   const { mutateAsync: updateProgram, isPending: isSaving } = useUpdateProgram();
+  const cities = data?.availableCities ?? [];
 
   const program = data?.program;
   const availableAudiences = data?.availableAudiences ?? [];
@@ -151,6 +153,7 @@ const ProgramDetailPage: React.FC = () => {
     initialValues: {
       displayName: program?.displayName ?? '',
       targetAudience: program?.targetAudience ?? '',
+      city: program?.city ?? '',
       shortDescription: program?.shortDescription ?? '',
       longDescription: program?.longDescription ?? '',
       status: program?.status ?? 'draft',
@@ -381,6 +384,22 @@ const ProgramDetailPage: React.FC = () => {
                           }}
                         />
                         <Form.Text muted>{intl.formatMessage(messages.fieldAudienceHint)}</Form.Text>
+                      </Form.Group>
+
+                      {/* City */}
+                      <Form.Group className="mb-4">
+                        <Form.Label>{intl.formatMessage(messages.fieldCity)}</Form.Label>
+                        <Form.Control
+                          as="select"
+                          name="city"
+                          value={formik.values.city ?? ''}
+                          onChange={formik.handleChange}
+                        >
+                          <option value="">— Select city —</option>
+                          {cities.map((c) => (
+                            <option key={c.id} value={c.name}>{c.name}</option>
+                          ))}
+                        </Form.Control>
                       </Form.Group>
 
                       {/* Start / End Dates */}
