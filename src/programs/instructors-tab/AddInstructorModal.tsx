@@ -33,10 +33,11 @@ interface AddInstructorModalProps {
   courseId: string;
   courseName: string;
   alreadyAddedUsernames: string[];
+  programId: string;
 }
 
 const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
-  isOpen, onClose, courseId, courseName, alreadyAddedUsernames,
+  isOpen, onClose, courseId, courseName, alreadyAddedUsernames, programId,
 }) => {
   const intl = useIntl();
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,7 +47,7 @@ const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
   const listRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isFetching } = useInstructors(
-    { page: currentPage, search: searchQuery },
+    { page: currentPage, search: searchQuery, programKey: programId },
     isOpen,
   );
   const { mutateAsync: addInstructor } = useAddInstructorToCourse();

@@ -25,16 +25,11 @@ import CreateNewProgramForm from './create-new-program-form';
 import messages from './messages';
 import { useStudioHome } from './hooks';
 import AlertMessage from '../generic/alert-message';
-import { usePrograms } from '../programs/data/apiHooks';
 
 const StudioHome = () => {
   const intl = useIntl();
   const location = useLocation();
   const navigate = useNavigate();
-
-  const { error: programsError } = usePrograms();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const isProgramAdmin = (programsError as any)?.response?.status !== 403;
 
   const {
     isLoadingPage,
@@ -79,7 +74,7 @@ const StudioHome = () => {
       );
     }
 
-    if (isProgramAdmin) {
+    if (hasAbilityToCreateNewCourse) {
       headerButtons.push(
         <Button
           variant="outline-primary"
@@ -129,7 +124,7 @@ const StudioHome = () => {
     }
 
     return headerButtons;
-  }, [location, userIsActive, isFailedLoadingPage, isProgramAdmin, showNewProgramContainer]);
+  }, [location, userIsActive, isFailedLoadingPage, hasAbilityToCreateNewCourse, showNewProgramContainer]);
 
   const headerButtons = userIsActive ? getHeaderButtons() : [];
   if (isLoadingPage && !isFiltered) {

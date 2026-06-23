@@ -38,6 +38,7 @@ const toProgram = (d: any): Program => ({
   programType: d.program_type,
   run: d.batch,
   targetAudience: d.target_audience?.name ?? '',
+  city: d.city?.name ?? '',
   shortDescription: d.description ?? '',
   longDescription: d.long_description ?? '',
   status: d.status ?? 'draft',
@@ -54,6 +55,7 @@ export const getProgramsConfig = async (): Promise<ProgramConfig> => {
   return {
     orgs: data.organizations.map((o: any) => ({ id: o.id, name: o.name, shortName: o.short_name })),
     programTypes: data.program_types.map((t: any) => ({ id: t.id, name: t.name, slug: t.slug })),
+    cities: (data.cities ?? []).map((c: any) => ({ id: c.id, name: c.name })),
     // Statuses are stable constants; not returned by config endpoint
     statuses: ['draft', 'active', 'archived', 'freezed'],
   };
@@ -74,6 +76,8 @@ export const getProgramDetail = async (programId: string): Promise<ProgramDetail
     program: toProgram(data),
     // target_audiences in the detail response is the full list of all audiences system-wide
     availableAudiences: (data.target_audiences ?? []).map((a: any) => a.name as string),
+    // cities in the detail response is the full list of all cities
+    availableCities: (data.cities ?? []).map((c: any) => ({ id: c.id, name: c.name })),
   };
 };
 
@@ -84,6 +88,7 @@ export const createProgram = async (input: Omit<Program, 'id'>): Promise<Program
     organization: input.org,
     program_type: input.programType,
     batch: input.run,
+    ...(input.city ? { city: input.city } : {}),
   };
   const { data } = await getAuthenticatedHttpClient().post(`${getProgramsBaseUrl()}/`, payload);
   return toProgram(data);
@@ -107,6 +112,7 @@ export const updateProgram = async (
   if (data.startDate !== undefined) { formData.append('start_date', data.startDate ?? ''); }
   if (data.endDate !== undefined) { formData.append('end_date', data.endDate ?? ''); }
   if (data.targetAudience !== undefined) { formData.append('target_audience', data.targetAudience ?? ''); }
+  if (data.city !== undefined) { formData.append('city', data.city ?? ''); }
   if (imageFile) { formData.append('card_image', imageFile); }
 
   // Intentionally not sent: org / programType / run (immutable after creation)
@@ -179,6 +185,7 @@ export const updateCourseTargetAudience = async (
 export interface GetInstructorsParams {
   page?: number;
   search?: string;
+  programKey?: string;
 }
 
 export interface GetLearnersParams {
@@ -209,7 +216,7 @@ export const getPlatformUsers = async (
         page: params.page ?? 1,
         page_size: pageSize,
         ...(params.search ? { search: params.search } : {}),
-        ...(params.role === 'learner' && params.programKey ? { program_key: params.programKey } : {}),
+        ...(params.programKey ? { program_key: params.programKey } : {}),
       },
     },
   );

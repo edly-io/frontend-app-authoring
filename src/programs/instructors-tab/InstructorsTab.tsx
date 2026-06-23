@@ -157,6 +157,7 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program }) => {
         courseId={selectedCourseId}
         courseName={selectedCourse?.displayName ?? ''}
         alreadyAddedUsernames={teamUsernames}
+        programId={program.id}
       />
 
       <DeleteModal

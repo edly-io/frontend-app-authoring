@@ -119,7 +119,7 @@ export const useUpdateCourseTargetAudience = () => {
 };
 
 export const useInstructors = (params: GetInstructorsParams = {}, enabled = true) => useQuery({
-  queryKey: ['instructors', params.page ?? 1, params.search ?? ''],
+  queryKey: ['instructors', params.programKey ?? '', params.page ?? 1, params.search ?? ''],
   queryFn: () => getPlatformUsers({ role: 'instructor', ...params }),
   placeholderData: keepPreviousData,
   staleTime: 0,

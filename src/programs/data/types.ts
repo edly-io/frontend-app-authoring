@@ -19,6 +19,7 @@ export interface Program {
   programType: string;
   run: string;
   targetAudience: string;
+  city?: string;
   shortDescription?: string;
   longDescription?: string;
   status?: string;
@@ -35,6 +36,11 @@ export interface OrgOption {
   shortName: string;
 }
 
+export interface CityOption {
+  id: number;
+  name: string;
+}
+
 export interface ProgramTypeOption {
   id: number;
   name: string;
@@ -45,12 +51,15 @@ export interface ProgramConfig {
   orgs: OrgOption[];
   programTypes: ProgramTypeOption[];
   statuses: string[];
+  cities: CityOption[];
 }
 
 export interface ProgramDetailResponse {
   program: Program;
   /** All target audiences available system-wide — used for the dropdown options. */
   availableAudiences: string[];
+  /** All cities available — returned by the detail endpoint alongside the program. */
+  availableCities: CityOption[];
 }
 
 export interface Instructor {

@@ -28,6 +28,7 @@ const defaultProps = {
   courseId: 'course-v1:Org+X+2025',
   courseName: 'CS 101',
   alreadyAddedUsernames: [],
+  programId: 'program-v1:Org+DST_IST+2025-B',
 };
 
 describe('<AddInstructorModal />', () => {
@@ -97,7 +98,7 @@ describe('<AddInstructorModal />', () => {
   it('passes enabled=false to useInstructors when modal is closed', () => {
     render(<AddInstructorModal {...defaultProps} isOpen={false} />);
     expect(mockUseInstructors).toHaveBeenCalledWith(
-      expect.any(Object),
+      expect.objectContaining({ programKey: 'program-v1:Org+DST_IST+2025-B' }),
       false,
     );
   });

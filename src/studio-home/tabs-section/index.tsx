@@ -12,6 +12,7 @@ import { useIntl } from '@edx/frontend-platform/i18n';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import { RequestStatus } from '@src/data/constants';
+import { COURSE_CREATOR_STATES } from '@src/constants';
 import { getLoadingStatuses, getStudioHomeData } from '../data/selectors';
 import messages from './messages';
 import { BaseFilterState, Filter, LibrariesList } from './libraries-tab';
@@ -19,7 +20,6 @@ import LibrariesV2List from './libraries-v2-tab/index';
 import CoursesTab from './courses-tab';
 import ProgramsTab from './programs-tab';
 import { WelcomeLibrariesV2Alert } from './libraries-v2-tab/WelcomeLibrariesV2Alert';
-import { usePrograms } from '../../programs/data/apiHooks';
 
 const TabsSection = ({
   showNewCourseContainer,
@@ -69,11 +69,8 @@ const TabsSection = ({
     setTabKey(initTabKeyState(pathname));
   }, [pathname]);
 
-  const { error: programsError } = usePrograms();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const isProgramAdmin = (programsError as any)?.response?.status !== 403;
-
-  const { courses, numPages, coursesCount } = useSelector(getStudioHomeData);
+  const { courses, numPages, coursesCount, courseCreatorStatus } = useSelector(getStudioHomeData);
+  const isProgramAdmin = courseCreatorStatus === COURSE_CREATOR_STATES.granted;
   const {
     courseLoadingStatus,
   } = useSelector(getLoadingStatuses);
