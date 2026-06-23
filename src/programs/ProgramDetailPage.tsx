@@ -27,6 +27,7 @@ import { useProgramDetail, useUpdateProgram } from './data/apiHooks';
 import CoursesTab from './courses-tab/CoursesTab';
 import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
+import './index.scss';
 
 const messages = defineMessages({
   backToPrograms: { id: 'programs.detail.back', defaultMessage: '← Back to Programs' },

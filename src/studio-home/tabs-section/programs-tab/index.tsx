@@ -10,6 +10,7 @@ import { useIntl, defineMessages } from '@edx/frontend-platform/i18n';
 import { LoadingSpinner } from '@src/generic/Loading';
 import { usePrograms } from '../../../programs/data/apiHooks';
 import ProgramCard from './ProgramCard';
+import './index.scss';
 
 const messages = defineMessages({
   searchPlaceholder: {
