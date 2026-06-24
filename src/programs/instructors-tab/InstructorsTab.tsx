@@ -47,7 +47,7 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, canManage = tr
   const { data: team, isLoading: isTeamLoading } = useCourseTeam(selectedCourseId, !!selectedCourseId);
   const removeInstructor = useRemoveInstructorFromCourse();
 
-  const teamEmails = team?.map((i) => i.email) ?? [];
+  const teamUsernames = team?.map((i) => i.username) ?? [];
   const selectedCourse = courses.find((c) => c.id === selectedCourseId);
 
   const handleCourseChange = useCallback((courseId: string) => {

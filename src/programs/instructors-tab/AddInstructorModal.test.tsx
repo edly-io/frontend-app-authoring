@@ -27,7 +27,8 @@ const defaultProps = {
   onClose: jest.fn(),
   courseId: 'course-v1:Org+X+2025',
   courseName: 'CS 101',
-  alreadyAddedEmails: [],
+  alreadyAddedUsernames: [],
+  programId: 'program-v1:Org+DST_IST+2025-B',
 };
 
 describe('<AddInstructorModal />', () => {
@@ -53,7 +54,7 @@ describe('<AddInstructorModal />', () => {
       isLoading: false,
       isFetching: false,
     });
-    render(<AddInstructorModal {...defaultProps} alreadyAddedEmails={['john@example.com']} />);
+    render(<AddInstructorModal {...defaultProps} alreadyAddedUsernames={['prof.john']} />);
     expect(screen.getByText('Added')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^Add$/i })).not.toBeInTheDocument();
   });
@@ -73,7 +74,7 @@ describe('<AddInstructorModal />', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Add$/i }));
     await waitFor(() => expect(mockAddMutate).toHaveBeenCalledWith({
       courseId: 'course-v1:Org+X+2025',
-      email: 'jane@example.com',
+      username: 'prof.john',
     }));
   });
 
@@ -97,7 +98,7 @@ describe('<AddInstructorModal />', () => {
   it('passes enabled=false to useInstructors when modal is closed', () => {
     render(<AddInstructorModal {...defaultProps} isOpen={false} />);
     expect(mockUseInstructors).toHaveBeenCalledWith(
-      expect.any(Object),
+      expect.objectContaining({ programKey: 'program-v1:Org+DST_IST+2025-B' }),
       false,
     );
   });

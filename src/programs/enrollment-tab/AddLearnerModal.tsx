@@ -42,10 +42,13 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
-  const [enrollError, setEnrollError] = useState(false);
+  const [enrollError, setEnrollError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const { data, isLoading, isFetching } = useLearners({ page: currentPage, search: searchQuery }, isOpen);
+  const { data, isLoading, isFetching } = useLearners(
+    { page: currentPage, search: searchQuery, programKey: programId },
+    isOpen,
+  );
   const { mutateAsync: enrollLearner } = useEnrollLearner();
 
   useEffect(() => {
@@ -59,11 +62,13 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
 
   const handleEnroll = async (username: string) => {
     setEnrollingId(username);
-    setEnrollError(false);
+    setEnrollError(null);
     try {
       await enrollLearner({ programId, username });
-    } catch {
-      setEnrollError(true);
+    } catch (err: any) {
+      setEnrollError(
+        err?.response?.data?.detail ?? intl.formatMessage(messages.enrollError),
+      );
     } finally {
       setEnrollingId(null);
     }
@@ -72,7 +77,7 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
   const handleClose = () => {
     setSearchQuery('');
     setCurrentPage(1);
-    setEnrollError(false);
+    setEnrollError(null);
     onClose();
   };
 
@@ -100,9 +105,7 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
 
       <ModalDialog.Body>
         {enrollError && (
-          <Alert variant="danger" className="mb-3">
-            {intl.formatMessage(messages.enrollError)}
-          </Alert>
+          <Alert variant="danger" className="mb-3">{enrollError}</Alert>
         )}
         {isLoading && (
           <div className="d-flex justify-content-center py-4">

@@ -48,6 +48,7 @@ const toProgram = (d: any): Program => ({
   programType: d.program_type,
   run: d.batch,
   targetAudience: d.target_audience?.name ?? '',
+  city: d.city?.name ?? '',
   shortDescription: d.description ?? '',
   longDescription: d.long_description ?? '',
   status: d.status ?? 'draft',
@@ -64,6 +65,7 @@ export const getProgramsConfig = async (): Promise<ProgramConfig> => {
   return {
     orgs: data.organizations.map((o: any) => ({ id: o.id, name: o.name, shortName: o.short_name })),
     programTypes: data.program_types.map((t: any) => ({ id: t.id, name: t.name, slug: t.slug })),
+    cities: (data.cities ?? []).map((c: any) => ({ id: c.id, name: c.name })),
     // Statuses are stable constants; not returned by config endpoint
     statuses: ['draft', 'active', 'archived', 'freezed'],
   };
@@ -84,6 +86,8 @@ export const getProgramDetail = async (programId: string): Promise<ProgramDetail
     program: toProgram(data),
     // target_audiences in the detail response is the full list of all audiences system-wide
     availableAudiences: (data.target_audiences ?? []).map((a: any) => a.name as string),
+    // cities in the detail response is the full list of all cities
+    availableCities: (data.cities ?? []).map((c: any) => ({ id: c.id, name: c.name })),
   };
 };
 
@@ -118,6 +122,7 @@ export const updateProgram = async (
   if (data.startDate !== undefined) { formData.append('start_date', data.startDate ?? ''); }
   if (data.endDate !== undefined) { formData.append('end_date', data.endDate ?? ''); }
   if (data.targetAudience !== undefined) { formData.append('target_audience', data.targetAudience ?? ''); }
+  if (data.city !== undefined) { formData.append('city', data.city ?? ''); }
   if (imageFile) { formData.append('card_image', imageFile); }
 
   // Intentionally not sent: org / programType / run (immutable after creation)
@@ -190,11 +195,13 @@ export const updateCourseTargetAudience = async (
 export interface GetInstructorsParams {
   page?: number;
   search?: string;
+  programKey?: string;
 }
 
 export interface GetLearnersParams {
   page?: number;
   search?: string;
+  programKey?: string;
 }
 
 // Shared mapping from UserSerializer response ({id, username, email, first_name, last_name})
@@ -219,6 +226,7 @@ export const getPlatformUsers = async (
         page: params.page ?? 1,
         page_size: pageSize,
         ...(params.search ? { search: params.search } : {}),
+        ...(params.programKey ? { program_key: params.programKey } : {}),
       },
     },
   );
@@ -231,26 +239,26 @@ export const getPlatformUsers = async (
   };
 };
 
-// ── Course team — GET ${STUDIO_BASE_URL}/api/contentstore/v1/course_team/<id> ─
+// ── Course team — GET /fbr/api/programs/courses/<course_key>/team/ ─────────
 export const getCourseTeam = async (courseId: string): Promise<Instructor[]> => {
   const { data } = await getAuthenticatedHttpClient().get(
-    `${getConfig().STUDIO_BASE_URL}/api/contentstore/v1/course_team/${courseId}`,
+    `${getProgramsBaseUrl()}/courses/${encodeURIComponent(courseId)}/team/`,
   );
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data.users ?? []).map((u: any) => ({
+  return (Array.isArray(data) ? data : (data.results ?? [])).map((u: any) => ({
     id: u.username,
     username: u.username,
     email: u.email,
     role: u.role,
-    name: u.username,
+    name: [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username,
   }));
 };
 
-// ── Add instructor to course — POST ${STUDIO_BASE_URL}/course_team/<id>/<email>
-export const addInstructorToCourse = async (courseId: string, email: string): Promise<void> => {
+// ── Add instructor to course — POST /fbr/api/programs/courses/<course_key>/team/
+export const addInstructorToCourse = async (courseId: string, username: string): Promise<void> => {
   await getAuthenticatedHttpClient().post(
-    `${getConfig().STUDIO_BASE_URL}/course_team/${courseId}/${email}`,
-    { role: 'staff' },
+    `${getProgramsBaseUrl()}/courses/${encodeURIComponent(courseId)}/team/`,
+    { username },
   );
 };
 

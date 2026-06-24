@@ -12,6 +12,7 @@ import { useIntl } from '@edx/frontend-platform/i18n';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import { RequestStatus } from '@src/data/constants';
+import { COURSE_CREATOR_STATES } from '@src/constants';
 import { getLoadingStatuses, getStudioHomeData } from '../data/selectors';
 import messages from './messages';
 import { BaseFilterState, Filter, LibrariesList } from './libraries-tab';
@@ -168,13 +169,7 @@ const TabsSection = ({
     }
 
     return tabs;
-  }, [
-    canAccessPrograms,
-    showNewCourseContainer,
-    showNewProgramContainer,
-    isLoadingCourses,
-    migrationFilter,
-  ]);
+  }, [showNewCourseContainer, showNewProgramContainer, isLoadingCourses, migrationFilter, isProgramAdmin]);
 
   const handleSelectTab = (tab: TabKeyType) => {
     if (tab === TABS_LIST.courses) {
