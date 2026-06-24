@@ -29,6 +29,7 @@ import { PreviewLibraryXBlockChanges } from '@src/course-unit/preview-changes';
 import type { XBlock } from '@src/data/types';
 import { useBlockSyncData, usePostSyncCallback, useSaveStatusCloseForm } from '@src/course-outline/hooks';
 import { useBlockState } from '@src/course-lifecycle/data/apiHooks';
+import { getLifecyclePublishPermission } from '@src/course-lifecycle/data/permissions';
 import { LifecycleModal } from '@src/course-lifecycle/components/LifecycleModal';
 import { useRefreshOnPublish } from '@src/course-lifecycle/hooks';
 import messages from './messages';
@@ -117,7 +118,9 @@ const SubsectionCard = ({
     upstreamInfo,
   } = subsection;
 
-  const { data: blockLifecycleState } = useBlockState(id);
+  const blockLifecycleQuery = useBlockState(id);
+  const { data: blockLifecycleState } = blockLifecycleQuery;
+  const lifecyclePublishPermission = getLifecyclePublishPermission(blockLifecycleQuery);
 
   useRefreshOnPublish(blockLifecycleState?.state, () => dispatch(fetchCourseSectionQuery([section.id])));
 
@@ -296,7 +299,7 @@ const SubsectionCard = ({
                 isSequential
                 extraActionsComponent={extraActionsComponent}
                 readyToSync={upstreamInfo?.readyToSync}
-                canPublish={blockLifecycleState?.canPublish}
+                canPublish={lifecyclePublishPermission}
                 lifecycleState={blockLifecycleState?.state}
                 onClickLifecycle={openLifecycleModal}
               />

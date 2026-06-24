@@ -52,6 +52,18 @@ describe('<InstructorsTab />', () => {
     expect(screen.getByText('smith@example.com')).toBeInTheDocument();
   });
 
+  it('hides instructor management actions in read-only mode', async () => {
+    const course = mockCourse({ id: 'course-v1:Org+X+2025' });
+    mockUseCourseTeam.mockReturnValue({ data: [mockInstructor()], isLoading: false });
+    const program = mockProgram({ courses: [course] });
+
+    render(<InstructorsTab program={program} canManage={false} />);
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: course.id } });
+
+    expect(screen.queryByRole('button', { name: /Add Instructor/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Remove/i })).not.toBeInTheDocument();
+  });
+
   it('shows role badge for instructor', async () => {
     const course = mockCourse({ id: 'course-v1:Org+X+2025', displayName: 'CS 101' });
     const instructor = mockInstructor({ role: 'staff' });

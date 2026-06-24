@@ -28,6 +28,8 @@ const TabsSection = ({
   librariesV1Enabled,
   librariesV2Enabled,
   showNewProgramContainer,
+  canAccessPrograms,
+  isProgramAccessLoading,
 }) => {
   const intl = useIntl();
   const navigate = useNavigate();
@@ -69,8 +71,13 @@ const TabsSection = ({
     setTabKey(initTabKeyState(pathname));
   }, [pathname]);
 
-  const { courses, numPages, coursesCount, courseCreatorStatus } = useSelector(getStudioHomeData);
-  const isProgramAdmin = courseCreatorStatus === COURSE_CREATOR_STATES.granted;
+  useEffect(() => {
+    if (!isProgramAccessLoading && !canAccessPrograms && pathname.includes('/programs')) {
+      navigate('/home', { replace: true });
+    }
+  }, [canAccessPrograms, isProgramAccessLoading, navigate, pathname]);
+
+  const { courses, numPages, coursesCount } = useSelector(getStudioHomeData);
   const {
     courseLoadingStatus,
   } = useSelector(getLoadingStatuses);
@@ -81,7 +88,7 @@ const TabsSection = ({
   // the correct operation of iterating over child elements inside the Paragon Tabs component.
   const visibleTabs = useMemo(() => {
     const tabs: JSX.Element[] = [];
-    if (isProgramAdmin) {
+    if (canAccessPrograms) {
       tabs.push(
         <Tab
           key={TABS_LIST.programs}
@@ -198,6 +205,8 @@ TabsSection.propTypes = {
   librariesV1Enabled: PropTypes.bool,
   librariesV2Enabled: PropTypes.bool,
   showNewProgramContainer: PropTypes.bool,
+  canAccessPrograms: PropTypes.bool.isRequired,
+  isProgramAccessLoading: PropTypes.bool.isRequired,
 };
 
 export default TabsSection;

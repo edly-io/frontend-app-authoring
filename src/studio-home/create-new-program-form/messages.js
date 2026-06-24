@@ -45,6 +45,14 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.new-program.run.required',
     defaultMessage: 'Program run is required.',
   },
+  cityLabel: {
+    id: 'course-authoring.studio-home.new-program.city.label',
+    defaultMessage: 'City',
+  },
+  cityRequired: {
+    id: 'course-authoring.studio-home.new-program.city.required',
+    defaultMessage: 'City is required.',
+  },
   targetAudienceLabel: {
     id: 'course-authoring.studio-home.new-program.audience.label',
     defaultMessage: 'Target audience',

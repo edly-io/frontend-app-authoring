@@ -6,7 +6,6 @@ import {
   Form,
   Spinner,
 } from '@openedx/paragon';
-import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 
 import type { BlockReviewComment } from '../data/types';
 import {
@@ -65,12 +64,11 @@ const ReplyForm = ({ commentId, usageKey, onCancel }: ReplyFormProps) => {
 interface CommentRowProps {
   comment: BlockReviewComment;
   usageKey: string;
-  currentUsername: string | undefined;
   isReply?: boolean;
 }
 
 const CommentRow = ({
-  comment, usageKey, currentUsername, isReply = false,
+  comment, usageKey, isReply = false,
 }: CommentRowProps) => {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const resolveMutation = useResolveComment(usageKey);
@@ -93,17 +91,15 @@ const CommentRow = ({
               Resolve
             </Button>
           )}
-          {comment.author === currentUsername && (
-            <Button
-              variant="link"
-              size="sm"
-              className="p-0 text-danger"
-              disabled={deleteMutation.isPending}
-              onClick={() => deleteMutation.mutate(comment.id)}
-            >
-              Delete
-            </Button>
-          )}
+          <Button
+            variant="link"
+            size="sm"
+            className="p-0 text-danger"
+            disabled={deleteMutation.isPending}
+            onClick={() => deleteMutation.mutate(comment.id)}
+          >
+            Delete
+          </Button>
         </div>
       </div>
       <p className="small mb-1">{comment.comment}</p>
@@ -115,7 +111,6 @@ const CommentRow = ({
           key={reply.id}
           comment={reply}
           usageKey={usageKey}
-          currentUsername={currentUsername}
           isReply
         />
       ))}
@@ -147,7 +142,6 @@ interface Props {
 }
 
 export const BlockCommentsPanel = ({ usageKey }: Props) => {
-  const currentUsername = getAuthenticatedUser()?.username;
   const { data: comments, isLoading } = useBlockComments(usageKey);
 
   return (
@@ -168,7 +162,6 @@ export const BlockCommentsPanel = ({ usageKey }: Props) => {
             key={c.id}
             comment={c}
             usageKey={usageKey}
-            currentUsername={currentUsername}
           />
         ))}
       </Collapsible.Body>

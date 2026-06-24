@@ -23,8 +23,9 @@ import { useIntl, defineMessages } from '@edx/frontend-platform/i18n';
 import { StudioFooterSlot } from '@edx/frontend-component-footer';
 import Header from '../header';
 import { LoadingSpinner } from '../generic/Loading';
+import PermissionDeniedAlert from '../generic/PermissionDeniedAlert';
 import { ToastContext } from '../generic/toast-context';
-import { useProgramDetail, useUpdateProgram } from './data/apiHooks';
+import { useProgramAccess, useProgramDetail, useUpdateProgram } from './data/apiHooks';
 import CoursesTab from './courses-tab/CoursesTab';
 import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
@@ -32,6 +33,7 @@ import EnrollmentTab from './enrollment-tab/EnrollmentTab';
 const messages = defineMessages({
   backToPrograms: { id: 'programs.detail.back', defaultMessage: '← Back to Programs' },
   configureSubtitle: { id: 'programs.detail.subtitle', defaultMessage: 'Configure your program details' },
+  viewSubtitle: { id: 'programs.detail.subtitle.read-only', defaultMessage: 'View program details' },
   saveProgram: { id: 'programs.detail.save', defaultMessage: 'Save Program' },
   saving: { id: 'programs.detail.saving', defaultMessage: 'Saving...' },
   savedSuccess: { id: 'programs.detail.saved', defaultMessage: 'Program saved successfully.' },
@@ -140,8 +142,15 @@ const ProgramDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState('details');
   const [imageFile, setImageFile] = React.useState<File | null>(null);
   const { showToast } = useContext(ToastContext);
+  const {
+    capabilities,
+    isLoading: isAccessLoading,
+  } = useProgramAccess();
 
-  const { data, isLoading, isError } = useProgramDetail(programId ?? '');
+  const { data, isLoading, isError } = useProgramDetail(
+    programId ?? '',
+    !isAccessLoading && capabilities.canAccessPrograms,
+  );
   const { mutateAsync: updateProgram, isPending: isSaving } = useUpdateProgram();
   const cities = data?.availableCities ?? [];
 
@@ -167,8 +176,22 @@ const ProgramDetailPage: React.FC = () => {
       displayName: Yup.string().trim().required(intl.formatMessage(messages.fieldTitleRequired)),
     }),
     onSubmit: async (values) => {
+      if (!capabilities.canEditProgram) {
+        return;
+      }
+
       try {
-        await updateProgram({ programId: programId ?? '', data: values, imageFile });
+        const updateData = capabilities.canArchiveProgram
+          ? values
+          : {
+            ...values,
+            status: undefined,
+          };
+        await updateProgram({
+          programId: programId ?? '',
+          data: updateData,
+          imageFile,
+        });
         setImageFile(null);
         showToast(intl.formatMessage(messages.savedSuccess));
       } catch {
@@ -193,12 +216,23 @@ const ProgramDetailPage: React.FC = () => {
   const statusBadgeVariant = STATUS_BADGE_VARIANT[formik.values.status ?? 'draft'] ?? 'secondary';
   const statusLabel = STATUS_OPTIONS.find((o) => o.value === formik.values.status)?.label ?? 'Draft';
 
-  if (isLoading) {
+  if (isAccessLoading || isLoading) {
     return (
       <>
         <Header isHiddenMainMenu />
         <Container size="xl" className="p-4 mt-3 d-flex justify-content-center">
           <LoadingSpinner />
+        </Container>
+      </>
+    );
+  }
+
+  if (!capabilities.canAccessPrograms) {
+    return (
+      <>
+        <Header isHiddenMainMenu />
+        <Container size="xl" className="p-4 mt-3">
+          <PermissionDeniedAlert />
         </Container>
       </>
     );
@@ -234,22 +268,28 @@ const ProgramDetailPage: React.FC = () => {
                 </Badge>
               )}
             </h2>
-            <p className="text-muted small mb-0">{intl.formatMessage(messages.configureSubtitle)}</p>
+            <p className="text-muted small mb-0">
+              {intl.formatMessage(
+                capabilities.isReadOnly ? messages.viewSubtitle : messages.configureSubtitle,
+              )}
+            </p>
           </div>
-          <StatefulButton
-            state={isSaving ? 'pending' : 'default'}
-            labels={{
-              default: intl.formatMessage(messages.saveProgram),
-              pending: intl.formatMessage(messages.saving),
-            }}
-            disabledStates={['pending']}
-            onClick={() => formik.handleSubmit()}
-            variant="primary"
-          />
+          {capabilities.canEditProgram && (
+            <StatefulButton
+              state={isSaving ? 'pending' : 'default'}
+              labels={{
+                default: intl.formatMessage(messages.saveProgram),
+                pending: intl.formatMessage(messages.saving),
+              }}
+              disabledStates={['pending']}
+              onClick={() => formik.handleSubmit()}
+              variant="primary"
+            />
+          )}
         </div>
 
         {/* ── Unsaved changes banner ──────────────────────────────────── */}
-        {formik.dirty && !formik.isSubmitting && (
+        {capabilities.canEditProgram && formik.dirty && !formik.isSubmitting && (
           <Alert variant="warning" className="mb-3">
             <div className="d-flex justify-content-between align-items-center">
               <span>
@@ -318,6 +358,7 @@ const ProgramDetailPage: React.FC = () => {
                           value={formik.values.displayName}
                           onChange={formik.handleChange}
                           onBlur={formik.handleBlur}
+                          readOnly={!capabilities.canEditProgram}
                         />
                         {formik.touched.displayName && formik.errors.displayName && (
                           <Form.Control.Feedback type="invalid">
@@ -337,6 +378,7 @@ const ProgramDetailPage: React.FC = () => {
                           value={formik.values.shortDescription ?? ''}
                           onChange={formik.handleChange}
                           onBlur={formik.handleBlur}
+                          readOnly={!capabilities.canEditProgram}
                         />
                         <Form.Text muted>{intl.formatMessage(messages.fieldShortDescHint)}</Form.Text>
                       </Form.Group>
@@ -352,6 +394,7 @@ const ProgramDetailPage: React.FC = () => {
                           value={formik.values.longDescription ?? ''}
                           onChange={formik.handleChange}
                           onBlur={formik.handleBlur}
+                          readOnly={!capabilities.canEditProgram}
                         />
                         <Form.Text muted>{intl.formatMessage(messages.fieldDetailedDescHint)}</Form.Text>
                       </Form.Group>
@@ -361,6 +404,7 @@ const ProgramDetailPage: React.FC = () => {
                         <Form.Label>{intl.formatMessage(messages.fieldAudience)}</Form.Label>
                         <CreatableSelect
                           isClearable
+                          isDisabled={!capabilities.canEditProgram}
                           options={audienceOptions}
                           value={selectedAudience}
                           onChange={(option) => formik.setFieldValue('targetAudience', option?.value ?? '')}
@@ -411,6 +455,7 @@ const ProgramDetailPage: React.FC = () => {
                               selected={formik.values.startDate ? new Date(formik.values.startDate) : null}
                               onChange={(date) => formik.setFieldValue('startDate', date ? date.toISOString().split('T')[0] : '')}
                               customInput={<DateInput placeholder="Select start date" />}
+                              disabled={!capabilities.canEditProgram}
                               dateFormat="MMMM d, yyyy"
                               popperPlacement="bottom-start"
                               showMonthDropdown
@@ -427,6 +472,7 @@ const ProgramDetailPage: React.FC = () => {
                               selected={formik.values.endDate ? new Date(formik.values.endDate) : null}
                               onChange={(date) => formik.setFieldValue('endDate', date ? date.toISOString().split('T')[0] : '')}
                               customInput={<DateInput placeholder="Select end date" />}
+                              disabled={!capabilities.canEditProgram}
                               dateFormat="MMMM d, yyyy"
                               minDate={formik.values.startDate ? new Date(formik.values.startDate) : undefined}
                               popperPlacement="bottom-start"
@@ -442,16 +488,20 @@ const ProgramDetailPage: React.FC = () => {
                       {/* Program Status */}
                       <Form.Group className="mb-4">
                         <Form.Label>{intl.formatMessage(messages.fieldStatus)}</Form.Label>
-                        <Form.Control
-                          as="select"
-                          name="status"
-                          value={formik.values.status ?? 'draft'}
-                          onChange={formik.handleChange}
-                        >
-                          {STATUS_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                          ))}
-                        </Form.Control>
+                        {capabilities.canArchiveProgram ? (
+                          <Form.Control
+                            as="select"
+                            name="status"
+                            value={formik.values.status ?? 'draft'}
+                            onChange={formik.handleChange}
+                          >
+                            {STATUS_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </Form.Control>
+                        ) : (
+                          <Form.Control plaintext readOnly value={statusLabel} />
+                        )}
                       </Form.Group>
 
                       {/* Is Featured */}
@@ -462,6 +512,7 @@ const ProgramDetailPage: React.FC = () => {
                             id="isFeatured"
                             checked={formik.values.isFeatured ?? false}
                             onChange={(e) => formik.setFieldValue('isFeatured', e.target.checked)}
+                            disabled={!capabilities.canEditProgram}
                             className="mt-1 mr-2"
                             style={{
                               cursor: 'pointer', width: '16px', height: '16px', flexShrink: 0,
@@ -487,7 +538,7 @@ const ProgramDetailPage: React.FC = () => {
                     subtitle={intl.formatMessage(messages.sectionImageSubtitle)}
                   />
                   <Card.Section>
-                    {formik.values.image ? (
+                    {formik.values.image && (
                       <div>
                         <img
                           src={formik.values.image}
@@ -500,16 +551,19 @@ const ProgramDetailPage: React.FC = () => {
                             display: 'block',
                           }}
                         />
-                        <Button
-                          variant="outline-primary"
-                          size="sm"
-                          className="mt-3"
-                          onClick={() => document.getElementById('program-image-input')?.click()}
-                        >
-                          {intl.formatMessage(messages.imageChange)}
-                        </Button>
+                        {capabilities.canEditProgram && (
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            className="mt-3"
+                            onClick={() => document.getElementById('program-image-input')?.click()}
+                          >
+                            {intl.formatMessage(messages.imageChange)}
+                          </Button>
+                        )}
                       </div>
-                    ) : (
+                    )}
+                    {!formik.values.image && capabilities.canEditProgram && (
                       <button
                         type="button"
                         className="w-100 border-0 bg-transparent p-0"
@@ -540,13 +594,18 @@ const ProgramDetailPage: React.FC = () => {
                         </div>
                       </button>
                     )}
-                    <input
-                      id="program-image-input"
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      className="d-none"
-                      onChange={handleImageChange}
-                    />
+                    {!formik.values.image && !capabilities.canEditProgram && (
+                      <p className="text-muted mb-0">No program image uploaded.</p>
+                    )}
+                    {capabilities.canEditProgram && (
+                      <input
+                        id="program-image-input"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="d-none"
+                        onChange={handleImageChange}
+                      />
+                    )}
                   </Card.Section>
                 </Card>
 
@@ -582,15 +641,25 @@ const ProgramDetailPage: React.FC = () => {
           </Tab>
 
           <Tab eventKey="courses" title={intl.formatMessage(messages.tabCourses)}>
-            <CoursesTab program={program} programId={programId ?? ''} />
+            <CoursesTab
+              program={program}
+              programId={programId ?? ''}
+              canManage={capabilities.canManageCourses}
+            />
           </Tab>
 
           <Tab eventKey="instructors" title={intl.formatMessage(messages.tabInstructors)}>
-            <InstructorsTab program={program} />
+            <InstructorsTab
+              program={program}
+              canManage={capabilities.canManageInstructors}
+            />
           </Tab>
 
           <Tab eventKey="enrollment" title={intl.formatMessage(messages.tabEnrollment)}>
-            <EnrollmentTab programId={programId ?? ''} />
+            <EnrollmentTab
+              programId={programId ?? ''}
+              canManage={capabilities.canManageEnrollment}
+            />
           </Tab>
         </Tabs>
 

@@ -45,14 +45,26 @@ describe('<CourseLifecycleSection />', () => {
     expect(container.querySelector('.spinner-border')).toBeInTheDocument();
   });
 
-  it('shows "not enrolled in review workflow" when there is an error', () => {
+  it('shows a load error for non-404 failures', () => {
     mockUseCourseAggregateState.mockReturnValue({
       data: undefined,
       isLoading: false,
       error: new Error('Not found'),
     });
     render(<CourseLifecycleSection courseId={courseId} />);
-    expect(screen.getByText(/not enrolled in the review workflow/i)).toBeInTheDocument();
+    expect(screen.getByText(/could not load course review status/i)).toBeInTheDocument();
+  });
+
+  it('does not render lifecycle UI when access is denied', () => {
+    mockUseCourseAggregateState.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: null,
+      isAccessPending: false,
+      isAccessDenied: true,
+    });
+    const { container } = render(<CourseLifecycleSection courseId={courseId} />);
+    expect(container.querySelector('.lifecycle-section')).not.toBeInTheDocument();
   });
 
   it('shows "not enrolled in review workflow" when data is null', () => {

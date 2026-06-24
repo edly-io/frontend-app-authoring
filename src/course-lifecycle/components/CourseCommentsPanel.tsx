@@ -7,7 +7,6 @@ import {
   Spinner,
 } from '@openedx/paragon';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 
 import type { BlockReviewComment } from '../data/types';
 import { deleteComment, resolveComment } from '../data/api';
@@ -62,7 +61,6 @@ const CourseReplyForm = ({ commentId, courseId, onCancel }: CourseReplyFormProps
 interface CourseCommentRowProps {
   comment: BlockReviewComment;
   courseId: string;
-  currentUsername: string | undefined;
   resolveMutationPending: boolean;
   deleteMutationPending: boolean;
   onResolve: (id: number) => void;
@@ -71,7 +69,7 @@ interface CourseCommentRowProps {
 }
 
 const CourseCommentRow = ({
-  comment, courseId, currentUsername,
+  comment, courseId,
   resolveMutationPending, deleteMutationPending,
   onResolve, onDelete, isReply = false,
 }: CourseCommentRowProps) => {
@@ -94,17 +92,15 @@ const CourseCommentRow = ({
               Resolve
             </Button>
           )}
-          {comment.author === currentUsername && (
-            <Button
-              variant="link"
-              size="sm"
-              className="p-0 text-danger"
-              disabled={deleteMutationPending}
-              onClick={() => onDelete(comment.id)}
-            >
-              Delete
-            </Button>
-          )}
+          <Button
+            variant="link"
+            size="sm"
+            className="p-0 text-danger"
+            disabled={deleteMutationPending}
+            onClick={() => onDelete(comment.id)}
+          >
+            Delete
+          </Button>
         </div>
       </div>
       <p className="small mb-1">{comment.comment}</p>
@@ -116,7 +112,6 @@ const CourseCommentRow = ({
           key={reply.id}
           comment={reply}
           courseId={courseId}
-          currentUsername={currentUsername}
           resolveMutationPending={resolveMutationPending}
           deleteMutationPending={deleteMutationPending}
           onResolve={onResolve}
@@ -152,7 +147,6 @@ interface Props {
 
 export const CourseCommentsPanel = ({ courseId }: Props) => {
   const queryClient = useQueryClient();
-  const currentUsername = getAuthenticatedUser()?.username;
   const { data: comments, isLoading } = useCourseComments(courseId);
 
   const resolveMutation = useMutation({
@@ -187,7 +181,6 @@ export const CourseCommentsPanel = ({ courseId }: Props) => {
             key={c.id}
             comment={c}
             courseId={courseId}
-            currentUsername={currentUsername}
             resolveMutationPending={resolveMutation.isPending}
             deleteMutationPending={deleteMutation.isPending}
             onResolve={(id) => resolveMutation.mutate(id)}

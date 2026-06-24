@@ -11,6 +11,7 @@ import { getCourseUnitData } from '../data/selectors';
 import messages from './messages';
 import ModalNotification from '../../generic/modal-notification';
 import { LifecycleSection, useBlockState } from '../../course-lifecycle';
+import { getLifecyclePublishPermission } from '../../course-lifecycle/data/permissions';
 
 interface PublishControlsProps {
   blockId?: string,
@@ -19,7 +20,8 @@ interface PublishControlsProps {
 const PublishControls = ({ blockId }: PublishControlsProps) => {
   const unitData = useSelector(getCourseUnitData);
   const { hasChanges } = unitData || {};
-  const { data: blockLifecycleState } = useBlockState(blockId ?? '');
+  const blockLifecycleQuery = useBlockState(blockId ?? '');
+  const lifecyclePublishPermission = getLifecyclePublishPermission(blockLifecycleQuery);
   const {
     title,
     locationId,
@@ -72,7 +74,7 @@ const PublishControls = ({ blockId }: PublishControlsProps) => {
         openVisibleModal={openVisibleModal}
         handlePublishing={handleCourseUnitPublish}
         visibleToStaffOnly={visibleToStaffOnly}
-        hidePublishButton={!!blockLifecycleState}
+        hidePublishButton={lifecyclePublishPermission !== undefined}
       />
       <ModalNotification
         title={intl.formatMessage(messages.modalDiscardUnitChangesTitle)}

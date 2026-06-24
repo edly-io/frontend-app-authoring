@@ -1,3 +1,5 @@
+export type { FbrRole, FbrUserProfile } from '@src/fbr-access/types';
+
 export interface Course {
   id: string;
   displayName: string;
@@ -52,6 +54,30 @@ export interface ProgramConfig {
   programTypes: ProgramTypeOption[];
   statuses: string[];
   cities: CityOption[];
+}
+
+export interface CityOption {
+  id: number;
+  name: string;
+}
+
+export interface CreateProgramInput {
+  displayName: string;
+  org: string;
+  programType: string;
+  run: string;
+  cityId?: number;
+}
+
+export interface ProgramCapabilities {
+  canAccessPrograms: boolean;
+  canCreateProgram: boolean;
+  canEditProgram: boolean;
+  canArchiveProgram: boolean;
+  canManageCourses: boolean;
+  canManageEnrollment: boolean;
+  canManageInstructors: boolean;
+  isReadOnly: boolean;
 }
 
 export interface ProgramDetailResponse {

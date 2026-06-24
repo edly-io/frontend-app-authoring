@@ -25,11 +25,16 @@ import CreateNewProgramForm from './create-new-program-form';
 import messages from './messages';
 import { useStudioHome } from './hooks';
 import AlertMessage from '../generic/alert-message';
+import { useProgramAccess } from '../programs/data/apiHooks';
 
 const StudioHome = () => {
   const intl = useIntl();
   const location = useLocation();
   const navigate = useNavigate();
+  const {
+    capabilities: programCapabilities,
+    isLoading: isProgramAccessLoading,
+  } = useProgramAccess();
 
   const {
     isLoadingPage,
@@ -74,7 +79,7 @@ const StudioHome = () => {
       );
     }
 
-    if (hasAbilityToCreateNewCourse) {
+    if (programCapabilities.canCreateProgram) {
       headerButtons.push(
         <Button
           variant="outline-primary"
@@ -124,7 +129,13 @@ const StudioHome = () => {
     }
 
     return headerButtons;
-  }, [location, userIsActive, isFailedLoadingPage, hasAbilityToCreateNewCourse, showNewProgramContainer]);
+  }, [
+    location,
+    userIsActive,
+    isFailedLoadingPage,
+    programCapabilities.canCreateProgram,
+    showNewProgramContainer,
+  ]);
 
   const headerButtons = userIsActive ? getHeaderButtons() : [];
   if (isLoadingPage && !isFiltered) {
@@ -161,7 +172,7 @@ const StudioHome = () => {
             {showNewCourseContainer && (
               <CreateNewCourseForm handleOnClickCancel={() => setShowNewCourseContainer(false)} />
             )}
-            {showNewProgramContainer && (
+            {showNewProgramContainer && programCapabilities.canCreateProgram && (
               <CreateNewProgramForm handleOnClickCancel={() => setShowNewProgramContainer(false)} />
             )}
             {isShowOrganizationDropdown && <OrganizationSection />}
@@ -172,6 +183,8 @@ const StudioHome = () => {
               librariesV1Enabled={librariesV1Enabled}
               librariesV2Enabled={librariesV2Enabled}
               showNewProgramContainer={showNewProgramContainer}
+              canAccessPrograms={programCapabilities.canAccessPrograms}
+              isProgramAccessLoading={isProgramAccessLoading}
             />
           </section>
         </Layout.Element>

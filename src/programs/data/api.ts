@@ -5,7 +5,9 @@ import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import type {
   Batch,
+  CityOption,
   Course,
+  CreateProgramInput,
   Instructor,
   Learner,
   PaginatedCourses,
@@ -15,7 +17,15 @@ import type {
   ProgramDetailResponse,
 } from './types';
 
+export { getCurrentFbrProfile, getCurrentFbrProfileUrl } from '@src/fbr-access/api';
+
 const getProgramsBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/programs`;
+export const getFbrCitiesUrl = () => `${getConfig().LMS_BASE_URL}/fbr/api/biodata/v1/users/cities/`;
+
+export const getFbrCities = async (): Promise<CityOption[]> => {
+  const { data } = await getAuthenticatedHttpClient().get(getFbrCitiesUrl());
+  return Array.isArray(data) ? data : [];
+};
 
 // ── Response → Course type transformation ────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -82,13 +92,13 @@ export const getProgramDetail = async (programId: string): Promise<ProgramDetail
 };
 
 // ── Create — POST /fbr/api/programs/ ────────────────────────────────────────
-export const createProgram = async (input: Omit<Program, 'id'>): Promise<Program> => {
+export const createProgram = async (input: CreateProgramInput): Promise<Program> => {
   const payload = {
     name: input.displayName,
     organization: input.org,
     program_type: input.programType,
     batch: input.run,
-    ...(input.city ? { city: input.city } : {}),
+    ...(input.cityId !== undefined ? { city: input.cityId } : {}),
   };
   const { data } = await getAuthenticatedHttpClient().post(`${getProgramsBaseUrl()}/`, payload);
   return toProgram(data);

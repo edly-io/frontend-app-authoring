@@ -43,6 +43,8 @@ const tabSectionComponent = (overrideProps) => (
     isShowProcessing
     librariesV1Enabled
     librariesV2Enabled
+    canAccessPrograms
+    isProgramAccessLoading={false}
     {...overrideProps}
   />
 );
@@ -90,10 +92,21 @@ describe('<TabsSection />', () => {
     await executeThunk(fetchStudioHomeData(), store.dispatch);
 
     expect(screen.getByRole('tab', { name: tabMessages.coursesTabTitle.defaultMessage })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: tabMessages.programsTabTitle.defaultMessage })).toBeInTheDocument();
 
     expect(screen.getByRole('tab', { name: librariesBetaTabTitle })).toBeInTheDocument();
 
     expect(screen.getByRole('tab', { name: tabMessages.legacyLibrariesTabTitle.defaultMessage })).toBeInTheDocument();
+  });
+
+  it('does not render the programs tab without program access', async () => {
+    const data: any = generateGetStudioHomeDataApiResponse();
+
+    render({ canAccessPrograms: false });
+    axiosMock.onGet(getStudioHomeApiUrl()).reply(200, data);
+    await executeThunk(fetchStudioHomeData(), store.dispatch);
+
+    expect(screen.queryByRole('tab', { name: tabMessages.programsTabTitle.defaultMessage })).not.toBeInTheDocument();
   });
 
   it('should render only 1 library tab when libraries-v2 disabled', async () => {

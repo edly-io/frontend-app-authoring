@@ -18,6 +18,7 @@ import {
   submitCourseForReview,
   submitForReview,
 } from './api';
+import { useLifecycleAccess } from './accessHooks';
 
 export const lifecycleQueryKeys = {
   blockState: (usageKey: string) => ['lifecycle', 'block', usageKey, 'state'],
@@ -27,21 +28,39 @@ export const lifecycleQueryKeys = {
   bulkCourseStates: (courseIds: string[]) => ['lifecycle', 'courses', 'bulk', ...courseIds],
 };
 
-export const useBulkCourseAggregateStates = (courseIds: string[]) => useQuery({
-  queryKey: lifecycleQueryKeys.bulkCourseStates(courseIds),
-  queryFn: () => getBulkCourseAggregateStates(courseIds),
-  enabled: courseIds.length > 0,
-});
+export const useBulkCourseAggregateStates = (courseIds: string[], options?: { enabled?: boolean }) => {
+  const { isPending: isAccessPending, capabilities } = useLifecycleAccess();
+  const isAccessDenied = !isAccessPending && !capabilities.canAccessLifecycle;
+  const query = useQuery({
+    queryKey: lifecycleQueryKeys.bulkCourseStates(courseIds),
+    queryFn: () => getBulkCourseAggregateStates(courseIds),
+    enabled: (options?.enabled ?? true)
+      && courseIds.length > 0
+      && !isAccessPending
+      && capabilities.canAccessLifecycle,
+  });
 
-export const useCourseAggregateState = (courseId: string, options?: { enabled?: boolean }) => useQuery({
-  queryKey: lifecycleQueryKeys.courseState(courseId),
-  queryFn: () => getCourseAggregateState(courseId),
-  enabled: options?.enabled ?? true,
-  retry: (failureCount, error: any) => {
-    if (error?.response?.status === 404) { return false; }
-    return failureCount < 3;
-  },
-});
+  return { ...query, isAccessPending, isAccessDenied };
+};
+
+export const useCourseAggregateState = (courseId: string, options?: { enabled?: boolean }) => {
+  const { isPending: isAccessPending, capabilities } = useLifecycleAccess();
+  const isAccessDenied = !isAccessPending && !capabilities.canAccessLifecycle;
+  const query = useQuery({
+    queryKey: lifecycleQueryKeys.courseState(courseId),
+    queryFn: () => getCourseAggregateState(courseId),
+    enabled: (options?.enabled ?? true)
+      && !!courseId
+      && !isAccessPending
+      && capabilities.canAccessLifecycle,
+    retry: (failureCount, error: any) => {
+      if ([403, 404].includes(error?.response?.status)) { return false; }
+      return failureCount < 3;
+    },
+  });
+
+  return { ...query, isAccessPending, isAccessDenied };
+};
 
 export const useSubmitCourseForReview = (courseId: string) => {
   const queryClient = useQueryClient();
@@ -75,27 +94,50 @@ export const useRequestCourseChanges = (courseId: string) => {
   });
 };
 
-export const useBlockState = (usageKey: string) => useQuery({
-  queryKey: lifecycleQueryKeys.blockState(usageKey),
-  queryFn: () => getBlockState(usageKey),
-  // Treat 404 as "unmanaged block" — return null instead of throwing
-  retry: (failureCount, error: any) => {
-    if (error?.response?.status === 404) {
-      return false;
-    }
-    return failureCount < 3;
-  },
-});
+export const useBlockState = (usageKey: string, options?: { enabled?: boolean }) => {
+  const { isPending: isAccessPending, capabilities } = useLifecycleAccess();
+  const isAccessDenied = !isAccessPending && !capabilities.canAccessLifecycle;
+  const query = useQuery({
+    queryKey: lifecycleQueryKeys.blockState(usageKey),
+    queryFn: () => getBlockState(usageKey),
+    enabled: (options?.enabled ?? true)
+      && !!usageKey
+      && !isAccessPending
+      && capabilities.canAccessLifecycle,
+    retry: (failureCount, error: any) => {
+      if ([403, 404].includes(error?.response?.status)) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+  });
 
-export const useBlockComments = (usageKey: string) => useQuery({
-  queryKey: lifecycleQueryKeys.blockComments(usageKey),
-  queryFn: () => getBlockComments(usageKey),
-});
+  return { ...query, isAccessPending, isAccessDenied };
+};
 
-export const useCourseComments = (courseId: string) => useQuery({
-  queryKey: lifecycleQueryKeys.courseComments(courseId),
-  queryFn: () => getCourseComments(courseId),
-});
+export const useBlockComments = (usageKey: string, options?: { enabled?: boolean }) => {
+  const { isPending: isAccessPending, capabilities } = useLifecycleAccess();
+  return useQuery({
+    queryKey: lifecycleQueryKeys.blockComments(usageKey),
+    queryFn: () => getBlockComments(usageKey),
+    enabled: (options?.enabled ?? true)
+      && !!usageKey
+      && !isAccessPending
+      && capabilities.canManageComments,
+  });
+};
+
+export const useCourseComments = (courseId: string, options?: { enabled?: boolean }) => {
+  const { isPending: isAccessPending, capabilities } = useLifecycleAccess();
+  return useQuery({
+    queryKey: lifecycleQueryKeys.courseComments(courseId),
+    queryFn: () => getCourseComments(courseId),
+    enabled: (options?.enabled ?? true)
+      && !!courseId
+      && !isAccessPending
+      && capabilities.canManageComments,
+  });
+};
 
 export const useSubmitForReview = (usageKey: string) => {
   const queryClient = useQueryClient();
