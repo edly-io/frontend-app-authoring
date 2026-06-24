@@ -6,10 +6,10 @@ import {
 } from '@openedx/paragon';
 import { RemoveRedEye as ViewIcon } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
-import {
-  getFeedbackStatus,
-  type FeedbackRequest,
-} from './feedbackMocks';
+import type {
+  FeedbackRequest,
+  FeedbackRequestStatus,
+} from '../data/types';
 
 const messages = defineMessages({
   feedbackName: { id: 'programs.feedback.table.feedback-name', defaultMessage: 'Feedback Name' },
@@ -33,12 +33,37 @@ const formatTableDate = (value: string | null) => {
     return '--';
   }
 
+  const dateOnlyMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dateOnlyMatch) {
+    const [, year, month, day] = dateOnlyMatch;
+    return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString('en-US', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+    });
+  }
+
   const match = value.match(/^([A-Za-z]{3} \d{2}, \d{4})/);
   if (match) {
     return match[1];
   }
 
+  const parsedDate = new Date(value);
+  if (!Number.isNaN(parsedDate.getTime())) {
+    return parsedDate.toLocaleDateString('en-US', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+    });
+  }
+
   return value;
+};
+
+const STATUS_BADGE_VARIANT: Record<FeedbackRequestStatus, string> = {
+  Completed: 'success',
+  'Not Submitted': 'danger',
+  Pending: 'warning',
 };
 
 interface FeedbackRequestsTableProps {
@@ -51,6 +76,11 @@ const FeedbackRequestsTable: React.FC<FeedbackRequestsTableProps> = ({
   onViewResponse,
 }) => {
   const intl = useIntl();
+  const statusLabelByStatus: Record<FeedbackRequestStatus, string> = {
+    Completed: intl.formatMessage(messages.completed),
+    'Not Submitted': intl.formatMessage(messages.notSubmitted),
+    Pending: intl.formatMessage(messages.pending),
+  };
 
   return (
     <div className="feedback-table-wrapper">
@@ -71,26 +101,21 @@ const FeedbackRequestsTable: React.FC<FeedbackRequestsTableProps> = ({
         </thead>
         <tbody>
           {requests.map((request) => {
-            const status = getFeedbackStatus(request);
-            const badgeVariant = status === 'Completed' ? 'success' : status === 'Not Submitted' ? 'danger' : 'warning';
+            const { status } = request;
 
             return (
               <tr key={request.id}>
                 <td className="feedback-table-feedback-name">{request.feedbackName}</td>
-                <td>{request.requestedBy}</td>
-                <td>{request.instructor}</td>
-                <td>{request.trainee}</td>
-                <td className="feedback-table-course">{request.course}</td>
-                <td className="feedback-table-nowrap">{request.deadline}</td>
-                <td className="feedback-table-nowrap">{formatTableDate(request.requestedOn)}</td>
-                <td className="feedback-table-nowrap">{formatTableDate(request.submittedOn)}</td>
+                <td>{request.requestedByName}</td>
+                <td>{request.instructorName}</td>
+                <td>{request.traineeName}</td>
+                <td className="feedback-table-course">{request.courseId}</td>
+                <td className="feedback-table-nowrap">{formatTableDate(request.deadline)}</td>
+                <td className="feedback-table-nowrap">{formatTableDate(request.created)}</td>
+                <td className="feedback-table-nowrap">{formatTableDate(request.submittedAt)}</td>
                 <td className="feedback-table-nowrap">
-                  <Badge variant={badgeVariant}>
-                    {status === 'Completed'
-                      ? intl.formatMessage(messages.completed)
-                      : status === 'Not Submitted'
-                        ? intl.formatMessage(messages.notSubmitted)
-                        : intl.formatMessage(messages.pending)}
+                  <Badge variant={STATUS_BADGE_VARIANT[status]}>
+                    {statusLabelByStatus[status]}
                   </Badge>
                 </td>
                 <td className="feedback-table-nowrap">

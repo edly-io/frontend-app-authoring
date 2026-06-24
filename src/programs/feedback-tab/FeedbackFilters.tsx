@@ -9,7 +9,7 @@ import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import type {
   FeedbackFilterOptions,
   FeedbackFiltersState,
-} from './feedbackMocks';
+} from '../data/types';
 
 const messages = defineMessages({
   feedbackName: { id: 'programs.feedback.filters.feedback-name', defaultMessage: 'Feedback Name' },
@@ -38,7 +38,9 @@ const FeedbackFilters: React.FC<FeedbackFiltersProps> = ({
 }) => {
   const intl = useIntl();
 
-  const handleChange = (field: keyof FeedbackFiltersState) => (event: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
+  const handleChange = (field: keyof FeedbackFiltersState) => (
+    event: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>,
+  ) => {
     onChange({
       ...filters,
       [field]: event.target.value,

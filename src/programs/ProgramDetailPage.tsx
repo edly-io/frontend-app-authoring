@@ -576,9 +576,9 @@ const ProgramDetailPage: React.FC = () => {
             <EnrollmentTab programId={programId ?? ''} />
           </Tab>
 
-            <Tab eventKey="feedback" title={intl.formatMessage(messages.tabFeedback)}>
-              <FeedbackTab program={program} />
-            </Tab>
+          <Tab eventKey="feedback" title={intl.formatMessage(messages.tabFeedback)}>
+            <FeedbackTab programId={programId ?? ''} />
+          </Tab>
         </Tabs>
 
       </Container>

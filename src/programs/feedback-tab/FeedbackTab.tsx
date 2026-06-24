@@ -1,27 +1,34 @@
 import React, { useContext, useMemo, useState } from 'react';
 import {
+  Alert,
   Button,
   Card,
+  Spinner,
   useToggle,
 } from '@openedx/paragon';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import { ToastContext } from '../../generic/toast-context';
-import type { Program } from '../data/types';
+import type {
+  FeedbackFiltersState,
+  FeedbackRequest,
+  InitiateFeedbackPayload,
+} from '../data/types';
+import {
+  useFeedbackRequests,
+  useInitiateFeedbackRequests,
+} from '../data/apiHooks';
 import FeedbackFilters from './FeedbackFilters';
 import InitiateFeedbackRequestModal from './InitiateFeedbackRequestModal';
 import FeedbackRequestsTable from './FeedbackRequestsTable';
 import FeedbackResponseModal from './FeedbackResponseModal';
-import {
-  defaultFeedbackFilters,
-  filterFeedbackRequests,
-  getFeedbackFilterOptions,
-  getFeedbackStatus,
-  initiateFeedbackRequests,
-  type FeedbackFiltersState,
-  type FeedbackRequest,
-  type InitiateFeedbackPayload,
-} from './feedbackMocks';
 import './feedback-tab.scss';
+
+const defaultFeedbackFilters: FeedbackFiltersState = {
+  feedbackName: 'All',
+  instructor: '',
+  trainee: '',
+  status: 'All',
+};
 
 const messages = defineMessages({
   sectionTitle: { id: 'programs.feedback.title', defaultMessage: 'Feedback' },
@@ -36,44 +43,66 @@ const messages = defineMessages({
     id: 'programs.feedback.initiated.success',
     defaultMessage: 'Feedback requests have been initiated successfully.',
   },
+  initiatedError: {
+    id: 'programs.feedback.initiated.error',
+    defaultMessage: 'Failed to initiate feedback requests. Please try again.',
+  },
+  loadError: {
+    id: 'programs.feedback.load.error',
+    defaultMessage: 'Failed to load feedback requests.',
+  },
+  loading: {
+    id: 'programs.feedback.loading',
+    defaultMessage: 'Loading feedback requests...',
+  },
 });
 
 interface FeedbackTabProps {
-  program: Program;
+  programId: string;
 }
 
-const FeedbackTab: React.FC<FeedbackTabProps> = ({ program }) => {
+const uniqueSorted = (values: string[]) => [...new Set(values)].sort((left, right) => left.localeCompare(right));
+
+const FeedbackTab: React.FC<FeedbackTabProps> = ({ programId }) => {
   const intl = useIntl();
   const { showToast } = useContext(ToastContext);
   const [isInitiateModalOpen, openInitiateModal, closeInitiateModal] = useToggle(false);
   const [filters, setFilters] = useState<FeedbackFiltersState>(defaultFeedbackFilters);
-  const [feedbackRequests, setFeedbackRequests] = useState<FeedbackRequest[]>([]);
-  const [selectedResponseRequest, setSelectedResponseRequest] = useState<FeedbackRequest | null>(null);
-  const [hasInitiated, setHasInitiated] = useState(false);
+  const [selectedResponseRequestId, setSelectedResponseRequestId] = useState<number | null>(null);
+  const {
+    data: feedbackRequests = [],
+    isLoading,
+    isFetching,
+    isError,
+  } = useFeedbackRequests(programId, filters);
+  const initiateFeedback = useInitiateFeedbackRequests();
+  const hasActiveFilters = filters.feedbackName !== 'All'
+    || filters.status !== 'All'
+    || !!filters.instructor.trim()
+    || !!filters.trainee.trim();
 
   const filterOptions = useMemo(
-    () => getFeedbackFilterOptions(feedbackRequests),
+    () => ({ feedbackNames: uniqueSorted(feedbackRequests.map((request) => request.feedbackName)) }),
     [feedbackRequests],
   );
-  const filteredRequests = useMemo(
-    () => filterFeedbackRequests(feedbackRequests, filters),
-    [feedbackRequests, filters],
-  );
 
-  const handleInitiate = (payload: InitiateFeedbackPayload) => {
-    setFeedbackRequests(initiateFeedbackRequests(program, payload));
-    setFilters(defaultFeedbackFilters);
-    setHasInitiated(true);
-    closeInitiateModal();
-    showToast(intl.formatMessage(messages.initiatedSuccess));
+  const handleInitiate = async (payload: InitiateFeedbackPayload) => {
+    try {
+      await initiateFeedback.mutateAsync({ programId, payload });
+      setFilters(defaultFeedbackFilters);
+      closeInitiateModal();
+      showToast(intl.formatMessage(messages.initiatedSuccess));
+    } catch {
+      showToast(intl.formatMessage(messages.initiatedError));
+    }
   };
 
   const handleViewResponse = (request: FeedbackRequest) => {
-    if (getFeedbackStatus(request) !== 'Completed' || !request.response) {
+    if (request.status !== 'Completed') {
       return;
     }
 
-    setSelectedResponseRequest(request);
+    setSelectedResponseRequestId(request.id);
   };
 
   return (
@@ -90,25 +119,37 @@ const FeedbackTab: React.FC<FeedbackTabProps> = ({ program }) => {
 
       <Card>
         <Card.Section className="feedback-tab-section">
-          {!hasInitiated ? (
-            <p className="text-muted mb-0">{intl.formatMessage(messages.emptyState)}</p>
-          ) : (
-            <>
-              <FeedbackFilters
-                filters={filters}
-                options={filterOptions}
-                onChange={setFilters}
-              />
+          <FeedbackFilters
+            filters={filters}
+            options={filterOptions}
+            onChange={setFilters}
+          />
 
-              {filteredRequests.length === 0 ? (
-                <p className="text-muted mb-0">{intl.formatMessage(messages.noResults)}</p>
-              ) : (
-                <FeedbackRequestsTable
-                  requests={filteredRequests}
-                  onViewResponse={handleViewResponse}
-                />
-              )}
-            </>
+          {isLoading && (
+            <div className="d-flex justify-content-center py-4">
+              <Spinner animation="border" screenReaderText={intl.formatMessage(messages.loading)} />
+            </div>
+          )}
+
+          {!isLoading && isError && (
+            <Alert variant="danger" className="mb-0">
+              {intl.formatMessage(messages.loadError)}
+            </Alert>
+          )}
+
+          {!isLoading && !isError && feedbackRequests.length === 0 ? (
+            <p className="text-muted mb-0">
+              {intl.formatMessage(hasActiveFilters ? messages.noResults : messages.emptyState)}
+            </p>
+          ) : null}
+
+          {!isLoading && !isError && feedbackRequests.length > 0 && (
+            <div style={{ opacity: isFetching && !isLoading ? 0.4 : 1, transition: 'opacity 0.15s' }}>
+              <FeedbackRequestsTable
+                requests={feedbackRequests}
+                onViewResponse={handleViewResponse}
+              />
+            </div>
           )}
         </Card.Section>
       </Card>
@@ -117,12 +158,15 @@ const FeedbackTab: React.FC<FeedbackTabProps> = ({ program }) => {
         isOpen={isInitiateModalOpen}
         onClose={closeInitiateModal}
         onConfirm={handleInitiate}
+        programId={programId}
+        isSubmitting={initiateFeedback.isPending}
       />
 
       <FeedbackResponseModal
-        isOpen={!!selectedResponseRequest}
-        request={selectedResponseRequest}
-        onClose={() => setSelectedResponseRequest(null)}
+        isOpen={!!selectedResponseRequestId}
+        programId={programId}
+        requestId={selectedResponseRequestId}
+        onClose={() => setSelectedResponseRequestId(null)}
       />
     </div>
   );

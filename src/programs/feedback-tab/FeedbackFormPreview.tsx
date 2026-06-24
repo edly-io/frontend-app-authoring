@@ -3,8 +3,7 @@ import { Form } from '@openedx/paragon';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import type {
   FeedbackFormQuestion,
-  FeedbackFormTemplate,
-} from './feedbackMocks';
+} from '../data/types';
 
 const messages = defineMessages({
   sectionTitle: { id: 'programs.feedback.preview.title', defaultMessage: 'Feedback Form Preview' },

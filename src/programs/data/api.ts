@@ -13,9 +13,17 @@ import type {
   Program,
   ProgramConfig,
   ProgramDetailResponse,
+  CreateFeedbackFormInput,
+  FeedbackFiltersState,
+  FeedbackFormQuestion,
+  FeedbackFormTemplate,
+  FeedbackRequest,
+  InitiateFeedbackPayload,
 } from './types';
 
 const getProgramsBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/programs`;
+const getFeedbackBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/cms/feedback`;
+const getEncodedProgramId = (programId: string) => encodeURIComponent(programId);
 
 // ── Response → Course type transformation ────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -193,6 +201,69 @@ const toUser = (d: any): Learner => ({
   username: d.username,
   email: d.email,
   name: [d.first_name, d.last_name].filter(Boolean).join(' ') || d.username,
+});
+
+// ── Response → Feedback types transformation ────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toFeedbackQuestion = (d: any): FeedbackFormQuestion => ({
+  id: d.id,
+  type: d.question_type ?? d.type,
+  question: d.question,
+  required: d.required,
+  isDefault: d.is_default ?? d.isDefault ?? false,
+  order: d.order,
+});
+
+const toFeedbackQuestionPayload = (question: FeedbackFormQuestion, index: number) => ({
+  question: question.question,
+  question_type: question.type,
+  required: question.required,
+  is_default: question.isDefault,
+  order: question.order ?? index,
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toFeedbackForm = (d: any): FeedbackFormTemplate => ({
+  id: d.id,
+  name: d.name,
+  questions: d.questions?.map(toFeedbackQuestion),
+  isInUse: d.is_in_use ?? false,
+  createdByName: d.created_by_name,
+  created: d.created,
+  modified: d.modified,
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toFeedbackResponseAnswer = (d: any) => ({
+  id: d.id,
+  questionId: d.question_id ?? d.question,
+  question: d.question_snapshot,
+  type: d.question_type_snapshot,
+  starValue: d.star_value,
+  textValue: d.text_value,
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toFeedbackRequest = (d: any): FeedbackRequest => ({
+  id: d.id,
+  feedbackName: d.feedback_name,
+  formId: d.form,
+  formName: d.form_name,
+  instructorId: d.instructor,
+  instructorName: d.instructor_name,
+  traineeId: d.trainee,
+  traineeName: d.trainee_name,
+  courseId: d.course_id,
+  deadline: d.deadline,
+  requestedById: d.requested_by,
+  requestedByName: d.requested_by_name,
+  submittedAt: d.submitted_at,
+  status: d.status,
+  response: d.response ? {
+    submittedAt: d.response.submitted_at,
+    answers: (d.response.answers ?? []).map(toFeedbackResponseAnswer),
+  } : null,
+  created: d.created,
 });
 
 // ── Platform users — GET /fbr/api/programs/users/?role=instructor|learner ─────
@@ -389,4 +460,87 @@ export const getBatches = async (): Promise<Batch[]> => {
 export const getBatchUsers = async (batchId: string): Promise<Learner[]> => {
   await new Promise<void>((res) => { setTimeout(res, 400); });
   return MOCK_BATCH_USERS[batchId] ?? [];
+};
+
+// ── Feedback forms — GET /fbr/api/cms/feedback/programs/<key>/forms/ ────────
+export const getFeedbackForms = async (programId: string): Promise<FeedbackFormTemplate[]> => {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/forms/`,
+  );
+  const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
+  return results.map(toFeedbackForm);
+};
+
+// ── Feedback form detail — GET /forms/<id>/ ─────────────────────────────────
+export const getFeedbackForm = async (
+  programId: string,
+  formId: number,
+): Promise<FeedbackFormTemplate> => {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/forms/${formId}/`,
+  );
+  return toFeedbackForm(data);
+};
+
+// ── Create feedback form — POST /forms/ ─────────────────────────────────────
+export const createFeedbackForm = async (
+  programId: string,
+  input: CreateFeedbackFormInput,
+): Promise<FeedbackFormTemplate> => {
+  const { data } = await getAuthenticatedHttpClient().post(
+    `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/forms/`,
+    {
+      name: input.name,
+      questions: input.questions.map(toFeedbackQuestionPayload),
+    },
+  );
+  return toFeedbackForm(data);
+};
+
+const toFeedbackRequestParams = (filters: FeedbackFiltersState) => ({
+  ...(filters.feedbackName !== 'All' ? { feedback_name: filters.feedbackName } : {}),
+  ...(filters.status !== 'All' ? { status: filters.status } : {}),
+  ...(filters.instructor.trim() ? { instructor: filters.instructor.trim() } : {}),
+  ...(filters.trainee.trim() ? { trainee: filters.trainee.trim() } : {}),
+});
+
+// ── Feedback requests — GET /requests/ ──────────────────────────────────────
+export const getFeedbackRequests = async (
+  programId: string,
+  filters: FeedbackFiltersState,
+): Promise<FeedbackRequest[]> => {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/requests/`,
+    { params: toFeedbackRequestParams(filters) },
+  );
+  const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
+  return results.map(toFeedbackRequest);
+};
+
+// ── Feedback request detail — GET /requests/<id>/ ───────────────────────────
+export const getFeedbackRequest = async (
+  programId: string,
+  requestId: number,
+): Promise<FeedbackRequest> => {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/requests/${requestId}/`,
+  );
+  return toFeedbackRequest(data);
+};
+
+// ── Initiate feedback requests — POST /requests/initiate/ ───────────────────
+export const initiateFeedbackRequests = async (
+  programId: string,
+  payload: InitiateFeedbackPayload,
+): Promise<FeedbackRequest[]> => {
+  const { data } = await getAuthenticatedHttpClient().post(
+    `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/requests/initiate/`,
+    {
+      feedback_name: payload.feedbackName,
+      deadline: payload.deadline,
+      form_id: payload.formId,
+    },
+  );
+  const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
+  return results.map(toFeedbackRequest);
 };

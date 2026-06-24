@@ -84,3 +84,80 @@ export interface Batch {
   id: string;
   name: string;
 }
+
+export type FeedbackRequestStatus = 'Pending' | 'Completed' | 'Not Submitted';
+export type FeedbackQuestionType = 'star_rating' | 'textarea';
+
+export interface FeedbackFormQuestion {
+  id: number;
+  type: FeedbackQuestionType;
+  question: string;
+  required: boolean;
+  isDefault: boolean;
+  order?: number;
+}
+
+export interface FeedbackFormTemplate {
+  id: number;
+  name: string;
+  questions?: FeedbackFormQuestion[];
+  isInUse: boolean;
+  createdByName?: string;
+  created?: string;
+  modified?: string;
+}
+
+export interface FeedbackResponseAnswer {
+  id: number;
+  questionId?: number;
+  question: string;
+  type: FeedbackQuestionType;
+  starValue: number | null;
+  textValue: string | null;
+}
+
+export interface FeedbackResponse {
+  submittedAt: string;
+  answers: FeedbackResponseAnswer[];
+}
+
+export interface FeedbackRequest {
+  id: number;
+  feedbackName: string;
+  formId: number;
+  formName: string;
+  instructorId?: number;
+  instructorName: string;
+  traineeId?: number;
+  traineeName: string;
+  courseId: string;
+  deadline: string;
+  requestedById?: number;
+  requestedByName: string;
+  submittedAt: string | null;
+  status: FeedbackRequestStatus;
+  response: FeedbackResponse | null;
+  created: string;
+}
+
+export interface FeedbackFiltersState {
+  feedbackName: string;
+  instructor: string;
+  trainee: string;
+  status: 'All' | FeedbackRequestStatus;
+}
+
+export interface FeedbackFilterOptions {
+  feedbackNames: string[];
+}
+
+export interface CreateFeedbackFormInput {
+  name: string;
+  questions: FeedbackFormQuestion[];
+}
+
+export interface InitiateFeedbackPayload {
+  feedbackName: string;
+  deadline: string;
+  formId: number;
+}

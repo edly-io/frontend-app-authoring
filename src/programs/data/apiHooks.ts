@@ -22,11 +22,22 @@ import {
   getProgramEnrollments,
   getBatches,
   getBatchUsers,
+  getFeedbackForms,
+  getFeedbackForm,
+  createFeedbackForm,
+  getFeedbackRequests,
+  getFeedbackRequest,
+  initiateFeedbackRequests,
   type GetCoursesParams,
   type GetInstructorsParams,
   type GetLearnersParams,
 } from './api';
-import type { Program } from './types';
+import type {
+  CreateFeedbackFormInput,
+  FeedbackFiltersState,
+  InitiateFeedbackPayload,
+  Program,
+} from './types';
 
 export const useProgramsConfig = () => useQuery({
   queryKey: ['programsConfig'],
@@ -219,3 +230,66 @@ export const useBatchUsers = (batchId: string, enabled = true) => useQuery({
   staleTime: Infinity,
   enabled,
 });
+
+export const useFeedbackForms = (programId: string, enabled = true) => useQuery({
+  queryKey: ['feedbackForms', programId],
+  queryFn: () => getFeedbackForms(programId),
+  enabled: enabled && !!programId,
+});
+
+export const useFeedbackForm = (programId: string, formId: number | null, enabled = true) => useQuery({
+  queryKey: ['feedbackForm', programId, formId],
+  queryFn: () => getFeedbackForm(programId, formId!),
+  enabled: enabled && !!programId && !!formId,
+});
+
+export const useCreateFeedbackForm = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ programId, input }: { programId: string; input: CreateFeedbackFormInput }) => (
+      createFeedbackForm(programId, input)
+    ),
+    onSuccess: (_, { programId }) => {
+      queryClient.invalidateQueries({ queryKey: ['feedbackForms', programId] });
+    },
+  });
+};
+
+export const useFeedbackRequests = (
+  programId: string,
+  filters: FeedbackFiltersState,
+) => useQuery({
+  queryKey: [
+    'feedbackRequests',
+    programId,
+    filters.feedbackName,
+    filters.status,
+    filters.instructor,
+    filters.trainee,
+  ],
+  queryFn: () => getFeedbackRequests(programId, filters),
+  placeholderData: keepPreviousData,
+  enabled: !!programId,
+});
+
+export const useFeedbackRequestDetail = (
+  programId: string,
+  requestId: number | null,
+  enabled = true,
+) => useQuery({
+  queryKey: ['feedbackRequest', programId, requestId],
+  queryFn: () => getFeedbackRequest(programId, requestId!),
+  enabled: enabled && !!programId && !!requestId,
+});
+
+export const useInitiateFeedbackRequests = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ programId, payload }: { programId: string; payload: InitiateFeedbackPayload }) => (
+      initiateFeedbackRequests(programId, payload)
+    ),
+    onSuccess: (_, { programId }) => {
+      queryClient.invalidateQueries({ queryKey: ['feedbackRequests', programId] });
+    },
+  });
+};

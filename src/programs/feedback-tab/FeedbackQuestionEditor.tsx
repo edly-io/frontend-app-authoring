@@ -8,7 +8,7 @@ import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import type {
   FeedbackFormQuestion,
   FeedbackQuestionType,
-} from './feedbackMocks';
+} from '../data/types';
 
 const messages = defineMessages({
   questionText: { id: 'programs.feedback.editor.question.text', defaultMessage: 'Question Text' },

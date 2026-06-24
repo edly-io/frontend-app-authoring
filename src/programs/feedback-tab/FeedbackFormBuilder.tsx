@@ -6,7 +6,7 @@ import {
 } from '@openedx/paragon';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import FeedbackQuestionEditor from './FeedbackQuestionEditor';
-import type { FeedbackFormQuestion } from './feedbackMocks';
+import type { FeedbackFormQuestion } from '../data/types';
 
 const messages = defineMessages({
   title: { id: 'programs.feedback.builder.title', defaultMessage: 'Create New Feedback Form' },
@@ -25,6 +25,7 @@ interface FeedbackFormBuilderProps {
   onAddQuestion: () => void;
   onRemoveQuestion: (questionId: number) => void;
   onSaveForm: () => void;
+  isSaving?: boolean;
 }
 
 const FeedbackFormBuilder: React.FC<FeedbackFormBuilderProps> = ({
@@ -36,6 +37,7 @@ const FeedbackFormBuilder: React.FC<FeedbackFormBuilderProps> = ({
   onAddQuestion,
   onRemoveQuestion,
   onSaveForm,
+  isSaving = false,
 }) => {
   const intl = useIntl();
 
@@ -78,7 +80,7 @@ const FeedbackFormBuilder: React.FC<FeedbackFormBuilderProps> = ({
         );
       })}
 
-      <Button variant="primary" onClick={onSaveForm}>
+      <Button variant="primary" onClick={onSaveForm} disabled={isSaving}>
         {intl.formatMessage(messages.saveForm)}
       </Button>
     </div>

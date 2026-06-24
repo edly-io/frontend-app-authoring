@@ -8,22 +8,28 @@ import {
   ModalDialog,
   Row,
   Col,
+  Spinner,
 } from '@openedx/paragon';
 import { CalendarMonth } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import { ToastContext } from '../../generic/toast-context';
+import {
+  useCreateFeedbackForm,
+  useFeedbackForm,
+  useFeedbackForms,
+} from '../data/apiHooks';
+import type {
+  FeedbackFormQuestion,
+  FeedbackFormTemplate,
+  InitiateFeedbackPayload,
+} from '../data/types';
 import FeedbackFormBuilder from './FeedbackFormBuilder';
 import FeedbackFormPreview from './FeedbackFormPreview';
 import FeedbackFormSelector from './FeedbackFormSelector';
 import {
-  cloneFeedbackForm,
   cloneFeedbackQuestions,
   CREATE_NEW_FORM_VALUE,
   defaultNewFormQuestions,
-  mockFeedbackForms,
-  type FeedbackFormQuestion,
-  type FeedbackFormTemplate,
-  type InitiateFeedbackPayload,
 } from './feedbackMocks';
 
 const messages = defineMessages({
@@ -67,6 +73,22 @@ const messages = defineMessages({
     id: 'programs.feedback.form-builder.saved',
     defaultMessage: 'Feedback form saved successfully.',
   },
+  formSaveError: {
+    id: 'programs.feedback.form-builder.save.error',
+    defaultMessage: 'Failed to save feedback form. Please try again.',
+  },
+  formsLoading: {
+    id: 'programs.feedback.forms.loading',
+    defaultMessage: 'Loading feedback forms...',
+  },
+  formsLoadError: {
+    id: 'programs.feedback.forms.load.error',
+    defaultMessage: 'Failed to load feedback forms.',
+  },
+  formInUse: {
+    id: 'programs.feedback.form.in-use',
+    defaultMessage: 'This form is already in use and cannot be edited.',
+  },
 });
 
 interface DateInputProps {
@@ -101,30 +123,33 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
 interface InitiateFeedbackRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (payload: InitiateFeedbackPayload) => void;
+  onConfirm: (payload: InitiateFeedbackPayload) => void | Promise<void>;
+  programId: string;
+  isSubmitting: boolean;
 }
 
 const nextQuestionId = (questions: FeedbackFormQuestion[]) => (
   questions.reduce((maxId, question) => Math.max(maxId, question.id), 0) + 1
 );
 
-const nextFormId = (forms: FeedbackFormTemplate[]) => (
-  forms.reduce((maxId, form) => Math.max(maxId, form.id), 0) + 1
-);
-
 const today = new Date();
 today.setHours(0, 0, 0, 0);
+
+const formatDateForApi = (date: Date) => (
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+);
 
 const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> = ({
   isOpen,
   onClose,
   onConfirm,
+  programId,
+  isSubmitting,
 }) => {
   const intl = useIntl();
   const { showToast } = useContext(ToastContext);
   const [feedbackName, setFeedbackName] = React.useState('');
   const [deadline, setDeadline] = React.useState<Date | null>(null);
-  const [availableForms, setAvailableForms] = React.useState<FeedbackFormTemplate[]>(mockFeedbackForms.map(cloneFeedbackForm));
   const [selectedFormId, setSelectedFormId] = React.useState('');
   const [newFormName, setNewFormName] = React.useState('');
   const [newFormQuestions, setNewFormQuestions] = React.useState<FeedbackFormQuestion[]>(
@@ -132,12 +157,25 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
   );
   const [validationError, setValidationError] = React.useState('');
   const [builderValidationError, setBuilderValidationError] = React.useState('');
+  const {
+    data: availableForms = [],
+    isLoading: areFormsLoading,
+    isError: hasFormsLoadError,
+  } = useFeedbackForms(programId, isOpen);
+  const createFeedbackForm = useCreateFeedbackForm();
+  const selectedFormIdNumber = selectedFormId && selectedFormId !== CREATE_NEW_FORM_VALUE
+    ? Number(selectedFormId)
+    : null;
+  const selectedFormSummary = availableForms.find((form) => form.id === selectedFormIdNumber) || null;
+  const {
+    data: selectedFormDetail,
+    isLoading: isSelectedFormLoading,
+  } = useFeedbackForm(programId, selectedFormIdNumber, isOpen && !!selectedFormIdNumber);
 
   React.useEffect(() => {
     if (!isOpen) {
       setFeedbackName('');
       setDeadline(null);
-      setAvailableForms(mockFeedbackForms.map(cloneFeedbackForm));
       setSelectedFormId('');
       setNewFormName('');
       setNewFormQuestions(cloneFeedbackQuestions(defaultNewFormQuestions));
@@ -146,7 +184,7 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
     }
   }, [isOpen]);
 
-  const selectedExistingForm = availableForms.find((form) => String(form.id) === selectedFormId) || null;
+  const selectedExistingForm = selectedFormDetail || selectedFormSummary;
   const isCreatingNewForm = selectedFormId === CREATE_NEW_FORM_VALUE;
 
   const handleQuestionChange = (
@@ -197,29 +235,34 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
     return true;
   };
 
-  const handleSaveForm = () => {
+  const handleSaveForm = async () => {
     if (!validateBuilder()) {
       return;
     }
 
-    const savedForm: FeedbackFormTemplate = {
-      id: nextFormId(availableForms),
-      name: newFormName.trim(),
-      questions: cloneFeedbackQuestions(newFormQuestions.map((question) => ({
-        ...question,
-        question: question.question.trim(),
-      }))),
-    };
+    try {
+      const savedForm: FeedbackFormTemplate = await createFeedbackForm.mutateAsync({
+        programId,
+        input: {
+          name: newFormName.trim(),
+          questions: cloneFeedbackQuestions(newFormQuestions.map((question) => ({
+            ...question,
+            question: question.question.trim(),
+          }))),
+        },
+      });
 
-    setAvailableForms((currentForms) => [...currentForms, savedForm]);
-    setSelectedFormId(String(savedForm.id));
-    setNewFormName('');
-    setNewFormQuestions(cloneFeedbackQuestions(defaultNewFormQuestions));
-    setBuilderValidationError('');
-    showToast(intl.formatMessage(messages.formSaved));
+      setSelectedFormId(String(savedForm.id));
+      setNewFormName('');
+      setNewFormQuestions(cloneFeedbackQuestions(defaultNewFormQuestions));
+      setBuilderValidationError('');
+      showToast(intl.formatMessage(messages.formSaved));
+    } catch {
+      showToast(intl.formatMessage(messages.formSaveError));
+    }
   };
 
-  const handleInitiate = () => {
+  const handleInitiate = async () => {
     const trimmedFeedbackName = feedbackName.trim();
     if (!trimmedFeedbackName) {
       setValidationError(intl.formatMessage(messages.validationName));
@@ -243,16 +286,49 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
     }
 
     setValidationError('');
-    onConfirm({
+    await onConfirm({
       feedbackName: trimmedFeedbackName,
-      deadline: deadline.toLocaleDateString('en-US', {
-        month: 'short',
-        day: '2-digit',
-        year: 'numeric',
-      }),
-      selectedForm: cloneFeedbackForm(selectedExistingForm),
+      deadline: formatDateForApi(deadline),
+      formId: selectedExistingForm.id,
     });
   };
+
+  let selectedFormContent: React.ReactNode = null;
+  if (isCreatingNewForm) {
+    selectedFormContent = (
+      <FeedbackFormBuilder
+        formName={newFormName}
+        questions={newFormQuestions}
+        validationError={builderValidationError}
+        onFormNameChange={setNewFormName}
+        onQuestionChange={handleQuestionChange}
+        onAddQuestion={handleAddQuestion}
+        onRemoveQuestion={handleRemoveQuestion}
+        onSaveForm={handleSaveForm}
+        isSaving={createFeedbackForm.isPending}
+      />
+    );
+  } else if (selectedExistingForm) {
+    selectedFormContent = (
+      <>
+        {selectedExistingForm.isInUse && (
+          <Alert variant="info" className="mb-3">
+            {intl.formatMessage(messages.formInUse)}
+          </Alert>
+        )}
+        {isSelectedFormLoading ? (
+          <div className="d-flex justify-content-center py-3">
+            <Spinner animation="border" screenReaderText={intl.formatMessage(messages.formsLoading)} />
+          </div>
+        ) : (
+          <FeedbackFormPreview
+            formName={selectedExistingForm.name}
+            questions={selectedExistingForm.questions ?? []}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <ModalDialog
@@ -314,30 +390,26 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
           }}
         />
 
-        {isCreatingNewForm ? (
-          <FeedbackFormBuilder
-            formName={newFormName}
-            questions={newFormQuestions}
-            validationError={builderValidationError}
-            onFormNameChange={setNewFormName}
-            onQuestionChange={handleQuestionChange}
-            onAddQuestion={handleAddQuestion}
-            onRemoveQuestion={handleRemoveQuestion}
-            onSaveForm={handleSaveForm}
-          />
-        ) : selectedExistingForm ? (
-          <FeedbackFormPreview
-            formName={selectedExistingForm.name}
-            questions={selectedExistingForm.questions}
-          />
-        ) : null}
+        {areFormsLoading && (
+          <div className="d-flex justify-content-center py-3">
+            <Spinner animation="border" screenReaderText={intl.formatMessage(messages.formsLoading)} />
+          </div>
+        )}
+
+        {!areFormsLoading && hasFormsLoadError && (
+          <Alert variant="danger" className="mb-3">
+            {intl.formatMessage(messages.formsLoadError)}
+          </Alert>
+        )}
+
+        {selectedFormContent}
       </ModalDialog.Body>
       <ModalDialog.Footer>
         <ActionRow>
           <ModalDialog.CloseButton variant="tertiary">
             {intl.formatMessage(messages.cancel)}
           </ModalDialog.CloseButton>
-          <Button variant="primary" onClick={handleInitiate}>
+          <Button variant="primary" onClick={handleInitiate} disabled={isSubmitting}>
             {intl.formatMessage(messages.initiate)}
           </Button>
         </ActionRow>
