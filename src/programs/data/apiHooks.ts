@@ -1,8 +1,10 @@
 import {
   useQuery, useMutation, useQueryClient, keepPreviousData,
 } from '@tanstack/react-query';
+import { useCurrentFbrProfile } from '@src/fbr-access/apiHooks';
 import {
   getProgramsConfig,
+  getFbrCities,
   getPrograms,
   getProgramDetail,
   createProgram,
@@ -38,6 +40,24 @@ import type {
   InitiateFeedbackPayload,
   Program,
 } from './types';
+import { getProgramCapabilities } from './permissions';
+
+export const useProgramAccess = () => {
+  const query = useCurrentFbrProfile();
+
+  return {
+    ...query,
+    profile: query.data,
+    capabilities: getProgramCapabilities(query.data?.roles),
+  };
+};
+
+export const useFbrCities = (enabled = true) => useQuery({
+  queryKey: ['fbrCities'],
+  queryFn: getFbrCities,
+  staleTime: 10 * 60 * 1000,
+  enabled,
+});
 
 export const useProgramsConfig = () => useQuery({
   queryKey: ['programsConfig'],
@@ -47,12 +67,14 @@ export const useProgramsConfig = () => useQuery({
 export const usePrograms = () => useQuery({
   queryKey: ['programs'],
   queryFn: getPrograms,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  retry: (failureCount, error: any) => error?.response?.status !== 403 && failureCount < 3,
 });
 
-export const useProgramDetail = (programId: string) => useQuery({
+export const useProgramDetail = (programId: string, enabled = true) => useQuery({
   queryKey: ['program', programId],
   queryFn: () => getProgramDetail(programId),
-  enabled: !!programId,
+  enabled: !!programId && enabled,
 });
 
 export const useCreateProgram = () => {
@@ -128,7 +150,7 @@ export const useUpdateCourseTargetAudience = () => {
 };
 
 export const useInstructors = (params: GetInstructorsParams = {}, enabled = true) => useQuery({
-  queryKey: ['instructors', params.page ?? 1, params.search ?? ''],
+  queryKey: ['instructors', params.programKey ?? '', params.page ?? 1, params.search ?? ''],
   queryFn: () => getPlatformUsers({ role: 'instructor', ...params }),
   placeholderData: keepPreviousData,
   staleTime: 0,
@@ -138,8 +160,8 @@ export const useInstructors = (params: GetInstructorsParams = {}, enabled = true
 export const useAddInstructorToCourse = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ courseId, email }: { courseId: string; email: string }) => (
-      addInstructorToCourse(courseId, email)
+    mutationFn: ({ courseId, username }: { courseId: string; username: string }) => (
+      addInstructorToCourse(courseId, username)
     ),
     onSuccess: (_, { courseId }) => {
       queryClient.invalidateQueries({ queryKey: ['courseTeam', courseId] });
@@ -160,7 +182,7 @@ export const useRemoveInstructorFromCourse = () => {
 };
 
 export const useLearners = (params: GetLearnersParams = {}, enabled = true) => useQuery({
-  queryKey: ['learners', params.page ?? 1, params.search ?? ''],
+  queryKey: ['learners', params.programKey ?? '', params.page ?? 1, params.search ?? ''],
   queryFn: () => getPlatformUsers({ role: 'learner', ...params }),
   placeholderData: keepPreviousData,
   staleTime: 0,

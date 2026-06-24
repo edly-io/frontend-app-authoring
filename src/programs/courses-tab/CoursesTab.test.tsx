@@ -36,6 +36,14 @@ describe('<CoursesTab />', () => {
     expect(screen.getByText('2025')).toBeInTheDocument();
   });
 
+  it('hides course management actions in read-only mode', () => {
+    const program = mockProgram({ courses: [mockCourse()] });
+    render(<CoursesTab program={program} programId={programId} canManage={false} />);
+
+    expect(screen.queryByRole('button', { name: /Add Course/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Remove/i })).not.toBeInTheDocument();
+  });
+
   it('opens AddCourseModal when "Add Course" is clicked', () => {
     const program = mockProgram({ courses: [] });
     render(<CoursesTab program={program} programId={programId} />);

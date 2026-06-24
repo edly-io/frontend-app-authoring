@@ -1,3 +1,5 @@
+export type { FbrRole, FbrUserProfile } from '@src/fbr-access/types';
+
 export interface Course {
   id: string;
   displayName: string;
@@ -19,6 +21,7 @@ export interface Program {
   programType: string;
   run: string;
   targetAudience: string;
+  city?: string;
   shortDescription?: string;
   longDescription?: string;
   status?: string;
@@ -35,6 +38,11 @@ export interface OrgOption {
   shortName: string;
 }
 
+export interface CityOption {
+  id: number;
+  name: string;
+}
+
 export interface ProgramTypeOption {
   id: number;
   name: string;
@@ -45,12 +53,39 @@ export interface ProgramConfig {
   orgs: OrgOption[];
   programTypes: ProgramTypeOption[];
   statuses: string[];
+  cities: CityOption[];
+}
+
+export interface CityOption {
+  id: number;
+  name: string;
+}
+
+export interface CreateProgramInput {
+  displayName: string;
+  org: string;
+  programType: string;
+  run: string;
+  cityId?: number;
+}
+
+export interface ProgramCapabilities {
+  canAccessPrograms: boolean;
+  canCreateProgram: boolean;
+  canEditProgram: boolean;
+  canArchiveProgram: boolean;
+  canManageCourses: boolean;
+  canManageEnrollment: boolean;
+  canManageInstructors: boolean;
+  isReadOnly: boolean;
 }
 
 export interface ProgramDetailResponse {
   program: Program;
   /** All target audiences available system-wide — used for the dropdown options. */
   availableAudiences: string[];
+  /** All cities available — returned by the detail endpoint alongside the program. */
+  availableCities: CityOption[];
 }
 
 export interface Instructor {

@@ -36,6 +36,14 @@ describe('<EnrollmentTab />', () => {
     expect(screen.getByText('alice@example.com')).toBeInTheDocument();
   });
 
+  it('hides enrollment management actions in read-only mode', () => {
+    render(<EnrollmentTab programId={programId} canManage={false} />);
+
+    expect(screen.queryByRole('button', { name: /Enroll Learner/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Enroll Batch/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Unenroll/i })).not.toBeInTheDocument();
+  });
+
   it('shows empty state message when no learners enrolled', () => {
     mockUseProgramEnrollments.mockReturnValue({
       data: mockPaginatedLearners([], { count: 0 }),

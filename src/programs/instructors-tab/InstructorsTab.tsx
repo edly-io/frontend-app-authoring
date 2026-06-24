@@ -33,9 +33,10 @@ const messages = defineMessages({
 
 interface InstructorsTabProps {
   program: Program;
+  canManage?: boolean;
 }
 
-const InstructorsTab: React.FC<InstructorsTabProps> = ({ program }) => {
+const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, canManage = true }) => {
   const intl = useIntl();
   const courses = program.courses ?? [];
 
@@ -46,7 +47,7 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program }) => {
   const { data: team, isLoading: isTeamLoading } = useCourseTeam(selectedCourseId, !!selectedCourseId);
   const removeInstructor = useRemoveInstructorFromCourse();
 
-  const teamEmails = team?.map((i) => i.email) ?? [];
+  const teamUsernames = team?.map((i) => i.username) ?? [];
   const selectedCourse = courses.find((c) => c.id === selectedCourseId);
 
   const handleCourseChange = useCallback((courseId: string) => {
@@ -60,15 +61,17 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program }) => {
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
         </div>
-        <Button
-          variant="outline-primary"
-          iconBefore={Add}
-          size="sm"
-          onClick={openModal}
-          disabled={!selectedCourseId}
-        >
-          {intl.formatMessage(messages.addInstructorBtn)}
-        </Button>
+        {canManage && (
+          <Button
+            variant="outline-primary"
+            iconBefore={Add}
+            size="sm"
+            onClick={openModal}
+            disabled={!selectedCourseId}
+          >
+            {intl.formatMessage(messages.addInstructorBtn)}
+          </Button>
+        )}
       </div>
 
       {courses.length === 0 ? (
@@ -136,14 +139,16 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program }) => {
                       {instructor.role && <Badge variant="secondary">{instructor.role}</Badge>}
                     </Stack>
                   </div>
-                  <Button
-                    variant="outline-danger"
-                    size="sm"
-                    onClick={() => setConfirmEmail(instructor.email)}
-                    disabled={confirmEmail !== null}
-                  >
-                    {intl.formatMessage(messages.removeBtn)}
-                  </Button>
+                  {canManage && (
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={() => setConfirmEmail(instructor.email)}
+                      disabled={confirmEmail !== null}
+                    >
+                      {intl.formatMessage(messages.removeBtn)}
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
@@ -151,31 +156,35 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program }) => {
         </>
       )}
 
-      <AddInstructorModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        courseId={selectedCourseId}
-        courseName={selectedCourse?.displayName ?? ''}
-        alreadyAddedEmails={teamEmails}
-      />
+      {canManage && (
+        <>
+          <AddInstructorModal
+            isOpen={isModalOpen}
+            onClose={closeModal}
+            courseId={selectedCourseId}
+            courseName={selectedCourse?.displayName ?? ''}
+            alreadyAddedEmails={teamEmails}
+          />
 
-      <DeleteModal
-        isOpen={!!confirmEmail}
-        close={() => setConfirmEmail(null)}
-        title={intl.formatMessage(messages.confirmRemoveTitle)}
-        description={(
-          <>
-            <strong>{confirmEmail}</strong>
-            <br />
-            {intl.formatMessage(messages.confirmRemoveDesc)}
-          </>
-        )}
-        btnLabel={intl.formatMessage(messages.confirmRemoveBtn)}
-        onDeleteSubmit={async () => {
-          await removeInstructor.mutateAsync({ courseId: selectedCourseId, email: confirmEmail! });
-          setConfirmEmail(null);
-        }}
-      />
+          <DeleteModal
+            isOpen={!!confirmEmail}
+            close={() => setConfirmEmail(null)}
+            title={intl.formatMessage(messages.confirmRemoveTitle)}
+            description={(
+              <>
+                <strong>{confirmEmail}</strong>
+                <br />
+                {intl.formatMessage(messages.confirmRemoveDesc)}
+              </>
+            )}
+            btnLabel={intl.formatMessage(messages.confirmRemoveBtn)}
+            onDeleteSubmit={async () => {
+              await removeInstructor.mutateAsync({ courseId: selectedCourseId, email: confirmEmail! });
+              setConfirmEmail(null);
+            }}
+          />
+        </>
+      )}
     </div>
   );
 };

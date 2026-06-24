@@ -12,6 +12,7 @@ import { useIntl } from '@edx/frontend-platform/i18n';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import { RequestStatus } from '@src/data/constants';
+import { COURSE_CREATOR_STATES } from '@src/constants';
 import { getLoadingStatuses, getStudioHomeData } from '../data/selectors';
 import messages from './messages';
 import { BaseFilterState, Filter, LibrariesList } from './libraries-tab';
@@ -27,6 +28,8 @@ const TabsSection = ({
   librariesV1Enabled,
   librariesV2Enabled,
   showNewProgramContainer,
+  canAccessPrograms,
+  isProgramAccessLoading,
 }) => {
   const intl = useIntl();
   const navigate = useNavigate();
@@ -68,6 +71,12 @@ const TabsSection = ({
     setTabKey(initTabKeyState(pathname));
   }, [pathname]);
 
+  useEffect(() => {
+    if (!isProgramAccessLoading && !canAccessPrograms && pathname.includes('/programs')) {
+      navigate('/home', { replace: true });
+    }
+  }, [canAccessPrograms, isProgramAccessLoading, navigate, pathname]);
+
   const { courses, numPages, coursesCount } = useSelector(getStudioHomeData);
   const {
     courseLoadingStatus,
@@ -79,15 +88,17 @@ const TabsSection = ({
   // the correct operation of iterating over child elements inside the Paragon Tabs component.
   const visibleTabs = useMemo(() => {
     const tabs: JSX.Element[] = [];
-    tabs.push(
-      <Tab
-        key={TABS_LIST.programs}
-        eventKey={TABS_LIST.programs}
-        title={intl.formatMessage(messages.programsTabTitle)}
-      >
-        <ProgramsTab showNewProgramContainer={showNewProgramContainer} />
-      </Tab>,
-    );
+    if (canAccessPrograms) {
+      tabs.push(
+        <Tab
+          key={TABS_LIST.programs}
+          eventKey={TABS_LIST.programs}
+          title={intl.formatMessage(messages.programsTabTitle)}
+        >
+          <ProgramsTab showNewProgramContainer={showNewProgramContainer} />
+        </Tab>,
+      );
+    }
 
     tabs.push(
       <Tab
@@ -158,7 +169,7 @@ const TabsSection = ({
     }
 
     return tabs;
-  }, [showNewCourseContainer, showNewProgramContainer, isLoadingCourses, migrationFilter]);
+  }, [showNewCourseContainer, showNewProgramContainer, isLoadingCourses, migrationFilter, isProgramAdmin]);
 
   const handleSelectTab = (tab: TabKeyType) => {
     if (tab === TABS_LIST.courses) {
@@ -194,6 +205,8 @@ TabsSection.propTypes = {
   librariesV1Enabled: PropTypes.bool,
   librariesV2Enabled: PropTypes.bool,
   showNewProgramContainer: PropTypes.bool,
+  canAccessPrograms: PropTypes.bool.isRequired,
+  isProgramAccessLoading: PropTypes.bool.isRequired,
 };
 
 export default TabsSection;

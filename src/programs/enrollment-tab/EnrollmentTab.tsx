@@ -40,9 +40,10 @@ const messages = defineMessages({
 
 interface EnrollmentTabProps {
   programId: string;
+  canManage?: boolean;
 }
 
-const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId }) => {
+const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = true }) => {
   const intl = useIntl();
   const [isModalOpen, openModal, closeModal] = useToggle(false);
   const [isBatchModalOpen, openBatchModal, closeBatchModal] = useToggle(false);
@@ -71,24 +72,26 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId }) => {
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
         </div>
-        <Stack direction="horizontal" gap={2}>
-          <Button
-            variant="outline-primary"
-            iconBefore={Add}
-            size="sm"
-            onClick={openBatchModal}
-          >
-            {intl.formatMessage(messages.enrollBatchBtn)}
-          </Button>
-          <Button
-            variant="outline-primary"
-            iconBefore={Add}
-            size="sm"
-            onClick={openModal}
-          >
-            {intl.formatMessage(messages.enrollLearnerBtn)}
-          </Button>
-        </Stack>
+        {canManage && (
+          <Stack direction="horizontal" gap={2}>
+            <Button
+              variant="outline-primary"
+              iconBefore={Add}
+              size="sm"
+              onClick={openBatchModal}
+            >
+              {intl.formatMessage(messages.enrollBatchBtn)}
+            </Button>
+            <Button
+              variant="outline-primary"
+              iconBefore={Add}
+              size="sm"
+              onClick={openModal}
+            >
+              {intl.formatMessage(messages.enrollLearnerBtn)}
+            </Button>
+          </Stack>
+        )}
       </div>
 
       <div className="mb-3">
@@ -144,14 +147,16 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId }) => {
                 <Badge variant="light">{learner.email}</Badge>
               </Stack>
             </div>
-            <Button
-              variant="outline-danger"
-              size="sm"
-              onClick={() => setConfirmUnenrollUsername(learner.username)}
-              disabled={confirmUnenrollUsername !== null}
-            >
-              {intl.formatMessage(messages.unenrollBtn)}
-            </Button>
+            {canManage && (
+              <Button
+                variant="outline-danger"
+                size="sm"
+                onClick={() => setConfirmUnenrollUsername(learner.username)}
+                disabled={confirmUnenrollUsername !== null}
+              >
+                {intl.formatMessage(messages.unenrollBtn)}
+              </Button>
+            )}
           </div>
         ))}
       </div>
@@ -172,39 +177,43 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId }) => {
         />
       )}
 
-      <AddLearnerModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        programId={programId}
-        alreadyEnrolledIds={enrolledIds}
-      />
+      {canManage && (
+        <>
+          <AddLearnerModal
+            isOpen={isModalOpen}
+            onClose={closeModal}
+            programId={programId}
+            alreadyEnrolledIds={enrolledIds}
+          />
 
-      <EnrollBatchModal
-        isOpen={isBatchModalOpen}
-        onClose={closeBatchModal}
-        programId={programId}
-        alreadyEnrolledIds={enrolledIds}
-      />
+          <EnrollBatchModal
+            isOpen={isBatchModalOpen}
+            onClose={closeBatchModal}
+            programId={programId}
+            alreadyEnrolledIds={enrolledIds}
+          />
 
-      <DeleteModal
-        isOpen={!!confirmUnenrollUsername}
-        close={() => setConfirmUnenrollUsername(null)}
-        title={intl.formatMessage(messages.confirmUnenrollTitle)}
-        description={(
-          <>
-            <strong>{confirmLearner?.name ?? confirmUnenrollUsername}</strong>
-            <br />
-            {intl.formatMessage(messages.confirmUnenrollDesc)}
-            {' '}
-            <strong>{intl.formatMessage(messages.confirmUnenrollWarning)}</strong>
-          </>
-        )}
-        btnLabel={intl.formatMessage(messages.confirmUnenrollBtn)}
-        onDeleteSubmit={async () => {
-          await unenrollLearner.mutateAsync({ programId, username: confirmUnenrollUsername! });
-          setConfirmUnenrollUsername(null);
-        }}
-      />
+          <DeleteModal
+            isOpen={!!confirmUnenrollUsername}
+            close={() => setConfirmUnenrollUsername(null)}
+            title={intl.formatMessage(messages.confirmUnenrollTitle)}
+            description={(
+              <>
+                <strong>{confirmLearner?.name ?? confirmUnenrollUsername}</strong>
+                <br />
+                {intl.formatMessage(messages.confirmUnenrollDesc)}
+                {' '}
+                <strong>{intl.formatMessage(messages.confirmUnenrollWarning)}</strong>
+              </>
+            )}
+            btnLabel={intl.formatMessage(messages.confirmUnenrollBtn)}
+            onDeleteSubmit={async () => {
+              await unenrollLearner.mutateAsync({ programId, username: confirmUnenrollUsername! });
+              setConfirmUnenrollUsername(null);
+            }}
+          />
+        </>
+      )}
     </div>
   );
 };

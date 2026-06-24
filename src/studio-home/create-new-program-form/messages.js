@@ -45,6 +45,14 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.new-program.run.required',
     defaultMessage: 'Program run is required.',
   },
+  cityLabel: {
+    id: 'course-authoring.studio-home.new-program.city.label',
+    defaultMessage: 'City',
+  },
+  cityRequired: {
+    id: 'course-authoring.studio-home.new-program.city.required',
+    defaultMessage: 'City is required.',
+  },
   targetAudienceLabel: {
     id: 'course-authoring.studio-home.new-program.audience.label',
     defaultMessage: 'Target audience',
@@ -64,6 +72,10 @@ const messages = defineMessages({
   pendingBtn: {
     id: 'course-authoring.studio-home.new-program.pending.btn',
     defaultMessage: 'Creating...',
+  },
+  cityLabel: {
+    id: 'course-authoring.studio-home.new-program.city.label',
+    defaultMessage: 'City',
   },
   selectPlaceholder: {
     id: 'course-authoring.studio-home.new-program.select.placeholder',

@@ -17,7 +17,9 @@ export const LifecycleSection = ({
   usageKey, title = 'Review Status', hasChanges,
 }: Props) => {
   const queryClient = useQueryClient();
-  const { data: blockState, isLoading, error } = useBlockState(usageKey);
+  const {
+    data: blockState, isLoading, error, isAccessPending, isAccessDenied,
+  } = useBlockState(usageKey);
 
   // When the unit gains unpublished changes (e.g. a new component was added),
   // the backend signals have already transitioned the block PUBLISHED → DRAFT.
@@ -30,6 +32,10 @@ export const LifecycleSection = ({
   }, [hasChanges, usageKey]);
 
   const effectiveState = (!hasChanges && blockState?.state === 'draft') ? 'published' : blockState?.state;
+
+  if (isAccessPending || isAccessDenied || (error as any)?.response?.status === 403) {
+    return null;
+  }
 
   return (
     <div className="lifecycle-section my-3 border-top pt-3">
