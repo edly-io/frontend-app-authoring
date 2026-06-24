@@ -29,7 +29,6 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
 
   const orgs = config?.orgs ?? [];
   const programTypes = config?.programTypes ?? [];
-  const cities = config?.cities ?? [];
 
   const validationSchema = Yup.object({
     displayName: Yup.string().trim().required(intl.formatMessage(messages.programNameRequired)),
@@ -188,21 +187,6 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
               {touched.run && errors.run && (
                 <Form.Control.Feedback type="invalid">{errors.run}</Form.Control.Feedback>
               )}
-            </Form.Group>
-
-            {/* City */}
-            <Form.Group>
-              <Form.Label>{intl.formatMessage(messages.cityLabel)}</Form.Label>
-              <Form.Control
-                as="select"
-                name="city"
-                value={values.city}
-                onChange={handleChange}
-                onBlur={handleBlur}
-              >
-                <option value="">{intl.formatMessage(messages.selectPlaceholder)}</option>
-                {cities.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
-              </Form.Control>
             </Form.Group>
 
             <div className="d-flex justify-content-end gap-2 mt-3">
