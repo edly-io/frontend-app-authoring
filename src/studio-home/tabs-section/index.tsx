@@ -169,7 +169,7 @@ const TabsSection = ({
     }
 
     return tabs;
-  }, [showNewCourseContainer, showNewProgramContainer, isLoadingCourses, migrationFilter, isProgramAdmin]);
+  }, [showNewCourseContainer, showNewProgramContainer, isLoadingCourses, migrationFilter, canAccessPrograms]);
 
   const handleSelectTab = (tab: TabKeyType) => {
     if (tab === TABS_LIST.courses) {
