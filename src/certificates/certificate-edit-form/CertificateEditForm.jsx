@@ -1,11 +1,10 @@
 import PropTypes from 'prop-types';
 import { Card, Stack, Button } from '@openedx/paragon';
 import { useIntl } from '@edx/frontend-platform/i18n';
-import { Formik, Form, FieldArray } from 'formik';
+import { Formik, Form } from 'formik';
 
 import ModalNotification from '../../generic/modal-notification';
 import CertificateDetailsForm from '../certificate-details/CertificateDetailsForm';
-import CertificateSignatories from '../certificate-signatories/CertificateSignatories';
 import commonMessages from '../messages';
 import messages from '../certificate-details/messages';
 import useCertificateEditForm from './hooks/useCertificateEditForm';
@@ -29,7 +28,7 @@ const CertificateEditForm = ({ courseId }) => {
       {certificates.map((certificate, id) => (
         <Formik initialValues={initialValues[id]} onSubmit={handleCertificateSubmit} key={certificate.id}>
           {({
-            values, handleChange, handleBlur, resetForm, setFieldValue,
+            values, handleChange, handleBlur, resetForm,
           }) => (
             <>
               <Form className="certificates-card-form" data-testid="certificates-edit-form">
@@ -41,19 +40,6 @@ const CertificateEditForm = ({ courseId }) => {
                         detailsCourseTitle={courseTitle}
                         handleChange={handleChange}
                         handleBlur={handleBlur}
-                      />
-                      <FieldArray
-                        name="signatories"
-                        render={arrayHelpers => (
-                          <CertificateSignatories
-                            isForm
-                            signatories={values.signatories}
-                            arrayHelpers={arrayHelpers}
-                            handleChange={handleChange}
-                            handleBlur={handleBlur}
-                            setFieldValue={setFieldValue}
-                          />
-                        )}
                       />
                     </Stack>
                   </Card.Section>
