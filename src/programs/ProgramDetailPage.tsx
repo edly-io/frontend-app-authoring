@@ -441,7 +441,7 @@ const ProgramDetailPage: React.FC = () => {
                         >
                           <option value="">— Select city —</option>
                           {cities.map((c) => (
-                            <option key={c.id} value={c.name}>{c.name}</option>
+                            <option key={c.id} value={String(c.id)}>{c.name}</option>
                           ))}
                         </Form.Control>
                       </Form.Group>

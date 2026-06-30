@@ -163,7 +163,8 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, canManage = tr
             onClose={closeModal}
             courseId={selectedCourseId}
             courseName={selectedCourse?.displayName ?? ''}
-            alreadyAddedEmails={teamUsernames}
+            alreadyAddedUsernames={teamUsernames}
+            programId={program.id}
           />
 
           <DeleteModal
