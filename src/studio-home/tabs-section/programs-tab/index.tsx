@@ -36,15 +36,39 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.programs.tab.empty-search',
     defaultMessage: 'No programs match your search.',
   },
+  filterAll: {
+    id: 'course-authoring.studio-home.programs.tab.filter.all',
+    defaultMessage: 'All statuses',
+  },
+  filterDraft: {
+    id: 'course-authoring.studio-home.programs.tab.filter.draft',
+    defaultMessage: 'Draft',
+  },
+  filterActive: {
+    id: 'course-authoring.studio-home.programs.tab.filter.active',
+    defaultMessage: 'Active',
+  },
+  filterArchived: {
+    id: 'course-authoring.studio-home.programs.tab.filter.archived',
+    defaultMessage: 'Archived',
+  },
+  filterFreezed: {
+    id: 'course-authoring.studio-home.programs.tab.filter.freezed',
+    defaultMessage: 'Freezed',
+  },
 });
 
 type SortOrder = 'az' | 'za';
+type StatusFilter = 'all' | 'draft' | 'active' | 'archived' | 'freezed';
+
+const STATUS_FILTER_OPTIONS: StatusFilter[] = ['all', 'draft', 'active', 'archived', 'freezed'];
 
 const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
   const intl = useIntl();
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('az');
   const { capabilities } = useProgramAccess();
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   // Treat API errors the same as empty — don't show a jarring error banner for the list
   const { data: programs = [], isLoading } = usePrograms();
@@ -57,6 +81,10 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
       list = list.filter((p) => p.displayName.toLowerCase().includes(q));
     }
 
+    if (statusFilter !== 'all') {
+      list = list.filter((p) => (p.status ?? 'draft') === statusFilter);
+    }
+
     list.sort((a, b) => (
       sortOrder === 'az'
         ? a.displayName.localeCompare(b.displayName)
@@ -64,7 +92,7 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
     ));
 
     return list;
-  }, [programs, search, sortOrder]);
+  }, [programs, search, sortOrder, statusFilter]);
 
   if (isLoading) {
     return (
@@ -78,10 +106,18 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
     ? intl.formatMessage(messages.sortAZ)
     : intl.formatMessage(messages.sortZA);
 
+  const statusFilterMessageKey: Record<StatusFilter, keyof typeof messages> = {
+    all: 'filterAll',
+    draft: 'filterDraft',
+    active: 'filterActive',
+    archived: 'filterArchived',
+    freezed: 'filterFreezed',
+  };
+
   return (
     <div className="mt-4">
 
-      {/* ── Search + sort bar ─────────────────────────────────────────── */}
+      {/* ── Search + sort + status filter bar ────────────────────────── */}
       <div className="d-flex mb-4">
         <SearchField
           onSubmit={setSearch}
@@ -90,6 +126,24 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
           className="mr-4"
           placeholder={intl.formatMessage(messages.searchPlaceholder)}
         />
+        <Dropdown id="programs-status-filter-dropdown" className="mr-2">
+          <Dropdown.Toggle
+            id="programs-status-filter-toggle"
+            variant="outline-primary"
+          >
+            {intl.formatMessage(messages[statusFilterMessageKey[statusFilter]])}
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            {STATUS_FILTER_OPTIONS.map((s) => (
+              <Dropdown.Item key={s} onClick={() => setStatusFilter(s)}>
+                <div className="d-flex align-items-center justify-content-between">
+                  {intl.formatMessage(messages[statusFilterMessageKey[s]])}
+                  {statusFilter === s && <Icon src={Check} size="xs" className="ml-2" />}
+                </div>
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown>
         <Dropdown id="programs-sort-dropdown">
           <Dropdown.Toggle
             id="programs-sort-toggle"
