@@ -653,6 +653,7 @@ const ProgramDetailPage: React.FC = () => {
           <Tab eventKey="instructors" title={intl.formatMessage(messages.tabInstructors)}>
             <InstructorsTab
               program={program}
+              programId={programId ?? ''}
               canManage={capabilities.canManageInstructors}
             />
           </Tab>

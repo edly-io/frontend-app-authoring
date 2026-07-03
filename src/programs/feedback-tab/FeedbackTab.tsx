@@ -25,8 +25,8 @@ import './feedback-tab.scss';
 
 const defaultFeedbackFilters: FeedbackFiltersState = {
   feedbackName: 'All',
-  instructor: '',
-  trainee: '',
+  subject: '',
+  reviewer: '',
   status: 'All',
 };
 
@@ -78,8 +78,8 @@ const FeedbackTab: React.FC<FeedbackTabProps> = ({ programId }) => {
   const initiateFeedback = useInitiateFeedbackRequests();
   const hasActiveFilters = filters.feedbackName !== 'All'
     || filters.status !== 'All'
-    || !!filters.instructor.trim()
-    || !!filters.trainee.trim();
+    || !!filters.subject.trim()
+    || !!filters.reviewer.trim();
 
   const filterOptions = useMemo(
     () => ({ feedbackNames: uniqueSorted(feedbackRequests.map((request) => request.feedbackName)) }),

@@ -13,8 +13,8 @@ const messages = defineMessages({
   title: { id: 'programs.feedback.response.modal.title', defaultMessage: 'Feedback Response' },
   feedbackName: { id: 'programs.feedback.response.modal.feedback-name', defaultMessage: 'Feedback Name' },
   feedbackForm: { id: 'programs.feedback.response.modal.feedback-form', defaultMessage: 'Feedback Form' },
-  trainee: { id: 'programs.feedback.response.modal.trainee', defaultMessage: 'Trainee' },
-  instructor: { id: 'programs.feedback.response.modal.instructor', defaultMessage: 'Instructor' },
+  reviewer: { id: 'programs.feedback.response.modal.reviewer', defaultMessage: 'Requested From' },
+  subject: { id: 'programs.feedback.response.modal.subject', defaultMessage: 'Feedback About' },
   course: { id: 'programs.feedback.response.modal.course', defaultMessage: 'Course' },
   deadline: { id: 'programs.feedback.response.modal.deadline', defaultMessage: 'Deadline' },
   requestedOn: { id: 'programs.feedback.response.modal.requested-on', defaultMessage: 'Requested On' },
@@ -123,8 +123,8 @@ const FeedbackResponseModal: React.FC<FeedbackResponseModalProps> = ({
             <div className="mb-4">
               <p className="mb-2"><strong>{intl.formatMessage(messages.feedbackName)}:</strong> {request.feedbackName}</p>
               <p className="mb-2"><strong>{intl.formatMessage(messages.feedbackForm)}:</strong> {request.formName}</p>
-              <p className="mb-2"><strong>{intl.formatMessage(messages.trainee)}:</strong> {request.traineeName}</p>
-              <p className="mb-2"><strong>{intl.formatMessage(messages.instructor)}:</strong> {request.instructorName}</p>
+              <p className="mb-2"><strong>{intl.formatMessage(messages.reviewer)}:</strong> {request.reviewerName}</p>
+              <p className="mb-2"><strong>{intl.formatMessage(messages.subject)}:</strong> {request.subjectName || '--'}</p>
               <p className="mb-2"><strong>{intl.formatMessage(messages.course)}:</strong> {request.courseId}</p>
               <p className="mb-2"><strong>{intl.formatMessage(messages.deadline)}:</strong> {formatDateOnly(request.deadline)}</p>
               <p className="mb-2"><strong>{intl.formatMessage(messages.requestedOn)}:</strong> {formatDateOnly(request.created)}</p>

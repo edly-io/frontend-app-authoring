@@ -56,11 +56,6 @@ export interface ProgramConfig {
   cities: CityOption[];
 }
 
-export interface CityOption {
-  id: number;
-  name: string;
-}
-
 export interface CreateProgramInput {
   displayName: string;
   org: string;
@@ -161,10 +156,10 @@ export interface FeedbackRequest {
   feedbackName: string;
   formId: number;
   formName: string;
-  instructorId?: number;
-  instructorName: string;
-  traineeId?: number;
-  traineeName: string;
+  subjectId?: number | null;
+  subjectName: string | null;
+  reviewerId?: number;
+  reviewerName: string;
   courseId: string;
   deadline: string;
   requestedById?: number;
@@ -177,8 +172,8 @@ export interface FeedbackRequest {
 
 export interface FeedbackFiltersState {
   feedbackName: string;
-  instructor: string;
-  trainee: string;
+  subject: string;
+  reviewer: string;
   status: 'All' | FeedbackRequestStatus;
 }
 
@@ -195,4 +190,6 @@ export interface InitiateFeedbackPayload {
   feedbackName: string;
   deadline: string;
   formId: number;
+  reviewerEmails: string[];
+  subjectEmails?: string[];
 }

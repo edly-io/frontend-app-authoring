@@ -33,6 +33,7 @@ import {
   type GetCoursesParams,
   type GetInstructorsParams,
   type GetLearnersParams,
+  type PlatformUserRole,
 } from './api';
 import type {
   CreateFeedbackFormInput,
@@ -149,12 +150,60 @@ export const useUpdateCourseTargetAudience = () => {
   });
 };
 
+const fetchAllPlatformUsersForRole = async (role: PlatformUserRole, programKey: string) => {
+  const pageSize = 100;
+  const firstPage = await getPlatformUsers({
+    role,
+    programKey,
+    page: 1,
+    pageSize,
+  });
+  if (firstPage.numPages <= 1) {
+    return firstPage;
+  }
+
+  const remainingPages = await Promise.all(
+    Array.from({ length: firstPage.numPages - 1 }, (_, index) => getPlatformUsers({
+      role,
+      programKey,
+      page: index + 2,
+      pageSize,
+    })),
+  );
+
+  return {
+    ...firstPage,
+    results: [
+      ...firstPage.results,
+      ...remainingPages.flatMap((page) => page.results),
+    ],
+  };
+};
+
 export const useInstructors = (params: GetInstructorsParams = {}, enabled = true) => useQuery({
-  queryKey: ['instructors', params.programKey ?? '', params.page ?? 1, params.search ?? ''],
+  queryKey: ['instructors', params.programKey ?? '', params.page ?? 1, params.search ?? '', params.pageSize ?? 5],
   queryFn: () => getPlatformUsers({ role: 'instructor', ...params }),
   placeholderData: keepPreviousData,
   staleTime: 0,
   enabled,
+});
+
+export const useAllInstructors = (programKey: string, enabled = true) => useQuery({
+  queryKey: ['instructors', 'all', programKey],
+  queryFn: () => fetchAllPlatformUsersForRole('instructor', programKey),
+  enabled: enabled && !!programKey,
+  staleTime: 0,
+});
+
+export const useAllPlatformUsersForRole = (
+  role: PlatformUserRole,
+  programKey: string,
+  enabled = true,
+) => useQuery({
+  queryKey: ['platformUsers', 'all', role, programKey],
+  queryFn: () => fetchAllPlatformUsersForRole(role, programKey),
+  enabled: enabled && !!programKey,
+  staleTime: 0,
 });
 
 export const useAddInstructorToCourse = () => {
@@ -182,7 +231,7 @@ export const useRemoveInstructorFromCourse = () => {
 };
 
 export const useLearners = (params: GetLearnersParams = {}, enabled = true) => useQuery({
-  queryKey: ['learners', params.programKey ?? '', params.page ?? 1, params.search ?? ''],
+  queryKey: ['learners', params.programKey ?? '', params.page ?? 1, params.search ?? '', params.pageSize ?? 5],
   queryFn: () => getPlatformUsers({ role: 'learner', ...params }),
   placeholderData: keepPreviousData,
   staleTime: 0,
@@ -286,8 +335,8 @@ export const useFeedbackRequests = (
     programId,
     filters.feedbackName,
     filters.status,
-    filters.instructor,
-    filters.trainee,
+    filters.subject,
+    filters.reviewer,
   ],
   queryFn: () => getFeedbackRequests(programId, filters),
   placeholderData: keepPreviousData,

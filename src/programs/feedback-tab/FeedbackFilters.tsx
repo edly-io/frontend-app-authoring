@@ -13,11 +13,11 @@ import type {
 
 const messages = defineMessages({
   feedbackName: { id: 'programs.feedback.filters.feedback-name', defaultMessage: 'Feedback Name' },
-  instructor: { id: 'programs.feedback.filters.instructor', defaultMessage: 'Instructor' },
-  trainee: { id: 'programs.feedback.filters.trainee', defaultMessage: 'Trainee' },
+  subject: { id: 'programs.feedback.filters.subject', defaultMessage: 'Feedback About' },
+  reviewer: { id: 'programs.feedback.filters.reviewer', defaultMessage: 'Requested From' },
   status: { id: 'programs.feedback.filters.status', defaultMessage: 'Status' },
-  instructorPlaceholder: { id: 'programs.feedback.filters.instructor.placeholder', defaultMessage: 'Search instructor' },
-  traineePlaceholder: { id: 'programs.feedback.filters.trainee.placeholder', defaultMessage: 'Search trainee' },
+  subjectPlaceholder: { id: 'programs.feedback.filters.subject.placeholder', defaultMessage: 'Search feedback subject' },
+  reviewerPlaceholder: { id: 'programs.feedback.filters.reviewer.placeholder', defaultMessage: 'Search reviewer' },
   allFeedbackNames: { id: 'programs.feedback.filters.feedback-name.all', defaultMessage: 'All' },
   allStatuses: { id: 'programs.feedback.filters.status.all', defaultMessage: 'All' },
   pending: { id: 'programs.feedback.filters.status.pending', defaultMessage: 'Pending' },
@@ -38,21 +38,34 @@ const FeedbackFilters: React.FC<FeedbackFiltersProps> = ({
 }) => {
   const intl = useIntl();
 
+  const updateFilter = React.useCallback(
+    <Field extends keyof FeedbackFiltersState>(field: Field, value: FeedbackFiltersState[Field]) => {
+      if (filters[field] === value) {
+        return;
+      }
+
+      onChange({
+        ...filters,
+        [field]: value,
+      });
+    },
+    [filters, onChange],
+  );
+
   const handleChange = (field: keyof FeedbackFiltersState) => (
     event: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>,
   ) => {
-    onChange({
-      ...filters,
-      [field]: event.target.value,
-    });
+    updateFilter(field, event.target.value as FeedbackFiltersState[typeof field]);
   };
 
-  const handleSearchChange = (field: 'instructor' | 'trainee') => (value: string) => {
-    onChange({
-      ...filters,
-      [field]: value,
-    });
-  };
+  const handleSubjectSearchChange = React.useCallback(
+    (value: string) => updateFilter('subject', value),
+    [updateFilter],
+  );
+  const handleReviewerSearchChange = React.useCallback(
+    (value: string) => updateFilter('reviewer', value),
+    [updateFilter],
+  );
 
   return (
     <Row className="mb-4">
@@ -80,25 +93,25 @@ const FeedbackFilters: React.FC<FeedbackFiltersProps> = ({
       </Col>
       <Col xs={12} md={6} xl={3}>
         <Form.Group className="mb-3">
-          <Form.Label>{intl.formatMessage(messages.instructor)}</Form.Label>
+          <Form.Label>{intl.formatMessage(messages.subject)}</Form.Label>
           <SearchField
-            value={filters.instructor}
-            onChange={handleSearchChange('instructor')}
-            onSubmit={handleSearchChange('instructor')}
-            onClear={() => handleSearchChange('instructor')('')}
-            placeholder={intl.formatMessage(messages.instructorPlaceholder)}
+            value={filters.subject}
+            onChange={handleSubjectSearchChange}
+            onSubmit={handleSubjectSearchChange}
+            onClear={() => handleSubjectSearchChange('')}
+            placeholder={intl.formatMessage(messages.subjectPlaceholder)}
           />
         </Form.Group>
       </Col>
       <Col xs={12} md={6} xl={3}>
         <Form.Group className="mb-3">
-          <Form.Label>{intl.formatMessage(messages.trainee)}</Form.Label>
+          <Form.Label>{intl.formatMessage(messages.reviewer)}</Form.Label>
           <SearchField
-            value={filters.trainee}
-            onChange={handleSearchChange('trainee')}
-            onSubmit={handleSearchChange('trainee')}
-            onClear={() => handleSearchChange('trainee')('')}
-            placeholder={intl.formatMessage(messages.traineePlaceholder)}
+            value={filters.reviewer}
+            onChange={handleReviewerSearchChange}
+            onSubmit={handleReviewerSearchChange}
+            onClear={() => handleReviewerSearchChange('')}
+            placeholder={intl.formatMessage(messages.reviewerPlaceholder)}
           />
         </Form.Group>
       </Col>

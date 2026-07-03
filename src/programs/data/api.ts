@@ -4,6 +4,7 @@
 import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import type {
+  FbrRole,
   Batch,
   CityOption,
   Course,
@@ -204,13 +205,17 @@ export interface GetInstructorsParams {
   page?: number;
   search?: string;
   programKey?: string;
+  pageSize?: number;
 }
 
 export interface GetLearnersParams {
   page?: number;
   search?: string;
   programKey?: string;
+  pageSize?: number;
 }
+
+export type PlatformUserRole = FbrRole | 'learner';
 
 // Shared mapping from UserSerializer response ({id, username, email, first_name, last_name})
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -267,10 +272,10 @@ const toFeedbackRequest = (d: any): FeedbackRequest => ({
   feedbackName: d.feedback_name,
   formId: d.form,
   formName: d.form_name,
-  instructorId: d.instructor,
-  instructorName: d.instructor_name,
-  traineeId: d.trainee,
-  traineeName: d.trainee_name,
+  subjectId: d.subject ?? d.instructor ?? null,
+  subjectName: d.subject_name ?? d.instructor_name ?? null,
+  reviewerId: d.reviewer ?? d.trainee,
+  reviewerName: d.reviewer_name ?? d.trainee_name,
   courseId: d.course_id,
   deadline: d.deadline,
   requestedById: d.requested_by,
@@ -284,11 +289,11 @@ const toFeedbackRequest = (d: any): FeedbackRequest => ({
   created: d.created,
 });
 
-// ── Platform users — GET /fbr/api/programs/users/?role=instructor|learner ─────
+// ── Platform users — GET /fbr/api/programs/users/?role=<fbr_role> ───────────
 export const getPlatformUsers = async (
-  params: { role: 'instructor' | 'learner' } & GetLearnersParams,
+  params: { role: PlatformUserRole } & GetLearnersParams,
 ): Promise<PaginatedLearners> => {
-  const pageSize = 5;
+  const pageSize = params.pageSize ?? 5;
   const { data } = await getAuthenticatedHttpClient().get(
     `${getProgramsBaseUrl()}/users/`,
     {
@@ -519,8 +524,8 @@ export const createFeedbackForm = async (
 const toFeedbackRequestParams = (filters: FeedbackFiltersState) => ({
   ...(filters.feedbackName !== 'All' ? { feedback_name: filters.feedbackName } : {}),
   ...(filters.status !== 'All' ? { status: filters.status } : {}),
-  ...(filters.instructor.trim() ? { instructor: filters.instructor.trim() } : {}),
-  ...(filters.trainee.trim() ? { trainee: filters.trainee.trim() } : {}),
+  ...(filters.subject.trim() ? { subject: filters.subject.trim() } : {}),
+  ...(filters.reviewer.trim() ? { reviewer: filters.reviewer.trim() } : {}),
 });
 
 // ── Feedback requests — GET /requests/ ──────────────────────────────────────
@@ -558,6 +563,8 @@ export const initiateFeedbackRequests = async (
       feedback_name: payload.feedbackName,
       deadline: payload.deadline,
       form_id: payload.formId,
+      reviewer_emails: payload.reviewerEmails,
+      ...(payload.subjectEmails?.length ? { subject_emails: payload.subjectEmails } : {}),
     },
   );
   const results: any[] = Array.isArray(data) ? data : (data.results ?? []);

@@ -14,8 +14,8 @@ import type {
 const messages = defineMessages({
   feedbackName: { id: 'programs.feedback.table.feedback-name', defaultMessage: 'Feedback Name' },
   requestedBy: { id: 'programs.feedback.table.requested-by', defaultMessage: 'Requested By' },
-  instructor: { id: 'programs.feedback.table.instructor', defaultMessage: 'Instructor' },
-  trainee: { id: 'programs.feedback.table.trainee', defaultMessage: 'Trainee' },
+  subject: { id: 'programs.feedback.table.subject', defaultMessage: 'Feedback About' },
+  reviewer: { id: 'programs.feedback.table.reviewer', defaultMessage: 'Requested From' },
   course: { id: 'programs.feedback.table.course', defaultMessage: 'Course' },
   deadline: { id: 'programs.feedback.table.deadline', defaultMessage: 'Deadline' },
   requestedOn: { id: 'programs.feedback.table.requested-on', defaultMessage: 'Requested On' },
@@ -89,8 +89,8 @@ const FeedbackRequestsTable: React.FC<FeedbackRequestsTableProps> = ({
           <tr>
             <th>{intl.formatMessage(messages.feedbackName)}</th>
             <th>{intl.formatMessage(messages.requestedBy)}</th>
-            <th>{intl.formatMessage(messages.instructor)}</th>
-            <th>{intl.formatMessage(messages.trainee)}</th>
+            <th>{intl.formatMessage(messages.subject)}</th>
+            <th>{intl.formatMessage(messages.reviewer)}</th>
             <th>{intl.formatMessage(messages.course)}</th>
             <th className="feedback-table-nowrap">{intl.formatMessage(messages.deadline)}</th>
             <th className="feedback-table-nowrap">{intl.formatMessage(messages.requestedOn)}</th>
@@ -107,8 +107,8 @@ const FeedbackRequestsTable: React.FC<FeedbackRequestsTableProps> = ({
               <tr key={request.id}>
                 <td className="feedback-table-feedback-name">{request.feedbackName}</td>
                 <td>{request.requestedByName}</td>
-                <td>{request.instructorName}</td>
-                <td>{request.traineeName}</td>
+                <td>{request.subjectName || '--'}</td>
+                <td>{request.reviewerName}</td>
                 <td className="feedback-table-course">{request.courseId}</td>
                 <td className="feedback-table-nowrap">{formatTableDate(request.deadline)}</td>
                 <td className="feedback-table-nowrap">{formatTableDate(request.created)}</td>

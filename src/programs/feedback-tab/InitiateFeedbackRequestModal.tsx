@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import DatePicker from 'react-datepicker';
+import SelectBase from 'react-select';
 import {
   ActionRow,
   Alert,
@@ -14,14 +15,18 @@ import { CalendarMonth } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import { ToastContext } from '../../generic/toast-context';
 import {
+  useAllPlatformUsersForRole,
   useCreateFeedbackForm,
   useFeedbackForm,
   useFeedbackForms,
+  useProgramAccess,
 } from '../data/apiHooks';
 import type {
+  FbrRole,
   FeedbackFormQuestion,
   FeedbackFormTemplate,
   InitiateFeedbackPayload,
+  Learner,
 } from '../data/types';
 import FeedbackFormBuilder from './FeedbackFormBuilder';
 import FeedbackFormPreview from './FeedbackFormPreview';
@@ -36,7 +41,7 @@ const messages = defineMessages({
   title: { id: 'programs.feedback.initiate.modal.title', defaultMessage: 'Initiate Feedback Request' },
   intro: {
     id: 'programs.feedback.initiate.modal.body',
-    defaultMessage: 'Create a feedback request for eligible trainees associated with this program.',
+    defaultMessage: 'Create a feedback request for selected FBR users in this program.',
   },
   feedbackName: { id: 'programs.feedback.initiate.name', defaultMessage: 'Feedback Name' },
   feedbackNamePlaceholder: {
@@ -56,6 +61,14 @@ const messages = defineMessages({
   validationForm: {
     id: 'programs.feedback.initiate.validation.form',
     defaultMessage: 'A feedback form must be selected.',
+  },
+  validationReviewers: {
+    id: 'programs.feedback.initiate.validation.reviewers',
+    defaultMessage: 'Select at least one person to request feedback from.',
+  },
+  validationSamePerson: {
+    id: 'programs.feedback.initiate.validation.same-person',
+    defaultMessage: 'The same person cannot be selected for both Feedback To and Feedback From.',
   },
   validationSaveForm: {
     id: 'programs.feedback.initiate.validation.form.unsaved',
@@ -85,11 +98,115 @@ const messages = defineMessages({
     id: 'programs.feedback.forms.load.error',
     defaultMessage: 'Failed to load feedback forms.',
   },
+  requestFrom: {
+    id: 'programs.feedback.initiate.request-from',
+    defaultMessage: 'Feedback From',
+  },
+  requestFromHelp: {
+    id: 'programs.feedback.initiate.request-from.help',
+    defaultMessage: 'Choose the people who should complete this feedback request.',
+  },
+  feedbackAbout: {
+    id: 'programs.feedback.initiate.feedback-about',
+    defaultMessage: 'Feedback To',
+  },
+  feedbackAboutHelp: {
+    id: 'programs.feedback.initiate.feedback-about.help',
+    defaultMessage: 'Choose who this feedback is about. Leave empty for general program feedback.',
+  },
+  roleSuperAdmin: {
+    id: 'programs.feedback.initiate.role.super-admin',
+    defaultMessage: 'Super Admins',
+  },
+  roleMiddleAdmin: {
+    id: 'programs.feedback.initiate.role.middle-admin',
+    defaultMessage: 'Middle Admins',
+  },
+  roleDataAdmin: {
+    id: 'programs.feedback.initiate.role.data-admin',
+    defaultMessage: 'Data Admins',
+  },
+  roleInstructor: {
+    id: 'programs.feedback.initiate.role.instructor',
+    defaultMessage: 'Instructors',
+  },
+  roleTrainee: {
+    id: 'programs.feedback.initiate.role.trainee',
+    defaultMessage: 'Trainees',
+  },
+  selectAllRole: {
+    id: 'programs.feedback.initiate.users.select-all-role',
+    defaultMessage: 'Select all in this group',
+  },
+  selectedCount: {
+    id: 'programs.feedback.initiate.users.selected-count',
+    defaultMessage: '{count, plural, one {# person selected} other {# people selected}}',
+  },
+  noSubjectSelected: {
+    id: 'programs.feedback.initiate.subject.empty-selection',
+    defaultMessage: 'No one selected. Feedback requests will be general and not tied to a specific person.',
+  },
+  userSelectPlaceholder: {
+    id: 'programs.feedback.initiate.users.placeholder',
+    defaultMessage: 'Search and select emails...',
+  },
+  userNoOptions: {
+    id: 'programs.feedback.initiate.users.no-options',
+    defaultMessage: 'No emails match your search',
+  },
+  usersLoading: {
+    id: 'programs.feedback.initiate.users.loading',
+    defaultMessage: 'Loading users...',
+  },
+  usersLoadError: {
+    id: 'programs.feedback.initiate.users.load.error',
+    defaultMessage: 'Failed to load users.',
+  },
+  noUsers: {
+    id: 'programs.feedback.initiate.users.empty',
+    defaultMessage: 'No users are available in this group.',
+  },
   formInUse: {
     id: 'programs.feedback.form.in-use',
     defaultMessage: 'This form is already in use and cannot be edited.',
   },
 });
+
+// ContentTagsCollapsible.d.ts globally augments react-select/base Props with taxonomy-specific
+// fields, which makes TypeScript require those props on every react-select usage in this project.
+const Select = SelectBase as React.ComponentType<any>;
+
+interface FeedbackUserOption {
+  value: string;
+  label: string;
+}
+
+const DEFAULT_REVIEWER_ROLE: FbrRole = 'trainee';
+const DEFAULT_SUBJECT_ROLE: FbrRole = 'instructor';
+const ROLE_HIERARCHY: FbrRole[] = [
+  'super_admin',
+  'middle_admin',
+  'data_admin',
+  'instructor',
+  'trainee',
+];
+
+const ROLE_MESSAGE_BY_ROLE: Record<FbrRole, keyof typeof messages> = {
+  super_admin: 'roleSuperAdmin',
+  middle_admin: 'roleMiddleAdmin',
+  data_admin: 'roleDataAdmin',
+  instructor: 'roleInstructor',
+  trainee: 'roleTrainee',
+};
+
+const toUserOptions = (users: Learner[]): FeedbackUserOption[] => users
+  .map((user) => user.email)
+  .filter(Boolean)
+  .map((email) => ({ value: email, label: email }));
+
+const mergeUniqueEmails = (currentEmails: string[], nextEmails: string[]) => (
+  [...new Set([...currentEmails, ...nextEmails])]
+);
 
 interface DateInputProps {
   value?: string;
@@ -139,6 +256,152 @@ const formatDateForApi = (date: Date) => (
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 );
 
+interface FeedbackUserSelectorProps {
+  label: string;
+  helpText: string;
+  programId: string;
+  isOpen: boolean;
+  roles: FbrRole[];
+  activeRole: FbrRole;
+  onActiveRoleChange: (role: FbrRole) => void;
+  selectedEmails: string[];
+  onSelectedEmailsChange: (emails: string[]) => void;
+  excludedEmails?: string[];
+  emptySelectionMessage?: string;
+}
+
+const FeedbackUserSelector: React.FC<FeedbackUserSelectorProps> = ({
+  label,
+  helpText,
+  programId,
+  isOpen,
+  roles,
+  activeRole,
+  onActiveRoleChange,
+  selectedEmails,
+  onSelectedEmailsChange,
+  excludedEmails = [],
+  emptySelectionMessage,
+}) => {
+  const intl = useIntl();
+  const {
+    data,
+    isLoading,
+    isError,
+  } = useAllPlatformUsersForRole(activeRole, programId, isOpen);
+  const users = data?.results ?? [];
+  const excludedEmailSet = new Set(excludedEmails);
+  const options = toUserOptions(users).filter((option) => !excludedEmailSet.has(option.value));
+  const optionEmails = options.map((option) => option.value);
+  const selectedOptions = options.filter((option) => selectedEmails.includes(option.value));
+  const roleLabel = intl.formatMessage(messages[ROLE_MESSAGE_BY_ROLE[activeRole]]);
+
+  const handleSelectionChange = (selectedOptionsForRole: readonly FeedbackUserOption[] | null) => {
+    const optionEmailSet = new Set(optionEmails);
+    const selectionsFromOtherRoles = selectedEmails.filter((email) => !optionEmailSet.has(email));
+    onSelectedEmailsChange([
+      ...selectionsFromOtherRoles,
+      ...(selectedOptionsForRole?.map((option) => option.value) ?? []),
+    ]);
+  };
+
+  const handleSelectAllRole = () => {
+    onSelectedEmailsChange(mergeUniqueEmails(selectedEmails, optionEmails));
+  };
+
+  return (
+    <Form.Group className="mb-4">
+      <Form.Label>{label}</Form.Label>
+      <Form.Text className="text-muted d-block mb-2">
+        {helpText}
+      </Form.Text>
+
+      <div className="feedback-user-picker">
+        <div className="feedback-user-role-tabs" role="tablist" aria-label={label}>
+          {roles.map((role) => (
+            <button
+              key={role}
+              type="button"
+              className={`feedback-user-role-tab ${activeRole === role ? 'active' : ''}`}
+              onClick={() => onActiveRoleChange(role)}
+            >
+              <span>{intl.formatMessage(messages[ROLE_MESSAGE_BY_ROLE[role]])}</span>
+            </button>
+          ))}
+        </div>
+
+        {isLoading && (
+          <div className="d-flex justify-content-center py-3">
+            <Spinner animation="border" screenReaderText={intl.formatMessage(messages.usersLoading)} />
+          </div>
+        )}
+
+        {!isLoading && isError && (
+          <Alert variant="danger" className="mb-3">
+            {intl.formatMessage(messages.usersLoadError)}
+          </Alert>
+        )}
+
+        {!isLoading && !isError && options.length === 0 && (
+          <Alert variant="info" className="mb-3">
+            {intl.formatMessage(messages.noUsers)}
+          </Alert>
+        )}
+
+        {!isLoading && !isError && options.length > 0 && (
+          <>
+            <div className="feedback-user-picker-toolbar">
+              <span className="text-muted small">
+                {roleLabel}
+              </span>
+              <Button variant="outline-primary" size="sm" onClick={handleSelectAllRole}>
+                {intl.formatMessage(messages.selectAllRole)}
+              </Button>
+            </div>
+            <Select
+              isMulti
+              closeMenuOnSelect={false}
+              hideSelectedOptions={false}
+              options={options}
+              value={selectedOptions}
+              onChange={handleSelectionChange}
+              placeholder={intl.formatMessage(messages.userSelectPlaceholder)}
+              noOptionsMessage={() => intl.formatMessage(messages.userNoOptions)}
+              classNamePrefix="feedback-user-select"
+              styles={{
+                control: (base, state) => ({
+                  ...base,
+                  minHeight: '42px',
+                  borderColor: state.isFocused ? '#0d6efd' : '#adb5bd',
+                  boxShadow: state.isFocused ? '0 0 0 1px #0d6efd' : 'none',
+                  '&:hover': { borderColor: '#0d6efd' },
+                }),
+                menu: (base) => ({ ...base, zIndex: 9999 }),
+                multiValue: (base) => ({
+                  ...base,
+                  backgroundColor: '#e7f1ff',
+                  borderRadius: '999px',
+                }),
+                multiValueLabel: (base) => ({
+                  ...base,
+                  color: '#084298',
+                  fontWeight: 600,
+                }),
+              }}
+            />
+          </>
+        )}
+
+        <div className="feedback-user-selection-summary">
+          {selectedEmails.length > 0
+            ? intl.formatMessage(messages.selectedCount, { count: selectedEmails.length })
+            : emptySelectionMessage}
+        </div>
+      </div>
+    </Form.Group>
+  );
+};
+
 const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> = ({
   isOpen,
   onClose,
@@ -148,9 +411,15 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
 }) => {
   const intl = useIntl();
   const { showToast } = useContext(ToastContext);
+  const { profile } = useProgramAccess();
+  const isSuperAdmin = profile?.roles.includes('super_admin') ?? false;
   const [feedbackName, setFeedbackName] = React.useState('');
   const [deadline, setDeadline] = React.useState<Date | null>(null);
   const [selectedFormId, setSelectedFormId] = React.useState('');
+  const [activeReviewerRole, setActiveReviewerRole] = React.useState<FbrRole>(DEFAULT_REVIEWER_ROLE);
+  const [activeSubjectRole, setActiveSubjectRole] = React.useState<FbrRole>(DEFAULT_SUBJECT_ROLE);
+  const [selectedReviewerEmails, setSelectedReviewerEmails] = React.useState<string[]>([]);
+  const [selectedSubjectEmails, setSelectedSubjectEmails] = React.useState<string[]>([]);
   const [newFormName, setNewFormName] = React.useState('');
   const [newFormQuestions, setNewFormQuestions] = React.useState<FeedbackFormQuestion[]>(
     cloneFeedbackQuestions(defaultNewFormQuestions),
@@ -177,6 +446,10 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
       setFeedbackName('');
       setDeadline(null);
       setSelectedFormId('');
+      setActiveReviewerRole(DEFAULT_REVIEWER_ROLE);
+      setActiveSubjectRole(DEFAULT_SUBJECT_ROLE);
+      setSelectedReviewerEmails([]);
+      setSelectedSubjectEmails([]);
       setNewFormName('');
       setNewFormQuestions(cloneFeedbackQuestions(defaultNewFormQuestions));
       setValidationError('');
@@ -186,6 +459,18 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
 
   const selectedExistingForm = selectedFormDetail || selectedFormSummary;
   const isCreatingNewForm = selectedFormId === CREATE_NEW_FORM_VALUE;
+  const selectableRoles = React.useMemo<FbrRole[]>(() => [
+    ...ROLE_HIERARCHY.filter((role) => role !== 'super_admin' || isSuperAdmin),
+  ], [isSuperAdmin]);
+
+  React.useEffect(() => {
+    if (!selectableRoles.includes(activeReviewerRole)) {
+      setActiveReviewerRole(DEFAULT_REVIEWER_ROLE);
+    }
+    if (!selectableRoles.includes(activeSubjectRole)) {
+      setActiveSubjectRole(DEFAULT_SUBJECT_ROLE);
+    }
+  }, [activeReviewerRole, activeSubjectRole, selectableRoles]);
 
   const handleQuestionChange = (
     questionId: number,
@@ -214,6 +499,20 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
 
   const handleRemoveQuestion = (questionId: number) => {
     setNewFormQuestions((currentQuestions) => currentQuestions.filter((question) => question.id !== questionId));
+  };
+
+  const handleReviewerEmailsChange = (emails: string[]) => {
+    const reviewerEmailSet = new Set(emails);
+    setSelectedReviewerEmails(emails);
+    setSelectedSubjectEmails((currentEmails) => currentEmails.filter((email) => !reviewerEmailSet.has(email)));
+    setValidationError('');
+  };
+
+  const handleSubjectEmailsChange = (emails: string[]) => {
+    const subjectEmailSet = new Set(emails);
+    setSelectedSubjectEmails(emails);
+    setSelectedReviewerEmails((currentEmails) => currentEmails.filter((email) => !subjectEmailSet.has(email)));
+    setValidationError('');
   };
 
   const validateBuilder = () => {
@@ -276,6 +575,15 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
       setValidationError(intl.formatMessage(messages.validationPastDeadline));
       return;
     }
+    if (selectedReviewerEmails.length === 0) {
+      setValidationError(intl.formatMessage(messages.validationReviewers));
+      return;
+    }
+    const subjectEmailSet = new Set(selectedSubjectEmails);
+    if (selectedReviewerEmails.some((email) => subjectEmailSet.has(email))) {
+      setValidationError(intl.formatMessage(messages.validationSamePerson));
+      return;
+    }
     if (isCreatingNewForm) {
       setValidationError(intl.formatMessage(messages.validationSaveForm));
       return;
@@ -290,6 +598,8 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
       feedbackName: trimmedFeedbackName,
       deadline: formatDateForApi(deadline),
       formId: selectedExistingForm.id,
+      reviewerEmails: selectedReviewerEmails,
+      ...(selectedSubjectEmails.length ? { subjectEmails: selectedSubjectEmails } : {}),
     });
   };
 
@@ -335,7 +645,8 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
       title={intl.formatMessage(messages.title)}
       isOpen={isOpen}
       onClose={onClose}
-      size="lg"
+      size="xl"
+      className="feedback-initiate-modal"
       hasCloseButton
       isFullscreenOnMobile
       isOverflowVisible={false}
@@ -343,7 +654,7 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
       <ModalDialog.Header>
         <ModalDialog.Title>{intl.formatMessage(messages.title)}</ModalDialog.Title>
       </ModalDialog.Header>
-      <ModalDialog.Body>
+      <ModalDialog.Body className="feedback-initiate-modal-body">
         <p className="mb-4">{intl.formatMessage(messages.intro)}</p>
         {validationError && (
           <Alert variant="danger" className="mb-3">
@@ -381,6 +692,33 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
           </Col>
         </Row>
 
+        <FeedbackUserSelector
+          label={intl.formatMessage(messages.feedbackAbout)}
+          helpText={intl.formatMessage(messages.feedbackAboutHelp)}
+          programId={programId}
+          isOpen={isOpen}
+          roles={selectableRoles}
+          activeRole={activeSubjectRole}
+          onActiveRoleChange={setActiveSubjectRole}
+          selectedEmails={selectedSubjectEmails}
+          onSelectedEmailsChange={handleSubjectEmailsChange}
+          excludedEmails={selectedReviewerEmails}
+          emptySelectionMessage={intl.formatMessage(messages.noSubjectSelected)}
+        />
+
+        <FeedbackUserSelector
+          label={intl.formatMessage(messages.requestFrom)}
+          helpText={intl.formatMessage(messages.requestFromHelp)}
+          programId={programId}
+          isOpen={isOpen}
+          roles={selectableRoles}
+          activeRole={activeReviewerRole}
+          onActiveRoleChange={setActiveReviewerRole}
+          selectedEmails={selectedReviewerEmails}
+          onSelectedEmailsChange={handleReviewerEmailsChange}
+          excludedEmails={selectedSubjectEmails}
+        />
+
         <FeedbackFormSelector
           forms={availableForms}
           selectedFormId={selectedFormId}
@@ -409,7 +747,11 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
           <ModalDialog.CloseButton variant="tertiary">
             {intl.formatMessage(messages.cancel)}
           </ModalDialog.CloseButton>
-          <Button variant="primary" onClick={handleInitiate} disabled={isSubmitting}>
+          <Button
+            variant="primary"
+            onClick={handleInitiate}
+            disabled={isSubmitting}
+          >
             {intl.formatMessage(messages.initiate)}
           </Button>
         </ActionRow>

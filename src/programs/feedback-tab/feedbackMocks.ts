@@ -46,8 +46,8 @@ export interface FeedbackRequest {
 
 export interface FeedbackFiltersState {
   feedbackName: string;
-  instructor: string;
-  trainee: string;
+  subject: string;
+  reviewer: string;
   status: 'All' | FeedbackRequestStatus;
 }
 
@@ -65,8 +65,8 @@ export const CREATE_NEW_FORM_VALUE = '__create_new_form__';
 
 export const defaultFeedbackFilters: FeedbackFiltersState = {
   feedbackName: 'All',
-  instructor: '',
-  trainee: '',
+  subject: '',
+  reviewer: '',
   status: 'All',
 };
 
@@ -409,11 +409,11 @@ export const filterFeedbackRequests = (
 ): FeedbackRequest[] => requests.filter((request) => {
   const status = getFeedbackStatus(request);
   const matchesFeedbackName = filters.feedbackName === 'All' || request.feedbackName === filters.feedbackName;
-  const matchesInstructor = !filters.instructor.trim()
-    || request.instructor.toLowerCase().includes(filters.instructor.trim().toLowerCase());
-  const matchesTrainee = !filters.trainee.trim()
-    || request.trainee.toLowerCase().includes(filters.trainee.trim().toLowerCase());
+  const matchesSubject = !filters.subject.trim()
+    || request.instructor.toLowerCase().includes(filters.subject.trim().toLowerCase());
+  const matchesReviewer = !filters.reviewer.trim()
+    || request.trainee.toLowerCase().includes(filters.reviewer.trim().toLowerCase());
   const matchesStatus = filters.status === 'All' || status === filters.status;
 
-  return matchesFeedbackName && matchesInstructor && matchesTrainee && matchesStatus;
+  return matchesFeedbackName && matchesSubject && matchesReviewer && matchesStatus;
 });

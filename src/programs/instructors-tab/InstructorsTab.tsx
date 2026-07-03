@@ -33,12 +33,14 @@ const messages = defineMessages({
 
 interface InstructorsTabProps {
   program: Program;
+  programId?: string;
   canManage?: boolean;
 }
 
-const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, canManage = true }) => {
+const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, canManage = true }) => {
   const intl = useIntl();
   const courses = program.courses ?? [];
+  const effectiveProgramId = programId || program.id;
 
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [confirmEmail, setConfirmEmail] = useState<string | null>(null);
@@ -163,7 +165,8 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, canManage = tr
             onClose={closeModal}
             courseId={selectedCourseId}
             courseName={selectedCourse?.displayName ?? ''}
-            alreadyAddedEmails={teamEmails}
+            alreadyAddedUsernames={teamUsernames}
+            programId={effectiveProgramId}
           />
 
           <DeleteModal
