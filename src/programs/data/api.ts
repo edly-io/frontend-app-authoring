@@ -250,7 +250,7 @@ export const getCourseTeam = async (courseId: string): Promise<Instructor[]> => 
     username: u.username,
     email: u.email,
     role: u.role,
-    name: u.full_name,
+    name: u.full_name || [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username,
   }));
 };
 
