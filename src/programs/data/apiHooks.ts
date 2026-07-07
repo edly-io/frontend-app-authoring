@@ -64,7 +64,7 @@ export const useUpdateProgram = () => {
 };
 
 export const useCourses = (params: GetCoursesParams = {}) => useQuery({
-  queryKey: ['courses', params.page ?? 1, params.search ?? ''],
+  queryKey: ['courses', params.page ?? 1, params.search ?? '', params.org ?? ''],
   queryFn: () => getCourses(params),
   placeholderData: keepPreviousData,
 });

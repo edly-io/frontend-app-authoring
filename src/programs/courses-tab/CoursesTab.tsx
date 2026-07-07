@@ -112,6 +112,7 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ program, programId }) => {
         isOpen={isModalOpen}
         onClose={closeModal}
         programId={programId}
+        programOrg={program.org}
         alreadyAddedIds={courseIds}
       />
 
