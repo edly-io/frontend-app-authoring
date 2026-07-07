@@ -33,6 +33,7 @@ interface AddCourseModalProps {
   isOpen: boolean;
   onClose: () => void;
   programId: string;
+  programOrg: string;
   alreadyAddedIds: string[];
 }
 
@@ -73,7 +74,7 @@ const CourseRow: React.FC<{
 );
 
 const AddCourseModal: React.FC<AddCourseModalProps> = ({
-  isOpen, onClose, programId, alreadyAddedIds,
+  isOpen, onClose, programId, programOrg, alreadyAddedIds,
 }) => {
   const intl = useIntl();
   const [searchQuery, setSearchQuery] = useState('');
@@ -81,7 +82,7 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
   const [addingId, setAddingId] = useState<string | null>(null);
   const [addError, setAddError] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
-  const { data, isLoading, isFetching } = useCourses({ page: currentPage, search: searchQuery });
+  const { data, isLoading, isFetching } = useCourses({ page: currentPage, search: searchQuery, org: programOrg });
   const { mutateAsync: addCourse } = useAddCourseToProgram();
 
   useEffect(() => {

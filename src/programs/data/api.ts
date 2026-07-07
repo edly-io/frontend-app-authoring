@@ -116,13 +116,21 @@ export const updateProgram = async (
 export interface GetCoursesParams {
   page?: number;
   search?: string;
+  org?: string;
 }
 
 export const getCourses = async (params: GetCoursesParams = {}): Promise<PaginatedCourses> => {
   const pageSize = 5; // temporary — lower for pagination testing; revert to backend default
   const { data } = await getAuthenticatedHttpClient().get(
     `${getProgramsBaseUrl()}/courses/`,
-    { params: { page: params.page ?? 1, page_size: pageSize, ...(params.search ? { search: params.search } : {}) } },
+    {
+      params: {
+        page: params.page ?? 1,
+        page_size: pageSize,
+        ...(params.search ? { search: params.search } : {}),
+        ...(params.org ? { org: params.org } : {}),
+      },
+    },
   );
   const results: any[] = data.results ?? [];
   const pagination = data.pagination ?? {};
