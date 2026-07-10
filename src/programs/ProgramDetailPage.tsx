@@ -27,6 +27,7 @@ import { useProgramDetail, useUpdateProgram } from './data/apiHooks';
 import CoursesTab from './courses-tab/CoursesTab';
 import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
+import ProgramRichTextEditor from './ProgramRichTextEditor';
 import './index.scss';
 
 const messages = defineMessages({
@@ -119,6 +120,7 @@ const ProgramDetailPage: React.FC = () => {
   const intl = useIntl();
   const [activeTab, setActiveTab] = React.useState('details');
   const [imageFile, setImageFile] = React.useState<File | null>(null);
+  const [editorKey, setEditorKey] = React.useState(0);
   const { showToast } = useContext(ToastContext);
 
   const { data, isLoading, isError } = useProgramDetail(programId ?? '');
@@ -231,7 +233,7 @@ const ProgramDetailPage: React.FC = () => {
                 <Button
                   variant="outline-secondary"
                   size="sm"
-                  onClick={() => formik.resetForm()}
+                  onClick={() => { formik.resetForm(); setEditorKey((k) => k + 1); }}
                   disabled={isSaving}
                 >
                   {intl.formatMessage(messages.unsavedBannerDiscard)}
@@ -315,14 +317,10 @@ const ProgramDetailPage: React.FC = () => {
                       {/* Detailed Description */}
                       <Form.Group className="mb-4">
                         <Form.Label>{intl.formatMessage(messages.fieldDetailedDesc)}</Form.Label>
-                        <Form.Control
-                          as="textarea"
-                          rows={6}
-                          name="longDescription"
-                          placeholder="Comprehensive description for the program detail page..."
-                          value={formik.values.longDescription ?? ''}
-                          onChange={formik.handleChange}
-                          onBlur={formik.handleBlur}
+                        <ProgramRichTextEditor
+                          editorKey={editorKey}
+                          value={program.longDescription ?? ''}
+                          onChange={(val) => formik.setFieldValue('longDescription', val)}
                         />
                         <Form.Text muted>{intl.formatMessage(messages.fieldDetailedDescHint)}</Form.Text>
                       </Form.Group>
