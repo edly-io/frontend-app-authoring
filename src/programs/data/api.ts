@@ -4,6 +4,7 @@
 import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import type {
+  FbrRole,
   Batch,
   CityOption,
   Course,
@@ -15,11 +16,19 @@ import type {
   Program,
   ProgramConfig,
   ProgramDetailResponse,
+  CreateFeedbackFormInput,
+  FeedbackFiltersState,
+  FeedbackFormQuestion,
+  FeedbackFormTemplate,
+  FeedbackRequest,
+  InitiateFeedbackPayload,
 } from './types';
 
 export { getCurrentFbrProfile, getCurrentFbrProfileUrl } from '@src/fbr-access/api';
 
 const getProgramsBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/programs`;
+const getFeedbackBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/cms/feedback`;
+const getEncodedProgramId = (programId: string) => encodeURIComponent(programId);
 export const getFbrCitiesUrl = () => `${getConfig().LMS_BASE_URL}/fbr/api/biodata/v1/users/cities/`;
 
 export const getFbrCities = async (): Promise<CityOption[]> => {
@@ -196,13 +205,17 @@ export interface GetInstructorsParams {
   page?: number;
   search?: string;
   programKey?: string;
+  pageSize?: number;
 }
 
 export interface GetLearnersParams {
   page?: number;
   search?: string;
   programKey?: string;
+  pageSize?: number;
 }
+
+export type PlatformUserRole = FbrRole | 'learner';
 
 // Shared mapping from UserSerializer response ({id, username, email, first_name, last_name})
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -213,11 +226,74 @@ const toUser = (d: any): Learner => ({
   name: [d.first_name, d.last_name].filter(Boolean).join(' ') || d.username,
 });
 
-// ── Platform users — GET /fbr/api/programs/users/?role=instructor|learner ─────
+// ── Response → Feedback types transformation ────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toFeedbackQuestion = (d: any): FeedbackFormQuestion => ({
+  id: d.id,
+  type: d.question_type ?? d.type,
+  question: d.question,
+  required: d.required,
+  isDefault: d.is_default ?? d.isDefault ?? false,
+  order: d.order,
+});
+
+const toFeedbackQuestionPayload = (question: FeedbackFormQuestion, index: number) => ({
+  question: question.question,
+  question_type: question.type,
+  required: question.required,
+  is_default: question.isDefault,
+  order: question.order ?? index,
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toFeedbackForm = (d: any): FeedbackFormTemplate => ({
+  id: d.id,
+  name: d.name,
+  questions: d.questions?.map(toFeedbackQuestion),
+  isInUse: d.is_in_use ?? false,
+  createdByName: d.created_by_name,
+  created: d.created,
+  modified: d.modified,
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toFeedbackResponseAnswer = (d: any) => ({
+  id: d.id,
+  questionId: d.question_id ?? d.question,
+  question: d.question_snapshot,
+  type: d.question_type_snapshot,
+  starValue: d.star_value,
+  textValue: d.text_value,
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toFeedbackRequest = (d: any): FeedbackRequest => ({
+  id: d.id,
+  feedbackName: d.feedback_name,
+  formId: d.form,
+  formName: d.form_name,
+  subjectId: d.subject ?? d.instructor ?? null,
+  subjectName: d.subject_name ?? d.instructor_name ?? null,
+  reviewerId: d.reviewer ?? d.trainee,
+  reviewerName: d.reviewer_name ?? d.trainee_name,
+  courseId: d.course_id,
+  deadline: d.deadline,
+  requestedById: d.requested_by,
+  requestedByName: d.requested_by_name,
+  submittedAt: d.submitted_at,
+  status: d.status,
+  response: d.response ? {
+    submittedAt: d.response.submitted_at,
+    answers: (d.response.answers ?? []).map(toFeedbackResponseAnswer),
+  } : null,
+  created: d.created,
+});
+
+// ── Platform users — GET /fbr/api/programs/users/?role=<fbr_role> ───────────
 export const getPlatformUsers = async (
-  params: { role: 'instructor' | 'learner' } & GetLearnersParams,
+  params: { role: PlatformUserRole } & GetLearnersParams,
 ): Promise<PaginatedLearners> => {
-  const pageSize = 5;
+  const pageSize = params.pageSize ?? 5;
   const { data } = await getAuthenticatedHttpClient().get(
     `${getProgramsBaseUrl()}/users/`,
     {
@@ -408,4 +484,89 @@ export const getBatches = async (): Promise<Batch[]> => {
 export const getBatchUsers = async (batchId: string): Promise<Learner[]> => {
   await new Promise<void>((res) => { setTimeout(res, 400); });
   return MOCK_BATCH_USERS[batchId] ?? [];
+};
+
+// ── Feedback forms — GET /fbr/api/cms/feedback/programs/<key>/forms/ ────────
+export const getFeedbackForms = async (programId: string): Promise<FeedbackFormTemplate[]> => {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/forms/`,
+  );
+  const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
+  return results.map(toFeedbackForm);
+};
+
+// ── Feedback form detail — GET /forms/<id>/ ─────────────────────────────────
+export const getFeedbackForm = async (
+  programId: string,
+  formId: number,
+): Promise<FeedbackFormTemplate> => {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/forms/${formId}/`,
+  );
+  return toFeedbackForm(data);
+};
+
+// ── Create feedback form — POST /forms/ ─────────────────────────────────────
+export const createFeedbackForm = async (
+  programId: string,
+  input: CreateFeedbackFormInput,
+): Promise<FeedbackFormTemplate> => {
+  const { data } = await getAuthenticatedHttpClient().post(
+    `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/forms/`,
+    {
+      name: input.name,
+      questions: input.questions.map(toFeedbackQuestionPayload),
+    },
+  );
+  return toFeedbackForm(data);
+};
+
+const toFeedbackRequestParams = (filters: FeedbackFiltersState) => ({
+  ...(filters.feedbackName !== 'All' ? { feedback_name: filters.feedbackName } : {}),
+  ...(filters.status !== 'All' ? { status: filters.status } : {}),
+  ...(filters.subject.trim() ? { subject: filters.subject.trim() } : {}),
+  ...(filters.reviewer.trim() ? { reviewer: filters.reviewer.trim() } : {}),
+});
+
+// ── Feedback requests — GET /requests/ ──────────────────────────────────────
+export const getFeedbackRequests = async (
+  programId: string,
+  filters: FeedbackFiltersState,
+): Promise<FeedbackRequest[]> => {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/requests/`,
+    { params: toFeedbackRequestParams(filters) },
+  );
+  const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
+  return results.map(toFeedbackRequest);
+};
+
+// ── Feedback request detail — GET /requests/<id>/ ───────────────────────────
+export const getFeedbackRequest = async (
+  programId: string,
+  requestId: number,
+): Promise<FeedbackRequest> => {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/requests/${requestId}/`,
+  );
+  return toFeedbackRequest(data);
+};
+
+// ── Initiate feedback requests — POST /requests/initiate/ ───────────────────
+export const initiateFeedbackRequests = async (
+  programId: string,
+  payload: InitiateFeedbackPayload,
+): Promise<FeedbackRequest[]> => {
+  const { data } = await getAuthenticatedHttpClient().post(
+    `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/requests/initiate/`,
+    {
+      feedback_name: payload.feedbackName,
+      deadline: payload.deadline,
+      form_id: payload.formId,
+      reviewer_emails: payload.reviewerEmails,
+      ...(payload.subjectEmails?.length ? { subject_emails: payload.subjectEmails } : {}),
+    },
+  );
+  const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
+  return results.map(toFeedbackRequest);
 };

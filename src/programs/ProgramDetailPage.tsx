@@ -29,6 +29,7 @@ import { useProgramAccess, useProgramDetail, useUpdateProgram } from './data/api
 import CoursesTab from './courses-tab/CoursesTab';
 import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
+import FeedbackTab from './feedback-tab/FeedbackTab';
 
 const messages = defineMessages({
   backToPrograms: { id: 'programs.detail.back', defaultMessage: '← Back to Programs' },
@@ -43,6 +44,7 @@ const messages = defineMessages({
   tabCourses: { id: 'programs.detail.tab.courses', defaultMessage: 'Courses' },
   tabInstructors: { id: 'programs.detail.tab.instructors', defaultMessage: 'Instructors' },
   tabEnrollment: { id: 'programs.detail.tab.enrollment', defaultMessage: 'Enrollment' },
+  tabFeedback: { id: 'programs.detail.tab.feedback', defaultMessage: 'Feedback' },
   sectionBasicInfo: { id: 'programs.detail.section.basic', defaultMessage: 'Basic Information' },
   sectionBasicSubtitle: { id: 'programs.detail.section.basic.sub', defaultMessage: 'Set the core details of your program' },
   sectionImage: { id: 'programs.detail.section.image', defaultMessage: 'Program Card Image' },
@@ -651,6 +653,7 @@ const ProgramDetailPage: React.FC = () => {
           <Tab eventKey="instructors" title={intl.formatMessage(messages.tabInstructors)}>
             <InstructorsTab
               program={program}
+              programId={programId ?? ''}
               canManage={capabilities.canManageInstructors}
             />
           </Tab>
@@ -660,6 +663,10 @@ const ProgramDetailPage: React.FC = () => {
               programId={programId ?? ''}
               canManage={capabilities.canManageEnrollment}
             />
+          </Tab>
+
+          <Tab eventKey="feedback" title={intl.formatMessage(messages.tabFeedback)}>
+            <FeedbackTab programId={programId ?? ''} />
           </Tab>
         </Tabs>
 
