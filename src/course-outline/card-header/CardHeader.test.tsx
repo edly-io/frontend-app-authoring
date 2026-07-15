@@ -1,4 +1,5 @@
 import { setConfig, getConfig } from '@edx/frontend-platform';
+import userEvent from '@testing-library/user-event';
 
 import { ITEM_BADGE_STATUS } from '@src/course-outline/constants';
 import {
@@ -231,6 +232,33 @@ describe('<CardHeader />', () => {
       expect(screen.queryByTestId('subsection-card-header__expanded-btn')).not.toBeInTheDocument();
       expect(screen.queryByTestId('edit-button')).not.toBeInTheDocument();
     });
+  });
+
+  it('selects all text in the edit field as soon as it opens', async () => {
+    renderComponent({
+      ...cardHeaderProps,
+      isFormOpen: true,
+    });
+
+    const editField = await screen.findByTestId('subsection-edit-field') as HTMLInputElement;
+    await waitFor(() => {
+      expect(editField.selectionStart).toBe(0);
+      expect(editField.selectionEnd).toBe(cardHeaderProps.title.length);
+    });
+  });
+
+  it('typing immediately after the edit field opens replaces the whole title', async () => {
+    const user = userEvent.setup();
+    renderComponent({
+      ...cardHeaderProps,
+      isFormOpen: true,
+    });
+
+    const editField = await screen.findByTestId('subsection-edit-field') as HTMLInputElement;
+    await waitFor(() => expect(editField.selectionEnd).toBe(cardHeaderProps.title.length));
+    await user.keyboard('New title');
+
+    expect(editField).toHaveValue('New title');
   });
 
   it('check editing is enabled when isDisabledEditField is false', async () => {
