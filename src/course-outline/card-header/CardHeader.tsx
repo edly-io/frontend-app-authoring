@@ -164,7 +164,6 @@ const CardHeader = ({
             <Form.Control
               data-testid={`${namePrefix}-edit-field`}
               ref={(e) => e && e.focus()}
-              onFocus={(e) => e.target.select()}
               value={titleValue}
               name="displayName"
               onChange={(e) => setTitleValue(e.target.value)}

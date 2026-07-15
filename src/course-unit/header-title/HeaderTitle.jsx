@@ -62,7 +62,6 @@ const HeaderTitle = ({
           <Form.Group className="m-0">
             <Form.Control
               ref={(e) => e && e.focus()}
-              onFocus={(e) => e.target.select()}
               value={titleValue}
               name="displayName"
               onChange={(e) => setTitleValue(e.target.value)}

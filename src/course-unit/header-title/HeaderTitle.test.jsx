@@ -108,31 +108,6 @@ describe('<HeaderTitle />', () => {
     expect(handleTitleEdit).toHaveBeenCalledTimes(1);
   });
 
-  it('selects all text in the title field as soon as it opens', async () => {
-    const { getByRole } = renderComponent({
-      isTitleEditFormOpen: true,
-    });
-
-    const titleField = getByRole('textbox', { name: messages.ariaLabelButtonEdit.defaultMessage });
-    await waitFor(() => {
-      expect(titleField.selectionStart).toBe(0);
-      expect(titleField.selectionEnd).toBe(unitTitle.length);
-    });
-  });
-
-  it('typing immediately after the title field opens replaces the whole title', async () => {
-    const user = userEvent.setup();
-    const { getByRole } = renderComponent({
-      isTitleEditFormOpen: true,
-    });
-
-    const titleField = getByRole('textbox', { name: messages.ariaLabelButtonEdit.defaultMessage });
-    await waitFor(() => expect(titleField.selectionEnd).toBe(unitTitle.length));
-    await user.keyboard('New title');
-
-    expect(titleField).toHaveValue('New title');
-  });
-
   it('calls saving title by clicking outside or press Enter key', async () => {
     const user = userEvent.setup();
     const { getByRole } = renderComponent({
