@@ -30,6 +30,7 @@ import CoursesTab from './courses-tab/CoursesTab';
 import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
 import FeedbackTab from './feedback-tab/FeedbackTab';
+import SchemeTab from './grade-scheme-tab/GradeSchemeTab';
 
 const messages = defineMessages({
   backToPrograms: { id: 'programs.detail.back', defaultMessage: '← Back to Programs' },
@@ -45,6 +46,7 @@ const messages = defineMessages({
   tabInstructors: { id: 'programs.detail.tab.instructors', defaultMessage: 'Instructors' },
   tabEnrollment: { id: 'programs.detail.tab.enrollment', defaultMessage: 'Enrollment' },
   tabFeedback: { id: 'programs.detail.tab.feedback', defaultMessage: 'Feedback' },
+  tabGradeScheme: { id: 'programs.detail.tab.grade-scheme', defaultMessage: 'Grade Scheme' },
   sectionBasicInfo: { id: 'programs.detail.section.basic', defaultMessage: 'Basic Information' },
   sectionBasicSubtitle: { id: 'programs.detail.section.basic.sub', defaultMessage: 'Set the core details of your program' },
   sectionImage: { id: 'programs.detail.section.image', defaultMessage: 'Program Card Image' },
@@ -672,6 +674,13 @@ const ProgramDetailPage: React.FC = () => {
 
           <Tab eventKey="feedback" title={intl.formatMessage(messages.tabFeedback)}>
             <FeedbackTab programId={programId ?? ''} isActive={activeTab === 'feedback'} />
+          </Tab>
+          <Tab eventKey="scheme" title={intl.formatMessage(messages.tabGradeScheme)}>
+            <SchemeTab
+              program={program}
+              programId={programId ?? ''}
+              canManage={capabilities.canEditProgram}
+            />
           </Tab>
         </Tabs>
 
