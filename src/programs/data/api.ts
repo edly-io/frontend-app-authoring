@@ -36,6 +36,7 @@ const toProgram = (d: any): Program => ({
   run: d.batch,
   shortDescription: d.description ?? '',
   longDescription: d.long_description ?? '',
+  introVideoId: d.intro_video_id ?? '',
   status: d.status ?? 'draft',
   isFeatured: d.is_featured ?? false,
   startDate: d.start_date ?? '',
@@ -96,6 +97,7 @@ export const updateProgram = async (
   if (data.displayName !== undefined) { formData.append('name', data.displayName); }
   if (data.shortDescription !== undefined) { formData.append('description', data.shortDescription ?? ''); }
   if (data.longDescription !== undefined) { formData.append('long_description', data.longDescription ?? ''); }
+  if (data.introVideoId !== undefined) { formData.append('intro_video_id', data.introVideoId ?? ''); }
   if (data.status !== undefined) { formData.append('status', data.status ?? 'draft'); }
   if (data.isFeatured !== undefined) { formData.append('is_featured', String(data.isFeatured)); }
   if (data.startDate !== undefined) { formData.append('start_date', data.startDate ?? ''); }

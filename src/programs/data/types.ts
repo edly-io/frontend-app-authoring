@@ -19,6 +19,7 @@ export interface Program {
   run: string;
   shortDescription?: string;
   longDescription?: string;
+  introVideoId?: string;
   status?: string;
   isFeatured?: boolean;
   startDate?: string;

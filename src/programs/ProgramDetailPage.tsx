@@ -56,6 +56,9 @@ const messages = defineMessages({
   fieldShortDescHint: { id: 'programs.detail.field.short-desc.hint', defaultMessage: 'Appears in program listings and cards. Keep it concise.' },
   fieldDetailedDesc: { id: 'programs.detail.field.long-desc', defaultMessage: 'Detailed Description' },
   fieldDetailedDescHint: { id: 'programs.detail.field.long-desc.hint', defaultMessage: 'Appears on the program detail page. Provide comprehensive information.' },
+  fieldIntroVideo: { id: 'programs.detail.field.intro-video', defaultMessage: 'YouTube Intro Video ID' },
+  fieldIntroVideoHint: { id: 'programs.detail.field.intro-video.hint', defaultMessage: 'Enter the YouTube video ID only (e.g. dQw4w9WgXcQ), not the full URL.' },
+  fieldIntroVideoDelete: { id: 'programs.detail.field.intro-video.delete', defaultMessage: 'Delete video' },
   fieldStartDate: { id: 'programs.detail.field.start-date', defaultMessage: 'Start Date' },
   fieldEndDate: { id: 'programs.detail.field.end-date', defaultMessage: 'End Date' },
   fieldStatus: { id: 'programs.detail.field.status', defaultMessage: 'Program Status' },
@@ -133,6 +136,7 @@ const ProgramDetailPage: React.FC = () => {
       displayName: program?.displayName ?? '',
       shortDescription: program?.shortDescription ?? '',
       longDescription: program?.longDescription ?? '',
+      introVideoId: program?.introVideoId ?? '',
       status: program?.status ?? 'draft',
       isFeatured: program?.isFeatured ?? false,
       startDate: program?.startDate ?? '',
@@ -323,6 +327,44 @@ const ProgramDetailPage: React.FC = () => {
                           onChange={(val) => formik.setFieldValue('longDescription', val)}
                         />
                         <Form.Text muted>{intl.formatMessage(messages.fieldDetailedDescHint)}</Form.Text>
+                      </Form.Group>
+
+                      {/* YouTube Intro Video */}
+                      <Form.Group className="mb-4">
+                        <Form.Label>{intl.formatMessage(messages.fieldIntroVideo)}</Form.Label>
+                        <div className="d-flex gap-2 align-items-center">
+                          <Form.Control
+                            name="introVideoId"
+                            placeholder="e.g. dQw4w9WgXcQ"
+                            value={formik.values.introVideoId ?? ''}
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                            style={{ fontFamily: 'monospace' }}
+                          />
+                          {formik.values.introVideoId && (
+                            <Button
+                              variant="outline-secondary"
+                              size="sm"
+                              onClick={() => formik.setFieldValue('introVideoId', '')}
+                              style={{ whiteSpace: 'nowrap' }}
+                            >
+                              {intl.formatMessage(messages.fieldIntroVideoDelete)}
+                            </Button>
+                          )}
+                        </div>
+                        <Form.Text muted>{intl.formatMessage(messages.fieldIntroVideoHint)}</Form.Text>
+                        {formik.values.introVideoId && (
+                          <div className="mt-3" style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '8px', background: '#000' }}>
+                            <iframe
+                              title="Program intro video preview"
+                              src={`https://www.youtube.com/embed/${formik.values.introVideoId}`}
+                              style={{
+                                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0,
+                              }}
+                              allowFullScreen
+                            />
+                          </div>
+                        )}
                       </Form.Group>
 
                       {/* Start / End Dates */}
