@@ -1,4 +1,6 @@
-import { useCallback, useState } from 'react';
+import {
+  useCallback, useRef, useState,
+} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getConfig } from '@edx/frontend-platform';
 import { useIntl, FormattedMessage } from '@edx/frontend-platform/i18n';
@@ -79,6 +81,10 @@ const AddComponent = ({
   const [blockType, setBlockType] = useState<string | null>(null);
   const [courseId, setCourseId] = useState<string | null>(null);
   const [newBlockId, setNewBlockId] = useState<string | null>(null);
+  // Tracks the block id currently being rolled back so a second near-simultaneous cancel
+  // (e.g. the video modal's onClose and onCancel both firing in the same tick) can't
+  // dispatch a duplicate delete for a locator that's already been removed.
+  const deletingBlockIdRef = useRef<string | null>(null);
   const [isSelectLibraryContentModalOpen, showSelectLibraryContentModal, closeSelectLibraryContentModal] = useToggle();
   const [selectedComponents, setSelectedComponents] = useState<SelectedComponent[]>([]);
   const [usageId, setUsageId] = useState(null);
@@ -105,7 +111,7 @@ const AddComponent = ({
     closeSelectLibraryContentModal();
   }, [selectedComponents]);
 
-  const onXBlockSave = useCallback(/* istanbul ignore next */ () => {
+  const onXBlockSave = useCallback(() => {
     closeXBlockEditorModal();
     closeVideoSelectorModal();
     setNewBlockId(null);
@@ -113,16 +119,16 @@ const AddComponent = ({
     dispatch(fetchCourseSectionVerticalData(blockId, sequenceId));
   }, [closeXBlockEditorModal, closeVideoSelectorModal, sendMessageToIframe]);
 
-  const onXBlockCancel = useCallback(/* istanbul ignore next */ () => {
-    // ignoring tests because it triggers when someone closes the editor which has a separate store
+  const onXBlockCancel = useCallback(() => {
     closeXBlockEditorModal();
     closeVideoSelectorModal();
-    if (newBlockId) {
+    if (newBlockId && deletingBlockIdRef.current !== newBlockId) {
       // The block was created eagerly before its editor opened; cancelling without saving
       // must roll that creation back instead of leaving a blank stub in the unit.
+      deletingBlockIdRef.current = newBlockId;
       dispatch(deleteUnitItemQuery(blockId, newBlockId, sendMessageToIframe));
       setNewBlockId(null);
-    } else {
+    } else if (!newBlockId) {
       dispatch(fetchCourseSectionVerticalData(blockId, sequenceId));
     }
   }, [closeXBlockEditorModal, closeVideoSelectorModal, sendMessageToIframe, blockId, sequenceId, newBlockId]);
