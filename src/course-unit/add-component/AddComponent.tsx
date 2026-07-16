@@ -15,7 +15,7 @@ import { useEventListener } from '@src/generic/hooks';
 import VideoSelectorPage from '@src/editors/VideoSelectorPage';
 import EditorPage from '@src/editors/EditorPage';
 import { SelectedComponent } from '@src/library-authoring';
-import { fetchCourseSectionVerticalData } from '../data/thunk';
+import { deleteUnitItemQuery, fetchCourseSectionVerticalData } from '../data/thunk';
 import { messageTypes } from '../constants';
 import messages from './messages';
 import AddComponentButton from './add-component-btn';
@@ -108,6 +108,7 @@ const AddComponent = ({
   const onXBlockSave = useCallback(/* istanbul ignore next */ () => {
     closeXBlockEditorModal();
     closeVideoSelectorModal();
+    setNewBlockId(null);
     sendMessageToIframe(messageTypes.refreshXBlock, null);
     dispatch(fetchCourseSectionVerticalData(blockId, sequenceId));
   }, [closeXBlockEditorModal, closeVideoSelectorModal, sendMessageToIframe]);
@@ -116,8 +117,15 @@ const AddComponent = ({
     // ignoring tests because it triggers when someone closes the editor which has a separate store
     closeXBlockEditorModal();
     closeVideoSelectorModal();
-    dispatch(fetchCourseSectionVerticalData(blockId, sequenceId));
-  }, [closeXBlockEditorModal, closeVideoSelectorModal, sendMessageToIframe, blockId, sequenceId]);
+    if (newBlockId) {
+      // The block was created eagerly before its editor opened; cancelling without saving
+      // must roll that creation back instead of leaving a blank stub in the unit.
+      dispatch(deleteUnitItemQuery(blockId, newBlockId, sendMessageToIframe));
+      setNewBlockId(null);
+    } else {
+      dispatch(fetchCourseSectionVerticalData(blockId, sequenceId));
+    }
+  }, [closeXBlockEditorModal, closeVideoSelectorModal, sendMessageToIframe, blockId, sequenceId, newBlockId]);
 
   const handleLibraryV2Selection = useCallback((selection: SelectedComponent) => {
     handleCreateNewCourseXBlock({
@@ -288,7 +296,7 @@ const AddComponent = ({
         <StandardModal
           title={intl.formatMessage(messages.videoPickerModalTitle)}
           isOpen={isVideoSelectorModalOpen}
-          onClose={closeVideoSelectorModal}
+          onClose={onXBlockCancel}
           isOverflowVisible={false}
           size="xl"
         >
@@ -298,7 +306,7 @@ const AddComponent = ({
               courseId={courseId}
               studioEndpointUrl={getConfig().STUDIO_BASE_URL}
               lmsEndpointUrl={getConfig().LMS_BASE_URL}
-              onCancel={closeVideoSelectorModal}
+              onCancel={onXBlockCancel}
               returnFunction={/* istanbul ignore next */ () => onXBlockSave}
             />
           </div>
