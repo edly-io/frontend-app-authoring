@@ -1,6 +1,3 @@
-// When backend APIs change, this is the ONLY file that should need updates.
-// All components call only the hooks in apiHooks.ts.
-
 import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import type {
@@ -16,7 +13,6 @@ const getSchemeUrl = (programKey: string) => (
   `${getProgramResultsBaseUrl()}/${getEncodedProgramKey(programKey)}/scheme/`
 );
 
-// ── Response → domain type transformation ────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toSubsection = (d: any): SchemeSubsection => ({
   id: d.id,
@@ -45,7 +41,6 @@ const toScheme = (d: any): Scheme => ({
   sections: (d.sections ?? []).map(toSection),
 });
 
-// ── Domain type → request payload transformation ─────────────────────────────
 const fromSaveSchemeInput = (input: SaveSchemeInput) => ({
   ...(input.name !== undefined && { name: input.name }),
   target_total: input.targetTotal,
@@ -60,31 +55,26 @@ const fromSaveSchemeInput = (input: SaveSchemeInput) => ({
   })),
 });
 
-// ── 1. GET /<program_key>/scheme/ ─────────────────────────────────────────────
 export const getProgramScheme = async (programKey: string): Promise<Scheme> => {
   const { data } = await getAuthenticatedHttpClient().get(getSchemeUrl(programKey));
   return toScheme(data);
 };
 
-// ── 2. PUT /<program_key>/scheme/ ─────────────────────────────────────────────
 export const saveProgramScheme = async (programKey: string, input: SaveSchemeInput): Promise<Scheme> => {
   const { data } = await getAuthenticatedHttpClient().put(getSchemeUrl(programKey), fromSaveSchemeInput(input));
   return toScheme(data);
 };
 
-// ── 3. PATCH /<program_key>/scheme/ ───────────────────────────────────────────
 export const renameProgramScheme = async (programKey: string, name: string): Promise<Scheme> => {
   const { data } = await getAuthenticatedHttpClient().patch(getSchemeUrl(programKey), { name });
   return toScheme(data);
 };
 
-// ── 4. POST /<program_key>/scheme/publish/ ────────────────────────────────────
 export const publishProgramScheme = async (programKey: string): Promise<Scheme> => {
   const { data } = await getAuthenticatedHttpClient().post(`${getSchemeUrl(programKey)}publish/`);
   return toScheme(data);
 };
 
-// ── 5. POST /<program_key>/scheme/unpublish/ ──────────────────────────────────
 export const unpublishProgramScheme = async (programKey: string): Promise<Scheme> => {
   const { data } = await getAuthenticatedHttpClient().post(`${getSchemeUrl(programKey)}unpublish/`);
   return toScheme(data);

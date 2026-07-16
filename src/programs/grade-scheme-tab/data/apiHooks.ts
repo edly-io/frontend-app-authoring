@@ -14,7 +14,6 @@ export const schemeQueryKeys = {
   scheme: (programKey: string) => ['programResults', 'scheme', programKey] as const,
 };
 
-/** Suppress retries on expected 4xx responses (403 forbidden, 404 not-yet-built). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const retryExceptClientErrors = (failureCount: number, error: any) => {
   if ([403, 404].includes(error?.response?.status)) {
@@ -23,12 +22,6 @@ const retryExceptClientErrors = (failureCount: number, error: any) => {
   return failureCount < 3;
 };
 
-/**
- * Reads the program's scheme. A 404 means no scheme has been built yet
- * (nothing is created on read) — treat it as "blank, unsaved" rather than
- * a hard error; the query's own `error` still carries the status so callers
- * can distinguish it from a real failure or from 403 (permission denied).
- */
 export const useProgramScheme = (programKey: string, options?: { enabled?: boolean }) => useQuery({
   queryKey: schemeQueryKeys.scheme(programKey),
   queryFn: () => getProgramScheme(programKey),
