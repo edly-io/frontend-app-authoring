@@ -78,13 +78,6 @@ export const defaultNewFormQuestions: FeedbackFormQuestion[] = [
     required: true,
     isDefault: true,
   },
-  {
-    id: 2,
-    type: 'textarea',
-    question: 'Any further feedback?',
-    required: false,
-    isDefault: true,
-  },
 ];
 
 export const mockFeedbackFormQuestions: FeedbackFormQuestion[] = [

@@ -80,7 +80,7 @@ const messages = defineMessages({
   },
   validationBuilderQuestions: {
     id: 'programs.feedback.form-builder.validation.questions',
-    defaultMessage: 'At least one star rating question, one comment box, and text for every question are required.',
+    defaultMessage: 'Add at least one star rating question and enter text for every question. New feedback forms cannot include comment boxes.',
   },
   formSaved: {
     id: 'programs.feedback.form-builder.saved',
@@ -477,6 +477,10 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
     field: keyof FeedbackFormQuestion,
     value: string | boolean,
   ) => {
+    if (field === 'type' && value !== 'star_rating') {
+      return;
+    }
+
     setNewFormQuestions((currentQuestions) => currentQuestions.map((question) => (
       question.id === questionId
         ? { ...question, [field]: value }
@@ -521,11 +525,11 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
       return false;
     }
 
-    const hasStarRatingQuestion = newFormQuestions.some((question) => question.type === 'star_rating');
-    const hasCommentBox = newFormQuestions.some((question) => question.type === 'textarea');
+    const hasQuestions = newFormQuestions.length > 0;
+    const hasOnlyStarRatingQuestions = newFormQuestions.every((question) => question.type === 'star_rating');
     const hasEmptyQuestion = newFormQuestions.some((question) => !question.question.trim());
 
-    if (!hasStarRatingQuestion || !hasCommentBox || hasEmptyQuestion) {
+    if (!hasQuestions || !hasOnlyStarRatingQuestions || hasEmptyQuestion) {
       setBuilderValidationError(intl.formatMessage(messages.validationBuilderQuestions));
       return false;
     }

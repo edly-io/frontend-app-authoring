@@ -30,6 +30,8 @@ import {
   getFeedbackRequests,
   getFeedbackRequest,
   initiateFeedbackRequests,
+  getFeedbackDashboardInitiations,
+  getFeedbackDashboardReport,
   type GetCoursesParams,
   type GetInstructorsParams,
   type GetLearnersParams,
@@ -329,6 +331,7 @@ export const useCreateFeedbackForm = () => {
 export const useFeedbackRequests = (
   programId: string,
   filters: FeedbackFiltersState,
+  enabled = true,
 ) => useQuery({
   queryKey: [
     'feedbackRequests',
@@ -340,7 +343,7 @@ export const useFeedbackRequests = (
   ],
   queryFn: () => getFeedbackRequests(programId, filters),
   placeholderData: keepPreviousData,
-  enabled: !!programId,
+  enabled: enabled && !!programId,
 });
 
 export const useFeedbackRequestDetail = (
@@ -361,6 +364,24 @@ export const useInitiateFeedbackRequests = () => {
     ),
     onSuccess: (_, { programId }) => {
       queryClient.invalidateQueries({ queryKey: ['feedbackRequests', programId] });
+      queryClient.invalidateQueries({ queryKey: ['feedbackDashboardInitiations', programId] });
+      queryClient.invalidateQueries({ queryKey: ['feedbackDashboardReport', programId] });
     },
   });
 };
+
+export const useFeedbackDashboardInitiations = (programId: string, enabled = true) => useQuery({
+  queryKey: ['feedbackDashboardInitiations', programId],
+  queryFn: () => getFeedbackDashboardInitiations(programId),
+  enabled: enabled && !!programId,
+});
+
+export const useFeedbackDashboardReport = (
+  programId: string,
+  initiationId: number | null,
+  enabled = true,
+) => useQuery({
+  queryKey: ['feedbackDashboardReport', programId, initiationId],
+  queryFn: () => getFeedbackDashboardReport(programId, initiationId!),
+  enabled: enabled && !!programId && !!initiationId,
+});

@@ -158,12 +158,24 @@ export interface FeedbackRequest {
   formName: string;
   subjectId?: number | null;
   subjectName: string | null;
+  subjectRole?: string | null;
+  subjectRoles?: string[];
+  subjectEmail?: string | null;
+  subjectAvatar?: string | null;
   reviewerId?: number;
   reviewerName: string;
+  reviewerRole?: string | null;
+  reviewerRoles?: string[];
+  reviewerEmail?: string | null;
+  reviewerAvatar?: string | null;
   courseId: string;
   deadline: string;
   requestedById?: number;
   requestedByName: string;
+  requestedByRole?: string | null;
+  requestedByRoles?: string[];
+  requestedByEmail?: string | null;
+  requestedByAvatar?: string | null;
   submittedAt: string | null;
   status: FeedbackRequestStatus;
   response: FeedbackResponse | null;
@@ -192,4 +204,85 @@ export interface InitiateFeedbackPayload {
   formId: number;
   reviewerEmails: string[];
   subjectEmails?: string[];
+}
+
+export type RatingLevelKey = 'excellent' | 'veryGood' | 'good' | 'needsAttention';
+
+export type RatingBandFilter = 'all' | 'top' | 'mid' | 'low';
+export type DashboardViewMode = 'table' | 'cards';
+export type DashboardAggregationMode = 'percentage' | 'count';
+
+export interface RatingLevel {
+  key: RatingLevelKey;
+  label: string;
+  shortLabel: string;
+}
+
+export interface RatingDistributionBucket {
+  count: number;
+  percentage: number;
+}
+
+export type RatingDistribution = Record<RatingLevelKey, RatingDistributionBucket> & {
+  total?: number;
+};
+
+export interface FeedbackDashboardCriterion {
+  id: string;
+  label: string;
+  order?: number;
+}
+
+export interface FeedbackDashboardSubject {
+  id: string;
+  name: string;
+  email?: string;
+  role?: string;
+  avatar?: string | null;
+  subtitle?: string;
+  rating?: number | null;
+  submittedResponses?: number;
+  totalRequests?: number;
+  distributions: Record<string, RatingDistribution>;
+  averageDistribution?: RatingDistribution;
+}
+
+export interface FeedbackDashboardSummary {
+  subjectCount: number;
+  submittedResponses: number;
+  responseRate: number;
+  averageRating: number;
+  topSubjectName: string;
+  topSubjectRating: number;
+  needsAttentionCount: number;
+}
+
+export interface FeedbackDashboardReport {
+  id: string;
+  feedbackName: string;
+  selectionValue?: string;
+  programName: string;
+  respondentsLabel: string;
+  submittedResponses: number;
+  totalRequests: number;
+  responseRate: number;
+  criteria: FeedbackDashboardCriterion[];
+  subjects: FeedbackDashboardSubject[];
+  summary?: FeedbackDashboardSummary;
+}
+
+export interface FeedbackDashboardInitiationOption {
+  id: number;
+  feedbackName: string;
+  selectionValue: string;
+  formId: number;
+  formName: string;
+  programKey: string;
+  programName: string;
+  deadline: string;
+  created: string;
+  totalRequests: number;
+  submittedResponses: number;
+  responseRate: number;
+  subjectCount: number;
 }
