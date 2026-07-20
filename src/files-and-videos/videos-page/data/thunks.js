@@ -232,6 +232,7 @@ const uploadToBucket = async ({
       uploadingIdsRef,
       edxVideoId,
       currentController,
+      courseId,
     );
     if (
       putToServerResponse.status < 200

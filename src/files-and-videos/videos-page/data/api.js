@@ -209,12 +209,17 @@ export async function uploadVideo(
   uploadingIdsRef,
   videoId,
   controller,
+  courseId,
 ) {
   const currentUpload = uploadingIdsRef.current.uploadData[videoId];
   return getHttpClient().put(uploadUrl, uploadFile, {
     headers: {
       'Content-Disposition': `attachment; filename="${uploadFile.name}"`,
       'Content-Type': uploadFile.type,
+      // Signed into the presigned URL by videos_post() via key.set_metadata() -
+      // must be echoed exactly or S3 rejects the PUT with SignatureDoesNotMatch.
+      'x-amz-meta-client_video_id': uploadFile.name,
+      'x-amz-meta-course_key': courseId,
     },
     multipart: false,
     signal: controller?.signal,
