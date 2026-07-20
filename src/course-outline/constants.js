@@ -88,4 +88,5 @@ export const API_ERROR_TYPES = /** @type {const} */ ({
   serverError: 'serverError',
   unknown: 'unknown',
   forbidden: 'forbidden',
+  courseNotReady: 'courseNotReady',
 });

@@ -16,6 +16,17 @@ describe('getErrorDetails', () => {
     });
   });
 
+  it('should handle course_does_not_exist as a non-dismissible courseNotReady error', () => {
+    const error = {
+      response: {
+        data: { developer_message: 'Unknown course course-v1:x+y+z', error_code: 'course_does_not_exist' },
+        status: 404,
+      },
+    };
+    const result = getErrorDetails(error);
+    expect(result).toEqual({ dismissible: false, status: 404, type: API_ERROR_TYPES.courseNotReady });
+  });
+
   it('should handle response with HTML data', () => {
     const error = { response: { data: '<html>error</html>', status: 500 } };
     const result = getErrorDetails(error);
