@@ -19,6 +19,7 @@ const EditableHeader = ({
   return (
     <Form.Group onBlur={(e) => updateTitle(e)}>
       <Form.Control
+        data-testid="editable-header-title-field"
         style={{ paddingInlineEnd: 'calc(1rem + 84px)' }}
         autoFocus
         trailingElement={<EditConfirmationButtons {...{ updateTitle, cancelEdit }} />}

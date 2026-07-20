@@ -40,6 +40,20 @@ describe('select-title-on-focus', () => {
     expect(input.selectionEnd).toBe(input.value.length);
   });
 
+  it('selects all text when the block editor title field gains focus', () => {
+    initSelectTitleOnFocus();
+
+    const input = document.createElement('input');
+    input.setAttribute('data-testid', 'editable-header-title-field');
+    input.value = 'Single select';
+    document.body.appendChild(input);
+
+    input.focus();
+
+    expect(input.selectionStart).toBe(0);
+    expect(input.selectionEnd).toBe(input.value.length);
+  });
+
   it('does not select text on unrelated inputs', () => {
     initSelectTitleOnFocus();
 

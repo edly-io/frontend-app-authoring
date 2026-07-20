@@ -1,8 +1,13 @@
 // data-testid selectors for the rename fields in the course outline (CardHeader.tsx, namePrefix
-// 'section' | 'subsection' | 'unit') and the standalone Unit page title (HeaderTitle.jsx). Kept as
-// an external listener (rather than editing those upstream-tracked components) to avoid diverging
-// from openedx/frontend-app-authoring.
-const RENAME_FIELD_SELECTOR = '[data-testid$="-edit-field"], [data-testid="unit-header-title"] input';
+// 'section' | 'subsection' | 'unit'), the standalone Unit page title (HeaderTitle.jsx), and the
+// Problem/Video/HTML block editor's title field (EditableHeader.jsx). Kept as an external listener
+// (rather than editing those upstream-tracked components) to avoid diverging from
+// openedx/frontend-app-authoring.
+const RENAME_FIELD_SELECTOR = [
+  '[data-testid$="-edit-field"]',
+  '[data-testid="unit-header-title"] input',
+  '[data-testid="editable-header-title-field"]',
+].join(', ');
 
 const handleFocusIn = (event) => {
   if (event.target instanceof HTMLInputElement && event.target.matches(RENAME_FIELD_SELECTOR)) {

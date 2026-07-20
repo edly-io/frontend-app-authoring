@@ -25,6 +25,11 @@ describe('EditableHeader', () => {
     expect((input as HTMLInputElement).value).toBe(props.localTitle);
   });
 
+  test('renders input with the data-testid used to select its text on focus', () => {
+    render(<EditableHeader {...props} />);
+    expect(screen.getByTestId('editable-header-title-field')).toBeInTheDocument();
+  });
+
   test('calls handleChange when input changes', () => {
     render(<EditableHeader {...props} />);
     const input = screen.getByPlaceholderText('Title');
