@@ -18,6 +18,12 @@ import type {
   ProgramDetailResponse,
   CreateFeedbackFormInput,
   FeedbackFiltersState,
+  FeedbackDashboardInitiationOption,
+  FeedbackDashboardCriterion,
+  FeedbackDashboardReport,
+  FeedbackDashboardSummary,
+  RatingDistribution,
+  RatingDistributionBucket,
   FeedbackFormQuestion,
   FeedbackFormTemplate,
   FeedbackRequest,
@@ -267,27 +273,185 @@ const toFeedbackResponseAnswer = (d: any) => ({
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toFeedbackRequest = (d: any): FeedbackRequest => ({
+const toFeedbackUser = (value: any, fallback: any = {}) => {
+  const user = value && typeof value === 'object' ? value : {};
+  const roles = Array.isArray(user.roles)
+    ? user.roles
+    : [fallback.role].filter(Boolean);
+
+  return {
+    id: user.id ?? (typeof value === 'number' ? value : fallback.id),
+    name: user.name ?? fallback.name ?? '',
+    email: user.email ?? fallback.email ?? null,
+    avatar: user.avatar ?? fallback.avatar ?? null,
+    roles,
+    role: roles[0] ?? fallback.role ?? null,
+  };
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toFeedbackRequest = (d: any): FeedbackRequest => {
+  const subject = toFeedbackUser(d.subject ?? d.instructor, {
+    id: d.subject ?? d.instructor ?? null,
+    name: d.subject_name ?? d.instructor_name ?? null,
+    email: d.subject_email ?? d.instructor_email ?? null,
+    avatar: d.subject_avatar ?? d.instructor_avatar ?? null,
+    role: d.subject_role ?? d.instructor_role ?? null,
+  });
+  const reviewer = toFeedbackUser(d.reviewer ?? d.trainee, {
+    id: d.reviewer ?? d.trainee,
+    name: d.reviewer_name ?? d.trainee_name,
+    email: d.reviewer_email ?? d.trainee_email ?? null,
+    avatar: d.reviewer_avatar ?? d.trainee_avatar ?? null,
+    role: d.reviewer_role ?? d.trainee_role ?? null,
+  });
+  const requestedBy = toFeedbackUser(d.requested_by, {
+    id: d.requested_by,
+    name: d.requested_by_name,
+    email: d.requested_by_email ?? null,
+    avatar: d.requested_by_avatar ?? null,
+    role: d.requested_by_role ?? null,
+  });
+
+  return {
+    id: d.id,
+    feedbackName: d.feedback_name,
+    formId: d.form,
+    formName: d.form_name,
+    subjectId: subject.id ?? null,
+    subjectName: subject.name || null,
+    subjectRole: subject.role,
+    subjectRoles: subject.roles,
+    subjectEmail: subject.email,
+    subjectAvatar: subject.avatar,
+    reviewerId: reviewer.id,
+    reviewerName: reviewer.name,
+    reviewerRole: reviewer.role,
+    reviewerRoles: reviewer.roles,
+    reviewerEmail: reviewer.email,
+    reviewerAvatar: reviewer.avatar,
+    courseId: d.course_id,
+    deadline: d.deadline,
+    requestedById: requestedBy.id,
+    requestedByName: requestedBy.name,
+    requestedByRole: requestedBy.role,
+    requestedByRoles: requestedBy.roles,
+    requestedByEmail: requestedBy.email,
+    requestedByAvatar: requestedBy.avatar,
+    submittedAt: d.submitted_at,
+    status: d.status,
+    response: d.response ? {
+      submittedAt: d.response.submitted_at,
+      answers: (d.response.answers ?? []).map(toFeedbackResponseAnswer),
+    } : null,
+    created: d.created,
+  };
+};
+
+const emptyRatingBucket = (): RatingDistributionBucket => ({
+  count: 0,
+  percentage: 0,
+});
+
+const getDashboardBucket = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  distribution: any,
+  backendKey: string,
+): RatingDistributionBucket => ({
+  count: distribution?.[backendKey]?.count ?? 0,
+  percentage: distribution?.[backendKey]?.percentage ?? 0,
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toDashboardDistribution = (distribution: any): RatingDistribution => ({
+  total: distribution?.total ?? 0,
+  excellent: getDashboardBucket(distribution, 'excellent'),
+  veryGood: getDashboardBucket(distribution, 'very_good'),
+  good: getDashboardBucket(distribution, 'good'),
+  needsAttention: getDashboardBucket(distribution, 'needs_attention'),
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getDashboardDistribution = (distributions: any, criterionId: string): RatingDistribution => (
+  distributions?.[criterionId] ? toDashboardDistribution(distributions[criterionId]) : {
+    total: 0,
+    excellent: emptyRatingBucket(),
+    veryGood: emptyRatingBucket(),
+    good: emptyRatingBucket(),
+    needsAttention: emptyRatingBucket(),
+  }
+);
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toFeedbackDashboardInitiationOption = (d: any): FeedbackDashboardInitiationOption => ({
   id: d.id,
   feedbackName: d.feedback_name,
-  formId: d.form,
+  selectionValue: d.selection_value ?? d.feedback_name,
+  formId: d.form_id,
   formName: d.form_name,
-  subjectId: d.subject ?? d.instructor ?? null,
-  subjectName: d.subject_name ?? d.instructor_name ?? null,
-  reviewerId: d.reviewer ?? d.trainee,
-  reviewerName: d.reviewer_name ?? d.trainee_name,
-  courseId: d.course_id,
+  programKey: d.program_key,
+  programName: d.program_name,
   deadline: d.deadline,
-  requestedById: d.requested_by,
-  requestedByName: d.requested_by_name,
-  submittedAt: d.submitted_at,
-  status: d.status,
-  response: d.response ? {
-    submittedAt: d.response.submitted_at,
-    answers: (d.response.answers ?? []).map(toFeedbackResponseAnswer),
-  } : null,
   created: d.created,
+  totalRequests: d.total_requests ?? 0,
+  submittedResponses: d.submitted_responses ?? 0,
+  responseRate: d.response_rate ?? 0,
+  subjectCount: d.subject_count ?? 0,
 });
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toFeedbackDashboardSummary = (d: any): FeedbackDashboardSummary => ({
+  subjectCount: d?.subject_count ?? 0,
+  submittedResponses: d?.submitted_responses ?? 0,
+  responseRate: d?.response_rate ?? 0,
+  averageRating: d?.average_rating ?? 0,
+  topSubjectName: d?.top_subject?.name ?? '--',
+  topSubjectRating: d?.top_subject?.rating ?? 0,
+  needsAttentionCount: d?.needs_attention_count ?? 0,
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toFeedbackDashboardReport = (d: any, initiationId: number): FeedbackDashboardReport => {
+  const criteria: FeedbackDashboardCriterion[] = (d.criteria ?? []).map((criterion: any) => ({
+    id: criterion.id,
+    label: criterion.label,
+    order: criterion.order,
+  }));
+  const subjects = (d.subjects ?? []).map((subject: any) => ({
+    id: String(subject.id),
+    name: subject.name,
+    email: subject.email,
+    role: subject.role,
+    avatar: subject.avatar,
+    rating: subject.rating,
+    submittedResponses: subject.submitted_responses ?? 0,
+    totalRequests: subject.total_requests ?? 0,
+    distributions: criteria.reduce((acc: Record<string, RatingDistribution>, criterion) => {
+      acc[criterion.id] = getDashboardDistribution(subject.distributions, criterion.id);
+      return acc;
+    }, {}),
+    averageDistribution: toDashboardDistribution(subject.average_distribution),
+  }));
+  const summary = toFeedbackDashboardSummary({
+    ...d.summary,
+    submitted_responses: d.submitted_responses,
+    response_rate: d.response_rate,
+  });
+
+  return {
+    id: String(initiationId),
+    feedbackName: d.feedback_name,
+    selectionValue: d.selection_value ?? d.feedback_name,
+    programName: d.program?.name ?? '',
+    respondentsLabel: `${d.submitted_responses ?? 0} submitted / ${d.total_requests ?? 0} requested`,
+    submittedResponses: d.submitted_responses ?? 0,
+    totalRequests: d.total_requests ?? 0,
+    responseRate: d.response_rate ?? 0,
+    criteria,
+    subjects,
+    summary,
+  };
+};
 
 // ── Platform users — GET /fbr/api/programs/users/?role=<fbr_role> ───────────
 export const getPlatformUsers = async (
@@ -569,4 +733,25 @@ export const initiateFeedbackRequests = async (
   );
   const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
   return results.map(toFeedbackRequest);
+};
+
+export const getFeedbackDashboardInitiations = async (
+  programId: string,
+): Promise<FeedbackDashboardInitiationOption[]> => {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/dashboard/initiated-feedback/`,
+  );
+  const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
+  return results.map(toFeedbackDashboardInitiationOption);
+};
+
+export const getFeedbackDashboardReport = async (
+  programId: string,
+  initiationId: number,
+): Promise<FeedbackDashboardReport> => {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/dashboard/report/`,
+    { params: { initiation_id: initiationId } },
+  );
+  return toFeedbackDashboardReport(data, initiationId);
 };

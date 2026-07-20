@@ -666,7 +666,7 @@ const ProgramDetailPage: React.FC = () => {
           </Tab>
 
           <Tab eventKey="feedback" title={intl.formatMessage(messages.tabFeedback)}>
-            <FeedbackTab programId={programId ?? ''} />
+            <FeedbackTab programId={programId ?? ''} isActive={activeTab === 'feedback'} />
           </Tab>
         </Tabs>
 

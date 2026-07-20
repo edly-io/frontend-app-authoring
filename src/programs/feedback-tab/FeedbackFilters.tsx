@@ -3,13 +3,13 @@ import {
   Form,
   Row,
   Col,
-  SearchField,
 } from '@openedx/paragon';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import type {
   FeedbackFilterOptions,
   FeedbackFiltersState,
 } from '../data/types';
+import DebouncedSearchField from './DebouncedSearchField';
 
 const messages = defineMessages({
   feedbackName: { id: 'programs.feedback.filters.feedback-name', defaultMessage: 'Feedback Name' },
@@ -94,11 +94,9 @@ const FeedbackFilters: React.FC<FeedbackFiltersProps> = ({
       <Col xs={12} md={6} xl={3}>
         <Form.Group className="mb-3">
           <Form.Label>{intl.formatMessage(messages.subject)}</Form.Label>
-          <SearchField
+          <DebouncedSearchField
             value={filters.subject}
-            onChange={handleSubjectSearchChange}
-            onSubmit={handleSubjectSearchChange}
-            onClear={() => handleSubjectSearchChange('')}
+            onSearch={handleSubjectSearchChange}
             placeholder={intl.formatMessage(messages.subjectPlaceholder)}
           />
         </Form.Group>
@@ -106,11 +104,9 @@ const FeedbackFilters: React.FC<FeedbackFiltersProps> = ({
       <Col xs={12} md={6} xl={3}>
         <Form.Group className="mb-3">
           <Form.Label>{intl.formatMessage(messages.reviewer)}</Form.Label>
-          <SearchField
+          <DebouncedSearchField
             value={filters.reviewer}
-            onChange={handleReviewerSearchChange}
-            onSubmit={handleReviewerSearchChange}
-            onClear={() => handleReviewerSearchChange('')}
+            onSearch={handleReviewerSearchChange}
             placeholder={intl.formatMessage(messages.reviewerPlaceholder)}
           />
         </Form.Group>

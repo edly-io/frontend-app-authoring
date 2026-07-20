@@ -12,8 +12,12 @@ const messages = defineMessages({
   title: { id: 'programs.feedback.builder.title', defaultMessage: 'Create New Feedback Form' },
   formName: { id: 'programs.feedback.builder.form-name', defaultMessage: 'Form Name' },
   formNamePlaceholder: { id: 'programs.feedback.builder.form-name.placeholder', defaultMessage: 'e.g. Weekly Instructor Feedback' },
-  addQuestion: { id: 'programs.feedback.builder.add', defaultMessage: 'Add Question' },
+  addQuestion: { id: 'programs.feedback.builder.add', defaultMessage: 'Add Rating Question' },
   saveForm: { id: 'programs.feedback.builder.save', defaultMessage: 'Save Form' },
+  ratingOnlyHelp: {
+    id: 'programs.feedback.builder.rating-only.help',
+    defaultMessage: 'Feedback dashboard reports use rating questions only. Comment boxes are not available for new forms.',
+  },
 });
 
 interface FeedbackFormBuilderProps {
@@ -60,7 +64,10 @@ const FeedbackFormBuilder: React.FC<FeedbackFormBuilderProps> = ({
       </Form.Group>
 
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h5 className="mb-0">Questions</h5>
+        <div>
+          <h5 className="mb-1">Questions</h5>
+          <p className="text-muted small mb-0">{intl.formatMessage(messages.ratingOnlyHelp)}</p>
+        </div>
         <Button variant="outline-primary" size="sm" onClick={onAddQuestion}>
           {intl.formatMessage(messages.addQuestion)}
         </Button>

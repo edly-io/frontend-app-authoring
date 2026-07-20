@@ -5,10 +5,7 @@ import {
   Form,
 } from '@openedx/paragon';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
-import type {
-  FeedbackFormQuestion,
-  FeedbackQuestionType,
-} from '../data/types';
+import type { FeedbackFormQuestion } from '../data/types';
 
 const messages = defineMessages({
   questionText: { id: 'programs.feedback.editor.question.text', defaultMessage: 'Question Text' },
@@ -16,7 +13,6 @@ const messages = defineMessages({
   required: { id: 'programs.feedback.editor.question.required', defaultMessage: 'Required' },
   remove: { id: 'programs.feedback.editor.question.remove', defaultMessage: 'Delete' },
   starRating: { id: 'programs.feedback.editor.question.type.rating', defaultMessage: 'Star Rating' },
-  textarea: { id: 'programs.feedback.editor.question.type.textarea', defaultMessage: 'Comment Box' },
 });
 
 interface FeedbackQuestionEditorProps {
@@ -50,18 +46,9 @@ const FeedbackQuestionEditor: React.FC<FeedbackQuestionEditorProps> = ({
             <Form.Group className="mb-3 mb-md-0 mr-md-3">
               <Form.Label>{intl.formatMessage(messages.questionType)}</Form.Label>
               <Form.Control
-                as="select"
-                value={question.type}
-                onChange={(event) => onQuestionChange(
-                  question.id,
-                  'type',
-                  event.target.value as FeedbackQuestionType,
-                )}
-                disabled={question.type === 'textarea' && question.isDefault}
-              >
-                <option value="star_rating">{intl.formatMessage(messages.starRating)}</option>
-                <option value="textarea">{intl.formatMessage(messages.textarea)}</option>
-              </Form.Control>
+                value={intl.formatMessage(messages.starRating)}
+                readOnly
+              />
             </Form.Group>
 
             <Form.Checkbox

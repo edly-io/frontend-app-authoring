@@ -4,6 +4,8 @@ import {
   Button,
   Card,
   Spinner,
+  Tab,
+  Tabs,
   useToggle,
 } from '@openedx/paragon';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
@@ -18,6 +20,7 @@ import {
   useInitiateFeedbackRequests,
 } from '../data/apiHooks';
 import FeedbackFilters from './FeedbackFilters';
+import FeedbackDashboard from './dashboard/FeedbackDashboard';
 import InitiateFeedbackRequestModal from './InitiateFeedbackRequestModal';
 import FeedbackRequestsTable from './FeedbackRequestsTable';
 import FeedbackResponseModal from './FeedbackResponseModal';
@@ -32,7 +35,9 @@ const defaultFeedbackFilters: FeedbackFiltersState = {
 
 const messages = defineMessages({
   sectionTitle: { id: 'programs.feedback.title', defaultMessage: 'Feedback' },
-  sectionSubtitle: { id: 'programs.feedback.subtitle', defaultMessage: 'View and manage feedback for this program' },
+  sectionSubtitle: { id: 'programs.feedback.subtitle', defaultMessage: 'View feedback summaries and individual responses for this program' },
+  summaryTab: { id: 'programs.feedback.tab.summary', defaultMessage: 'Summary' },
+  responsesTab: { id: 'programs.feedback.tab.responses', defaultMessage: 'Individual Responses' },
   initiateButton: { id: 'programs.feedback.initiate.button', defaultMessage: 'Initiate Feedback Request' },
   emptyState: { id: 'programs.feedback.empty', defaultMessage: 'No feedback has been submitted for this program yet.' },
   noResults: {
@@ -59,14 +64,18 @@ const messages = defineMessages({
 
 interface FeedbackTabProps {
   programId: string;
+  isActive?: boolean;
 }
+
+type FeedbackTabView = 'summary' | 'responses';
 
 const uniqueSorted = (values: string[]) => [...new Set(values)].sort((left, right) => left.localeCompare(right));
 
-const FeedbackTab: React.FC<FeedbackTabProps> = ({ programId }) => {
+const FeedbackTab: React.FC<FeedbackTabProps> = ({ programId, isActive = true }) => {
   const intl = useIntl();
   const { showToast } = useContext(ToastContext);
   const [isInitiateModalOpen, openInitiateModal, closeInitiateModal] = useToggle(false);
+  const [activeFeedbackView, setActiveFeedbackView] = useState<FeedbackTabView>('summary');
   const [filters, setFilters] = useState<FeedbackFiltersState>(defaultFeedbackFilters);
   const [selectedResponseRequestId, setSelectedResponseRequestId] = useState<number | null>(null);
   const {
@@ -74,7 +83,7 @@ const FeedbackTab: React.FC<FeedbackTabProps> = ({ programId }) => {
     isLoading,
     isFetching,
     isError,
-  } = useFeedbackRequests(programId, filters);
+  } = useFeedbackRequests(programId, filters, isActive && activeFeedbackView === 'responses');
   const initiateFeedback = useInitiateFeedbackRequests();
   const hasActiveFilters = filters.feedbackName !== 'All'
     || filters.status !== 'All'
@@ -117,42 +126,56 @@ const FeedbackTab: React.FC<FeedbackTabProps> = ({ programId }) => {
         </Button>
       </div>
 
-      <Card>
-        <Card.Section className="feedback-tab-section">
-          <FeedbackFilters
-            filters={filters}
-            options={filterOptions}
-            onChange={setFilters}
-          />
+      <Tabs
+        variant="tabs"
+        activeKey={activeFeedbackView}
+        onSelect={(key) => setActiveFeedbackView((key as FeedbackTabView) ?? 'summary')}
+      >
+        <Tab eventKey="summary" title={intl.formatMessage(messages.summaryTab)}>
+          <div className="mt-3">
+            <FeedbackDashboard programId={programId} isActive={isActive && activeFeedbackView === 'summary'} />
+          </div>
+        </Tab>
 
-          {isLoading && (
-            <div className="d-flex justify-content-center py-4">
-              <Spinner animation="border" screenReaderText={intl.formatMessage(messages.loading)} />
-            </div>
-          )}
-
-          {!isLoading && isError && (
-            <Alert variant="danger" className="mb-0">
-              {intl.formatMessage(messages.loadError)}
-            </Alert>
-          )}
-
-          {!isLoading && !isError && feedbackRequests.length === 0 ? (
-            <p className="text-muted mb-0">
-              {intl.formatMessage(hasActiveFilters ? messages.noResults : messages.emptyState)}
-            </p>
-          ) : null}
-
-          {!isLoading && !isError && feedbackRequests.length > 0 && (
-            <div style={{ opacity: isFetching && !isLoading ? 0.4 : 1, transition: 'opacity 0.15s' }}>
-              <FeedbackRequestsTable
-                requests={feedbackRequests}
-                onViewResponse={handleViewResponse}
+        <Tab eventKey="responses" title={intl.formatMessage(messages.responsesTab)}>
+          <Card className="mt-3">
+            <Card.Section className="feedback-tab-section">
+              <FeedbackFilters
+                filters={filters}
+                options={filterOptions}
+                onChange={setFilters}
               />
-            </div>
-          )}
-        </Card.Section>
-      </Card>
+
+              {isLoading && (
+                <div className="d-flex justify-content-center py-4">
+                  <Spinner animation="border" screenReaderText={intl.formatMessage(messages.loading)} />
+                </div>
+              )}
+
+              {!isLoading && isError && (
+                <Alert variant="danger" className="mb-0">
+                  {intl.formatMessage(messages.loadError)}
+                </Alert>
+              )}
+
+              {!isLoading && !isError && feedbackRequests.length === 0 ? (
+                <p className="text-muted mb-0">
+                  {intl.formatMessage(hasActiveFilters ? messages.noResults : messages.emptyState)}
+                </p>
+              ) : null}
+
+              {!isLoading && !isError && feedbackRequests.length > 0 && (
+                <div style={{ opacity: isFetching && !isLoading ? 0.4 : 1, transition: 'opacity 0.15s' }}>
+                  <FeedbackRequestsTable
+                    requests={feedbackRequests}
+                    onViewResponse={handleViewResponse}
+                  />
+                </div>
+              )}
+            </Card.Section>
+          </Card>
+        </Tab>
+      </Tabs>
 
       <InitiateFeedbackRequestModal
         isOpen={isInitiateModalOpen}
