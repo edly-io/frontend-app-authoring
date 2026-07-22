@@ -2,7 +2,7 @@ import React from 'react';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
-  Badge, Button, Form, Icon,
+  Button, Form, Icon,
 } from '@openedx/paragon';
 import { Add, Lock } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
@@ -11,6 +11,7 @@ import RowActions from './RowActions';
 import SubsectionRow from './SubsectionRow';
 import type { EditableSection } from './types';
 import { getSectionTotal } from './utils';
+import { getSectionVariant } from '../add-trainee-results/utils';
 
 const messages = defineMessages({
   sectionLabelAria: { id: 'programs.scheme.section-label-aria', defaultMessage: 'Section name' },
@@ -64,15 +65,15 @@ const SectionRow: React.FC<SectionRowProps> = ({
   };
 
   return (
-    <>
+    <div className="section-row" role="rowgroup">
       <div
         ref={setNodeRef}
         style={style}
         role="row"
-        className="d-flex align-items-center gap-2 px-3 py-2 border-bottom bg-light"
+        className={`d-flex align-items-center rounded-lg gap-2 px-3 py-2 bg-${getSectionVariant(index)}-100`}
       >
         <span
-          className="d-flex align-items-center justify-content-center rounded-circle bg-primary text-white fw-bold flex-shrink-0 mr-2"
+          className={`d-flex align-items-center justify-content-center rounded-circle bg-primary text-white fw-bold flex-shrink-0 mr-2 bg-${getSectionVariant(index)}-800`}
           style={{ width: 28, height: 28, fontSize: '0.8rem' }}
           aria-hidden="true"
         >
@@ -88,10 +89,12 @@ const SectionRow: React.FC<SectionRowProps> = ({
           />
         </div>
         <div role="cell" className="d-flex align-items-center gap-2 px-3" style={{ width: WEIGHTAGE_CELL_WIDTH }}>
-          <Badge variant="info" className="d-flex align-items-center gap-1">
+          <span className={`d-flex px-1 align-items-center gap-1 bg-white text-gray-400 rounded-lg border-${getSectionVariant(index)}-800`} style={{ border: '2px solid' }}>
             <Icon src={Lock} size="xs" />
-            {total}
-          </Badge>
+            <strong className={`small font-weight-bold text-${getSectionVariant(index)}-800`}>
+              {total}
+            </strong>
+          </span>
           <span className="text-muted small text-nowrap">{intl.formatMessage(messages.sumOfItems)}</span>
         </div>
         <div role="cell">
@@ -108,38 +111,40 @@ const SectionRow: React.FC<SectionRowProps> = ({
         </div>
       </div>
 
-      {section.subsections.length > 0 && (
-        <SortableContext
-          items={section.subsections.map((subsection) => subsection.localId)}
-          strategy={verticalListSortingStrategy}
-        >
-          {section.subsections.map((subsection, subsectionIndex) => (
-            <SubsectionRow
-              key={subsection.localId}
-              subsection={subsection}
-              isFirst={subsectionIndex === 0}
-              isLast={subsectionIndex === section.subsections.length - 1}
-              canManage={canManage}
-              onTitleChange={(title) => onSubsectionTitleChange(subsection.localId, title)}
-              onMaxMarksChange={(maxMarks) => onSubsectionMaxMarksChange(subsection.localId, maxMarks)}
-              onMoveUp={() => onMoveSubsection(subsectionIndex, -1)}
-              onMoveDown={() => onMoveSubsection(subsectionIndex, 1)}
-              onDelete={() => onDeleteSubsection(subsection.localId)}
-            />
-          ))}
-        </SortableContext>
-      )}
+      <div className="subsections pb-2" style={{ paddingLeft: 40 }}>
+        {section.subsections.length > 0 && (
+          <SortableContext
+            items={section.subsections.map((subsection) => subsection.localId)}
+            strategy={verticalListSortingStrategy}
+          >
+            {section.subsections.map((subsection, subsectionIndex) => (
+              <SubsectionRow
+                key={subsection.localId}
+                subsection={subsection}
+                isFirst={subsectionIndex === 0}
+                isLast={subsectionIndex === section.subsections.length - 1}
+                canManage={canManage}
+                onTitleChange={(title) => onSubsectionTitleChange(subsection.localId, title)}
+                onMaxMarksChange={(maxMarks) => onSubsectionMaxMarksChange(subsection.localId, maxMarks)}
+                onMoveUp={() => onMoveSubsection(subsectionIndex, -1)}
+                onMoveDown={() => onMoveSubsection(subsectionIndex, 1)}
+                onDelete={() => onDeleteSubsection(subsection.localId)}
+              />
+            ))}
+          </SortableContext>
+        )}
 
-      {canManage && (
-        <div role="row" className="py-2 border-bottom">
-          <div role="cell" style={{ paddingLeft: 56 }}>
-            <Button variant="outline-primary" size="sm" iconBefore={Add} onClick={onAddSubsection}>
-              {intl.formatMessage(messages.addSubsectionBtn)}
-            </Button>
+        {canManage && (
+          <div role="row" className="py-2 mb-3">
+            <div role="cell" style={{ paddingLeft: 16 }}>
+              <Button variant="outline-primary" size="sm" iconBefore={Add} onClick={onAddSubsection}>
+                {intl.formatMessage(messages.addSubsectionBtn)}
+              </Button>
+            </div>
           </div>
-        </div>
-      )}
-    </>
+        )}
+      </div>
+    </div>
   );
 };
 

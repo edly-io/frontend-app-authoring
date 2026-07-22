@@ -30,7 +30,8 @@ import CoursesTab from './courses-tab/CoursesTab';
 import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
 import FeedbackTab from './feedback-tab/FeedbackTab';
-import SchemeTab from './grade-scheme-tab/GradeSchemeTab';
+import GradeSchemeTab from './grade-scheme-tab/GradeSchemeTab';
+import AddTraineeResults from './add-trainee-results/AddTraineeResults';
 
 const messages = defineMessages({
   backToPrograms: { id: 'programs.detail.back', defaultMessage: '← Back to Programs' },
@@ -46,6 +47,7 @@ const messages = defineMessages({
   tabInstructors: { id: 'programs.detail.tab.instructors', defaultMessage: 'Instructors' },
   tabEnrollment: { id: 'programs.detail.tab.enrollment', defaultMessage: 'Enrollment' },
   tabFeedback: { id: 'programs.detail.tab.feedback', defaultMessage: 'Feedback' },
+  tabAddTraineeResults: { id: 'programs.detail.tab.add-trainee-results', defaultMessage: 'Add Trainee Results' },
   tabGradeScheme: { id: 'programs.detail.tab.grade-scheme', defaultMessage: 'Grade Scheme' },
   sectionBasicInfo: { id: 'programs.detail.section.basic', defaultMessage: 'Basic Information' },
   sectionBasicSubtitle: { id: 'programs.detail.section.basic.sub', defaultMessage: 'Set the core details of your program' },
@@ -675,8 +677,15 @@ const ProgramDetailPage: React.FC = () => {
           <Tab eventKey="feedback" title={intl.formatMessage(messages.tabFeedback)}>
             <FeedbackTab programId={programId ?? ''} isActive={activeTab === 'feedback'} />
           </Tab>
-          <Tab eventKey="scheme" title={intl.formatMessage(messages.tabGradeScheme)}>
-            <SchemeTab
+          <Tab eventKey="grade-scheme" title={intl.formatMessage(messages.tabGradeScheme)}>
+            <GradeSchemeTab
+              program={program}
+              programId={programId ?? ''}
+              canManage={capabilities.canEditProgram}
+            />
+          </Tab>
+          <Tab eventKey="add-trainee-results" title={intl.formatMessage(messages.tabAddTraineeResults)}>
+            <AddTraineeResults
               program={program}
               programId={programId ?? ''}
               canManage={capabilities.canEditProgram}

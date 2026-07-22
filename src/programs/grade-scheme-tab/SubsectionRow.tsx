@@ -43,9 +43,9 @@ const SubsectionRow: React.FC<SubsectionRowProps> = ({
       ref={setNodeRef}
       style={style}
       role="row"
-      className="d-flex align-items-center gap-2 py-2 px-3 border-bottom bg-white"
+      className={`subsection-row d-flex align-items-center gap-2 py-2 mx-3 ${isFirst ? '' : 'border-top'}`}
     >
-      <div role="cell" className="flex-grow-1" style={{ marginLeft: 40 }}>
+      <div role="cell" className="flex-grow-1">
         <Form.Control
           value={subsection.title}
           disabled={!canManage}

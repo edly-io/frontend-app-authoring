@@ -38,6 +38,7 @@ import {
   toSaveSchemeInput,
 } from './utils';
 import { isPublishable, validateSchemeDraft } from './validation';
+import './grade-scheme-styles.scss';
 
 const messages = defineMessages({
   pageTitle: { id: 'programs.scheme.title', defaultMessage: 'Grade Scheme' },
@@ -299,7 +300,7 @@ const GradeSchemeTab: React.FC<GradeSchemeTabProps> = ({ program, programId = ''
   }
 
   return (
-    <div className="pb-4 pt-4">
+    <div className="grade-scheme-tab pb-4 pt-4">
       <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
         <div>
           <h3 className="mb-1">{intl.formatMessage(messages.pageTitle)}</h3>

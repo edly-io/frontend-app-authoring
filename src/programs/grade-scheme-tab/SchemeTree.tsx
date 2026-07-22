@@ -14,7 +14,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Button } from '@openedx/paragon';
+import { Button, Card } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import { WEIGHTAGE_CELL_WIDTH, ACTIONS_CELL_WIDTH } from './constants';
@@ -142,62 +142,65 @@ const SchemeTree: React.FC<SchemeTreeProps> = ({
   }, [onSectionsChange]);
 
   return (
-    <div className="border rounded bg-white">
-      <div role="table" aria-label={intl.formatMessage(messages.treeAriaLabel)}>
-        <div
-          role="row"
-          className="d-flex align-items-center gap-2 px-3 py-2 border-bottom bg-light small text-uppercase text-muted fw-bold"
-        >
-          <span role="columnheader" className="flex-grow-1" style={{ marginLeft: 36 }}>
-            {intl.formatMessage(messages.columnSection)}
-          </span>
-          <span role="columnheader" className="px-2" style={{ width: WEIGHTAGE_CELL_WIDTH }}>
-            {intl.formatMessage(messages.columnWeightage)}
-          </span>
-          <span role="columnheader" className="text-end" style={{ width: ACTIONS_CELL_WIDTH }}>
-            {intl.formatMessage(messages.columnActions)}
-          </span>
+    <Card className="p-3">
+      <Card.Body>
+        <div role="table" aria-label={intl.formatMessage(messages.treeAriaLabel)}>
+          <div
+            role="row"
+            className="d-flex align-items-center gap-2 px-3 py-2 small text-uppercase text-muted font-weight-bold"
+          >
+            <span role="columnheader" className="flex-grow-1" style={{ marginLeft: 36 }}>
+              {intl.formatMessage(messages.columnSection)}
+            </span>
+            <span role="columnheader" className="px-2" style={{ width: WEIGHTAGE_CELL_WIDTH }}>
+              {intl.formatMessage(messages.columnWeightage)}
+            </span>
+            <span role="columnheader" className="text-end" style={{ width: ACTIONS_CELL_WIDTH }}>
+              {intl.formatMessage(messages.columnActions)}
+            </span>
+          </div>
+
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={sections.map((section) => section.localId)} strategy={verticalListSortingStrategy}>
+              {sections.map((section, sectionIndex) => (
+                <SectionRow
+                  key={section.localId}
+                  section={section}
+                  index={sectionIndex}
+                  isFirst={sectionIndex === 0}
+                  isLast={sectionIndex === sections.length - 1}
+                  canManage={canManage}
+                  onTitleChange={(title) => updateSectionTitle(section.localId, title)}
+                  onMoveUp={() => moveSection(sectionIndex, -1)}
+                  onMoveDown={() => moveSection(sectionIndex, 1)}
+                  onDelete={() => onDeleteSection(section)}
+                  onAddSubsection={() => onAddSubsection(section.localId)}
+                  onSubsectionTitleChange={(subsectionLocalId, title) => (
+                    updateSubsectionTitle(section.localId, subsectionLocalId, title)
+                  )}
+                  onSubsectionMaxMarksChange={(subsectionLocalId, maxMarks) => (
+                    updateSubsectionMaxMarks(section.localId, subsectionLocalId, maxMarks)
+                  )}
+                  onMoveSubsection={(subsectionIndex, direction) => (
+                    moveSubsection(section.localId, subsectionIndex, direction)
+                  )}
+                  onDeleteSubsection={(subsectionLocalId) => onDeleteSubsection(section.localId, subsectionLocalId)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         </div>
 
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={sections.map((section) => section.localId)} strategy={verticalListSortingStrategy}>
-            {sections.map((section, sectionIndex) => (
-              <SectionRow
-                key={section.localId}
-                section={section}
-                index={sectionIndex}
-                isFirst={sectionIndex === 0}
-                isLast={sectionIndex === sections.length - 1}
-                canManage={canManage}
-                onTitleChange={(title) => updateSectionTitle(section.localId, title)}
-                onMoveUp={() => moveSection(sectionIndex, -1)}
-                onMoveDown={() => moveSection(sectionIndex, 1)}
-                onDelete={() => onDeleteSection(section)}
-                onAddSubsection={() => onAddSubsection(section.localId)}
-                onSubsectionTitleChange={(subsectionLocalId, title) => (
-                  updateSubsectionTitle(section.localId, subsectionLocalId, title)
-                )}
-                onSubsectionMaxMarksChange={(subsectionLocalId, maxMarks) => (
-                  updateSubsectionMaxMarks(section.localId, subsectionLocalId, maxMarks)
-                )}
-                onMoveSubsection={(subsectionIndex, direction) => (
-                  moveSubsection(section.localId, subsectionIndex, direction)
-                )}
-                onDeleteSubsection={(subsectionLocalId) => onDeleteSubsection(section.localId, subsectionLocalId)}
-              />
-            ))}
-          </SortableContext>
-        </DndContext>
-      </div>
+        {canManage && (
+          <div className="p-3 border-top">
+            <Button variant="outline-primary" iconBefore={Add} onClick={onAddSection}>
+              {intl.formatMessage(messages.addSectionBtn)}
+            </Button>
+          </div>
+        )}
 
-      {canManage && (
-        <div className="p-3">
-          <Button variant="outline-primary" iconBefore={Add} onClick={onAddSection}>
-            {intl.formatMessage(messages.addSectionBtn)}
-          </Button>
-        </div>
-      )}
-    </div>
+      </Card.Body>
+    </Card>
   );
 };
 
