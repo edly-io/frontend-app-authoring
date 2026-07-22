@@ -370,6 +370,16 @@ const PageAlerts = ({
             dismissible: v.dismissible,
           };
         }
+        case API_ERROR_TYPES.courseNotReady: {
+          return {
+            key: k,
+            desc: intl.formatMessage(messages.courseNotReadyAlertBody),
+            title: intl.formatMessage(messages.courseNotReadyAlert),
+            dismissible: v.dismissible,
+            variant: 'warning',
+            icon: WarningIcon,
+          };
+        }
         case API_ERROR_TYPES.networkError:
           return {
             key: k,
@@ -402,8 +412,8 @@ const PageAlerts = ({
           </ErrorAlert>
         ) : (
           <Alert
-            variant="danger"
-            icon={ErrorIcon}
+            variant={msgObj.variant || 'danger'}
+            icon={msgObj.icon || ErrorIcon}
             key={msgObj.key}
           >
             <Alert.Heading>{msgObj.title}</Alert.Heading>

@@ -217,6 +217,19 @@ describe('<PageAlerts />', () => {
     expect(screen.queryByText('some unknown error')).toBeInTheDocument();
   });
 
+  it('renders course not ready api error alert', async () => {
+    renderComponent({
+      ...pageAlertsData,
+      errors: {
+        outlineIndexApi: {
+          status: 404, type: API_ERROR_TYPES.courseNotReady, dismissible: false,
+        },
+      },
+    });
+    expect(screen.queryByText(messages.courseNotReadyAlert.defaultMessage)).toBeInTheDocument();
+    expect(screen.queryByText(messages.courseNotReadyAlertBody.defaultMessage)).toBeInTheDocument();
+  });
+
   it('renders forbidden api error alerts', async () => {
     renderComponent({
       ...pageAlertsData,
