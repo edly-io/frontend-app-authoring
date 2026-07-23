@@ -1,0 +1,97 @@
+import React from 'react';
+import {
+  Alert,
+  Button,
+  Form,
+} from '@openedx/paragon';
+import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
+import FeedbackQuestionEditor from './FeedbackQuestionEditor';
+import type { FeedbackFormQuestion } from '../data/types';
+
+const messages = defineMessages({
+  title: { id: 'programs.feedback.builder.title', defaultMessage: 'Create New Feedback Form' },
+  formName: { id: 'programs.feedback.builder.form-name', defaultMessage: 'Form Name' },
+  formNamePlaceholder: { id: 'programs.feedback.builder.form-name.placeholder', defaultMessage: 'e.g. Weekly Instructor Feedback' },
+  addQuestion: { id: 'programs.feedback.builder.add', defaultMessage: 'Add Rating Question' },
+  saveForm: { id: 'programs.feedback.builder.save', defaultMessage: 'Save Form' },
+  ratingOnlyHelp: {
+    id: 'programs.feedback.builder.rating-only.help',
+    defaultMessage: 'Feedback dashboard reports use rating questions only. Comment boxes are not available for new forms.',
+  },
+});
+
+interface FeedbackFormBuilderProps {
+  formName: string;
+  questions: FeedbackFormQuestion[];
+  validationError: string;
+  onFormNameChange: (value: string) => void;
+  onQuestionChange: (questionId: number, field: keyof FeedbackFormQuestion, value: string | boolean) => void;
+  onAddQuestion: () => void;
+  onRemoveQuestion: (questionId: number) => void;
+  onSaveForm: () => void;
+  isSaving?: boolean;
+}
+
+const FeedbackFormBuilder: React.FC<FeedbackFormBuilderProps> = ({
+  formName,
+  questions,
+  validationError,
+  onFormNameChange,
+  onQuestionChange,
+  onAddQuestion,
+  onRemoveQuestion,
+  onSaveForm,
+  isSaving = false,
+}) => {
+  const intl = useIntl();
+
+  return (
+    <div className="mt-4">
+      <h4 className="h5 mb-3">{intl.formatMessage(messages.title)}</h4>
+      {validationError && (
+        <Alert variant="danger" className="mb-3">
+          {validationError}
+        </Alert>
+      )}
+
+      <Form.Group className="mb-4">
+        <Form.Label>{intl.formatMessage(messages.formName)}</Form.Label>
+        <Form.Control
+          value={formName}
+          onChange={(event) => onFormNameChange(event.target.value)}
+          placeholder={intl.formatMessage(messages.formNamePlaceholder)}
+        />
+      </Form.Group>
+
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <h5 className="mb-1">Questions</h5>
+          <p className="text-muted small mb-0">{intl.formatMessage(messages.ratingOnlyHelp)}</p>
+        </div>
+        <Button variant="outline-primary" size="sm" onClick={onAddQuestion}>
+          {intl.formatMessage(messages.addQuestion)}
+        </Button>
+      </div>
+
+      {questions.map((question) => {
+        const canRemove = !question.isDefault;
+
+        return (
+          <FeedbackQuestionEditor
+            key={question.id}
+            question={question}
+            onQuestionChange={onQuestionChange}
+            onRemove={onRemoveQuestion}
+            canRemove={canRemove}
+          />
+        );
+      })}
+
+      <Button variant="primary" onClick={onSaveForm} disabled={isSaving}>
+        {intl.formatMessage(messages.saveForm)}
+      </Button>
+    </div>
+  );
+};
+
+export default FeedbackFormBuilder;

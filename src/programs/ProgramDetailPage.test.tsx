@@ -7,6 +7,8 @@ import { getProgramCapabilities } from './data/permissions';
 
 const mockUpdateProgram = jest.fn();
 const mockUseProgramAccess = jest.fn();
+const mockInitiateFeedbackRequests = jest.fn();
+const mockCreateFeedbackForm = jest.fn();
 
 jest.mock('../header', () => function MockHeader() {
   return <header>Header</header>;
@@ -37,6 +39,51 @@ jest.mock('./data/apiHooks', () => ({
     mutateAsync: mockUpdateProgram,
     isPending: false,
   }),
+  useFeedbackRequests: () => ({
+    data: [],
+    isLoading: false,
+    isFetching: false,
+    isError: false,
+  }),
+  useInitiateFeedbackRequests: () => ({
+    mutateAsync: mockInitiateFeedbackRequests,
+    isPending: false,
+  }),
+  useFeedbackRequestDetail: () => ({
+    data: null,
+    isLoading: false,
+    isError: false,
+  }),
+  useFeedbackForms: () => ({
+    data: [],
+    isLoading: false,
+    isError: false,
+  }),
+  useFeedbackForm: () => ({
+    data: null,
+    isLoading: false,
+    isError: false,
+  }),
+  useCreateFeedbackForm: () => ({
+    mutateAsync: mockCreateFeedbackForm,
+    isPending: false,
+  }),
+  useAllPlatformUsersForRole: () => ({
+    data: { results: [], count: 0, numPages: 1 },
+    isLoading: false,
+    isError: false,
+  }),
+  useFeedbackDashboardInitiations: () => ({
+    data: [],
+    isLoading: false,
+    isError: false,
+  }),
+  useFeedbackDashboardReport: () => ({
+    data: null,
+    isLoading: false,
+    isFetching: false,
+    isError: false,
+  }),
 }));
 
 const renderPage = () => render(
@@ -50,6 +97,8 @@ const renderPage = () => render(
 describe('<ProgramDetailPage /> permissions', () => {
   beforeEach(() => {
     initializeMocks();
+    mockInitiateFeedbackRequests.mockReset();
+    mockCreateFeedbackForm.mockReset();
     mockUseProgramAccess.mockReturnValue({
       capabilities: getProgramCapabilities(['super_admin']),
       isLoading: false,

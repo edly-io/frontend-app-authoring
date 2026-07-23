@@ -59,11 +59,6 @@ export interface ProgramConfig {
   cities: CityOption[];
 }
 
-export interface CityOption {
-  id: number;
-  name: string;
-}
-
 export interface CreateProgramInput {
   displayName: string;
   org: string;
@@ -121,4 +116,176 @@ export interface PaginatedLearners {
 export interface Batch {
   id: string;
   name: string;
+}
+
+export type FeedbackRequestStatus = 'Pending' | 'Completed' | 'Not Submitted';
+export type FeedbackQuestionType = 'star_rating' | 'textarea';
+
+export interface FeedbackFormQuestion {
+  id: number;
+  type: FeedbackQuestionType;
+  question: string;
+  required: boolean;
+  isDefault: boolean;
+  order?: number;
+}
+
+export interface FeedbackFormTemplate {
+  id: number;
+  name: string;
+  questions?: FeedbackFormQuestion[];
+  isInUse: boolean;
+  createdByName?: string;
+  created?: string;
+  modified?: string;
+}
+
+export interface FeedbackResponseAnswer {
+  id: number;
+  questionId?: number;
+  question: string;
+  type: FeedbackQuestionType;
+  starValue: number | null;
+  textValue: string | null;
+}
+
+export interface FeedbackResponse {
+  submittedAt: string;
+  answers: FeedbackResponseAnswer[];
+}
+
+export interface FeedbackRequest {
+  id: number;
+  feedbackName: string;
+  formId: number;
+  formName: string;
+  subjectId?: number | null;
+  subjectName: string | null;
+  subjectRole?: string | null;
+  subjectRoles?: string[];
+  subjectEmail?: string | null;
+  subjectAvatar?: string | null;
+  reviewerId?: number;
+  reviewerName: string;
+  reviewerRole?: string | null;
+  reviewerRoles?: string[];
+  reviewerEmail?: string | null;
+  reviewerAvatar?: string | null;
+  courseId: string;
+  deadline: string;
+  requestedById?: number;
+  requestedByName: string;
+  requestedByRole?: string | null;
+  requestedByRoles?: string[];
+  requestedByEmail?: string | null;
+  requestedByAvatar?: string | null;
+  submittedAt: string | null;
+  status: FeedbackRequestStatus;
+  response: FeedbackResponse | null;
+  created: string;
+}
+
+export interface FeedbackFiltersState {
+  feedbackName: string;
+  subject: string;
+  reviewer: string;
+  status: 'All' | FeedbackRequestStatus;
+}
+
+export interface FeedbackFilterOptions {
+  feedbackNames: string[];
+}
+
+export interface CreateFeedbackFormInput {
+  name: string;
+  questions: FeedbackFormQuestion[];
+}
+
+export interface InitiateFeedbackPayload {
+  feedbackName: string;
+  deadline: string;
+  formId: number;
+  reviewerEmails: string[];
+  subjectEmails?: string[];
+}
+
+export type RatingLevelKey = 'excellent' | 'veryGood' | 'good' | 'needsAttention';
+
+export type RatingBandFilter = 'all' | 'top' | 'mid' | 'low';
+export type DashboardViewMode = 'table' | 'cards';
+export type DashboardAggregationMode = 'percentage' | 'count';
+
+export interface RatingLevel {
+  key: RatingLevelKey;
+  label: string;
+  shortLabel: string;
+}
+
+export interface RatingDistributionBucket {
+  count: number;
+  percentage: number;
+}
+
+export type RatingDistribution = Record<RatingLevelKey, RatingDistributionBucket> & {
+  total?: number;
+};
+
+export interface FeedbackDashboardCriterion {
+  id: string;
+  label: string;
+  order?: number;
+}
+
+export interface FeedbackDashboardSubject {
+  id: string;
+  name: string;
+  email?: string;
+  role?: string;
+  avatar?: string | null;
+  subtitle?: string;
+  rating?: number | null;
+  submittedResponses?: number;
+  totalRequests?: number;
+  distributions: Record<string, RatingDistribution>;
+  averageDistribution?: RatingDistribution;
+}
+
+export interface FeedbackDashboardSummary {
+  subjectCount: number;
+  submittedResponses: number;
+  responseRate: number;
+  averageRating: number;
+  topSubjectName: string;
+  topSubjectRating: number;
+  needsAttentionCount: number;
+}
+
+export interface FeedbackDashboardReport {
+  id: string;
+  feedbackName: string;
+  selectionValue?: string;
+  programName: string;
+  respondentsLabel: string;
+  submittedResponses: number;
+  totalRequests: number;
+  responseRate: number;
+  criteria: FeedbackDashboardCriterion[];
+  subjects: FeedbackDashboardSubject[];
+  summary?: FeedbackDashboardSummary;
+}
+
+export interface FeedbackDashboardInitiationOption {
+  id: number;
+  feedbackName: string;
+  selectionValue: string;
+  formId: number;
+  formName: string;
+  programKey: string;
+  programName: string;
+  deadline: string;
+  created: string;
+  totalRequests: number;
+  submittedResponses: number;
+  responseRate: number;
+  subjectCount: number;
 }
