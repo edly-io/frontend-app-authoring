@@ -155,6 +155,9 @@ const ProgramDetailPage: React.FC = () => {
   const cities = data?.availableCities ?? [];
 
   const program = data?.program;
+  const hasStarted = program?.status === 'active'
+    && !!program.startDate
+    && new Date(program.startDate) <= new Date();
   const availableAudiences = data?.availableAudiences ?? [];
   const audienceOptions = availableAudiences.map((a) => ({ value: a, label: a }));
 
@@ -645,6 +648,7 @@ const ProgramDetailPage: React.FC = () => {
               program={program}
               programId={programId ?? ''}
               canManage={capabilities.canManageCourses}
+              hasStarted={hasStarted}
             />
           </Tab>
 
@@ -659,6 +663,7 @@ const ProgramDetailPage: React.FC = () => {
             <EnrollmentTab
               programId={programId ?? ''}
               canManage={capabilities.canManageEnrollment}
+              hasStarted={hasStarted}
             />
           </Tab>
         </Tabs>

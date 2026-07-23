@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import {
   Badge,
   Button,
+  OverlayTrigger,
   Stack,
+  Tooltip,
   useToggle,
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
@@ -15,6 +17,10 @@ import AddCourseModal from './AddCourseModal';
 const messages = defineMessages({
   sectionTitle: { id: 'programs.courses.title', defaultMessage: 'Program Courses' },
   sectionSubtitle: { id: 'programs.courses.subtitle', defaultMessage: 'Add and arrange courses for this program' },
+  oneCourseNote: {
+    id: 'programs.courses.one-course-note',
+    defaultMessage: 'Each course can only belong to one program. To reuse course content, create a rerun in Studio.',
+  },
   addCourseBtn: { id: 'programs.courses.add-btn', defaultMessage: 'Add Course' },
   emptyCourses: { id: 'programs.courses.empty', defaultMessage: 'No courses added yet. Click \'+ Add Course\' to begin.' },
   removeBtn: { id: 'programs.courses.remove-btn', defaultMessage: 'Remove' },
@@ -27,9 +33,12 @@ interface CoursesTabProps {
   program: Program;
   programId: string;
   canManage?: boolean;
+  hasStarted?: boolean;
 }
 
-const CoursesTab: React.FC<CoursesTabProps> = ({ program, programId, canManage = true }) => {
+const CoursesTab: React.FC<CoursesTabProps> = ({
+  program, programId, canManage = true, hasStarted = false,
+}) => {
   const intl = useIntl();
   const [isModalOpen, openModal, closeModal] = useToggle(false);
   const [confirmCourseId, setConfirmCourseId] = useState<string | null>(null);
@@ -47,6 +56,9 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ program, programId, canManage =
         <div>
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
+          {canManage && (
+            <p className="text-muted small mb-0 mt-1">{intl.formatMessage(messages.oneCourseNote)}</p>
+          )}
         </div>
         {canManage && (
           <Button
@@ -100,14 +112,32 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ program, programId, canManage =
               </div>
 
               {canManage && (
-                <Button
-                  variant="outline-danger"
-                  size="sm"
-                  onClick={() => setConfirmCourseId(course.id)}
-                  disabled={confirmCourseId !== null}
-                >
-                  {intl.formatMessage(messages.removeBtn)}
-                </Button>
+                hasStarted ? (
+                  <OverlayTrigger
+                    trigger={['hover', 'focus']}
+                    placement="top"
+                    overlay={(
+                      <Tooltip id={`remove-disabled-${course.id}`}>
+                        Courses cannot be removed after a program has started.
+                      </Tooltip>
+                    )}
+                  >
+                    <span>
+                      <Button variant="outline-danger" size="sm" disabled style={{ pointerEvents: 'none' }}>
+                        {intl.formatMessage(messages.removeBtn)}
+                      </Button>
+                    </span>
+                  </OverlayTrigger>
+                ) : (
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={() => setConfirmCourseId(course.id)}
+                    disabled={confirmCourseId !== null}
+                  >
+                    {intl.formatMessage(messages.removeBtn)}
+                  </Button>
+                )
               )}
             </div>
           ))}

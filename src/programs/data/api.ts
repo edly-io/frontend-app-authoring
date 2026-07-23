@@ -35,6 +35,9 @@ const toCourse = (d: any): Course => ({
   org: d.org,
   run: d.run,
   targetAudience: d.target_audience?.name ?? '',
+  assignedProgramKey: d.assigned_program_key ?? null,
+  assignedProgramName: d.assigned_program_name ?? null,
+  cmsRerunUrl: d.cms_rerun_url ?? null,
 });
 
 // ── Response → Program type transformation ──────────────────────────────────
@@ -139,13 +142,23 @@ export const updateProgram = async (
 export interface GetCoursesParams {
   page?: number;
   search?: string;
+  availableForProgram?: string;
+  assignedToOtherProgram?: string;
 }
 
 export const getCourses = async (params: GetCoursesParams = {}): Promise<PaginatedCourses> => {
   const pageSize = 5; // temporary — lower for pagination testing; revert to backend default
   const { data } = await getAuthenticatedHttpClient().get(
     `${getProgramsBaseUrl()}/courses/`,
-    { params: { page: params.page ?? 1, page_size: pageSize, ...(params.search ? { search: params.search } : {}) } },
+    {
+      params: {
+        page: params.page ?? 1,
+        page_size: pageSize,
+        ...(params.search ? { search: params.search } : {}),
+        ...(params.availableForProgram ? { available_for_program: params.availableForProgram } : {}),
+        ...(params.assignedToOtherProgram ? { assigned_to_other_program: params.assignedToOtherProgram } : {}),
+      },
+    },
   );
   const results: any[] = data.results ?? [];
   const pagination = data.pagination ?? {};
@@ -250,7 +263,7 @@ export const getCourseTeam = async (courseId: string): Promise<Instructor[]> => 
     username: u.username,
     email: u.email,
     role: u.role,
-    name: [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username,
+    name: u.full_name || [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username,
   }));
 };
 

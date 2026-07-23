@@ -8,6 +8,9 @@ export const mockCourse = (overrides: Partial<Course> = {}): Course => ({
   org: 'TestOrg',
   run: '2025',
   targetAudience: '',
+  assignedProgramKey: null,
+  assignedProgramName: null,
+  cmsRerunUrl: null,
   ...overrides,
 });
 
