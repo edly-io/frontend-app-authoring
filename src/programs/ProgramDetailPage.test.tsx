@@ -22,6 +22,9 @@ jest.mock('./instructors-tab/InstructorsTab', () => function MockInstructorsTab(
 jest.mock('./enrollment-tab/EnrollmentTab', () => function MockEnrollmentTab() {
   return <div>Enrollment content</div>;
 });
+jest.mock('./certificates-tab/CertificatesTab', () => function MockCertificatesTab() {
+  return <div>Certificates content</div>;
+});
 jest.mock('./data/apiHooks', () => ({
   useProgramAccess: () => mockUseProgramAccess(),
   useProgramDetail: () => ({
@@ -110,6 +113,18 @@ describe('<ProgramDetailPage /> permissions', () => {
 
     expect(screen.getByRole('button', { name: 'Save Program' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Program Status' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Certificates' })).toBeInTheDocument();
+  });
+
+  it('hides the Certificates tab from instructors', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['instructor']),
+      isLoading: false,
+    });
+
+    renderPage();
+
+    expect(screen.queryByRole('tab', { name: 'Certificates' })).not.toBeInTheDocument();
   });
 
   it('lets Data Admins edit metadata without exposing archive status controls', () => {

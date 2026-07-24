@@ -33,6 +33,11 @@ import {
   getFeedbackDashboardComments,
   getFeedbackDashboardInitiations,
   getFeedbackDashboardReport,
+  getCertificateConfig,
+  updateCertificateConfig,
+  getCertificateRoster,
+  awardCertificates,
+  revokeCertificate,
   type GetCoursesParams,
   type GetInstructorsParams,
   type GetLearnersParams,
@@ -43,6 +48,7 @@ import type {
   FeedbackFiltersState,
   InitiateFeedbackPayload,
   Program,
+  CertificateConfig,
 } from './types';
 import { getProgramCapabilities } from './permissions';
 
@@ -403,3 +409,46 @@ export const useFeedbackDashboardComments = (
   queryFn: () => getFeedbackDashboardComments(programId, initiationId!, subjectId!),
   enabled: enabled && !!programId && !!initiationId && !!subjectId,
 });
+
+// ── Program Certificates ──────────────────────────────────────────────────
+export const useCertificateConfig = (programId: string, enabled = true) => useQuery({
+  queryKey: ['certificateConfig', programId],
+  queryFn: () => getCertificateConfig(programId),
+  enabled: enabled && !!programId,
+});
+
+export const useCertificateRoster = (programId: string, enabled = true) => useQuery({
+  queryKey: ['certificateRoster', programId],
+  queryFn: () => getCertificateRoster(programId),
+  enabled: enabled && !!programId,
+});
+
+export const useUpdateCertificateConfig = (programId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (config: CertificateConfig) => updateCertificateConfig(programId, config),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['certificateConfig', programId] });
+    },
+  });
+};
+
+export const useAwardCertificates = (programId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (usernames: string[]) => awardCertificates(programId, usernames),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['certificateRoster', programId] });
+    },
+  });
+};
+
+export const useRevokeCertificate = (programId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (certificateNumber: string) => revokeCertificate(certificateNumber),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['certificateRoster', programId] });
+    },
+  });
+};

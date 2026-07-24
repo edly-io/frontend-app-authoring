@@ -1,0 +1,331 @@
+// Program Certificates tab.
+//
+// App chrome (KPIs, roster, config form, modal shell) uses Paragon components
+// + utility classes; the only bespoke visual is the certificate document
+// itself (`.fbr-cert`), which is a formal government artifact with its own
+// fixed navy/gold identity and is what the trainee walks away with.
+
+// ── Certificate document palette + type (self-contained, brand-fixed) ───────
+$cert-navy: #082c47;
+$cert-navy-mid: #0d4d7d;
+$cert-gold: #c8a24a;
+$cert-gold-deep: #9a7a24;
+$cert-gold-soft: #e2cf9a;
+$cert-paper: #fffdf7;
+$cert-ink: #2a2418;
+$cert-ink-soft: #6a604a;
+
+// Graceful fallbacks — never depend on a network font fetch at print time.
+$cert-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+$cert-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+// ── Tab layout helpers ──────────────────────────────────────────────────────
+.certificates-tab-section {
+  padding-top: .25rem;
+}
+
+.certificates-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.certificate-roster-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 44rem;
+
+  th,
+  td {
+    padding: .625rem .75rem;
+    border-bottom: 1px solid var(--pgn-color-light-400);
+    vertical-align: middle;
+    text-align: left;
+  }
+
+  th {
+    font-size: .75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--pgn-color-gray-500);
+    white-space: nowrap;
+  }
+
+  td.certificate-score-cell {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+
+  .certificate-actions-cell {
+    text-align: right;
+    white-space: nowrap;
+  }
+}
+
+.certificate-trainee-cell {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.certificate-trainee-name {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.certificate-trainee-username {
+  font-size: .75rem;
+  color: var(--pgn-color-gray-500);
+  font-family: $cert-mono;
+}
+
+.certificate-await-meta {
+  font-size: .75rem;
+  color: var(--pgn-color-gray-500);
+  font-family: $cert-mono;
+  margin-top: .125rem;
+}
+
+// Signatory editor rows in the settings panel.
+.certificate-signatory-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: .5rem;
+  align-items: start;
+  margin-bottom: .5rem;
+}
+
+// Config panel: form on the left, live preview on the right.
+.certificate-config-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+
+  @media (max-width: 62rem) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.certificate-preview-hint {
+  font-size: .75rem;
+  color: var(--pgn-color-gray-500);
+  text-align: center;
+  margin-top: .625rem;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// The certificate document itself.
+// ─────────────────────────────────────────────────────────────────────────
+.fbr-cert {
+  position: relative;
+  background: $cert-paper;
+  color: $cert-ink;
+  border: 1px solid #e6dcc2;
+  aspect-ratio: 1.414 / 1; // A4 landscape
+  overflow: hidden;
+  width: 100%;
+
+  .fbr-cert__frame {
+    position: absolute;
+    inset: 3.5%;
+    border: 2px solid $cert-gold;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 5px;
+      border: 1px solid $cert-gold-soft;
+    }
+  }
+
+  .fbr-cert__inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 7% 9% 5%;
+  }
+
+  .fbr-cert__mark {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: $cert-navy-mid;
+    color: $cert-gold;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: .875rem;
+    letter-spacing: .03em;
+    margin-bottom: .5rem;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .15);
+  }
+
+  .fbr-cert__org {
+    font-size: .7rem;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: $cert-navy-mid;
+    font-weight: 700;
+  }
+
+  .fbr-cert__gov {
+    font-size: .6rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: #9a8a66;
+    margin-top: .125rem;
+  }
+
+  .fbr-cert__title {
+    font-family: $cert-serif;
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: $cert-gold-deep;
+    margin: .75rem 0 .125rem;
+    letter-spacing: .01em;
+  }
+
+  .fbr-cert__subtitle {
+    font-size: .7rem;
+    letter-spacing: .08em;
+    color: #7a6f56;
+    text-transform: uppercase;
+  }
+
+  .fbr-cert__present {
+    font-size: .72rem;
+    color: $cert-ink-soft;
+    margin-top: .875rem;
+  }
+
+  .fbr-cert__name {
+    font-family: $cert-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: $cert-navy;
+    margin: .375rem 0 .25rem;
+    border-bottom: 1.5px solid $cert-gold;
+    padding: 0 1.125rem .375rem;
+  }
+
+  .fbr-cert__roll {
+    font-family: $cert-mono;
+    font-size: .7rem;
+    color: #8a7f66;
+  }
+
+  .fbr-cert__body {
+    font-size: .74rem;
+    line-height: 1.6;
+    color: #4a4436;
+    max-width: 78%;
+    margin-top: .75rem;
+
+    b {
+      color: $cert-ink;
+    }
+  }
+
+  .fbr-cert__sigs {
+    display: flex;
+    justify-content: center;
+    gap: 9%;
+    width: 82%;
+    margin-top: auto;
+    padding-bottom: 2%;
+  }
+
+  .fbr-cert__sig {
+    flex: 1;
+    max-width: 12.5rem;
+
+    .fbr-cert__sig-line {
+      border-top: 1.4px solid $cert-ink-soft;
+      margin-bottom: .3125rem;
+    }
+
+    .fbr-cert__sig-name {
+      font-size: .72rem;
+      font-weight: 700;
+      color: $cert-ink;
+    }
+
+    .fbr-cert__sig-title {
+      font-size: .6rem;
+      color: #7a6f56;
+      margin-top: .0625rem;
+    }
+  }
+
+  .fbr-cert__seal {
+    position: absolute;
+    bottom: 9%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 11%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 40%, #e6c56a, $cert-gold 60%, $cert-gold-deep);
+    box-shadow: 0 2px 6px rgba(154, 122, 36, .35);
+    display: grid;
+    place-items: center;
+    color: #4a3a10;
+    font-weight: 800;
+    font-size: .55rem;
+    line-height: 1.1;
+    text-align: center;
+    border: 2px solid $cert-paper;
+  }
+
+  .fbr-cert__meta {
+    position: absolute;
+    bottom: 3.5%;
+    left: 6%;
+    font-family: $cert-mono;
+    font-size: .5rem;
+    color: #a89a76;
+    text-align: left;
+  }
+}
+
+// Compact variant used in the settings live-preview panel.
+.fbr-cert--mini {
+  .fbr-cert__title { font-size: 1.25rem; }
+  .fbr-cert__name { font-size: 1.4rem; }
+  .fbr-cert__mark { width: 2.25rem; height: 2.25rem; font-size: .75rem; }
+}
+
+// ── Print / PDF: only the certificate document prints, A4 landscape ─────────
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .fbr-cert-print-area,
+  .fbr-cert-print-area * {
+    visibility: visible;
+  }
+
+  .fbr-cert-print-area {
+    position: fixed;
+    inset: 0;
+    padding: 0;
+    margin: 0;
+  }
+
+  .fbr-cert-print-area .fbr-cert {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+}

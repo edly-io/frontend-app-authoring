@@ -14,6 +14,22 @@ describe('getProgramCapabilities', () => {
       isReadOnly: false,
     });
   });
+  it.each(['super_admin', 'middle_admin'] as const)(
+    'grants full program management to %s',
+    (role) => {
+      expect(getProgramCapabilities([role])).toEqual({
+        canAccessPrograms: true,
+        canCreateProgram: true,
+        canEditProgram: true,
+        canArchiveProgram: true,
+        canManageCourses: true,
+        canManageEnrollment: true,
+        canManageInstructors: true,
+        canManageCertificates: true,
+        isReadOnly: false,
+      });
+    },
+  );
 
   it('grants full program management to middle_admin, but not editing finalized results', () => {
     expect(getProgramCapabilities(['middle_admin'])).toEqual({
@@ -39,6 +55,7 @@ describe('getProgramCapabilities', () => {
       canManageEnrollment: true,
       canManageInstructors: true,
       canEditFinalizedResults: false,
+      canManageCertificates: true,
       isReadOnly: false,
     });
   });
@@ -51,6 +68,7 @@ describe('getProgramCapabilities', () => {
       canManageCourses: false,
       canManageEnrollment: false,
       canManageInstructors: false,
+      canManageCertificates: false,
       isReadOnly: true,
     });
   });

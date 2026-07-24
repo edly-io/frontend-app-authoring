@@ -31,6 +31,9 @@ import type {
   FeedbackFormTemplate,
   FeedbackRequest,
   InitiateFeedbackPayload,
+  CertificateConfig,
+  CertificateRosterRow,
+  AwardResult,
 } from './types';
 
 export { getCurrentFbrProfile, getCurrentFbrProfileUrl } from '@src/fbr-access/api';
@@ -888,4 +891,143 @@ export const getFeedbackDashboardComments = async (
     { params: { initiation_id: initiationId, subject_id: subjectId } },
   );
   return toFeedbackDashboardCommentsResponse(data);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Program Certificates — TEMPORARY in-memory mock.
+//
+// The backend endpoints (fbr/api/cms/certificates/…) are not built yet, so
+// these functions resolve against an in-module store instead of the network.
+// When the backend ships, replace each function body with the real call shown
+// in its comment — no consumer (hooks/components) changes. Delete this block's
+// store + seeding at that point.
+//
+//   GET  {base}/{programId}/config/            → getCertificateConfig
+//   PUT  {base}/{programId}/config/            → updateCertificateConfig
+//   GET  {base}/{programId}/awards/            → getCertificateRoster
+//   POST {base}/{programId}/awards/            → awardCertificates
+//   POST {base}/awards/{number}/revoke/        → revokeCertificate
+//   where {base} = `${STUDIO_BASE_URL}/fbr/api/cms/certificates`
+// ─────────────────────────────────────────────────────────────────────────
+
+const MOCK_LATENCY_MS = 350;
+const mockDelay = <T>(value: T): Promise<T> => new Promise((resolve) => {
+  setTimeout(() => resolve(value), MOCK_LATENCY_MS);
+});
+
+const mockCertificateConfigs: Record<string, CertificateConfig> = {};
+// Roster + awards, seeded per program on first access.
+const mockRosters: Record<string, CertificateRosterRow[]> = {};
+
+const MOCK_DEFAULT_CONFIG: CertificateConfig = {
+  issuedBy: 'Directorate of Training (Direct Taxes), FBR',
+  signatories: [
+    { name: 'Muhammad Ashfaq Ahmed', title: 'Director General, Directorate of Training' },
+    { name: 'Saira Kamal', title: 'Chief Coordinator, STP' },
+  ],
+};
+
+const MOCK_TRAINEES: Array<{ username: string; fullName: string; percent: number; awarded?: boolean }> = [
+  {
+    username: 'ifrah.saleem', fullName: 'Ifrah Saleem', percent: 97, awarded: true,
+  },
+  {
+    username: 'ayesha.tariq', fullName: 'Ayesha Tariq', percent: 94, awarded: true,
+  },
+  { username: 'tania.bashir', fullName: 'Tania Bashir', percent: 90 },
+  { username: 'zoya.iqbal', fullName: 'Zoya Iqbal', percent: 86 },
+  { username: 'qasim.raza', fullName: 'Qasim Raza', percent: 85 },
+  { username: 'kiran.rashid', fullName: 'Kiran Rashid', percent: 82 },
+  { username: 'wajeeha.noor', fullName: 'Wajeeha Noor', percent: 79 },
+  { username: 'omer.siddiqui', fullName: 'Omer Siddiqui', percent: 77 },
+  { username: 'rabia.aslam', fullName: 'Rabia Aslam', percent: 73 },
+  { username: 'bilal.hussain', fullName: 'Bilal Hussain', percent: 71 },
+  { username: 'parveen.akhtar', fullName: 'Parveen Akhtar', percent: 68 },
+  { username: 'usman.ghani', fullName: 'Usman Ghani', percent: 66 },
+  { username: 'hassan.mehmood', fullName: 'Hassan Mehmood', percent: 63 },
+  { username: 'jawad.ali', fullName: 'Jawad Ali', percent: 55 },
+  { username: 'naila.qureshi', fullName: 'Naila Qureshi', percent: 46 },
+  { username: 'salman.haider', fullName: 'Salman Haider', percent: 42 },
+];
+
+const mockCertificateNumber = (username: string): string => `FBR-CERT-${username.replace(/[^a-z0-9]/gi, '').slice(0, 6).toUpperCase().padEnd(6, '0')}`;
+
+const seedMockRoster = (programId: string): CertificateRosterRow[] => {
+  if (!mockRosters[programId]) {
+    mockRosters[programId] = MOCK_TRAINEES.map((trainee) => ({
+      username: trainee.username,
+      fullName: trainee.fullName,
+      avatarUrl: null,
+      percent: trainee.percent.toFixed(1),
+      result: trainee.percent >= 50 ? 'pass' : 'fail',
+      status: 'finalized',
+      certificate: trainee.awarded
+        ? {
+          certificateNumber: mockCertificateNumber(trainee.username),
+          status: 'active',
+          issuedAt: '2026-06-18T00:00:00Z',
+        }
+        : null,
+    }));
+  }
+  return mockRosters[programId];
+};
+
+export const getCertificateConfig = async (programId: string): Promise<CertificateConfig> => {
+  // Real: const { data } = await getAuthenticatedHttpClient().get(
+  //   `${STUDIO_BASE_URL}/fbr/api/cms/certificates/${getEncodedProgramId(programId)}/config/`);
+  //   return { issuedBy: data.issued_by, signatories: data.signatories ?? [] };
+  const config = mockCertificateConfigs[programId] ?? MOCK_DEFAULT_CONFIG;
+  return mockDelay({ issuedBy: config.issuedBy, signatories: [...config.signatories] });
+};
+
+export const updateCertificateConfig = async (
+  programId: string,
+  config: CertificateConfig,
+): Promise<CertificateConfig> => {
+  // Real: await getAuthenticatedHttpClient().put(`…/${getEncodedProgramId(programId)}/config/`,
+  //   { issued_by: config.issuedBy, signatories: config.signatories }); return config;
+  mockCertificateConfigs[programId] = {
+    issuedBy: config.issuedBy,
+    signatories: config.signatories.map((s) => ({ ...s })),
+  };
+  return mockDelay(mockCertificateConfigs[programId]);
+};
+
+// Real: GET `…/${getEncodedProgramId(programId)}/awards/` → (data.results ?? data).map(toRosterRow)
+export const getCertificateRoster = async (programId: string): Promise<CertificateRosterRow[]> => mockDelay(
+  seedMockRoster(programId).map((row) => ({ ...row })),
+);
+export const awardCertificates = async (
+  programId: string,
+  usernames: string[],
+): Promise<AwardResult> => {
+  // Real: const { data } = await getAuthenticatedHttpClient().post(
+  //   `…/${getEncodedProgramId(programId)}/awards/`, { usernames }); return data;
+  const roster = seedMockRoster(programId);
+  const ok: string[] = [];
+  usernames.forEach((username) => {
+    const row = roster.find((r) => r.username === username);
+    if (row && !row.certificate) {
+      row.certificate = {
+        certificateNumber: mockCertificateNumber(username),
+        status: 'active',
+        issuedAt: new Date().toISOString(),
+      };
+      ok.push(row.certificate.certificateNumber);
+    }
+  });
+  return mockDelay({ ok, errors: [] });
+};
+
+export const revokeCertificate = async (certificateNumber: string): Promise<void> => {
+  // Real: await getAuthenticatedHttpClient().post(
+  //   `…/awards/${encodeURIComponent(certificateNumber)}/revoke/`);
+  Object.values(mockRosters).forEach((roster) => {
+    const match = roster.find((r) => r.certificate?.certificateNumber === certificateNumber);
+    if (match) {
+      match.certificate = null;
+    }
+  });
+  return mockDelay(undefined);
 };

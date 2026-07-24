@@ -31,6 +31,7 @@ import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
 import FeedbackTab from './feedback-tab/FeedbackTab';
 import ResultsTab from './results-tab/ResultsTab';
+import CertificatesTab from './certificates-tab/CertificatesTab';
 
 const messages = defineMessages({
   backToPrograms: { id: 'programs.detail.back', defaultMessage: '← Back to Programs' },
@@ -47,6 +48,7 @@ const messages = defineMessages({
   tabEnrollment: { id: 'programs.detail.tab.enrollment', defaultMessage: 'Enrollment' },
   tabFeedback: { id: 'programs.detail.tab.feedback', defaultMessage: 'Feedback' },
   tabTraineeResults: { id: 'programs.detail.tab.bulk-trainee-results', defaultMessage: 'Trainees Results' },
+  tabCertificates: { id: 'programs.detail.tab.certificates', defaultMessage: 'Certificates' },
   sectionBasicInfo: { id: 'programs.detail.section.basic', defaultMessage: 'Basic Information' },
   sectionBasicSubtitle: { id: 'programs.detail.section.basic.sub', defaultMessage: 'Set the core details of your program' },
   sectionImage: { id: 'programs.detail.section.image', defaultMessage: 'Program Card Image' },
@@ -687,6 +689,16 @@ const ProgramDetailPage: React.FC = () => {
               )
             }
           </Tab>
+
+          {capabilities.canManageCertificates && (
+            <Tab eventKey="certificates" title={intl.formatMessage(messages.tabCertificates)}>
+              <CertificatesTab
+                programId={programId ?? ''}
+                programName={program.displayName}
+                isActive={activeTab === 'certificates'}
+              />
+            </Tab>
+          )}
         </Tabs>
 
       </Container>
