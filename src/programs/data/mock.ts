@@ -11,6 +11,9 @@ export const MOCK_COURSES: Course[] = [
     org: 'IRSA Lahore',
     run: '2024-Spring',
     targetAudience: 'Inspectors',
+    assignedProgramKey: null,
+    assignedProgramName: null,
+    cmsRerunUrl: null,
   },
   {
     id: 'course-002',
@@ -18,6 +21,9 @@ export const MOCK_COURSES: Course[] = [
     org: 'IRSA Lahore',
     run: '2024-Summer',
     targetAudience: 'Auditors',
+    assignedProgramKey: null,
+    assignedProgramName: null,
+    cmsRerunUrl: null,
   },
   {
     id: 'course-003',
@@ -25,6 +31,9 @@ export const MOCK_COURSES: Course[] = [
     org: 'IRSA Karachi',
     run: '2024-Spring',
     targetAudience: 'Clerks',
+    assignedProgramKey: null,
+    assignedProgramName: null,
+    cmsRerunUrl: null,
   },
   {
     id: 'course-004',
@@ -32,6 +41,9 @@ export const MOCK_COURSES: Course[] = [
     org: 'IRSA Lahore',
     run: '2024-Fall',
     targetAudience: 'Inspectors',
+    assignedProgramKey: null,
+    assignedProgramName: null,
+    cmsRerunUrl: null,
   },
   {
     id: 'course-005',
@@ -39,6 +51,9 @@ export const MOCK_COURSES: Course[] = [
     org: 'IRSA Islamabad',
     run: '2024-Summer',
     targetAudience: 'Auditors',
+    assignedProgramKey: null,
+    assignedProgramName: null,
+    cmsRerunUrl: null,
   },
   {
     id: 'course-006',
@@ -46,6 +61,9 @@ export const MOCK_COURSES: Course[] = [
     org: 'IRSA Karachi',
     run: '2024-Fall',
     targetAudience: 'Clerks',
+    assignedProgramKey: null,
+    assignedProgramName: null,
+    cmsRerunUrl: null,
   },
 ];
 

@@ -6,6 +6,9 @@ export interface Course {
   org: string;
   run: string;
   targetAudience: string;
+  assignedProgramKey: string | null;
+  assignedProgramName: string | null;
+  cmsRerunUrl: string | null;
 }
 
 export interface PaginatedCourses {

@@ -2,10 +2,12 @@ import React, { useState, useCallback } from 'react';
 import {
   Badge,
   Button,
+  OverlayTrigger,
   Pagination,
   SearchField,
   Spinner,
   Stack,
+  Tooltip,
   useToggle,
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
@@ -41,9 +43,10 @@ const messages = defineMessages({
 interface EnrollmentTabProps {
   programId: string;
   canManage?: boolean;
+  hasStarted?: boolean;
 }
 
-const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = true }) => {
+const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = true, hasStarted = false }) => {
   const intl = useIntl();
   const [isModalOpen, openModal, closeModal] = useToggle(false);
   const [isBatchModalOpen, openBatchModal, closeBatchModal] = useToggle(false);
@@ -148,14 +151,32 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
               </Stack>
             </div>
             {canManage && (
-              <Button
-                variant="outline-danger"
-                size="sm"
-                onClick={() => setConfirmUnenrollUsername(learner.username)}
-                disabled={confirmUnenrollUsername !== null}
-              >
-                {intl.formatMessage(messages.unenrollBtn)}
-              </Button>
+              hasStarted ? (
+                <OverlayTrigger
+                  trigger={['hover', 'focus']}
+                  placement="top"
+                  overlay={(
+                    <Tooltip id={`unenroll-disabled-${learner.id}`}>
+                      Learners cannot be unenrolled after a program has started.
+                    </Tooltip>
+                  )}
+                >
+                  <span>
+                    <Button variant="outline-danger" size="sm" disabled style={{ pointerEvents: 'none' }}>
+                      {intl.formatMessage(messages.unenrollBtn)}
+                    </Button>
+                  </span>
+                </OverlayTrigger>
+              ) : (
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  onClick={() => setConfirmUnenrollUsername(learner.username)}
+                  disabled={confirmUnenrollUsername !== null}
+                >
+                  {intl.formatMessage(messages.unenrollBtn)}
+                </Button>
+              )
             )}
           </div>
         ))}
