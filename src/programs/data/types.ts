@@ -75,6 +75,8 @@ export interface ProgramCapabilities {
   canManageCourses: boolean;
   canManageEnrollment: boolean;
   canManageInstructors: boolean;
+  /** Only a Super Admin may edit/add scores on a trainee row once finalized. */
+  canEditFinalizedResults: boolean;
   isReadOnly: boolean;
 }
 

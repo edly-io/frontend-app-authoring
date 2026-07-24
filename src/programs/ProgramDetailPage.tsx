@@ -31,7 +31,7 @@ import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
 import FeedbackTab from './feedback-tab/FeedbackTab';
 import GradeSchemeTab from './grade-scheme-tab/GradeSchemeTab';
-import AddTraineeResults from './add-trainee-results/AddTraineeResults';
+import BulkTraineeResults from './bulk-trainee-results/BulkTraineeResults';
 
 const messages = defineMessages({
   backToPrograms: { id: 'programs.detail.back', defaultMessage: '← Back to Programs' },
@@ -47,7 +47,7 @@ const messages = defineMessages({
   tabInstructors: { id: 'programs.detail.tab.instructors', defaultMessage: 'Instructors' },
   tabEnrollment: { id: 'programs.detail.tab.enrollment', defaultMessage: 'Enrollment' },
   tabFeedback: { id: 'programs.detail.tab.feedback', defaultMessage: 'Feedback' },
-  tabAddTraineeResults: { id: 'programs.detail.tab.add-trainee-results', defaultMessage: 'Add Trainee Results' },
+  tabBulkTraineeResults: { id: 'programs.detail.tab.bulk-trainee-results', defaultMessage: 'Trainees Results' },
   tabGradeScheme: { id: 'programs.detail.tab.grade-scheme', defaultMessage: 'Grade Scheme' },
   sectionBasicInfo: { id: 'programs.detail.section.basic', defaultMessage: 'Basic Information' },
   sectionBasicSubtitle: { id: 'programs.detail.section.basic.sub', defaultMessage: 'Set the core details of your program' },
@@ -684,11 +684,12 @@ const ProgramDetailPage: React.FC = () => {
               canManage={capabilities.canEditProgram}
             />
           </Tab>
-          <Tab eventKey="add-trainee-results" title={intl.formatMessage(messages.tabAddTraineeResults)}>
-            <AddTraineeResults
+          <Tab eventKey="bulk-trainee-results" title={intl.formatMessage(messages.tabBulkTraineeResults)}>
+            <BulkTraineeResults
               program={program}
               programId={programId ?? ''}
               canManage={capabilities.canEditProgram}
+              canEditFinalized={capabilities.canEditFinalizedResults}
             />
           </Tab>
         </Tabs>
