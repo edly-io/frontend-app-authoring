@@ -6,7 +6,9 @@ import { Lock, Save } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import UserIdentity from '../../components/UserIdentity';
 import { GRID_SCORE_CELL_WIDTH } from './constants';
-import { computeSectionScore, getSectionVariant, isRowDirty } from './utils';
+import {
+  computeSectionScore, focusNextScoreInputInColumn, getSectionVariant, isRowDirty,
+} from './utils';
 import type { EditableScoringRow } from './types';
 
 const messages = defineMessages({
@@ -62,6 +64,16 @@ const BulkResultsGridRow: React.FC<BulkResultsGridRowProps> = ({
     onScoreChange(cell.subsectionId, value);
   };
 
+  // Enter moves to the next row's input in the same column (wrapping past
+  // the last row); Tab is left untouched since we only handle 'Enter' here.
+  const handleScoreKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter') {
+      return;
+    }
+    e.preventDefault();
+    focusNextScoreInputInColumn(e.currentTarget);
+  };
+
   return (
     <tr className={`bulk-results-grid-row ${hasFinalizeError ? 'has-error' : ''}`}>
       <td className={`bulk-results-grid-sticky-col bulk-results-grid-name-col ${stickyColStateClass}`}>
@@ -101,6 +113,8 @@ const BulkResultsGridRow: React.FC<BulkResultsGridRowProps> = ({
                       disabled={!canEditRow}
                       onChange={(e) => handleScoreChange(e, cell)}
                       onFocus={(e) => e.target.select()}
+                      onKeyDown={handleScoreKeyDown}
+                      data-score-column={cell.subsectionId}
                       style={{ width: GRID_SCORE_CELL_WIDTH }}
                       className="mr-0"
                       aria-label={intl.formatMessage(messages.scoreInputAria, {

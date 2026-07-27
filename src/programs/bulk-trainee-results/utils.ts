@@ -128,3 +128,56 @@ export const getVisibleSectionIndexes = (
     ? Array.from({ length: sectionCount }, (_, index) => index)
     : [focusSectionIndex]
 );
+
+/**
+ * Score inputs sharing a `data-score-column` (the subsection id — unique
+ * across the whole scheme, so it doubles as a stable column key) that are
+ * actually focusable right now, in the DOM/visual row order. Queried live
+ * off the table rather than a ref map kept in sync by hand, so the result
+ * is always correct after rows are added, removed, sorted, or filtered —
+ * there's nothing to invalidate.
+ */
+const getFocusableColumnInputs = (
+  table: HTMLTableElement,
+  scoreColumn: string,
+): HTMLInputElement[] => (
+  Array.from(table.querySelectorAll<HTMLInputElement>('input[data-score-column]')).filter((input) => (
+    input.dataset.scoreColumn === scoreColumn
+    && !input.disabled
+    && !input.readOnly
+    && input.offsetParent !== null
+  ))
+);
+
+/**
+ * Enter-key navigation for the bulk-results score grid (wired up in
+ * `BulkResultsGridRow`): moves focus to the next row's input in the same
+ * column, wrapping back to the first row once the last row is passed. Tab
+ * navigation is left entirely to the browser — this only ever runs for the
+ * Enter key.
+ *
+ * Falls forward past any candidate that turns out not to be focusable
+ * (e.g. it became disabled between render and click), wrapping if needed,
+ * and is a no-op if the input is the only focusable one in its column.
+ */
+export const focusNextScoreInputInColumn = (currentInput: HTMLInputElement): void => {
+  const { scoreColumn } = currentInput.dataset;
+  const table = currentInput.closest('table');
+  if (!scoreColumn || !table) {
+    return;
+  }
+
+  const candidates = getFocusableColumnInputs(table, scoreColumn);
+  const currentIndex = candidates.indexOf(currentInput);
+  if (currentIndex === -1) {
+    return;
+  }
+
+  for (let offset = 1; offset <= candidates.length; offset += 1) {
+    const nextInput = candidates[(currentIndex + offset) % candidates.length];
+    nextInput.focus();
+    if (document.activeElement === nextInput) {
+      return;
+    }
+  }
+};
