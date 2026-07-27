@@ -40,50 +40,143 @@ const getFeedbackBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/cms/fee
 const getEncodedProgramId = (programId: string) => encodeURIComponent(programId);
 export const getFbrCitiesUrl = () => `${getConfig().LMS_BASE_URL}/fbr/api/biodata/v1/users/cities/`;
 
+type ApiRecord = Record<string, unknown>;
+
+const isApiRecord = (value: unknown): value is ApiRecord => (
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+);
+
+const toApiRecord = (value: unknown): ApiRecord => (isApiRecord(value) ? value : {});
+
+const getStringValue = (record: ApiRecord, key: string): string | undefined => {
+  const value = record[key];
+  return typeof value === 'string' ? value : undefined;
+};
+
+const getNumberValue = (record: ApiRecord, key: string): number | undefined => {
+  const value = record[key];
+  if (typeof value === 'number') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsedValue = Number(value);
+    return Number.isFinite(parsedValue) ? parsedValue : undefined;
+  }
+  return undefined;
+};
+
+const getBooleanValue = (record: ApiRecord, key: string): boolean | undefined => {
+  const value = record[key];
+  return typeof value === 'boolean' ? value : undefined;
+};
+
+const getStringOrNumberValue = (record: ApiRecord, key: string): string | number | undefined => {
+  const value = record[key];
+  return typeof value === 'string' || typeof value === 'number' ? value : undefined;
+};
+
+const getStringArrayValue = (record: ApiRecord, key: string): string[] => {
+  const value = record[key];
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+};
+
+const getArrayValue = (record: ApiRecord, key: string): unknown[] => {
+  const value = record[key];
+  return Array.isArray(value) ? value : [];
+};
+
+const getResultsArray = (value: unknown): unknown[] => {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  return getArrayValue(toApiRecord(value), 'results');
+};
+
+const mapOptionalArray = <T>(
+  record: ApiRecord,
+  key: string,
+  mapper: (item: unknown) => T,
+): T[] | undefined => {
+  const value = record[key];
+  return Array.isArray(value) ? value.map(mapper) : undefined;
+};
+
 export const getFbrCities = async (): Promise<CityOption[]> => {
   const { data } = await getAuthenticatedHttpClient().get(getFbrCitiesUrl());
   return Array.isArray(data) ? data : [];
 };
 
 // ── Response → Course type transformation ────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toCourse = (d: any): Course => ({
-  id: d.course_key,
-  displayName: d.display_name,
-  org: d.org,
-  run: d.run,
-  targetAudience: d.target_audience?.name ?? '',
-});
+const toCourse = (value: unknown): Course => {
+  const d = toApiRecord(value);
+  const targetAudience = toApiRecord(d.target_audience);
+
+  return {
+    id: getStringValue(d, 'course_key') ?? '',
+    displayName: getStringValue(d, 'display_name') ?? '',
+    org: getStringValue(d, 'org') ?? '',
+    run: getStringValue(d, 'run') ?? '',
+    targetAudience: getStringValue(targetAudience, 'name') ?? '',
+  };
+};
 
 // ── Response → Program type transformation ──────────────────────────────────
 // SlugRelatedField serializes FK as string (short_name / slug), not an object.
 // target_audience is a FK returning {id, name}; target_audiences is the full list.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toProgram = (d: any): Program => ({
-  id: d.program_key,
-  displayName: d.name,
-  org: d.organization,
-  programType: d.program_type,
-  run: d.batch,
-  targetAudience: d.target_audience?.name ?? '',
-  city: d.city?.id !== undefined ? String(d.city.id) : '',
-  shortDescription: d.description ?? '',
-  longDescription: d.long_description ?? '',
-  status: d.status ?? 'draft',
-  isFeatured: d.is_featured ?? false,
-  startDate: d.start_date ?? '',
-  endDate: d.end_date ?? '',
-  image: d.card_image ?? '',
-  courses: d.courses?.map(toCourse) ?? [],
-});
+const toProgram = (value: unknown): Program => {
+  const d = toApiRecord(value);
+  const targetAudience = toApiRecord(d.target_audience);
+  const city = toApiRecord(d.city);
+
+  return {
+    id: getStringValue(d, 'program_key') ?? '',
+    displayName: getStringValue(d, 'name') ?? '',
+    org: getStringValue(d, 'organization') ?? '',
+    programType: getStringValue(d, 'program_type') ?? '',
+    run: getStringValue(d, 'batch') ?? '',
+    targetAudience: getStringValue(targetAudience, 'name') ?? '',
+    city: getStringOrNumberValue(city, 'id') !== undefined ? String(getStringOrNumberValue(city, 'id')) : '',
+    shortDescription: getStringValue(d, 'description') ?? '',
+    longDescription: getStringValue(d, 'long_description') ?? '',
+    status: getStringValue(d, 'status') ?? 'draft',
+    isFeatured: getBooleanValue(d, 'is_featured') ?? false,
+    startDate: getStringValue(d, 'start_date') ?? '',
+    endDate: getStringValue(d, 'end_date') ?? '',
+    image: getStringValue(d, 'card_image') ?? '',
+    courses: getArrayValue(d, 'courses').map(toCourse),
+  };
+};
 
 // ── Config — GET /fbr/api/programs/config/ ───────────────────────────────────
 export const getProgramsConfig = async (): Promise<ProgramConfig> => {
   const { data } = await getAuthenticatedHttpClient().get(`${getProgramsBaseUrl()}/config/`);
+  const response = toApiRecord(data);
   return {
-    orgs: data.organizations.map((o: any) => ({ id: o.id, name: o.name, shortName: o.short_name })),
-    programTypes: data.program_types.map((t: any) => ({ id: t.id, name: t.name, slug: t.slug })),
-    cities: (data.cities ?? []).map((c: any) => ({ id: c.id, name: c.name })),
+    orgs: getArrayValue(response, 'organizations').map((item) => {
+      const org = toApiRecord(item);
+      return {
+        id: getNumberValue(org, 'id') ?? 0,
+        name: getStringValue(org, 'name') ?? '',
+        shortName: getStringValue(org, 'short_name') ?? '',
+      };
+    }),
+    programTypes: getArrayValue(response, 'program_types').map((item) => {
+      const programType = toApiRecord(item);
+      return {
+        id: getNumberValue(programType, 'id') ?? 0,
+        name: getStringValue(programType, 'name') ?? '',
+        slug: getStringValue(programType, 'slug') ?? '',
+      };
+    }),
+    cities: getArrayValue(response, 'cities').map((item) => {
+      const city = toApiRecord(item);
+      return {
+        id: getNumberValue(city, 'id') ?? 0,
+        name: getStringValue(city, 'name') ?? '',
+      };
+    }),
     // Statuses are stable constants; not returned by config endpoint
     statuses: ['draft', 'active', 'archived', 'freezed'],
   };
@@ -93,19 +186,26 @@ export const getProgramsConfig = async (): Promise<ProgramConfig> => {
 export const getPrograms = async (): Promise<Program[]> => {
   const { data } = await getAuthenticatedHttpClient().get(`${getProgramsBaseUrl()}/`);
   // Handle both paginated { results: [...] } and flat array responses
-  const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
-  return results.map(toProgram);
+  return getResultsArray(data).map(toProgram);
 };
 
 // ── Detail — GET /fbr/api/programs/<program_key>/ ───────────────────────────
 export const getProgramDetail = async (programId: string): Promise<ProgramDetailResponse> => {
   const { data } = await getAuthenticatedHttpClient().get(`${getProgramsBaseUrl()}/${programId}/`);
+  const response = toApiRecord(data);
   return {
     program: toProgram(data),
     // target_audiences in the detail response is the full list of all audiences system-wide
-    availableAudiences: (data.target_audiences ?? []).map((a: any) => a.name as string),
+    availableAudiences: getArrayValue(response, 'target_audiences')
+      .map((item) => getStringValue(toApiRecord(item), 'name') ?? ''),
     // cities in the detail response is the full list of all cities
-    availableCities: (data.cities ?? []).map((c: any) => ({ id: c.id, name: c.name })),
+    availableCities: getArrayValue(response, 'cities').map((item) => {
+      const city = toApiRecord(item);
+      return {
+        id: getNumberValue(city, 'id') ?? 0,
+        name: getStringValue(city, 'name') ?? '',
+      };
+    }),
   };
 };
 
@@ -165,13 +265,13 @@ export const getCourses = async (params: GetCoursesParams = {}): Promise<Paginat
     `${getProgramsBaseUrl()}/courses/`,
     { params: { page: params.page ?? 1, page_size: pageSize, ...(params.search ? { search: params.search } : {}) } },
   );
-  const results: any[] = data.results ?? [];
-  const pagination = data.pagination ?? {};
-  const count = pagination.count ?? 0;
+  const response = toApiRecord(data);
+  const pagination = toApiRecord(response.pagination);
+  const count = getNumberValue(pagination, 'count') ?? 0;
   return {
-    results: results.map(toCourse),
+    results: getArrayValue(response, 'results').map(toCourse),
     count,
-    numPages: pagination.num_pages ?? (Math.ceil(count / pageSize) || 1),
+    numPages: getNumberValue(pagination, 'num_pages') ?? (Math.ceil(count / pageSize) || 1),
   };
 };
 
@@ -187,7 +287,7 @@ export const addCourseToProgram = async (programId: string, courseId: string): P
 // ── All target audiences — GET /fbr/api/programs/target-audiences/ ───────────
 export const getTargetAudiences = async (): Promise<string[]> => {
   const { data } = await getAuthenticatedHttpClient().get(`${getProgramsBaseUrl()}/target-audiences/`);
-  return (data as any[]).map((a) => a.name as string);
+  return getResultsArray(data).map((item) => getStringValue(toApiRecord(item), 'name') ?? '');
 };
 
 // ── Course target audience — GET /fbr/api/programs/courses/<courseKey>/ ──────
@@ -227,24 +327,33 @@ export interface GetLearnersParams {
 export type PlatformUserRole = FbrRole | 'learner';
 
 // Shared mapping from UserSerializer response ({id, username, email, first_name, last_name})
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toUser = (d: any): Learner => ({
-  id: d.username,
-  username: d.username,
-  email: d.email,
-  name: [d.first_name, d.last_name].filter(Boolean).join(' ') || d.username,
-});
+const toUser = (value: unknown): Learner => {
+  const d = toApiRecord(value);
+  const username = getStringValue(d, 'username') ?? '';
+  const firstName = getStringValue(d, 'first_name');
+  const lastName = getStringValue(d, 'last_name');
+
+  return {
+    id: username,
+    username,
+    email: getStringValue(d, 'email') ?? '',
+    name: [firstName, lastName].filter(Boolean).join(' ') || username,
+  };
+};
 
 // ── Response → Feedback types transformation ────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toFeedbackQuestion = (d: any): FeedbackFormQuestion => ({
-  id: d.id,
-  type: d.question_type ?? d.type,
-  question: d.question,
-  required: d.required,
-  isDefault: d.is_default ?? d.isDefault ?? false,
-  order: d.order,
-});
+const toFeedbackQuestion = (value: unknown): FeedbackFormQuestion => {
+  const d = toApiRecord(value);
+
+  return {
+    id: getNumberValue(d, 'id') ?? 0,
+    type: (getStringValue(d, 'question_type') ?? getStringValue(d, 'type') ?? 'star_rating') as FeedbackFormQuestion['type'],
+    question: getStringValue(d, 'question') ?? '',
+    required: getBooleanValue(d, 'required') ?? false,
+    isDefault: getBooleanValue(d, 'is_default') ?? getBooleanValue(d, 'isDefault') ?? false,
+    order: getNumberValue(d, 'order'),
+  };
+};
 
 const toFeedbackQuestionPayload = (question: FeedbackFormQuestion, index: number) => ({
   question: question.question,
@@ -254,46 +363,55 @@ const toFeedbackQuestionPayload = (question: FeedbackFormQuestion, index: number
   order: question.order ?? index,
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toFeedbackForm = (d: any): FeedbackFormTemplate => ({
-  id: d.id,
-  name: d.name,
-  questions: d.questions?.map(toFeedbackQuestion),
-  isInUse: d.is_in_use ?? false,
-  createdByName: d.created_by_name,
-  created: d.created,
-  modified: d.modified,
-});
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toFeedbackResponseAnswer = (d: any) => ({
-  id: d.id,
-  questionId: d.question_id ?? d.question,
-  question: d.question_snapshot,
-  type: d.question_type_snapshot,
-  starValue: d.star_value,
-  textValue: d.text_value,
-});
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toFeedbackUser = (value: any, fallback: any = {}) => {
-  const user = value && typeof value === 'object' ? value : {};
-  const roles = Array.isArray(user.roles)
-    ? user.roles
-    : [fallback.role].filter(Boolean);
+const toFeedbackForm = (value: unknown): FeedbackFormTemplate => {
+  const d = toApiRecord(value);
 
   return {
-    id: user.id ?? (typeof value === 'number' ? value : fallback.id),
-    name: user.name ?? fallback.name ?? '',
-    email: user.email ?? fallback.email ?? null,
-    avatar: user.avatar ?? fallback.avatar ?? null,
-    roles,
-    role: roles[0] ?? fallback.role ?? null,
+    id: getNumberValue(d, 'id') ?? 0,
+    name: getStringValue(d, 'name') ?? '',
+    questions: mapOptionalArray(d, 'questions', toFeedbackQuestion),
+    isInUse: getBooleanValue(d, 'is_in_use') ?? false,
+    createdByName: getStringValue(d, 'created_by_name'),
+    created: getStringValue(d, 'created'),
+    modified: getStringValue(d, 'modified'),
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toFeedbackRequest = (d: any): FeedbackRequest => {
+const toFeedbackResponseAnswer = (value: unknown) => {
+  const d = toApiRecord(value);
+
+  return {
+    id: getNumberValue(d, 'id') ?? 0,
+    questionId: getNumberValue(d, 'question_id') ?? getNumberValue(d, 'question'),
+    question: getStringValue(d, 'question_snapshot') ?? '',
+    type: (getStringValue(d, 'question_type_snapshot') ?? 'star_rating') as FeedbackFormQuestion['type'],
+    starValue: getNumberValue(d, 'star_value') ?? null,
+    textValue: getStringValue(d, 'text_value') ?? null,
+  };
+};
+
+const toFeedbackUser = (value: unknown, fallbackValue: unknown = {}) => {
+  const user = toApiRecord(value);
+  const fallback = toApiRecord(fallbackValue);
+  const fallbackRole = getStringValue(fallback, 'role');
+  const roles = getStringArrayValue(user, 'roles');
+  const resolvedRoles = roles.length > 0
+    ? roles
+    : [fallbackRole].filter((role): role is string => Boolean(role));
+
+  return {
+    id: getNumberValue(user, 'id')
+      ?? (typeof value === 'number' ? value : getNumberValue(fallback, 'id')),
+    name: getStringValue(user, 'name') ?? getStringValue(fallback, 'name') ?? '',
+    email: getStringValue(user, 'email') ?? getStringValue(fallback, 'email') ?? null,
+    avatar: getStringValue(user, 'avatar') ?? getStringValue(fallback, 'avatar') ?? null,
+    roles: resolvedRoles,
+    role: resolvedRoles[0] ?? fallbackRole ?? null,
+  };
+};
+
+const toFeedbackRequest = (value: unknown): FeedbackRequest => {
+  const d = toApiRecord(value);
   const subject = toFeedbackUser(d.subject ?? d.instructor, {
     id: d.subject ?? d.instructor ?? null,
     name: d.subject_name ?? d.instructor_name ?? null,
@@ -315,12 +433,13 @@ const toFeedbackRequest = (d: any): FeedbackRequest => {
     avatar: d.requested_by_avatar ?? null,
     role: d.requested_by_role ?? null,
   });
+  const response = toApiRecord(d.response);
 
   return {
-    id: d.id,
-    feedbackName: d.feedback_name,
-    formId: d.form,
-    formName: d.form_name,
+    id: getNumberValue(d, 'id') ?? 0,
+    feedbackName: getStringValue(d, 'feedback_name') ?? '',
+    formId: getNumberValue(d, 'form') ?? 0,
+    formName: getStringValue(d, 'form_name') ?? '',
     subjectId: subject.id ?? null,
     subjectName: subject.name || null,
     subjectRole: subject.role,
@@ -333,21 +452,21 @@ const toFeedbackRequest = (d: any): FeedbackRequest => {
     reviewerRoles: reviewer.roles,
     reviewerEmail: reviewer.email,
     reviewerAvatar: reviewer.avatar,
-    courseId: d.course_id,
-    deadline: d.deadline,
+    courseId: getStringValue(d, 'course_id') ?? '',
+    deadline: getStringValue(d, 'deadline') ?? '',
     requestedById: requestedBy.id,
     requestedByName: requestedBy.name,
     requestedByRole: requestedBy.role,
     requestedByRoles: requestedBy.roles,
     requestedByEmail: requestedBy.email,
     requestedByAvatar: requestedBy.avatar,
-    submittedAt: d.submitted_at,
-    status: d.status,
-    response: d.response ? {
-      submittedAt: d.response.submitted_at,
-      answers: (d.response.answers ?? []).map(toFeedbackResponseAnswer),
+    submittedAt: getStringValue(d, 'submitted_at') ?? null,
+    status: (getStringValue(d, 'status') ?? 'Pending') as FeedbackRequest['status'],
+    response: isApiRecord(d.response) ? {
+      submittedAt: getStringValue(response, 'submitted_at') ?? '',
+      answers: getArrayValue(response, 'answers').map(toFeedbackResponseAnswer),
     } : null,
-    created: d.created,
+    created: getStringValue(d, 'created') ?? '',
   };
 };
 
@@ -357,102 +476,74 @@ const emptyRatingBucket = (): RatingDistributionBucket => ({
 });
 
 const getDashboardBucket = (
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  distribution: any,
+  distribution: unknown,
   backendKey: string,
-): RatingDistributionBucket => ({
-  count: distribution?.[backendKey]?.count ?? 0,
-  percentage: distribution?.[backendKey]?.percentage ?? 0,
-});
+): RatingDistributionBucket => {
+  const bucket = toApiRecord(toApiRecord(distribution)[backendKey]);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toDashboardDistribution = (distribution: any): RatingDistribution => ({
-  total: distribution?.total ?? 0,
-  excellent: getDashboardBucket(distribution, 'excellent'),
-  veryGood: getDashboardBucket(distribution, 'very_good'),
-  good: getDashboardBucket(distribution, 'good'),
-  needsAttention: getDashboardBucket(distribution, 'needs_attention'),
-});
+  return {
+    count: getNumberValue(bucket, 'count') ?? 0,
+    percentage: getNumberValue(bucket, 'percentage') ?? 0,
+  };
+};
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getDashboardDistribution = (distributions: any, criterionId: string): RatingDistribution => (
-  distributions?.[criterionId] ? toDashboardDistribution(distributions[criterionId]) : {
+const toDashboardDistribution = (distribution: unknown): RatingDistribution => {
+  const d = toApiRecord(distribution);
+
+  return {
+    total: getNumberValue(d, 'total') ?? 0,
+    excellent: getDashboardBucket(d, 'excellent'),
+    veryGood: getDashboardBucket(d, 'very_good'),
+    good: getDashboardBucket(d, 'good'),
+    needsAttention: getDashboardBucket(d, 'needs_attention'),
+  };
+};
+
+const getDashboardDistribution = (distributions: unknown, criterionId: string): RatingDistribution => {
+  const d = toApiRecord(distributions);
+
+  return d[criterionId] ? toDashboardDistribution(d[criterionId]) : {
     total: 0,
     excellent: emptyRatingBucket(),
     veryGood: emptyRatingBucket(),
     good: emptyRatingBucket(),
     needsAttention: emptyRatingBucket(),
-  }
-);
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toFeedbackDashboardInitiationOption = (d: any): FeedbackDashboardInitiationOption => ({
-  id: d.id,
-  feedbackName: d.feedback_name,
-  selectionValue: d.selection_value ?? d.feedback_name,
-  formId: d.form_id,
-  formName: d.form_name,
-  programKey: d.program_key,
-  programName: d.program_name,
-  deadline: d.deadline,
-  created: d.created,
-  totalRequests: d.total_requests ?? 0,
-  submittedResponses: d.submitted_responses ?? 0,
-  responseRate: d.response_rate ?? 0,
-  subjectCount: d.subject_count ?? 0,
-});
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toFeedbackDashboardSummary = (d: any): FeedbackDashboardSummary => ({
-  subjectCount: d?.subject_count ?? 0,
-  submittedResponses: d?.submitted_responses ?? 0,
-  responseRate: d?.response_rate ?? 0,
-  averageRating: d?.average_rating ?? 0,
-  topSubjectName: d?.top_subject?.name ?? '--',
-  topSubjectRating: d?.top_subject?.rating ?? 0,
-  needsAttentionCount: d?.needs_attention_count ?? 0,
-});
-
-type ApiRecord = Record<string, unknown>;
-
-const isApiRecord = (value: unknown): value is ApiRecord => (
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-);
-
-const toApiRecord = (value: unknown): ApiRecord => (isApiRecord(value) ? value : {});
-
-const getStringValue = (record: ApiRecord, key: string): string | undefined => {
-  const value = record[key];
-  return typeof value === 'string' ? value : undefined;
+  };
 };
 
-const getNumberValue = (record: ApiRecord, key: string): number | undefined => {
-  const value = record[key];
-  if (typeof value === 'number') {
-    return value;
-  }
-  if (typeof value === 'string') {
-    const parsedValue = Number(value);
-    return Number.isFinite(parsedValue) ? parsedValue : undefined;
-  }
-  return undefined;
+const toFeedbackDashboardInitiationOption = (value: unknown): FeedbackDashboardInitiationOption => {
+  const d = toApiRecord(value);
+
+  return {
+    id: getNumberValue(d, 'id') ?? 0,
+    feedbackName: getStringValue(d, 'feedback_name') ?? '',
+    selectionValue: getStringValue(d, 'selection_value') ?? getStringValue(d, 'feedback_name') ?? '',
+    formId: getNumberValue(d, 'form_id') ?? 0,
+    formName: getStringValue(d, 'form_name') ?? '',
+    programKey: getStringValue(d, 'program_key') ?? '',
+    programName: getStringValue(d, 'program_name') ?? '',
+    deadline: getStringValue(d, 'deadline') ?? '',
+    created: getStringValue(d, 'created') ?? '',
+    totalRequests: getNumberValue(d, 'total_requests') ?? 0,
+    submittedResponses: getNumberValue(d, 'submitted_responses') ?? 0,
+    responseRate: getNumberValue(d, 'response_rate') ?? 0,
+    subjectCount: getNumberValue(d, 'subject_count') ?? 0,
+  };
 };
 
-const getStringOrNumberValue = (record: ApiRecord, key: string): string | number | undefined => {
-  const value = record[key];
-  return typeof value === 'string' || typeof value === 'number' ? value : undefined;
-};
+const toFeedbackDashboardSummary = (value: unknown): FeedbackDashboardSummary => {
+  const d = toApiRecord(value);
+  const topSubject = toApiRecord(d.top_subject);
 
-const getStringArrayValue = (record: ApiRecord, key: string): string[] => {
-  const value = record[key];
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === 'string')
-    : [];
-};
-
-const getArrayValue = (record: ApiRecord, key: string): unknown[] => {
-  const value = record[key];
-  return Array.isArray(value) ? value : [];
+  return {
+    subjectCount: getNumberValue(d, 'subject_count') ?? 0,
+    submittedResponses: getNumberValue(d, 'submitted_responses') ?? 0,
+    responseRate: getNumberValue(d, 'response_rate') ?? 0,
+    averageRating: getNumberValue(d, 'average_rating') ?? 0,
+    topSubjectName: getStringValue(topSubject, 'name') ?? '--',
+    topSubjectRating: getNumberValue(topSubject, 'rating') ?? 0,
+    needsAttentionCount: getNumberValue(d, 'needs_attention_count') ?? 0,
+  };
 };
 
 const toFeedbackDashboardCommentUser = (value: unknown): FeedbackDashboardCommentUser => {
@@ -507,44 +598,53 @@ const toFeedbackDashboardCommentsSummary = (value: unknown) => {
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const toFeedbackDashboardReport = (d: any, initiationId: number): FeedbackDashboardReport => {
-  const criteria: FeedbackDashboardCriterion[] = (d.criteria ?? []).map((criterion: any) => ({
-    id: criterion.id,
-    label: criterion.label,
-    order: criterion.order,
-  }));
-  const subjects = (d.subjects ?? []).map((subject: any) => ({
-    id: String(subject.id),
-    name: subject.name,
-    email: subject.email,
-    role: subject.role,
-    avatar: subject.avatar,
-    rating: subject.rating,
-    submittedResponses: subject.submitted_responses ?? 0,
-    totalRequests: subject.total_requests ?? 0,
-    distributions: criteria.reduce((acc: Record<string, RatingDistribution>, criterion) => {
-      acc[criterion.id] = getDashboardDistribution(subject.distributions, criterion.id);
-      return acc;
-    }, {}),
-    averageDistribution: toDashboardDistribution(subject.average_distribution),
-    commentsSummary: toFeedbackDashboardCommentsSummary(subject.comments_summary ?? subject.commentsSummary),
-  }));
+const toFeedbackDashboardReport = (value: unknown, initiationId: number): FeedbackDashboardReport => {
+  const d = toApiRecord(value);
+  const criteria: FeedbackDashboardCriterion[] = getArrayValue(d, 'criteria').map((item) => {
+    const criterion = toApiRecord(item);
+    return {
+      id: String(getStringOrNumberValue(criterion, 'id') ?? ''),
+      label: getStringValue(criterion, 'label') ?? '',
+      order: getNumberValue(criterion, 'order'),
+    };
+  });
+  const subjects = getArrayValue(d, 'subjects').map((item) => {
+    const subject = toApiRecord(item);
+
+    return {
+      id: String(getStringOrNumberValue(subject, 'id') ?? ''),
+      name: getStringValue(subject, 'name') ?? '',
+      email: getStringValue(subject, 'email'),
+      role: getStringValue(subject, 'role'),
+      avatar: getStringValue(subject, 'avatar'),
+      rating: getNumberValue(subject, 'rating') ?? null,
+      submittedResponses: getNumberValue(subject, 'submitted_responses') ?? 0,
+      totalRequests: getNumberValue(subject, 'total_requests') ?? 0,
+      distributions: criteria.reduce((acc: Record<string, RatingDistribution>, criterion) => {
+        acc[criterion.id] = getDashboardDistribution(subject.distributions, criterion.id);
+        return acc;
+      }, {}),
+      averageDistribution: toDashboardDistribution(subject.average_distribution),
+      commentsSummary: toFeedbackDashboardCommentsSummary(subject.comments_summary ?? subject.commentsSummary),
+    };
+  });
+  const summaryData = toApiRecord(d.summary);
   const summary = toFeedbackDashboardSummary({
-    ...d.summary,
+    ...summaryData,
     submitted_responses: d.submitted_responses,
     response_rate: d.response_rate,
   });
+  const program = toApiRecord(d.program);
 
   return {
     id: String(initiationId),
-    feedbackName: d.feedback_name,
-    selectionValue: d.selection_value ?? d.feedback_name,
-    programName: d.program?.name ?? '',
-    respondentsLabel: `${d.submitted_responses ?? 0} submitted / ${d.total_requests ?? 0} requested`,
-    submittedResponses: d.submitted_responses ?? 0,
-    totalRequests: d.total_requests ?? 0,
-    responseRate: d.response_rate ?? 0,
+    feedbackName: getStringValue(d, 'feedback_name') ?? '',
+    selectionValue: getStringValue(d, 'selection_value') ?? getStringValue(d, 'feedback_name'),
+    programName: getStringValue(program, 'name') ?? '',
+    respondentsLabel: `${getNumberValue(d, 'submitted_responses') ?? 0} submitted / ${getNumberValue(d, 'total_requests') ?? 0} requested`,
+    submittedResponses: getNumberValue(d, 'submitted_responses') ?? 0,
+    totalRequests: getNumberValue(d, 'total_requests') ?? 0,
+    responseRate: getNumberValue(d, 'response_rate') ?? 0,
     criteria,
     subjects,
     summary,
@@ -579,28 +679,34 @@ export const getPlatformUsers = async (
       },
     },
   );
-  const pagination = data.pagination ?? {};
-  const count = pagination.count ?? 0;
+  const response = toApiRecord(data);
+  const pagination = toApiRecord(response.pagination);
+  const count = getNumberValue(pagination, 'count') ?? 0;
   return {
-    results: (data.results ?? []).map(toUser),
+    results: getArrayValue(response, 'results').map(toUser),
     count,
-    numPages: pagination.num_pages ?? (Math.ceil(count / pageSize) || 1),
+    numPages: getNumberValue(pagination, 'num_pages') ?? (Math.ceil(count / pageSize) || 1),
   };
 };
 
 // ── Course team — GET /fbr/api/programs/courses/<course_key>/team/ ─────────
+const toInstructor = (value: unknown): Instructor => {
+  const d = toApiRecord(value);
+
+  return {
+    id: getStringValue(d, 'username') ?? '',
+    username: getStringValue(d, 'username') ?? '',
+    email: getStringValue(d, 'email') ?? '',
+    role: getStringValue(d, 'role'),
+    name: getStringValue(d, 'full_name') ?? '',
+  };
+};
+
 export const getCourseTeam = async (courseId: string): Promise<Instructor[]> => {
   const { data } = await getAuthenticatedHttpClient().get(
     `${getProgramsBaseUrl()}/courses/${encodeURIComponent(courseId)}/team/`,
   );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (Array.isArray(data) ? data : (data.results ?? [])).map((u: any) => ({
-    id: u.username,
-    username: u.username,
-    email: u.email,
-    role: u.role,
-    name: u.full_name,
-  }));
+  return getResultsArray(data).map(toInstructor);
 };
 
 // ── Add instructor to course — POST /fbr/api/programs/courses/<course_key>/team/
@@ -635,12 +741,13 @@ export const getProgramEnrollments = async (
       },
     },
   );
-  const pagination = data.pagination ?? {};
-  const count = pagination.count ?? 0;
+  const response = toApiRecord(data);
+  const pagination = toApiRecord(response.pagination);
+  const count = getNumberValue(pagination, 'count') ?? 0;
   return {
-    results: (data.results ?? []).map(toUser),
+    results: getArrayValue(response, 'results').map(toUser),
     count,
-    numPages: pagination.num_pages ?? (Math.ceil(count / pageSize) || 1),
+    numPages: getNumberValue(pagination, 'num_pages') ?? (Math.ceil(count / pageSize) || 1),
   };
 };
 
@@ -764,8 +871,7 @@ export const getFeedbackForms = async (programId: string): Promise<FeedbackFormT
   const { data } = await getAuthenticatedHttpClient().get(
     `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/forms/`,
   );
-  const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
-  return results.map(toFeedbackForm);
+  return getResultsArray(data).map(toFeedbackForm);
 };
 
 // ── Feedback form detail — GET /forms/<id>/ ─────────────────────────────────
@@ -810,8 +916,7 @@ export const getFeedbackRequests = async (
     `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/requests/`,
     { params: toFeedbackRequestParams(filters) },
   );
-  const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
-  return results.map(toFeedbackRequest);
+  return getResultsArray(data).map(toFeedbackRequest);
 };
 
 // ── Feedback request detail — GET /requests/<id>/ ───────────────────────────
@@ -840,8 +945,7 @@ export const initiateFeedbackRequests = async (
       ...(payload.subjectEmails?.length ? { subject_emails: payload.subjectEmails } : {}),
     },
   );
-  const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
-  return results.map(toFeedbackRequest);
+  return getResultsArray(data).map(toFeedbackRequest);
 };
 
 export const getFeedbackDashboardInitiations = async (
@@ -850,8 +954,7 @@ export const getFeedbackDashboardInitiations = async (
   const { data } = await getAuthenticatedHttpClient().get(
     `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/dashboard/initiated-feedback/`,
   );
-  const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
-  return results.map(toFeedbackDashboardInitiationOption);
+  return getResultsArray(data).map(toFeedbackDashboardInitiationOption);
 };
 
 export const getFeedbackDashboardReport = async (
