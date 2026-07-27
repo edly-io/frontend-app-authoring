@@ -9,7 +9,7 @@ import { StudioFooterSlot } from '@edx/frontend-component-footer';
 import Header from './header';
 import { fetchCourseDetail } from './data/thunks';
 import { useModel } from './generic/model-store';
-import NotFoundAlert from './generic/NotFoundAlert';
+import CourseNotFoundHandler from './generic/course-not-found';
 import PermissionDeniedAlert from './generic/PermissionDeniedAlert';
 import { fetchOnlyStudioHomeData } from './studio-home/data/thunks';
 import { getCourseAppsApiStatus } from './pages-and-resources/data/selectors';
@@ -40,7 +40,7 @@ const CourseAuthoringPage = ({ courseId, children }) => {
 
   if (courseDetailStatus === RequestStatus.NOT_FOUND && !isEditor) {
     return (
-      <NotFoundAlert />
+      <CourseNotFoundHandler courseId={courseId} />
     );
   }
   if (courseAppsApiStatus === RequestStatus.DENIED) {
