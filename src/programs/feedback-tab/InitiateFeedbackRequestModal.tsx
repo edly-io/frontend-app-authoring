@@ -80,7 +80,7 @@ const messages = defineMessages({
   },
   validationBuilderQuestions: {
     id: 'programs.feedback.form-builder.validation.questions',
-    defaultMessage: 'Add at least one star rating question and enter text for every question. New feedback forms cannot include comment boxes.',
+    defaultMessage: 'Add at least one rating question and enter text for every question.',
   },
   formSaved: {
     id: 'programs.feedback.form-builder.saved',
@@ -247,6 +247,31 @@ interface InitiateFeedbackRequestModalProps {
 
 const nextQuestionId = (questions: FeedbackFormQuestion[]) => (
   questions.reduce((maxId, question) => Math.max(maxId, question.id), 0) + 1
+);
+
+const buildQuestionsForSave = (questions: FeedbackFormQuestion[]): FeedbackFormQuestion[] => (
+  questions.flatMap((question) => {
+    const ratingQuestion: FeedbackFormQuestion = {
+      ...question,
+      type: 'star_rating',
+      question: question.question.trim(),
+    };
+
+    if (!question.includeComment) {
+      return [ratingQuestion];
+    }
+
+    return [
+      ratingQuestion,
+      {
+        id: question.id + 10000,
+        type: 'textarea',
+        question: `Comments for: ${ratingQuestion.question}`,
+        required: false,
+        isDefault: false,
+      },
+    ];
+  })
 );
 
 const today = new Date();
@@ -477,10 +502,6 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
     field: keyof FeedbackFormQuestion,
     value: string | boolean,
   ) => {
-    if (field === 'type' && value !== 'star_rating') {
-      return;
-    }
-
     setNewFormQuestions((currentQuestions) => currentQuestions.map((question) => (
       question.id === questionId
         ? { ...question, [field]: value }
@@ -497,6 +518,7 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
         question: '',
         required: true,
         isDefault: false,
+        includeComment: false,
       },
     ]);
   };
@@ -526,10 +548,9 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
     }
 
     const hasQuestions = newFormQuestions.length > 0;
-    const hasOnlyStarRatingQuestions = newFormQuestions.every((question) => question.type === 'star_rating');
     const hasEmptyQuestion = newFormQuestions.some((question) => !question.question.trim());
 
-    if (!hasQuestions || !hasOnlyStarRatingQuestions || hasEmptyQuestion) {
+    if (!hasQuestions || hasEmptyQuestion) {
       setBuilderValidationError(intl.formatMessage(messages.validationBuilderQuestions));
       return false;
     }
@@ -548,10 +569,7 @@ const InitiateFeedbackRequestModal: React.FC<InitiateFeedbackRequestModalProps> 
         programId,
         input: {
           name: newFormName.trim(),
-          questions: cloneFeedbackQuestions(newFormQuestions.map((question) => ({
-            ...question,
-            question: question.question.trim(),
-          }))),
+          questions: cloneFeedbackQuestions(buildQuestionsForSave(newFormQuestions)),
         },
       });
 

@@ -2,6 +2,7 @@ import React from 'react';
 import UserIdentity from '../../../components/UserIdentity';
 import type {
   DashboardAggregationMode,
+  FeedbackDashboardCriterion,
   FeedbackDashboardReport,
   FeedbackDashboardSubject,
   RatingDistribution,
@@ -19,6 +20,8 @@ interface FeedbackDashboardTableProps {
   report: FeedbackDashboardReport;
   subjects: FeedbackDashboardSubject[];
   aggregationMode: DashboardAggregationMode;
+  criteria?: FeedbackDashboardCriterion[];
+  enableUserHoverCard?: boolean;
 }
 
 const getCellClassName = (distribution: RatingDistribution, level: RatingLevel) => {
@@ -46,12 +49,14 @@ const FeedbackDashboardTable: React.FC<FeedbackDashboardTableProps> = ({
   report,
   subjects,
   aggregationMode,
+  criteria = report.criteria,
+  enableUserHoverCard = true,
 }) => (
   <div className="feedback-dashboard-table-wrapper">
     <table className="table feedback-dashboard-table mb-0">
       <colgroup>
         <col className="feedback-dashboard-subject-column" />
-        {report.criteria.map((criterion) => (
+        {criteria.map((criterion) => (
           RATING_LEVELS.map((level) => (
             <col key={`${criterion.id}-${level.key}`} className="feedback-dashboard-rating-column" />
           ))
@@ -63,7 +68,7 @@ const FeedbackDashboardTable: React.FC<FeedbackDashboardTableProps> = ({
       <thead>
         <tr className="feedback-dashboard-group-row">
           <th rowSpan={2} className="feedback-dashboard-subject-header">Person - Rating</th>
-          {report.criteria.map((criterion) => (
+          {criteria.map((criterion) => (
             <th key={criterion.id} scope="colgroup" colSpan={RATING_LEVELS.length} className="feedback-dashboard-group-header">
               {criterion.label}
             </th>
@@ -73,7 +78,7 @@ const FeedbackDashboardTable: React.FC<FeedbackDashboardTableProps> = ({
           </th>
         </tr>
         <tr className="feedback-dashboard-level-row">
-          {[...report.criteria, { id: 'average', label: 'Average' }].map((criterion) => (
+          {[...criteria, { id: 'average', label: 'Average' }].map((criterion) => (
             RATING_LEVELS.map((level) => (
               <th
                 key={`${criterion.id}-${level.key}`}
@@ -97,9 +102,10 @@ const FeedbackDashboardTable: React.FC<FeedbackDashboardTableProps> = ({
                   name={subject.name}
                   badges={[subject.role ?? 'Instructor']}
                   size="compact"
+                  enableHoverCard={enableUserHoverCard}
                 />
               </th>
-              {report.criteria.map((criterion) => {
+              {criteria.map((criterion) => {
                 const distribution = subject.distributions[criterion.id];
 
                 return RATING_LEVELS.map((level) => (

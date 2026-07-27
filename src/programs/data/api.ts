@@ -19,6 +19,9 @@ import type {
   CreateFeedbackFormInput,
   FeedbackFiltersState,
   FeedbackDashboardInitiationOption,
+  FeedbackDashboardComment,
+  FeedbackDashboardCommentsResponse,
+  FeedbackDashboardCommentUser,
   FeedbackDashboardCriterion,
   FeedbackDashboardReport,
   FeedbackDashboardSummary,
@@ -423,6 +426,100 @@ const toFeedbackDashboardSummary = (d: any): FeedbackDashboardSummary => ({
   needsAttentionCount: d?.needs_attention_count ?? 0,
 });
 
+type ApiRecord = Record<string, unknown>;
+
+const isApiRecord = (value: unknown): value is ApiRecord => (
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+);
+
+const toApiRecord = (value: unknown): ApiRecord => (isApiRecord(value) ? value : {});
+
+const getStringValue = (record: ApiRecord, key: string): string | undefined => {
+  const value = record[key];
+  return typeof value === 'string' ? value : undefined;
+};
+
+const getNumberValue = (record: ApiRecord, key: string): number | undefined => {
+  const value = record[key];
+  if (typeof value === 'number') {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsedValue = Number(value);
+    return Number.isFinite(parsedValue) ? parsedValue : undefined;
+  }
+  return undefined;
+};
+
+const getStringOrNumberValue = (record: ApiRecord, key: string): string | number | undefined => {
+  const value = record[key];
+  return typeof value === 'string' || typeof value === 'number' ? value : undefined;
+};
+
+const getStringArrayValue = (record: ApiRecord, key: string): string[] => {
+  const value = record[key];
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+};
+
+const getArrayValue = (record: ApiRecord, key: string): unknown[] => {
+  const value = record[key];
+  return Array.isArray(value) ? value : [];
+};
+
+const toFeedbackDashboardCommentUser = (value: unknown): FeedbackDashboardCommentUser => {
+  const d = toApiRecord(value);
+  const firstName = getStringValue(d, 'first_name');
+  const lastName = getStringValue(d, 'last_name');
+  const name = getStringValue(d, 'name')
+    || [firstName, lastName].filter(Boolean).join(' ')
+    || getStringValue(d, 'username')
+    || getStringValue(d, 'email')
+    || 'Unknown user';
+  const roles = getStringArrayValue(d, 'roles');
+  const role = getStringValue(d, 'role');
+  const resolvedRoles = roles.length > 0 ? roles : [];
+  if (resolvedRoles.length === 0 && role) {
+    resolvedRoles.push(role);
+  }
+
+  return {
+    id: getStringOrNumberValue(d, 'id') ?? getStringValue(d, 'email') ?? name,
+    name,
+    email: getStringValue(d, 'email'),
+    avatar: getStringValue(d, 'avatar') ?? null,
+    roles: resolvedRoles,
+  };
+};
+
+const toFeedbackDashboardComment = (value: unknown): FeedbackDashboardComment => {
+  const d = toApiRecord(value);
+  const reviewer = toApiRecord(d.reviewer);
+  const fallbackId = `${getStringOrNumberValue(reviewer, 'id') ?? 'reviewer'}-${
+    getStringValue(d, 'created_at') ?? getStringValue(d, 'createdAt') ?? getStringValue(d, 'comment') ?? ''
+  }`;
+
+  return {
+    id: getStringOrNumberValue(d, 'id') ?? fallbackId,
+    reviewer: toFeedbackDashboardCommentUser(d.reviewer),
+    rating: getNumberValue(d, 'rating') ?? null,
+    criterionId: getStringValue(d, 'criterion_id') ?? getStringValue(d, 'criterionId'),
+    criterionLabel: getStringValue(d, 'criterion_label') ?? getStringValue(d, 'criterionLabel'),
+    comment: getStringValue(d, 'comment') ?? '',
+    createdAt: getStringValue(d, 'created_at') ?? getStringValue(d, 'createdAt'),
+  };
+};
+
+const toFeedbackDashboardCommentsSummary = (value: unknown) => {
+  const d = toApiRecord(value);
+
+  return {
+    total: getNumberValue(d, 'total') ?? 0,
+    latest: d.latest ? toFeedbackDashboardComment(d.latest) : null,
+  };
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toFeedbackDashboardReport = (d: any, initiationId: number): FeedbackDashboardReport => {
   const criteria: FeedbackDashboardCriterion[] = (d.criteria ?? []).map((criterion: any) => ({
@@ -444,6 +541,7 @@ const toFeedbackDashboardReport = (d: any, initiationId: number): FeedbackDashbo
       return acc;
     }, {}),
     averageDistribution: toDashboardDistribution(subject.average_distribution),
+    commentsSummary: toFeedbackDashboardCommentsSummary(subject.comments_summary ?? subject.commentsSummary),
   }));
   const summary = toFeedbackDashboardSummary({
     ...d.summary,
@@ -463,6 +561,17 @@ const toFeedbackDashboardReport = (d: any, initiationId: number): FeedbackDashbo
     criteria,
     subjects,
     summary,
+  };
+};
+
+const toFeedbackDashboardCommentsResponse = (value: unknown): FeedbackDashboardCommentsResponse => {
+  const d = toApiRecord(value);
+  const comments = getArrayValue(d, 'comments').map(toFeedbackDashboardComment);
+
+  return {
+    subject: toFeedbackDashboardCommentUser(d.subject),
+    total: getNumberValue(d, 'total') ?? comments.length,
+    comments,
   };
 };
 
@@ -767,4 +876,16 @@ export const getFeedbackDashboardReport = async (
     { params: { initiation_id: initiationId } },
   );
   return toFeedbackDashboardReport(data, initiationId);
+};
+
+export const getFeedbackDashboardComments = async (
+  programId: string,
+  initiationId: number,
+  subjectId: string,
+): Promise<FeedbackDashboardCommentsResponse> => {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/dashboard/comments/`,
+    { params: { initiation_id: initiationId, subject_id: subjectId } },
+  );
+  return toFeedbackDashboardCommentsResponse(data);
 };

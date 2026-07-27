@@ -11,6 +11,7 @@ const messages = defineMessages({
   questionText: { id: 'programs.feedback.editor.question.text', defaultMessage: 'Question Text' },
   questionType: { id: 'programs.feedback.editor.question.type', defaultMessage: 'Question Type' },
   required: { id: 'programs.feedback.editor.question.required', defaultMessage: 'Required' },
+  includeComment: { id: 'programs.feedback.editor.question.comment', defaultMessage: 'Include comment box' },
   remove: { id: 'programs.feedback.editor.question.remove', defaultMessage: 'Delete' },
   starRating: { id: 'programs.feedback.editor.question.type.rating', defaultMessage: 'Star Rating' },
 });
@@ -57,6 +58,14 @@ const FeedbackQuestionEditor: React.FC<FeedbackQuestionEditorProps> = ({
               className="mb-3 mb-md-0 align-self-md-end"
             >
               {intl.formatMessage(messages.required)}
+            </Form.Checkbox>
+
+            <Form.Checkbox
+              checked={!!question.includeComment}
+              onChange={(event) => onQuestionChange(question.id, 'includeComment', event.target.checked)}
+              className="mb-3 mb-md-0 ml-md-3 align-self-md-end"
+            >
+              {intl.formatMessage(messages.includeComment)}
             </Form.Checkbox>
           </div>
 

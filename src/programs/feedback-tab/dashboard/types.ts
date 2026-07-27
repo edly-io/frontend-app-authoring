@@ -1,6 +1,10 @@
 export type {
   DashboardAggregationMode,
   DashboardViewMode,
+  FeedbackDashboardComment,
+  FeedbackDashboardCommentsResponse,
+  FeedbackDashboardCommentsSummary,
+  FeedbackDashboardCommentUser,
   FeedbackDashboardCriterion,
   FeedbackDashboardInitiationOption,
   FeedbackDashboardReport,

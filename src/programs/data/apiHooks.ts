@@ -30,6 +30,7 @@ import {
   getFeedbackRequests,
   getFeedbackRequest,
   initiateFeedbackRequests,
+  getFeedbackDashboardComments,
   getFeedbackDashboardInitiations,
   getFeedbackDashboardReport,
   type GetCoursesParams,
@@ -390,4 +391,15 @@ export const useFeedbackDashboardReport = (
   queryKey: ['feedbackDashboardReport', programId, initiationId],
   queryFn: () => getFeedbackDashboardReport(programId, initiationId!),
   enabled: enabled && !!programId && !!initiationId,
+});
+
+export const useFeedbackDashboardComments = (
+  programId: string,
+  initiationId: number | null,
+  subjectId: string | null,
+  enabled = true,
+) => useQuery({
+  queryKey: ['feedbackDashboardComments', programId, initiationId, subjectId],
+  queryFn: () => getFeedbackDashboardComments(programId, initiationId!, subjectId!),
+  enabled: enabled && !!programId && !!initiationId && !!subjectId,
 });
