@@ -395,6 +395,15 @@ const PageAlerts = ({
       }
     });
     errorList = uniqBy(errorList, 'title');
+    const hasCourseNotReady = Object.values(errors).some(
+      (e) => e?.type === API_ERROR_TYPES.courseNotReady,
+    );
+    if (hasCourseNotReady) {
+      errorList = errorList.filter((msgObj) => {
+        const errType = errors[msgObj.key]?.type;
+        return errType === API_ERROR_TYPES.courseNotReady;
+      });
+    }
     if (!errorList?.length) {
       return null;
     }
