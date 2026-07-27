@@ -10,8 +10,7 @@ import { WEIGHTAGE_CELL_WIDTH } from './constants';
 import RowActions from './RowActions';
 import SubsectionRow from './SubsectionRow';
 import type { EditableSection } from './types';
-import { getSectionTotal } from './utils';
-import { getSectionVariant } from '../add-trainee-results/utils';
+import { getSectionTotal, getSectionVariant } from './utils';
 
 const messages = defineMessages({
   sectionLabelAria: { id: 'programs.scheme.section-label-aria', defaultMessage: 'Section name' },
