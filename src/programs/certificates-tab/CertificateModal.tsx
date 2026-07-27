@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import {
   ActionRow,
   Button,
@@ -17,8 +18,6 @@ const messages = defineMessages({
   revoke: { id: 'programs.certificates.modal.revoke', defaultMessage: 'Revoke certificate' },
   close: { id: 'programs.certificates.modal.close', defaultMessage: 'Close' },
 });
-
-const PENDING_CERTIFICATE_NUMBER = 'FBR-CERT-XXXXXX';
 
 interface CertificateModalProps {
   isOpen: boolean;
@@ -47,55 +46,74 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
 
   const award = row.certificate;
   const isAwarded = !!award;
+  const issuedAt = award ? award.issuedAt : new Date().toISOString();
 
   return (
-    <ModalDialog
-      title={intl.formatMessage(isAwarded ? messages.awardedTitle : messages.previewTitle)}
-      isOpen={isOpen}
-      onClose={onClose}
-      size="xl"
-      hasCloseButton
-      isFullscreenOnMobile
-      isOverflowVisible={false}
-    >
-      <ModalDialog.Header>
-        <ModalDialog.Title>
-          {intl.formatMessage(isAwarded ? messages.awardedTitle : messages.previewTitle)}
-        </ModalDialog.Title>
-      </ModalDialog.Header>
-      <ModalDialog.Body>
+    <>
+      <ModalDialog
+        title={intl.formatMessage(isAwarded ? messages.awardedTitle : messages.previewTitle)}
+        isOpen={isOpen}
+        onClose={onClose}
+        size="xl"
+        className="certificate-preview-modal"
+        hasCloseButton
+        isFullscreenOnMobile
+        isOverflowVisible={false}
+      >
+        <ModalDialog.Header>
+          <ModalDialog.Title>
+            {intl.formatMessage(isAwarded ? messages.awardedTitle : messages.previewTitle)}
+          </ModalDialog.Title>
+        </ModalDialog.Header>
+        <ModalDialog.Body>
+          {/* On-screen preview: sized to fit the modal without scrolling. */}
+          <div className="fbr-cert-modal-view">
+            <CertificatePreview
+              config={config}
+              programName={programName}
+              traineeName={row.fullName}
+              issuedAt={issuedAt}
+              mode="fit"
+            />
+          </div>
+        </ModalDialog.Body>
+        <ModalDialog.Footer>
+          <ActionRow>
+            <Button variant="tertiary" onClick={onClose}>
+              {intl.formatMessage(messages.close)}
+            </Button>
+            <ActionRow.Spacer />
+            <Button variant="outline-primary" iconBefore={Print} onClick={() => window.print()}>
+              {intl.formatMessage(messages.print)}
+            </Button>
+            {isAwarded ? (
+              <Button variant="danger" onClick={() => onRevoke(award!.certificateNumber)}>
+                {intl.formatMessage(messages.revoke)}
+              </Button>
+            ) : (
+              <Button variant="primary" onClick={() => onAward(row.username)}>
+                {intl.formatMessage(messages.award)}
+              </Button>
+            )}
+          </ActionRow>
+        </ModalDialog.Footer>
+      </ModalDialog>
+
+      {/* Print copy rendered at document.body — escapes the modal's scrolling
+          fixed layer so `@media print` positions it against the page, not the
+          modal. Hidden on screen; shown only when printing. */}
+      {isOpen && createPortal(
         <div className="fbr-cert-print-area">
           <CertificatePreview
-            variant="full"
             config={config}
             programName={programName}
             traineeName={row.fullName}
-            certificateNumber={award ? award.certificateNumber : PENDING_CERTIFICATE_NUMBER}
-            issuedAt={award ? award.issuedAt : new Date().toISOString()}
+            issuedAt={issuedAt}
           />
-        </div>
-      </ModalDialog.Body>
-      <ModalDialog.Footer>
-        <ActionRow>
-          <Button variant="tertiary" onClick={onClose}>
-            {intl.formatMessage(messages.close)}
-          </Button>
-          <ActionRow.Spacer />
-          <Button variant="outline-primary" iconBefore={Print} onClick={() => window.print()}>
-            {intl.formatMessage(messages.print)}
-          </Button>
-          {isAwarded ? (
-            <Button variant="danger" onClick={() => onRevoke(award!.certificateNumber)}>
-              {intl.formatMessage(messages.revoke)}
-            </Button>
-          ) : (
-            <Button variant="primary" onClick={() => onAward(row.username)}>
-              {intl.formatMessage(messages.award)}
-            </Button>
-          )}
-        </ActionRow>
-      </ModalDialog.Footer>
-    </ModalDialog>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 };
 

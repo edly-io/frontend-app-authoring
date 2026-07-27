@@ -48,7 +48,6 @@ const messages = defineMessages({
 });
 
 const PREVIEW_TRAINEE_NAME = 'Trainee Name';
-const PREVIEW_CERTIFICATE_NUMBER = 'FBR-CERT-XXXXXX';
 
 interface CertificateConfigPanelProps {
   programId: string;
@@ -164,11 +163,9 @@ const CertificateConfigPanel: React.FC<CertificateConfigPanelProps> = ({ program
         <Card.Header title={intl.formatMessage(messages.previewTitle)} />
         <Card.Section>
           <CertificatePreview
-            variant="mini"
             config={{ issuedBy, signatories }}
             programName={programName}
             traineeName={PREVIEW_TRAINEE_NAME}
-            certificateNumber={PREVIEW_CERTIFICATE_NUMBER}
             issuedAt={new Date().toISOString()}
           />
           <p className="certificate-preview-hint">{intl.formatMessage(messages.previewHint)}</p>

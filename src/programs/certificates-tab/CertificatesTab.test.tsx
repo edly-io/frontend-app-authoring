@@ -68,9 +68,9 @@ describe('<CertificatesTab />', () => {
   it('shows awarded status with the certificate number', () => {
     renderTab();
     // "Awarded" also appears as a filter option, so assert on the unique number.
-    expect(screen.getByText('FBR-CERT-AYESHA')).toBeInTheDocument();
-    const badge = screen.getByText('FBR-CERT-AYESHA').closest('td');
-    expect(badge).toHaveTextContent('Awarded');
+    const meta = screen.getByText(/FBR-CERT-AYESHA/);
+    expect(meta).toBeInTheDocument();
+    expect(meta.closest('td')).toHaveTextContent('Awarded');
   });
 
   it('awards a certificate to a pending trainee', () => {
@@ -100,7 +100,7 @@ describe('<CertificatesTab />', () => {
 
   it('renders the certificate settings panel with the issuing authority', async () => {
     renderTab();
-    fireEvent.click(screen.getByRole('tab', { name: /Certificate settings/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /Configuration/i }));
     await waitFor(() => {
       expect(screen.getByDisplayValue('Directorate of Training')).toBeInTheDocument();
     });
