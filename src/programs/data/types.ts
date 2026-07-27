@@ -125,6 +125,7 @@ export interface FeedbackFormQuestion {
   required: boolean;
   isDefault: boolean;
   order?: number;
+  includeComment?: boolean;
 }
 
 export interface FeedbackFormTemplate {
@@ -233,6 +234,29 @@ export interface FeedbackDashboardCriterion {
   order?: number;
 }
 
+export interface FeedbackDashboardCommentUser {
+  id: string | number;
+  name: string;
+  email?: string;
+  avatar?: string | null;
+  roles?: string[];
+}
+
+export interface FeedbackDashboardComment {
+  id: string | number;
+  reviewer: FeedbackDashboardCommentUser;
+  rating?: number | null;
+  criterionId?: string;
+  criterionLabel?: string;
+  comment: string;
+  createdAt?: string;
+}
+
+export interface FeedbackDashboardCommentsSummary {
+  total: number;
+  latest?: FeedbackDashboardComment | null;
+}
+
 export interface FeedbackDashboardSubject {
   id: string;
   name: string;
@@ -245,6 +269,7 @@ export interface FeedbackDashboardSubject {
   totalRequests?: number;
   distributions: Record<string, RatingDistribution>;
   averageDistribution?: RatingDistribution;
+  commentsSummary?: FeedbackDashboardCommentsSummary;
 }
 
 export interface FeedbackDashboardSummary {
@@ -285,4 +310,10 @@ export interface FeedbackDashboardInitiationOption {
   submittedResponses: number;
   responseRate: number;
   subjectCount: number;
+}
+
+export interface FeedbackDashboardCommentsResponse {
+  subject: FeedbackDashboardCommentUser;
+  total: number;
+  comments: FeedbackDashboardComment[];
 }

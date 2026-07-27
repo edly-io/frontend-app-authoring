@@ -19,6 +19,9 @@ import type {
   CreateFeedbackFormInput,
   FeedbackFiltersState,
   FeedbackDashboardInitiationOption,
+  FeedbackDashboardComment,
+  FeedbackDashboardCommentsResponse,
+  FeedbackDashboardCommentUser,
   FeedbackDashboardCriterion,
   FeedbackDashboardReport,
   FeedbackDashboardSummary,
@@ -411,6 +414,32 @@ const toFeedbackDashboardSummary = (d: any): FeedbackDashboardSummary => ({
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toFeedbackDashboardCommentUser = (d: any): FeedbackDashboardCommentUser => ({
+  id: d?.id ?? d?.email ?? d?.name ?? '',
+  name: d?.name || [d?.first_name, d?.last_name].filter(Boolean).join(' ') || d?.username || d?.email || 'Unknown user',
+  email: d?.email,
+  avatar: d?.avatar ?? null,
+  roles: d?.roles ?? (d?.role ? [d.role] : []),
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toFeedbackDashboardComment = (d: any): FeedbackDashboardComment => ({
+  id: d?.id ?? `${d?.reviewer?.id ?? 'reviewer'}-${d?.created_at ?? d?.createdAt ?? d?.comment ?? ''}`,
+  reviewer: toFeedbackDashboardCommentUser(d?.reviewer ?? {}),
+  rating: d?.rating ?? null,
+  criterionId: d?.criterion_id ?? d?.criterionId,
+  criterionLabel: d?.criterion_label ?? d?.criterionLabel,
+  comment: d?.comment ?? '',
+  createdAt: d?.created_at ?? d?.createdAt,
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toFeedbackDashboardCommentsSummary = (d: any) => ({
+  total: d?.total ?? 0,
+  latest: d?.latest ? toFeedbackDashboardComment(d.latest) : null,
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toFeedbackDashboardReport = (d: any, initiationId: number): FeedbackDashboardReport => {
   const criteria: FeedbackDashboardCriterion[] = (d.criteria ?? []).map((criterion: any) => ({
     id: criterion.id,
@@ -431,6 +460,7 @@ const toFeedbackDashboardReport = (d: any, initiationId: number): FeedbackDashbo
       return acc;
     }, {}),
     averageDistribution: toDashboardDistribution(subject.average_distribution),
+    commentsSummary: toFeedbackDashboardCommentsSummary(subject.comments_summary ?? subject.commentsSummary),
   }));
   const summary = toFeedbackDashboardSummary({
     ...d.summary,
@@ -452,6 +482,13 @@ const toFeedbackDashboardReport = (d: any, initiationId: number): FeedbackDashbo
     summary,
   };
 };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toFeedbackDashboardCommentsResponse = (d: any): FeedbackDashboardCommentsResponse => ({
+  subject: toFeedbackDashboardCommentUser(d?.subject ?? {}),
+  total: d?.total ?? d?.comments?.length ?? 0,
+  comments: (d?.comments ?? []).map(toFeedbackDashboardComment),
+});
 
 // ── Platform users — GET /fbr/api/programs/users/?role=<fbr_role> ───────────
 export const getPlatformUsers = async (
@@ -754,4 +791,16 @@ export const getFeedbackDashboardReport = async (
     { params: { initiation_id: initiationId } },
   );
   return toFeedbackDashboardReport(data, initiationId);
+};
+
+export const getFeedbackDashboardComments = async (
+  programId: string,
+  initiationId: number,
+  subjectId: string,
+): Promise<FeedbackDashboardCommentsResponse> => {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getFeedbackBaseUrl()}/programs/${getEncodedProgramId(programId)}/dashboard/comments/`,
+    { params: { initiation_id: initiationId, subject_id: subjectId } },
+  );
+  return toFeedbackDashboardCommentsResponse(data);
 };

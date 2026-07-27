@@ -2,9 +2,6 @@ import React from 'react';
 import {
   Alert,
   Card,
-  Col,
-  Form,
-  Row,
   Spinner,
 } from '@openedx/paragon';
 import type {
@@ -19,13 +16,13 @@ import {
 import FeedbackDashboardCards from './FeedbackDashboardCards';
 import FeedbackDashboardEmptyState from './FeedbackDashboardEmptyState';
 import FeedbackDashboardKpis from './FeedbackDashboardKpis';
+import FeedbackDashboardPrintSummary from './FeedbackDashboardPrintSummary';
+import FeedbackDashboardReportHeader from './FeedbackDashboardReportHeader';
 import FeedbackDashboardTable from './FeedbackDashboardTable';
 import FeedbackDashboardToolbar from './FeedbackDashboardToolbar';
 import {
   filterDashboardSubjects,
-  formatPercent,
   getFeedbackDashboardSummary,
-  RATING_LEVELS,
 } from './feedbackDashboardUtils';
 import './feedback-dashboard.scss';
 
@@ -76,6 +73,10 @@ const FeedbackDashboard: React.FC<FeedbackDashboardProps> = ({ programId, isActi
     setRatingBand('all');
   };
 
+  const handlePrintSummary = () => {
+    window.print();
+  };
+
   if (isInitiatedFeedbackLoading) {
     return (
       <Card className="feedback-dashboard-report-card">
@@ -106,133 +107,102 @@ const FeedbackDashboard: React.FC<FeedbackDashboardProps> = ({ programId, isActi
   }
 
   return (
-    <div className="feedback-dashboard">
-      <Card className="feedback-dashboard-report-card mb-3">
-        <Card.Section>
-          <div className="feedback-dashboard-heading">
-            <div>
-              <div className="d-flex align-items-center flex-wrap mb-1">
-                <h4 className="mb-0 mr-2">Feedback Summary</h4>
-              </div>
-              <p className="text-muted small mb-0">
-                Star-rated feedback summary for reviewed people in this program.
-              </p>
-            </div>
-          </div>
+    <>
+      <div className="feedback-dashboard feedback-dashboard-screen">
+        <FeedbackDashboardReportHeader
+          initiatedFeedbackOptions={initiatedFeedbackOptions}
+          selectedInitiationId={selectedInitiationId}
+          selectedReport={selectedReport}
+          summary={summary}
+          onReportChange={handleReportChange}
+        />
 
-          <Row className="feedback-dashboard-report-meta">
-            <Col xs={12} lg={4}>
-              <Form.Group className="mb-3 mb-lg-0">
-                <Form.Label className="feedback-dashboard-meta-label">Feedback Name</Form.Label>
-                <Form.Control as="select" value={selectedInitiationId ?? ''} onChange={handleReportChange}>
-                  {initiatedFeedbackOptions.map((option) => (
-                    <option key={option.id} value={option.id}>{option.feedbackName}</option>
-                  ))}
-                </Form.Control>
-              </Form.Group>
-            </Col>
-            <Col xs={12} md={4} lg={2}>
-              <div className="feedback-dashboard-meta-field">
-                <span>Program</span>
-                <strong>{selectedReport?.programName ?? '--'}</strong>
-              </div>
-            </Col>
-            <Col xs={12} md={4} lg={2}>
-              <div className="feedback-dashboard-meta-field">
-                <span>Respondents</span>
-                <strong>{selectedReport?.respondentsLabel ?? '--'}</strong>
-              </div>
-            </Col>
-            <Col xs={12} md={4} lg={2}>
-              <div className="feedback-dashboard-meta-field">
-                <span>Response rate</span>
-                <strong>{summary ? formatPercent(summary.responseRate) : '--'}</strong>
-              </div>
-            </Col>
-            <Col xs={12} lg={2}>
-              <div className="feedback-dashboard-legend">
-                {RATING_LEVELS.map((level) => (
-                  <span key={level.key} className={`feedback-dashboard-legend-item feedback-dashboard-legend-${level.key}`}>
-                    <span aria-hidden="true" />
-                    {level.shortLabel}
-                  </span>
-                ))}
-              </div>
-            </Col>
-          </Row>
-        </Card.Section>
-      </Card>
-
-      {isReportLoading && (
-        <Card className="feedback-dashboard-results-card">
-          <Card.Section>
-            <div className="d-flex justify-content-center py-4">
-              <Spinner animation="border" screenReaderText="Loading feedback dashboard report..." />
-            </div>
-          </Card.Section>
-        </Card>
-      )}
-
-      {!isReportLoading && hasReportError && (
-        <Alert variant="danger">
-          Failed to load the selected feedback summary.
-        </Alert>
-      )}
-
-      {!isReportLoading && !hasReportError && selectedReport && summary && (
-        <>
-          <FeedbackDashboardKpis summary={summary} />
-
+        {isReportLoading && (
           <Card className="feedback-dashboard-results-card">
-            <Card.Section className="feedback-dashboard-results-toolbar">
-              <FeedbackDashboardToolbar
-                searchTerm={searchTerm}
-                ratingBand={ratingBand}
-                viewMode={viewMode}
-                aggregationMode={aggregationMode}
-                onSearchChange={setSearchTerm}
-                onRatingBandChange={setRatingBand}
-                onViewModeChange={setViewMode}
-                onAggregationModeChange={setAggregationMode}
-              />
+            <Card.Section>
+              <div className="d-flex justify-content-center py-4">
+                <Spinner animation="border" screenReaderText="Loading feedback dashboard report..." />
+              </div>
             </Card.Section>
+          </Card>
+        )}
 
-            {visibleSubjects.length === 0 ? (
-              <Card.Section>
-                <FeedbackDashboardEmptyState
-                  title="No people match these filters"
-                  description="Try a different search term or rating band to review more results."
+        {!isReportLoading && hasReportError && (
+          <Alert variant="danger">
+            Failed to load the selected feedback summary.
+          </Alert>
+        )}
+
+        {!isReportLoading && !hasReportError && selectedReport && summary && (
+          <>
+            <FeedbackDashboardKpis summary={summary} />
+
+            <Card className="feedback-dashboard-results-card">
+              <Card.Section className="feedback-dashboard-results-toolbar">
+                <FeedbackDashboardToolbar
+                  searchTerm={searchTerm}
+                  ratingBand={ratingBand}
+                  viewMode={viewMode}
+                  aggregationMode={aggregationMode}
+                  onSearchChange={setSearchTerm}
+                  onRatingBandChange={setRatingBand}
+                  onViewModeChange={setViewMode}
+                  onAggregationModeChange={setAggregationMode}
+                  onPrint={handlePrintSummary}
                 />
               </Card.Section>
-            ) : (
-              <>
-                <div style={{ opacity: isReportFetching && !isReportLoading ? 0.4 : 1, transition: 'opacity 0.15s' }}>
-                  {viewMode === 'table' ? (
-                    <FeedbackDashboardTable
-                      report={selectedReport}
-                      subjects={visibleSubjects}
-                      aggregationMode={aggregationMode}
-                    />
-                  ) : (
-                    <Card.Section>
-                      <FeedbackDashboardCards report={selectedReport} subjects={visibleSubjects} />
-                    </Card.Section>
-                  )}
-                </div>
-                <Card.Footer
-                  orientation="horizontal"
-                  textElement={(
-                    <span>
-                      Showing <strong>{visibleSubjects.length}</strong> people - {selectedReport.feedbackName}
-                    </span>
-                  )}
-                />
-              </>
-            )}
-          </Card>
-        </>
+
+              {visibleSubjects.length === 0 ? (
+                <Card.Section>
+                  <FeedbackDashboardEmptyState
+                    title="No people match these filters"
+                    description="Try a different search term or rating band to review more results."
+                  />
+                </Card.Section>
+              ) : (
+                <>
+                  <div style={{ opacity: isReportFetching && !isReportLoading ? 0.4 : 1, transition: 'opacity 0.15s' }}>
+                    {viewMode === 'table' ? (
+                      <FeedbackDashboardTable
+                        report={selectedReport}
+                        subjects={visibleSubjects}
+                        aggregationMode={aggregationMode}
+                      />
+                    ) : (
+                      <Card.Section>
+                        <FeedbackDashboardCards
+                          programId={programId}
+                          initiationId={selectedInitiationId}
+                          report={selectedReport}
+                          subjects={visibleSubjects}
+                        />
+                      </Card.Section>
+                    )}
+                  </div>
+                  <Card.Footer
+                    orientation="horizontal"
+                    textElement={(
+                      <span>
+                        Showing <strong>{visibleSubjects.length}</strong> people - {selectedReport.feedbackName}
+                      </span>
+                    )}
+                  />
+                </>
+              )}
+            </Card>
+          </>
+        )}
+      </div>
+
+      {!isReportLoading && !hasReportError && selectedReport && summary && (
+        <FeedbackDashboardPrintSummary
+          report={selectedReport}
+          summary={summary}
+          subjects={visibleSubjects}
+          aggregationMode={aggregationMode}
+        />
       )}
-    </div>
+    </>
   );
 };
 

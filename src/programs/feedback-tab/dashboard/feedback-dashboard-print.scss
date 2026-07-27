@@ -1,0 +1,267 @@
+.feedback-dashboard-print-summary {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 10mm;
+    size: a3 landscape;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  body > *:not(.feedback-dashboard-print-summary, style) {
+    display: none !important;
+  }
+
+  .feedback-dashboard-screen {
+    display: none !important;
+  }
+
+  .feedback-dashboard-print-summary {
+    background: #FFFFFF;
+    color: #111827;
+    display: block !important;
+    font-size: var(--feedback-print-font-size, 8pt);
+    line-height: 1.25;
+    position: static;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    width: 100%;
+
+    .feedback-dashboard-print-header {
+      align-items: flex-start;
+      border-bottom: 1px solid #A1A5A8;
+      display: grid;
+      gap: 16px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+
+      h1 {
+        font-size: 18px;
+        line-height: 1.15;
+        margin: 0 0 4px;
+      }
+
+      p {
+        margin: 0;
+      }
+    }
+
+    .feedback-dashboard-print-kicker {
+      color: #707070;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      margin-bottom: 4px !important;
+      text-transform: uppercase;
+    }
+
+    .feedback-dashboard-print-meta {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+
+      span {
+        color: #707070;
+        display: block;
+        font-size: 7px;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+      }
+
+      strong {
+        display: block;
+        font-size: var(--feedback-print-meta-font-size, 7pt);
+        margin-top: 2px;
+      }
+    }
+
+    .feedback-dashboard-print-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+
+    .feedback-dashboard-legend-item {
+      border: 1px solid #D1D7DC;
+      border-radius: 999px;
+      font-size: 7px;
+      gap: 3px;
+      padding: 2px 5px;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+
+    .feedback-dashboard-legend-excellent {
+      background: #DFF3E6 !important;
+      border-color: #9FD8B8 !important;
+      color: #0F6B3B !important;
+    }
+
+    .feedback-dashboard-legend-veryGood {
+      background: #E1EFFF !important;
+      border-color: #A9D0FF !important;
+      color: #0A58CA !important;
+    }
+
+    .feedback-dashboard-legend-good {
+      background: #FFF4CC !important;
+      border-color: #F0D06A !important;
+      color: #8A5A00 !important;
+    }
+
+    .feedback-dashboard-legend-needsAttention {
+      background: #F8D7DA !important;
+      border-color: #E6A4AA !important;
+      color: #842029 !important;
+    }
+
+    .feedback-dashboard-print-empty {
+      border: 1px solid #D1D7DC;
+      padding: 12px;
+    }
+
+    .feedback-dashboard-table-wrapper {
+      overflow: visible !important;
+    }
+
+    .feedback-dashboard-table {
+      border-collapse: collapse;
+      font-size: var(--feedback-print-font-size, 8pt);
+      min-width: 0 !important;
+      print-color-adjust: exact;
+      table-layout: fixed;
+      -webkit-print-color-adjust: exact;
+      width: 100% !important;
+
+      thead {
+        display: table-header-group;
+      }
+
+      tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+
+      th,
+      td {
+        border: 1px solid #B8B8B8 !important;
+        height: var(--feedback-print-row-height, 9mm);
+        padding: 0 !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+
+      thead th {
+        background: #F5F5F5 !important;
+        color: #111827 !important;
+      }
+
+      .feedback-dashboard-subject-column {
+        width: var(--feedback-print-subject-column-width, 58mm);
+      }
+
+      .feedback-dashboard-rating-column {
+        width: var(--feedback-print-rating-column-width, 14mm);
+      }
+
+      .feedback-dashboard-subject-header,
+      .feedback-dashboard-subject-cell {
+        left: auto;
+        position: static;
+      }
+
+      .feedback-dashboard-subject-header {
+        font-size: 7px;
+        padding: 4px 5px !important;
+      }
+
+      .feedback-dashboard-subject-cell {
+        background: #FFFFFF !important;
+
+        .user-identity {
+          padding: 3px 5px;
+        }
+
+        .user-identity__avatar-wrap {
+          display: none;
+        }
+
+        .user-identity__name {
+          font-size: var(--feedback-print-font-size, 8pt);
+          white-space: normal;
+        }
+
+        .user-identity__role-label {
+          font-size: var(--feedback-print-meta-font-size, 7pt);
+        }
+      }
+
+      .feedback-dashboard-group-header {
+        font-size: var(--feedback-print-group-font-size, 7pt);
+        line-height: 1.15;
+        padding: 4px 3px !important;
+      }
+
+      .feedback-dashboard-level-header {
+        font-size: var(--feedback-print-header-font-size, 6pt);
+        letter-spacing: 0;
+        padding: 3px 2px !important;
+      }
+
+      .feedback-dashboard-level-excellent {
+        background: #DFF3E6 !important;
+        color: #0F6B3B !important;
+      }
+
+      .feedback-dashboard-level-veryGood {
+        background: #E1EFFF !important;
+        color: #0A58CA !important;
+      }
+
+      .feedback-dashboard-level-good {
+        background: #FFF4CC !important;
+        color: #8A5A00 !important;
+      }
+
+      .feedback-dashboard-level-needsAttention {
+        background: #F8D7DA !important;
+        color: #842029 !important;
+      }
+
+      .feedback-dashboard-rating-cell {
+        font-size: var(--feedback-print-font-size, 8pt);
+        padding: 4px 2px;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+
+      .feedback-dashboard-rating-cell-excellent {
+        color: #0F6B3B !important;
+      }
+
+      .feedback-dashboard-rating-cell-veryGood {
+        color: #0A58CA !important;
+      }
+
+      .feedback-dashboard-rating-cell-good {
+        color: #8A5A00 !important;
+      }
+
+      .feedback-dashboard-rating-cell-needsAttention {
+        color: #842029 !important;
+      }
+    }
+  }
+}

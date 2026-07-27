@@ -20,6 +20,7 @@ interface FeedbackDashboardToolbarProps {
   onRatingBandChange: (value: RatingBandFilter) => void;
   onViewModeChange: (value: DashboardViewMode) => void;
   onAggregationModeChange: (value: DashboardAggregationMode) => void;
+  onPrint: () => void;
 }
 
 const FeedbackDashboardToolbar: React.FC<FeedbackDashboardToolbarProps> = ({
@@ -31,6 +32,7 @@ const FeedbackDashboardToolbar: React.FC<FeedbackDashboardToolbarProps> = ({
   onRatingBandChange,
   onViewModeChange,
   onAggregationModeChange,
+  onPrint,
 }) => (
   <div className="feedback-dashboard-toolbar">
     <div className="feedback-dashboard-search">
@@ -92,6 +94,14 @@ const FeedbackDashboardToolbar: React.FC<FeedbackDashboardToolbarProps> = ({
         </Button>
       </ButtonGroup>
     )}
+
+    <Button
+      size="sm"
+      variant="outline-primary"
+      onClick={onPrint}
+    >
+      Print Summary
+    </Button>
 
     <span className="feedback-dashboard-toolbar-hint">
       Sorted by rating
