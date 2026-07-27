@@ -41,11 +41,6 @@ import { isPublishable, validateSchemeDraft } from './validation';
 import './grade-scheme-styles.scss';
 
 const messages = defineMessages({
-  pageTitle: { id: 'programs.scheme.title', defaultMessage: 'Grade Scheme' },
-  pageSubtitle: {
-    id: 'programs.scheme.subtitle',
-    defaultMessage: 'Build the weighted criteria tree. Category weightage is the sum of its line items; type weightage only on leaves and directly-scored categories.',
-  },
   loadError: { id: 'programs.scheme.load-error', defaultMessage: 'Failed to load the evaluation scheme.' },
   unsavedChanges: { id: 'programs.scheme.unsaved-changes', defaultMessage: 'You have unsaved changes.' },
   publishRequiresSaveHint: {
@@ -301,13 +296,6 @@ const GradeSchemeTab: React.FC<GradeSchemeTabProps> = ({ program, programId = ''
 
   return (
     <div className="grade-scheme-tab pb-4 pt-4">
-      <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
-        <div>
-          <h3 className="mb-1">{intl.formatMessage(messages.pageTitle)}</h3>
-          <p className="text-muted small mb-0">{intl.formatMessage(messages.pageSubtitle)}</p>
-        </div>
-      </div>
-
       <SchemeHeader
         name={draft.name}
         targetTotal={draft.targetTotal}

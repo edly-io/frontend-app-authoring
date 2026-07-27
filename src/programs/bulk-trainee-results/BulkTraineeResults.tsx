@@ -26,11 +26,6 @@ import {
 import { SCORING_GRID_PAGE_SIZE } from './constants';
 
 const messages = defineMessages({
-  pageTitle: { id: 'programs.bulk-trainee-results.title', defaultMessage: 'Trainee Results' },
-  pageSubtitle: {
-    id: 'programs.bulk-trainee-results.subtitle',
-    defaultMessage: 'Score the whole roster against the published grade scheme.',
-  },
   loadError: { id: 'programs.bulk-trainee-results.load-error', defaultMessage: 'Failed to load trainee results.' },
   noSchemeTitle: { id: 'programs.bulk-trainee-results.no-scheme.title', defaultMessage: 'No published grade scheme.' },
   noSchemeBody: {
@@ -331,11 +326,6 @@ const BulkTraineeResults: React.FC<BulkTraineeResultsProps> = ({
 
   return (
     <div className="bulk-trainee-results-tab pb-4 pt-4">
-      <div className="mb-3">
-        <h3 className="mb-1">{intl.formatMessage(messages.pageTitle)}</h3>
-        <p className="text-muted small mb-0">{intl.formatMessage(messages.pageSubtitle)}</p>
-      </div>
-
       {!scheme || rows === null || isGridLoading ? (
         <div className="d-flex justify-content-center py-5">
           <LoadingSpinner />
