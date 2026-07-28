@@ -19,6 +19,7 @@ import BulkResultsFinalizeBar from './BulkResultsFinalizeBar';
 import BulkResultsFillColumnModal from './BulkResultsFillColumnModal';
 import type { FillColumnTarget } from './BulkResultsFillColumnModal';
 import BulkResultsUnsavedChangesModal from './BulkResultsUnsavedChangesModal';
+import CourseScoresSheet from './CourseScoresSheet';
 import type { EditableScoringRow } from './types';
 import {
   buildEditableRows, clampScore, getChangedScores, isRowDirty, mergeEditableRows,
@@ -54,6 +55,7 @@ interface BulkTraineeResultsProps {
 }
 
 type PendingNavigation = { type: 'page'; value: number } | { type: 'pageSize'; value: number };
+type ViewingCourseScoresTarget = { username: string; fullName: string };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getErrorDetail = (error: unknown): string | undefined => (error as any)?.response?.data?.detail;
@@ -77,6 +79,7 @@ const BulkTraineeResults: React.FC<BulkTraineeResultsProps> = ({
   const [fillColumnTarget, setFillColumnTarget] = useState<FillColumnTarget | null>(null);
   const [pendingNavigation, setPendingNavigation] = useState<PendingNavigation | null>(null);
   const [finalizeErrors, setFinalizeErrors] = useState<WriteEnvelopeError<FinalizeErrorCode>[]>([]);
+  const [viewingCourseScoresFor, setViewingCourseScoresFor] = useState<ViewingCourseScoresTarget | null>(null);
 
   const {
     data: scheme, isLoading: isSchemeLoading, isError: isSchemeError, error: schemeError,
@@ -364,6 +367,10 @@ const BulkTraineeResults: React.FC<BulkTraineeResultsProps> = ({
             onRequestFillColumn={(subsectionId, label, maxMarks) => (
               setFillColumnTarget({ subsectionId, label, maxMarks })
             )}
+            onViewCourseScores={(username) => {
+              const row = rows.find((candidate) => candidate.username === username);
+              setViewingCourseScoresFor({ username, fullName: row?.fullName ?? '' });
+            }}
           />
 
           <BulkResultsFinalizeBar
@@ -390,6 +397,13 @@ const BulkTraineeResults: React.FC<BulkTraineeResultsProps> = ({
             onCancel={handleCancelNavigation}
             onDiscard={handleDiscardNavigation}
             onSaveAndContinue={handleSaveAndNavigate}
+          />
+
+          <CourseScoresSheet
+            programKey={programKey}
+            username={viewingCourseScoresFor?.username ?? null}
+            fullName={viewingCourseScoresFor?.fullName}
+            onClose={() => setViewingCourseScoresFor(null)}
           />
         </>
       )}

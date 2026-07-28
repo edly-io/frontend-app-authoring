@@ -1,8 +1,8 @@
 import React from 'react';
 import {
-  Badge, Form, Icon, StatefulButton,
+  Badge, Form, Icon, IconButtonWithTooltip, StatefulButton,
 } from '@openedx/paragon';
-import { Lock, Save } from '@openedx/paragon/icons';
+import { Lock, RemoveRedEye, Save } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import UserIdentity from '../../components/UserIdentity';
 import { GRID_SCORE_CELL_WIDTH } from './constants';
@@ -27,6 +27,10 @@ const messages = defineMessages({
     id: 'programs.bulk-trainee-results.grid.finalized-editable-hint',
     defaultMessage: 'Editable (Super Admin)',
   },
+  viewCourseScoresBtn: {
+    id: 'programs.bulk-trainee-results.grid.view-course-scores-btn',
+    defaultMessage: 'View course score',
+  },
 });
 
 interface BulkResultsGridRowProps {
@@ -41,11 +45,12 @@ interface BulkResultsGridRowProps {
   finalizeError?: string;
   onScoreChange: (subsectionId: number, value: number) => void;
   onSaveRow: () => void;
+  onViewCourseScores: () => void;
 }
 
 const BulkResultsGridRow: React.FC<BulkResultsGridRowProps> = ({
   row, showTotals, canManage, canEditFinalized = false, isSaving, scoredCells, totalCells,
-  visibleSectionIndexes, finalizeError, onScoreChange, onSaveRow,
+  visibleSectionIndexes, finalizeError, onScoreChange, onSaveRow, onViewCourseScores,
 }) => {
   const intl = useIntl();
   const isFinalized = row.status === 'finalized';
@@ -151,26 +156,34 @@ const BulkResultsGridRow: React.FC<BulkResultsGridRowProps> = ({
         </div>
       </td>
 
-      <td className="text-center text-nowrap">
+      <td className="text-center text-nowrap action-column">
         <div className="d-flex flex-column align-items-center gap-1">
           <span className={`small ${dirty ? 'text-warning-800' : 'text-success-800'}`}>
             {intl.formatMessage(dirty ? messages.unsavedLabel : messages.savedLabel)}
           </span>
-          {canEditRow && (
-            <StatefulButton
-              variant="outline-primary"
-              size="sm"
-              iconBefore={Save}
-              state={isSaving ? 'pending' : 'default'}
-              disabledStates={['pending']}
-              disabled={!dirty}
-              labels={{
-                default: intl.formatMessage(messages.saveRowBtn),
-                pending: intl.formatMessage(messages.saveRowBtnPending),
-              }}
-              onClick={onSaveRow}
+          <div className="d-flex align-items-center gap-2">
+            {canEditRow && (
+              <StatefulButton
+                variant="outline-primary"
+                size="sm"
+                iconBefore={Save}
+                state={isSaving ? 'pending' : 'default'}
+                disabledStates={['pending']}
+                disabled={!dirty}
+                labels={{
+                  default: intl.formatMessage(messages.saveRowBtn),
+                  pending: intl.formatMessage(messages.saveRowBtnPending),
+                }}
+                onClick={onSaveRow}
+              />
+            )}
+            <IconButtonWithTooltip
+              tooltipContent={intl.formatMessage(messages.viewCourseScoresBtn)}
+              src={RemoveRedEye}
+              onClick={onViewCourseScores}
+              alt={intl.formatMessage(messages.viewCourseScoresBtn)}
             />
-          )}
+          </div>
         </div>
       </td>
     </tr>

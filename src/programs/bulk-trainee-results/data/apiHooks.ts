@@ -2,7 +2,9 @@ import {
   keepPreviousData, useMutation, useQuery, useQueryClient,
 } from '@tanstack/react-query';
 
-import { finalizeScores, getScoringGrid, saveScores } from './api';
+import {
+  finalizeScores, getCourseScores, getScoringGrid, saveScores,
+} from './api';
 import type {
   FinalizeScoresInput, ScoringGridParams, SaveScoresInput,
 } from './types';
@@ -60,3 +62,26 @@ export const useFinalizeScores = (programKey: string) => {
     },
   });
 };
+
+export const courseScoresQueryKeys = {
+  detail: (programKey: string, username: string) => (
+    ['programResults', 'courseScores', programKey, username] as const
+  ),
+};
+
+/**
+ * Read of `GET /trainees/{traineeId}/course-scores/` for the row-level "View
+ * course score" sheet. `enabled` must reflect the sheet's own open/closed
+ * state (not just a truthy username) so the request only ever fires while
+ * the sheet is actually visible to the user.
+ */
+export const useCourseScores = (
+  programKey: string,
+  username: string | null,
+  options?: { enabled?: boolean },
+) => useQuery({
+  queryKey: courseScoresQueryKeys.detail(programKey, username ?? ''),
+  queryFn: () => getCourseScores(programKey, username as string),
+  enabled: (options?.enabled ?? true) && !!programKey && !!username,
+  retry: retryExceptClientErrors,
+});

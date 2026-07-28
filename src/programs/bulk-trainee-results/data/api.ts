@@ -9,6 +9,9 @@
 import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import type {
+  CourseScoreEntry,
+  CourseScoreModule,
+  CourseScoresResponse,
   FinalizeScoresInput,
   FinalizeScoresResponse,
   FinalizeErrorCode,
@@ -35,11 +38,15 @@ const DEFAULT_PAGE_SIZE = 50;
 export const SAVE_SCORES_BATCH_SIZE = 25;
 
 const getProgramResultsBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/program-results`;
+const getProgramResultsLMSBaseUrl = () => `${getConfig().LMS_BASE_URL}/fbr/api/program-results`;
 const getEncodedProgramKey = (programKey: string) => encodeURIComponent(programKey);
 const getScoresUrl = (programKey: string) => (
   `${getProgramResultsBaseUrl()}/${getEncodedProgramKey(programKey)}/trainees/scores/`
 );
 const getFinalizeUrl = (programKey: string) => `${getScoresUrl(programKey)}finalize/`;
+const getCourseScoresUrl = (programKey: string, traineeId: string) => (
+  `${getProgramResultsLMSBaseUrl()}/${getEncodedProgramKey(programKey)}/trainees/${encodeURIComponent(traineeId)}/course-scores/`
+);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toScoreCell = (d: any): ScoreCell => ({
@@ -166,5 +173,38 @@ export const finalizeScores = async (
   return {
     ok: data.ok ?? [],
     errors: (data.errors ?? []).map(toWriteEnvelopeError<FinalizeErrorCode>),
+  };
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toCourseScoreModule = (d: any): CourseScoreModule => ({
+  name: d.name,
+  weight: Number(d.weight),
+  grade: Number(d.grade),
+  weightedGrade: Number(d.weighted_grade),
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toCourseScoreEntry = (d: any): CourseScoreEntry => ({
+  courseId: d.course_id,
+  courseCode: d.course_code,
+  courseName: d.course_name,
+  percent: Number(d.percent),
+  passed: !!d.passed,
+  letterGrade: d.letter_grade ?? null,
+  moduleCount: Number(d.module_count),
+  modules: (d.modules ?? []).map(toCourseScoreModule),
+});
+
+/** `GET /trainees/{traineeId}/course-scores/` (LMS-hosted) — a single trainee's per-course grade breakdown. */
+export const getCourseScores = async (
+  programKey: string,
+  traineeId: string,
+): Promise<CourseScoresResponse> => {
+  const { data } = await getAuthenticatedHttpClient().get(getCourseScoresUrl(programKey, traineeId));
+  return {
+    programKey: data.program_key,
+    aggregatePercent: Number(data.aggregate_percent),
+    courses: (data.courses ?? []).map(toCourseScoreEntry),
   };
 };

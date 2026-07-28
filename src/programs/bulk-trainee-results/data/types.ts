@@ -112,3 +112,30 @@ export interface WriteEnvelope<TCode extends string> {
 
 export type SaveScoresResponse = WriteEnvelope<SaveScoreErrorCode>;
 export type FinalizeScoresResponse = WriteEnvelope<FinalizeErrorCode>;
+
+/** One graded module's contribution to a course's percent, from `GET /trainees/{traineeId}/course-scores/`. */
+export interface CourseScoreModule {
+  name: string;
+  weight: number;
+  grade: number;
+  weightedGrade: number;
+}
+
+/** One course's grade breakdown from `GET /trainees/{traineeId}/course-scores/`. */
+export interface CourseScoreEntry {
+  courseId: string;
+  courseCode: string;
+  courseName: string;
+  percent: number;
+  passed: boolean;
+  letterGrade: string | null;
+  moduleCount: number;
+  modules: CourseScoreModule[];
+}
+
+/** Response shape for a single trainee's course-scores breakdown (LMS-hosted endpoint). */
+export interface CourseScoresResponse {
+  programKey: string;
+  aggregatePercent: number;
+  courses: CourseScoreEntry[];
+}

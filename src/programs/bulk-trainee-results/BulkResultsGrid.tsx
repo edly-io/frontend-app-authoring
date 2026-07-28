@@ -48,12 +48,13 @@ interface BulkResultsGridProps {
   onScoreChange: (username: string, subsectionId: number, value: number) => void;
   onSaveRow: (username: string) => void;
   onRequestFillColumn: (subsectionId: number, label: string, maxMarks: number) => void;
+  onViewCourseScores: (username: string) => void;
 }
 
 const BulkResultsGrid: React.FC<BulkResultsGridProps> = ({
   scheme, rows, showTotals, canManage, canEditFinalized = false, savingUsername, focusSectionIndex,
   page, pageCount, rangeStart, rangeEnd, totalCount, finalizeErrors = {},
-  onPageChange, onScoreChange, onSaveRow, onRequestFillColumn,
+  onPageChange, onScoreChange, onSaveRow, onRequestFillColumn, onViewCourseScores,
 }) => {
   const intl = useIntl();
   const visibleSectionIndexes = getVisibleSectionIndexes(scheme.sections.length, focusSectionIndex);
@@ -90,7 +91,7 @@ const BulkResultsGrid: React.FC<BulkResultsGridProps> = ({
                 );
               })}
               <th rowSpan={2} className="text-center align-bottom">{intl.formatMessage(messages.statusColumn)}</th>
-              <th rowSpan={2} className="text-center align-bottom">{intl.formatMessage(messages.actionsColumn)}</th>
+              <th rowSpan={2} className="text-center align-bottom action-column">{intl.formatMessage(messages.actionsColumn)}</th>
             </tr>
             <tr>
               {scheme.sections.map((section, index) => {
@@ -148,6 +149,7 @@ const BulkResultsGrid: React.FC<BulkResultsGridProps> = ({
                 finalizeError={finalizeErrors[row.username]}
                 onScoreChange={(subsectionId, value) => onScoreChange(row.username, subsectionId, value)}
                 onSaveRow={() => onSaveRow(row.username)}
+                onViewCourseScores={() => onViewCourseScores(row.username)}
               />
             ))}
           </tbody>
