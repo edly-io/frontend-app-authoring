@@ -118,6 +118,7 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
 }) => {
   const authority = config.issuedBy || DEFAULT_AUTHORITY;
   const signatories = config.signatories.filter((s) => s.name || s.title);
+  const sigCount = signatories.length;
   const scaleRef = useFitScale(mode);
 
   return (
@@ -152,11 +153,17 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
             <span className="fbr-cert__body-line">{authority}</span>
           </section>
 
-          <section className="fbr-cert__sigs">
+          <section
+            className="fbr-cert__sigs"
+            style={sigCount > 0 ? { gridTemplateColumns: `repeat(${sigCount}, minmax(0, 1fr))` } : undefined}
+          >
             {signatories.map((signatory) => (
               <article className="fbr-cert__sig" key={`${signatory.name}-${signatory.title}`}>
+                {signatory.signatureUrl && (
+                  <img className="fbr-cert__sig-image" src={signatory.signatureUrl} alt="" />
+                )}
                 <div className="fbr-cert__sig-line" />
-                <p className="fbr-cert__sig-name">{signatory.name || ' '}</p>
+                <p className="fbr-cert__sig-name">{signatory.name || ' '}</p>
                 <p className="fbr-cert__sig-title">{signatory.title}</p>
               </article>
             ))}

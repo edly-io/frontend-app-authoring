@@ -25,6 +25,7 @@ import {
 } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import { ToastContext } from '../../generic/toast-context';
+import UserIdentity from '../../components/UserIdentity';
 import type { CertificateConfig, CertificateRosterRow } from '../data/types';
 import {
   useAwardCertificates,
@@ -77,7 +78,6 @@ const messages = defineMessages({
   loadError: { id: 'programs.certificates.load.error', defaultMessage: 'Could not load the certificate roster.' },
   awardedOne: { id: 'programs.certificates.toast.awardedOne', defaultMessage: 'Certificate awarded.' },
   awardedMany: { id: 'programs.certificates.toast.awardedMany', defaultMessage: '{count} certificates awarded.' },
-  revoked: { id: 'programs.certificates.toast.revoked', defaultMessage: 'Certificate revoked.' },
   paginationLabel: { id: 'programs.certificates.pagination', defaultMessage: 'Trainee roster pages' },
 });
 
@@ -91,20 +91,15 @@ interface CertificatesTabProps {
   isActive: boolean;
 }
 
-const initials = (fullName: string): string => fullName
-  .split(/\s+/)
-  .slice(0, 2)
-  .map((part) => part.charAt(0).toUpperCase())
-  .join('');
-
-const AVATAR_TONES = ['', 'certificate-avatar--gold', 'certificate-avatar--slate'];
-const avatarTone = (index: number): string => AVATAR_TONES[index % AVATAR_TONES.length];
-
 const formatShortDate = (value: string): string => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) { return ''; }
   return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
+
+// Which award action is currently in flight, so each button can show its own
+// spinner without the bulk button and a row's button both lighting up.
+type AwardingScope = 'bulk' | { username: string };
 
 const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programName, isActive }) => {
   const intl = useIntl();
@@ -125,20 +120,24 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
   const [modalRow, setModalRow] = useState<CertificateRosterRow | null>(null);
   const [isModalOpen, openModal, closeModal] = useToggle(false);
   const [page, setPage] = useState(1);
+  const [awardingScope, setAwardingScope] = useState<AwardingScope | null>(null);
 
   const effectiveConfig: CertificateConfig = config ?? { issuedBy: '', signatories: [] };
 
   const stats = useMemo(() => {
     const total = roster.length;
     const awarded = roster.filter((row) => row.certificate).length;
-    const averagePercent = total === 0
-      ? 0
-      : roster.reduce((sum, row) => sum + Number(row.percent), 0) / total;
+    // percent is null for programs with no grading scheme set up — exclude
+    // those rows from the average rather than treating them as 0.
+    const scoredRows = roster.filter((row) => row.percent !== null);
+    const average = scoredRows.length === 0
+      ? null
+      : (scoredRows.reduce((sum, row) => sum + Number(row.percent), 0) / scoredRows.length).toFixed(1);
     return {
       total,
       awarded,
       notAwarded: total - awarded,
-      average: averagePercent.toFixed(1),
+      average,
     };
   }, [roster]);
 
@@ -194,23 +193,34 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
 
   const clearSelection = () => setSelected(new Set());
 
-  const handleAward = (usernames: string[]) => {
+  const handleAward = (usernames: string[], scope: AwardingScope) => {
+    setAwardingScope(scope);
     awardCertificates.mutate(usernames, {
       onSuccess: (result) => {
-        const count = result.ok.length;
-        showToast(count === 1
-          ? intl.formatMessage(messages.awardedOne)
-          : intl.formatMessage(messages.awardedMany, { count }));
         clearSelection();
+        // A single row's own pill flipping to "Awarded" is confirmation
+        // enough; a bulk award touches several rows at once (and can
+        // partially fail), so it gets a summary toast.
+        if (scope === 'bulk') {
+          const count = result.ok.length;
+          showToast(count === 1
+            ? intl.formatMessage(messages.awardedOne)
+            : intl.formatMessage(messages.awardedMany, { count }));
+        }
       },
+      onSettled: () => setAwardingScope(null),
     });
   };
 
   const handleRevoke = (certificateNumber: string) => {
-    revokeCertificate.mutate(certificateNumber, {
-      onSuccess: () => showToast(intl.formatMessage(messages.revoked)),
-    });
+    revokeCertificate.mutate(certificateNumber);
   };
+
+  const isBulkAwarding = awardCertificates.isPending && awardingScope === 'bulk';
+  const isRowAwarding = (username: string) => awardCertificates.isPending
+    && typeof awardingScope === 'object' && awardingScope?.username === username;
+  const isRowRevoking = (certificateNumber: string) => revokeCertificate.isPending
+    && revokeCertificate.variables === certificateNumber;
 
   const openRowModal = (row: CertificateRosterRow) => {
     setModalRow(row);
@@ -257,7 +267,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
       {
         key: 'average',
         label: intl.formatMessage(messages.kpiAverage),
-        value: `${stats.average}%`,
+        value: stats.average === null ? '—' : `${stats.average}%`,
         sub: intl.formatMessage(messages.kpiAverageSub),
         accent: '#0d9488',
       },
@@ -311,10 +321,16 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => handleAward([...selected])}
+                onClick={() => handleAward([...selected], 'bulk')}
                 disabled={awardCertificates.isPending}
               >
-                {intl.formatMessage(messages.awardSelected)}
+                {isBulkAwarding ? (
+                  <Spinner
+                    animation="border"
+                    size="sm"
+                    screenReaderText={intl.formatMessage(messages.awardSelected)}
+                  />
+                ) : intl.formatMessage(messages.awardSelected)}
               </Button>
             </div>
             )}
@@ -346,7 +362,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
                       {intl.formatMessage(messages.empty)}
                     </td>
                   </tr>
-                ) : pageRows.map((row, rowIndex) => {
+                ) : pageRows.map((row) => {
                   const isAwarded = !!row.certificate;
                   return (
                     <tr key={row.username}>
@@ -361,16 +377,15 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
                       </td>
                       <td>
                         <div className="certificate-trainee-cell">
-                          <span className={`certificate-avatar ${avatarTone(rowIndex)}`}>
-                            {initials(row.fullName)}
-                          </span>
-                          <div>
-                            <div className="certificate-trainee-name">{row.fullName}</div>
-                            <div className="certificate-trainee-username">{row.username}</div>
-                          </div>
+                          <UserIdentity
+                            name={row.fullName}
+                            avatarValue={row.avatarUrl ?? ''}
+                            badges={['Trainee']}
+                            size="compact"
+                          />
                         </div>
                       </td>
-                      <td className="certificate-score-cell">{row.percent}%</td>
+                      <td className="certificate-score-cell">{row.percent === null ? '—' : `${row.percent}%`}</td>
                       <td>
                         {isAwarded ? (
                           <>
@@ -379,7 +394,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
                               {intl.formatMessage(messages.statusAwarded)}
                             </span>
                             <div className="certificate-await-meta">
-                              {row.certificate!.certificateNumber} · {formatShortDate(row.certificate!.issuedAt)}
+                              {formatShortDate(row.certificate!.issuedAt)}
                             </div>
                           </>
                         ) : (
@@ -399,12 +414,22 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
                             size="sm"
                             className="text-danger"
                             onClick={() => handleRevoke(row.certificate!.certificateNumber)}
+                            disabled={isRowRevoking(row.certificate!.certificateNumber)}
                           >
-                            {intl.formatMessage(messages.revoke)}
+                            {isRowRevoking(row.certificate!.certificateNumber) ? (
+                              <Spinner animation="border" size="sm" screenReaderText={intl.formatMessage(messages.revoke)} />
+                            ) : intl.formatMessage(messages.revoke)}
                           </Button>
                         ) : (
-                          <Button variant="primary" size="sm" onClick={() => handleAward([row.username])}>
-                            {intl.formatMessage(messages.award)}
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => handleAward([row.username], { username: row.username })}
+                            disabled={isRowAwarding(row.username)}
+                          >
+                            {isRowAwarding(row.username) ? (
+                              <Spinner animation="border" size="sm" screenReaderText={intl.formatMessage(messages.award)} />
+                            ) : intl.formatMessage(messages.award)}
                           </Button>
                         )}
                       </td>
@@ -477,8 +502,10 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
         row={modalRow}
         config={effectiveConfig}
         programName={programName}
-        onAward={(username) => handleAward([username])}
+        onAward={(username) => handleAward([username], { username })}
         onRevoke={handleRevoke}
+        isAwarding={modalRow ? isRowAwarding(modalRow.username) : false}
+        isRevoking={modalRow?.certificate ? isRowRevoking(modalRow.certificate.certificateNumber) : false}
       />
     </div>
   );

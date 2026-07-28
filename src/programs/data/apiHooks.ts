@@ -35,6 +35,7 @@ import {
   getFeedbackDashboardReport,
   getCertificateConfig,
   updateCertificateConfig,
+  uploadCertificateSignature,
   getCertificateRoster,
   awardCertificates,
   revokeCertificate,
@@ -49,6 +50,7 @@ import type {
   InitiateFeedbackPayload,
   Program,
   CertificateConfig,
+  CertificateRosterRow,
 } from './types';
 import { getProgramCapabilities } from './permissions';
 
@@ -433,11 +435,30 @@ export const useUpdateCertificateConfig = (programId: string) => {
   });
 };
 
+export const useUploadCertificateSignature = (programId: string) => useMutation({
+  mutationFn: (file: File) => uploadCertificateSignature(programId, file),
+});
+
 export const useAwardCertificates = (programId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (usernames: string[]) => awardCertificates(programId, usernames),
-    onSuccess: () => {
+    onSuccess: (result, usernames) => {
+      // A single-username award unambiguously matches its one result — patch
+      // the cache directly so the row updates instantly, no refetch round
+      // trip. A bulk award's `ok` list isn't paired with usernames, so it
+      // falls back to a refetch.
+      if (usernames.length === 1 && result.ok.length === 1) {
+        const [username] = usernames;
+        const [certificateNumber] = result.ok;
+        queryClient.setQueryData<CertificateRosterRow[]>(
+          ['certificateRoster', programId],
+          (rows) => rows?.map((row) => (row.username === username
+            ? { ...row, certificate: { certificateNumber, status: 'active', issuedAt: new Date().toISOString() } }
+            : row)),
+        );
+        return;
+      }
       queryClient.invalidateQueries({ queryKey: ['certificateRoster', programId] });
     },
   });
@@ -447,8 +468,13 @@ export const useRevokeCertificate = (programId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (certificateNumber: string) => revokeCertificate(certificateNumber),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['certificateRoster', programId] });
+    onSuccess: (_data, certificateNumber) => {
+      queryClient.setQueryData<CertificateRosterRow[]>(
+        ['certificateRoster', programId],
+        (rows) => rows?.map((row) => (row.certificate?.certificateNumber === certificateNumber
+          ? { ...row, certificate: null }
+          : row)),
+      );
     },
   });
 };

@@ -4,6 +4,7 @@ import {
   ActionRow,
   Button,
   ModalDialog,
+  Spinner,
 } from '@openedx/paragon';
 import { Print } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
@@ -19,6 +20,14 @@ const messages = defineMessages({
   close: { id: 'programs.certificates.modal.close', defaultMessage: 'Close' },
 });
 
+const FILENAME_UNSAFE_CHARS = /[\\/:*?"<>|]/g;
+
+const sanitizeForFileName = (value: string): string => value.replace(FILENAME_UNSAFE_CHARS, '').trim();
+
+const buildCertificateFileName = (traineeName: string, programName: string): string => (
+  `${sanitizeForFileName(traineeName)} - ${sanitizeForFileName(programName)} - Certificate`
+);
+
 interface CertificateModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -27,6 +36,8 @@ interface CertificateModalProps {
   programName: string;
   onAward: (username: string) => void;
   onRevoke: (certificateNumber: string) => void;
+  isAwarding: boolean;
+  isRevoking: boolean;
 }
 
 const CertificateModal: React.FC<CertificateModalProps> = ({
@@ -37,6 +48,8 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
   programName,
   onAward,
   onRevoke,
+  isAwarding,
+  isRevoking,
 }) => {
   const intl = useIntl();
 
@@ -47,6 +60,17 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
   const award = row.certificate;
   const isAwarded = !!award;
   const issuedAt = award ? award.issuedAt : new Date().toISOString();
+
+  const handlePrint = (): void => {
+    const previousTitle = document.title;
+    const restoreTitle = (): void => {
+      document.title = previousTitle;
+      window.removeEventListener('afterprint', restoreTitle);
+    };
+    window.addEventListener('afterprint', restoreTitle);
+    document.title = buildCertificateFileName(row.fullName, programName);
+    window.print();
+  };
 
   return (
     <>
@@ -83,16 +107,20 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
               {intl.formatMessage(messages.close)}
             </Button>
             <ActionRow.Spacer />
-            <Button variant="outline-primary" iconBefore={Print} onClick={() => window.print()}>
+            <Button variant="outline-primary" iconBefore={Print} onClick={handlePrint}>
               {intl.formatMessage(messages.print)}
             </Button>
             {isAwarded ? (
-              <Button variant="danger" onClick={() => onRevoke(award!.certificateNumber)}>
-                {intl.formatMessage(messages.revoke)}
+              <Button variant="danger" onClick={() => onRevoke(award!.certificateNumber)} disabled={isRevoking}>
+                {isRevoking ? (
+                  <Spinner animation="border" size="sm" screenReaderText={intl.formatMessage(messages.revoke)} />
+                ) : intl.formatMessage(messages.revoke)}
               </Button>
             ) : (
-              <Button variant="primary" onClick={() => onAward(row.username)}>
-                {intl.formatMessage(messages.award)}
+              <Button variant="primary" onClick={() => onAward(row.username)} disabled={isAwarding}>
+                {isAwarding ? (
+                  <Spinner animation="border" size="sm" screenReaderText={intl.formatMessage(messages.award)} />
+                ) : intl.formatMessage(messages.award)}
               </Button>
             )}
           </ActionRow>

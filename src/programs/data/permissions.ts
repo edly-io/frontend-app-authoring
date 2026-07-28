@@ -34,7 +34,7 @@ export const getProgramCapabilities = (roles: FbrRole[] = []): ProgramCapabiliti
     canManageEnrollment: isProgramAdmin,
     canManageInstructors: isProgramAdmin,
     canEditFinalizedResults: isSuperAdmin,
-    canManageCertificates: isProgramAdmin,
+    canManageCertificates: isSuperAdmin,
     isReadOnly: !isProgramAdmin,
   };
 };

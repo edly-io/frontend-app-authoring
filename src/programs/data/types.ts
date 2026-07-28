@@ -333,12 +333,22 @@ export type TraineeResultStatus = 'finalized' | 'in_progress';
 export interface Signatory {
   name: string;
   title: string;
+  /** Id of the uploaded ProgramCertificateAssets row, or null/undefined if none yet. */
+  signatureAssetId?: number | null;
+  /** Absolute URL for the uploaded signature image, printed above the dashed line. */
+  signatureUrl?: string;
 }
 
 /** Per-program certificate presentation. Editable; rendered live. */
 export interface CertificateConfig {
   issuedBy: string;
   signatories: Signatory[];
+}
+
+/** Result of uploading a signature image: id to reference + URL to preview. */
+export interface CertificateAssetUploadResult {
+  id: number;
+  url: string;
 }
 
 /** An issued certificate's immutable facts + current status. */
@@ -348,14 +358,18 @@ export interface CertificateAward {
   issuedAt: string;
 }
 
-/** One roster row: a trainee, their score/result state, and any award. */
+/**
+ * One roster row: a trainee, their score/result state, and any award.
+ * percent/result/status are null when the program has no grading scheme set
+ * up at all — certificates don't require Program Results to be configured.
+ */
 export interface CertificateRosterRow {
   username: string;
   fullName: string;
   avatarUrl: string | null;
-  percent: string;
-  result: TraineeResultOutcome;
-  status: TraineeResultStatus;
+  percent: string | null;
+  result: TraineeResultOutcome | null;
+  status: TraineeResultStatus | null;
   certificate: CertificateAward | null;
 }
 
