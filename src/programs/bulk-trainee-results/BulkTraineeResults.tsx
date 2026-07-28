@@ -1,5 +1,5 @@
 import React, {
-  useContext, useEffect, useMemo, useState,
+  useCallback, useContext, useEffect, useMemo, useRef, useState,
 } from 'react';
 import { Alert, Container } from '@openedx/paragon';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
@@ -54,7 +54,11 @@ interface BulkTraineeResultsProps {
   canEditFinalized?: boolean;
 }
 
-type PendingNavigation = { type: 'page'; value: number } | { type: 'pageSize'; value: number };
+type PendingNavigation =
+  | { type: 'page'; value: number }
+  | { type: 'pageSize'; value: number }
+  | { type: 'search'; value: string }
+  | { type: 'status'; value: ScoringStatus | undefined };
 type ViewingCourseScoresTarget = { username: string; fullName: string };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -125,15 +129,42 @@ const BulkTraineeResults: React.FC<BulkTraineeResultsProps> = ({
     }, {})
   ), [finalizeErrors]);
 
-  const handleSearchChange = (nextSearch: string) => {
-    setSearch(nextSearch);
-    setPage(1);
-  };
+  const changedCountRef = useRef(changedCount);
+  changedCountRef.current = changedCount;
 
-  const handleStatusChange = (nextStatus: ScoringStatus | undefined) => {
-    setStatus(nextStatus);
+  const applyNavigation = useCallback((navigation: PendingNavigation) => {
+    if (navigation.type === 'page') {
+      setPage(navigation.value);
+      return;
+    }
+    if (navigation.type === 'search') {
+      setSearch(navigation.value);
+      setPage(1);
+      return;
+    }
+    if (navigation.type === 'status') {
+      setStatus(navigation.value);
+      setPage(1);
+      return;
+    }
     setPage(1);
-  };
+  }, []);
+
+  const requestNavigation = useCallback((navigation: PendingNavigation) => {
+    if (changedCountRef.current > 0) {
+      setPendingNavigation(navigation);
+      return;
+    }
+    applyNavigation(navigation);
+  }, [applyNavigation]);
+
+  const handleSearchChange = useCallback((nextSearch: string) => {
+    requestNavigation({ type: 'search', value: nextSearch });
+  }, [requestNavigation]);
+
+  const handleStatusChange = useCallback((nextStatus: ScoringStatus | undefined) => {
+    requestNavigation({ type: 'status', value: nextStatus });
+  }, [requestNavigation]);
 
   const handleScoreChange = (username: string, subsectionId: number, value: number) => {
     setFinalizeErrors((prev) => (
@@ -255,25 +286,14 @@ const BulkTraineeResults: React.FC<BulkTraineeResultsProps> = ({
     }
   };
 
-  const applyNavigation = (navigation: PendingNavigation) => {
-    if (navigation.type === 'page') {
-      setPage(navigation.value);
-    } else {
-      setPage(1);
-    }
-  };
-
-  const handlePageChange = (nextPage: number) => {
-    if (changedCount > 0) {
-      setPendingNavigation({ type: 'page', value: nextPage });
-      return;
-    }
-    setPage(nextPage);
-  };
+  const handlePageChange = useCallback((nextPage: number) => {
+    requestNavigation({ type: 'page', value: nextPage });
+  }, [requestNavigation]);
 
   const handleCancelNavigation = () => setPendingNavigation(null);
 
   const handleDiscardNavigation = () => {
+    handleClearAll();
     if (pendingNavigation) {
       applyNavigation(pendingNavigation);
     }
@@ -374,7 +394,7 @@ const BulkTraineeResults: React.FC<BulkTraineeResultsProps> = ({
           />
 
           <BulkResultsFinalizeBar
-            totalTrainees={gridData?.count ?? 0}
+            pageTraineeCount={rows.length}
             changedCount={changedCount}
             isFinalizing={finalizeScoresMutation.isPending}
             isSavingChanged={saveChangedRowsMutation.isPending}

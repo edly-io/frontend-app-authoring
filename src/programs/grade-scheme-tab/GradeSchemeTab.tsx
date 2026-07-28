@@ -158,6 +158,7 @@ const GradeSchemeTab: React.FC<GradeSchemeTabProps> = ({ program, programId = ''
     ? getSchemeTreeSignature(draft.targetTotal, draft.sections) !== savedSignature
     : false;
   const isNameDirty = draft ? draft.name !== savedName : false;
+  const hasUnsavedChanges = isTreeDirty || isNameDirty;
 
   const validationErrors = draft ? validateSchemeDraft(draft) : [];
   const validationMessageByCode = {
@@ -165,7 +166,7 @@ const GradeSchemeTab: React.FC<GradeSchemeTabProps> = ({ program, programId = ''
     EMPTY_SECTION: messages.validationEmptySection,
     UNBALANCED: messages.validationUnbalanced,
   } as const;
-  const canPublish = canManage && hasBeenCreated && status === 'draft' && !isTreeDirty
+  const canPublish = canManage && hasBeenCreated && status === 'draft' && !hasUnsavedChanges
     && draft !== null && isPublishable(draft);
 
   const updateSections = useCallback((updater: (sections: EditableSection[]) => EditableSection[]) => {
@@ -346,7 +347,7 @@ const GradeSchemeTab: React.FC<GradeSchemeTabProps> = ({ program, programId = ''
 
       <div className="bg-white border-top d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 py-3 mt-4">
         <span>
-          {isTreeDirty && canManage ? (
+          {hasUnsavedChanges && canManage ? (
             <span className="text-warning-800">{intl.formatMessage(messages.unsavedChanges)}</span>
           ) : (
             <span className="text-muted small">
@@ -363,7 +364,7 @@ const GradeSchemeTab: React.FC<GradeSchemeTabProps> = ({ program, programId = ''
               variant="outline-primary"
               state={saveScheme.isPending ? 'pending' : 'default'}
               disabledStates={['pending']}
-              disabled={!isTreeDirty}
+              disabled={!hasUnsavedChanges}
               labels={{
                 default: intl.formatMessage(messages.saveDraftBtnDefault),
                 pending: intl.formatMessage(messages.saveDraftBtnPending),

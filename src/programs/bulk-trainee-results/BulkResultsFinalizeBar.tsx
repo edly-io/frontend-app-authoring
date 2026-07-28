@@ -6,9 +6,9 @@ import { CheckCircleOutline, Save } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 
 const messages = defineMessages({
-  cohortSizeLabel: {
-    id: 'programs.bulk-trainee-results.finalize-bar.cohort-size',
-    defaultMessage: '{count, plural, one {# trainee} other {# trainees}} in this cohort',
+  pageSizeLabel: {
+    id: 'programs.bulk-trainee-results.finalize-bar.page-size',
+    defaultMessage: '{count, plural, one {# trainee} other {# trainees}} on this page',
   },
   changedCountLabel: {
     id: 'programs.bulk-trainee-results.finalize-bar.changed-count',
@@ -21,12 +21,12 @@ const messages = defineMessages({
   clearAllBtn: { id: 'programs.bulk-trainee-results.finalize-bar.clear-all-btn', defaultMessage: 'Clear all' },
   saveChangedBtnDefault: { id: 'programs.bulk-trainee-results.finalize-bar.save-changed-btn.default', defaultMessage: 'Save changed rows' },
   saveChangedBtnPending: { id: 'programs.bulk-trainee-results.finalize-bar.save-changed-btn.pending', defaultMessage: 'Saving…' },
-  finalizeAllBtnDefault: { id: 'programs.bulk-trainee-results.finalize-bar.finalize-all-btn.default', defaultMessage: 'Finalize all eligible' },
+  finalizeAllBtnDefault: { id: 'programs.bulk-trainee-results.finalize-bar.finalize-all-btn.default', defaultMessage: 'Finalize eligible on this page' },
   finalizeAllBtnPending: { id: 'programs.bulk-trainee-results.finalize-bar.finalize-all-btn.pending', defaultMessage: 'Finalizing…' },
 });
 
 interface BulkResultsFinalizeBarProps {
-  totalTrainees: number;
+  pageTraineeCount: number;
   changedCount: number;
   isFinalizing: boolean;
   isSavingChanged: boolean;
@@ -37,7 +37,7 @@ interface BulkResultsFinalizeBarProps {
 }
 
 const BulkResultsFinalizeBar: React.FC<BulkResultsFinalizeBarProps> = ({
-  totalTrainees, changedCount, isFinalizing, isSavingChanged, canManage,
+  pageTraineeCount, changedCount, isFinalizing, isSavingChanged, canManage,
   onFinalizeAll, onSaveChangedRows, onClearAll,
 }) => {
   const intl = useIntl();
@@ -52,7 +52,7 @@ const BulkResultsFinalizeBar: React.FC<BulkResultsFinalizeBarProps> = ({
         <Stack direction="horizontal" gap={4} className="flex-wrap align-items-center justify-content-between">
           <div>
             <div className="font-weight-bold">
-              {intl.formatMessage(messages.cohortSizeLabel, { count: totalTrainees })}
+              {intl.formatMessage(messages.pageSizeLabel, { count: pageTraineeCount })}
               {changedCount > 0 && (
                 <span className="text-warning-800 font-weight-normal ml-2">
                   · {intl.formatMessage(messages.changedCountLabel, { count: changedCount })}
