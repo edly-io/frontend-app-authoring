@@ -19,6 +19,7 @@ const messages = defineMessages({
     defaultMessage: 'Fully-scored trainees will be locked and their results marked final.',
   },
   clearAllBtn: { id: 'programs.bulk-trainee-results.finalize-bar.clear-all-btn', defaultMessage: 'Clear all' },
+  printResults: { id: 'programs.bulk-trainee-results.finalize-bar.print-results-btn', defaultMessage: 'Print Results' },
   saveChangedBtnDefault: { id: 'programs.bulk-trainee-results.finalize-bar.save-changed-btn.default', defaultMessage: 'Save changed rows' },
   saveChangedBtnPending: { id: 'programs.bulk-trainee-results.finalize-bar.save-changed-btn.pending', defaultMessage: 'Saving…' },
   finalizeAllBtnDefault: { id: 'programs.bulk-trainee-results.finalize-bar.finalize-all-btn.default', defaultMessage: 'Finalize eligible on this page' },
@@ -41,6 +42,10 @@ const BulkResultsFinalizeBar: React.FC<BulkResultsFinalizeBarProps> = ({
   onFinalizeAll, onSaveChangedRows, onClearAll,
 }) => {
   const intl = useIntl();
+
+  const handlePrint = () => {
+    window.print();
+  }
 
   if (!canManage) {
     return null;
@@ -95,6 +100,12 @@ const BulkResultsFinalizeBar: React.FC<BulkResultsFinalizeBarProps> = ({
               }}
               onClick={onFinalizeAll}
             />
+            <Button
+              variant="outline-primary"
+              onClick={handlePrint}
+            >
+              {intl.formatMessage(messages.printResults)}
+            </Button>
           </Stack>
         </Stack>
       </Card.Body>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useIntl, defineMessages } from '@edx/frontend-platform/i18n';
 import {
   Tab,
@@ -31,9 +31,17 @@ const ResultsTab: React.FC<ResultsTabProps> = ({
 }) => {
   const [activeTab, setActiveTab] = React.useState('grade-scheme');
   const intl = useIntl();
+
+  useEffect(() => {
+    document.body.classList.add('is-trainee-results-tab-shown');
+    return () => {
+      document.body.classList.remove('is-trainee-results-tab-shown');
+    };
+  }, []);
+
   return (
     <>
-      <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3 pt-4">
+      <div className="trainee-page-sub-header d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3 pt-4">
         <div>
           <h3 className="mb-1">{intl.formatMessage(messages.pageTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.pageSubtitle)}</p>

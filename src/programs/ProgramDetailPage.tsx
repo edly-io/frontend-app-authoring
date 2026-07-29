@@ -676,12 +676,16 @@ const ProgramDetailPage: React.FC = () => {
             <FeedbackTab programId={programId ?? ''} isActive={activeTab === 'feedback'} />
           </Tab>
           <Tab eventKey="trainee-results" title={intl.formatMessage(messages.tabTraineeResults)}>
-            <ResultsTab
-              program={program}
-              programId={programId ?? ''}
-              canManage={capabilities.canEditProgram}
-              canEditFinalized={capabilities.canEditFinalizedResults}
-            />
+            {
+              activeTab === 'trainee-results' && (
+                <ResultsTab
+                  program={program}
+                  programId={programId ?? ''}
+                  canManage={capabilities.canEditProgram}
+                  canEditFinalized={capabilities.canEditFinalizedResults}
+                />
+              )
+            }
           </Tab>
         </Tabs>
 

@@ -147,7 +147,7 @@ const BulkResultsGridRow: React.FC<BulkResultsGridRowProps> = ({
           {intl.formatMessage(isFinalized ? messages.statusFinalized : messages.statusInProgress)}
         </Badge>
         {isFinalized && canEditRow && (
-          <div className="small text-warning-800 mt-1">
+          <div className="small text-warning-800 mt-1 finalized-editable-hint">
             {intl.formatMessage(messages.finalizedEditableHint)}
           </div>
         )}
