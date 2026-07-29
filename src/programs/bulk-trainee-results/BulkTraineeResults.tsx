@@ -10,6 +10,7 @@ import { ToastContext } from '../../generic/toast-context';
 import type { Program } from '../data/types';
 import { useProgramScheme } from '../grade-scheme-tab/data/apiHooks';
 import './bulk-trainee-results-styles.scss';
+import './bulk-trainee-results-print-styles.scss';
 
 import { useFinalizeScores, useSaveScores, useScoringGrid } from './data/apiHooks';
 import type { FinalizeErrorCode, ScoringStatus, WriteEnvelopeError } from './data/types';
