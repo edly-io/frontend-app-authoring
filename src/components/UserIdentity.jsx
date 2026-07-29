@@ -143,9 +143,9 @@ const UserIdentity = ({
       placement="auto"
       delay={{ show: 250, hide: 120 }}
       overlay={hoverCard}
-      trigger="hover"
+      trigger={['hover', 'focus']}
     >
-      <div className="user-identity__hover-trigger">
+      <div className="user-identity__hover-trigger" tabIndex={0}>
         {identity}
       </div>
     </OverlayTrigger>
