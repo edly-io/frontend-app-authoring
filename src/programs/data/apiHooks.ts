@@ -36,6 +36,7 @@ import {
   getCertificateConfig,
   updateCertificateConfig,
   uploadCertificateSignature,
+  getCertificatePreview,
   getCertificateRoster,
   awardCertificates,
   revokeCertificate,
@@ -437,6 +438,24 @@ export const useUpdateCertificateConfig = (programId: string) => {
 
 export const useUploadCertificateSignature = (programId: string) => useMutation({
   mutationFn: (file: File) => uploadCertificateSignature(programId, file),
+});
+
+/**
+ * Server-rendered certificate HTML for the admin preview. The caller passes the
+ * current (possibly unsaved) config + a sample/real trainee; keying on the
+ * serialized input means an unchanged config re-uses the cached HTML, and
+ * `placeholderData` keeps the previous render visible while a new one loads.
+ */
+export const useCertificatePreview = (
+  programId: string,
+  input: { config: CertificateConfig; traineeName: string; issuedAt?: string },
+  enabled = true,
+) => useQuery({
+  queryKey: ['certificatePreview', programId, input],
+  queryFn: () => getCertificatePreview(programId, input),
+  enabled: enabled && !!programId,
+  placeholderData: (previous) => previous,
+  staleTime: Infinity,
 });
 
 export const useAwardCertificates = (programId: string) => {

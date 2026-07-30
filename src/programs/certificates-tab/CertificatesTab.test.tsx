@@ -20,6 +20,7 @@ jest.mock('@src/programs/data/apiHooks', () => ({
   useRevokeCertificate: () => mockUseRevokeCertificate(),
   useUpdateCertificateConfig: () => ({ mutate: mockUpdateConfigMutate, isPending: false }),
   useUploadCertificateSignature: () => ({ mutateAsync: mockUploadSignatureMutateAsync, isPending: false }),
+  useCertificatePreview: () => ({ data: '<div class="fbr-cert" />', isFetching: false }),
 }));
 
 const programId = 'prog-key-1';
@@ -49,9 +50,11 @@ const renderTab = () => render(
   <CertificatesTab programId={programId} programName={programName} isActive />,
 );
 
+let mockShowToast;
+
 describe('<CertificatesTab />', () => {
   beforeEach(() => {
-    initializeMocks();
+    ({ mockShowToast } = initializeMocks());
     mockAwardMutate.mockImplementation((usernames: string[], opts?: any) => {
       opts?.onSuccess?.({ ok: usernames, errors: [] });
       opts?.onSettled?.();
@@ -95,15 +98,60 @@ describe('<CertificatesTab />', () => {
     expect(mockRevokeMutate.mock.calls[0][0]).toBe('FBR-CERT-AYESHA');
   });
 
+  it('shows an error toast when awarding fails', () => {
+    mockAwardMutate.mockImplementation((_usernames: string[], opts?: any) => {
+      opts?.onError?.();
+      opts?.onSettled?.();
+    });
+    renderTab();
+    fireEvent.click(screen.getByRole('button', { name: /^Award$/i }));
+    expect(mockShowToast).toHaveBeenCalledWith('Could not award the certificate. Please try again.');
+  });
+
+  it('shows an error toast when revoking fails', () => {
+    mockRevokeMutate.mockImplementation((_num: string, opts?: any) => {
+      opts?.onError?.();
+    });
+    renderTab();
+    fireEvent.click(screen.getByRole('button', { name: /^Revoke$/i }));
+    expect(mockShowToast).toHaveBeenCalledWith('Could not revoke the certificate. Please try again.');
+  });
+
+  it('reflects an award made from within the modal instead of showing stale data', () => {
+    let currentRoster = [awardedRow, pendingRow];
+    mockUseCertificateRoster.mockImplementation(() => ({ data: currentRoster, isLoading: false, isError: false }));
+    mockAwardMutate.mockImplementation((usernames: string[], opts?: any) => {
+      currentRoster = currentRoster.map((row) => (row.username === usernames[0]
+        ? {
+          ...row,
+          certificate: { certificateNumber: 'FBR-CERT-NEW', status: 'active' as const, issuedAt: '2026-07-01T00:00:00Z' },
+        }
+        : row));
+      opts?.onSuccess?.({ ok: usernames, errors: [] });
+      opts?.onSettled?.();
+    });
+    renderTab();
+    fireEvent.click(screen.getByRole('button', { name: /^Preview$/i }));
+    expect(screen.getByRole('button', { name: /^Award certificate$/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Award certificate$/i }));
+    expect(screen.getByRole('button', { name: /^Revoke certificate$/i })).toBeInTheDocument();
+  });
+
   it('spins the row award button, not the bulk button, for a single-row award', () => {
-    mockUseAwardCertificates.mockReturnValue({ mutate: mockAwardMutate, isPending: true, variables: undefined });
-    mockAwardMutate.mockImplementationOnce(() => {}); // leave the award pending, no onSettled
+    // Award buttons are disabled while a mutation is pending, so isPending must
+    // start false and flip only once mutate() fires (mirroring react-query) —
+    // otherwise the row button is disabled and the click is a no-op.
+    let isPending = false;
+    mockUseAwardCertificates.mockImplementation(() => ({
+      mutate: mockAwardMutate, isPending, variables: undefined,
+    }));
+    mockAwardMutate.mockImplementationOnce(() => { isPending = true; }); // left pending, no onSettled
     renderTab();
     fireEvent.click(screen.getByRole('button', { name: /^Award$/i }));
     expect(screen.getByRole('status')).toBeInTheDocument();
   });
 
-  it('spins the bulk award button, not the row button, for a bulk award', () => {
+  it('spins the bulk award button and disables the row button too, for a bulk award', () => {
     // The bulk button is disabled while isPending is true, so it must start
     // false and flip only once mutate() actually fires — mirroring how
     // react-query flips isPending as a side effect of calling mutate.
@@ -116,8 +164,11 @@ describe('<CertificatesTab />', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /Select Jawad Ali/i }));
     fireEvent.click(screen.getByRole('button', { name: /Award selected/i }));
     expect(screen.getByRole('status')).toBeInTheDocument();
-    // The row's own Award button is untouched by the bulk action's pending state.
-    expect(screen.getByRole('button', { name: /^Award$/i })).not.toBeDisabled();
+    // Award triggers (row and bulk) share one mutation instance, so the row
+    // button is disabled too while a bulk award is in flight — this prevents
+    // a second, overlapping award request from corrupting the shared pending
+    // state (see MED-01 in the code review).
+    expect(screen.getByRole('button', { name: /^Award$/i })).toBeDisabled();
   });
 
   it('shows a spinner on the revoke button while revoking', () => {

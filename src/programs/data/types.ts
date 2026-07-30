@@ -333,8 +333,8 @@ export type TraineeResultStatus = 'finalized' | 'in_progress';
 export interface Signatory {
   name: string;
   title: string;
-  /** Id of the uploaded ProgramCertificateAssets row, or null/undefined if none yet. */
-  signatureAssetId?: number | null;
+  /** Slug of the uploaded ProgramCertificateAsset row, or null/undefined if none yet. */
+  signatureSlug?: string | null;
   /** Absolute URL for the uploaded signature image, printed above the dashed line. */
   signatureUrl?: string;
 }
@@ -345,9 +345,9 @@ export interface CertificateConfig {
   signatories: Signatory[];
 }
 
-/** Result of uploading a signature image: id to reference + URL to preview. */
+/** Result of uploading a signature image: slug to reference + URL to preview. */
 export interface CertificateAssetUploadResult {
-  id: number;
+  slug: string;
   url: string;
 }
 

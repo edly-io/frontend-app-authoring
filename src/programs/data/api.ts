@@ -905,14 +905,14 @@ const getCertificatesBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/cms
 const toSignatory = (s: any): Signatory => ({
   name: s.name,
   title: s.title,
-  signatureAssetId: s.signature_asset_id ?? null,
+  signatureSlug: s.signature_slug ?? null,
   signatureUrl: s.signature_url ?? undefined,
 });
 
 const fromSignatory = (s: Signatory) => ({
   name: s.name,
   title: s.title,
-  signature_asset_id: s.signatureAssetId ?? null,
+  signature_slug: s.signatureSlug ?? null,
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -956,7 +956,26 @@ export const uploadCertificateSignature = async (
   const formData = new FormData();
   formData.append('image', file);
   const { data } = await getAuthenticatedHttpClient().post(url, formData);
-  return { id: data.id, url: data.url };
+  return { slug: data.slug, url: data.url };
+};
+
+/**
+ * Render the certificate to HTML for the admin live preview. Sends the current
+ * (possibly unsaved) config so the preview reflects edits before save; the
+ * backend fills all placeholders and returns final HTML.
+ */
+export const getCertificatePreview = async (
+  programId: string,
+  input: { config: CertificateConfig; traineeName: string; issuedAt?: string },
+): Promise<string> => {
+  const url = `${getCertificatesBaseUrl()}/${getEncodedProgramId(programId)}/certificate/preview/`;
+  const { data } = await getAuthenticatedHttpClient().post(url, {
+    issued_by: input.config.issuedBy,
+    signatories: input.config.signatories.map(fromSignatory),
+    trainee_name: input.traineeName,
+    ...(input.issuedAt ? { issued_at: input.issuedAt } : {}),
+  });
+  return data.html;
 };
 
 export const getCertificateRoster = async (programId: string): Promise<CertificateRosterRow[]> => {

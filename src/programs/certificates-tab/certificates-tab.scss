@@ -6,39 +6,12 @@
 // layout, colours, and print size (297mm × 188mm) — so Studio previews match
 // the certificate the credentials service issues.
 
-// ── Bundled certificate fonts (match the credentials template) ──────────────
-@font-face {
-  font-family: "Algerian";
-  src: url("./assets/algerian.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-}
-@font-face {
-  font-family: "Bookman Old Style";
-  src: url("./assets/bookman-old-style.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-}
-@font-face {
-  font-family: "Monotype Corsiva";
-  src: url("./assets/monotype-corsiva.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-}
-@font-face {
-  font-family: "Open Sans Cert";
-  src: url("./assets/open-sans-400.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-}
-@font-face {
-  font-family: "Open Sans Cert";
-  src: url("./assets/open-sans-700.ttf") format("truetype");
-  font-weight: 700;
-  font-style: normal;
-}
+// The certificate document itself — fonts (@font-face), logos, and all
+// `.fbr-cert` layout/colour rules — is owned by the backend template's inlined
+// `<style>` (rendered server-side and injected by CertificateHtmlView). Only
+// the host-side scale wrapper, modal, and print rules live here.
 
-// Native certificate dimensions (from the credentials template).
+// Native certificate dimensions (must match the backend template).
 $cert-w: 1123;
 $cert-h: 710;
 $cert-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
@@ -107,9 +80,9 @@ $cert-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, m
   gap: .5rem;
   padding: .75rem;
   margin-bottom: .5rem;
-  border: 1px solid #e3e6ea;
-  border-radius: 8px;
-  background: #fafbfc;
+  border: 1px solid var(--pgn-color-light-400);
+  border-radius: .5rem;
+  background: var(--pgn-color-light-100);
 }
 
 .certificate-signatory-fields {
@@ -143,13 +116,13 @@ $cert-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, m
   }
 
   &__thumb {
-    max-height: 40px;
-    max-width: 160px;
+    max-height: 2.5rem;
+    max-width: 10rem;
     width: auto;
     object-fit: contain;
-    border: 1px solid #e3e6ea;
-    border-radius: 4px;
-    background: #fff;
+    border: 1px solid var(--pgn-color-light-400);
+    border-radius: .25rem;
+    background: var(--pgn-color-white);
   }
 
   &__actions {
@@ -227,13 +200,8 @@ $cert-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, m
 
 .fbr-cert-modal-view .fbr-cert {
   transform-origin: top left;
-  border: 1px solid #d7dbe0;
-  border-radius: 8px;
-}
-
-// The body-level print copy is hidden on screen; only `@media print` shows it.
-.fbr-cert-print-area {
-  display: none;
+  border: 1px solid var(--pgn-color-light-400);
+  border-radius: .5rem;
 }
 
 // ── Intro (section heading + muted subtitle) ────────────────────────────────
@@ -241,7 +209,7 @@ $cert-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, m
   margin-top: 1.25rem;
   margin-bottom: 1.25rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #e3e6ea;
+  border-bottom: 1px solid var(--pgn-color-light-400);
 }
 
 .certificate-intro__title {
@@ -249,12 +217,12 @@ $cert-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, m
   font-size: 1.375rem;
   font-weight: 700;
   letter-spacing: -.2px;
-  color: #11181c;
+  color: var(--pgn-color-gray-900);
 }
 
 .certificate-intro__subtitle {
   margin: 0;
-  color: #687784;
+  color: var(--pgn-color-gray-500);
   font-size: .875rem;
   line-height: 1.5;
 }
@@ -274,10 +242,10 @@ $cert-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, m
 .certificate-kpi {
   position: relative;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid #e3e6ea;
-  border-radius: 10px;
-  padding: 14px 16px;
+  background: var(--pgn-color-white);
+  border: 1px solid var(--pgn-color-light-400);
+  border-radius: .625rem;
+  padding: .875rem 1rem;
 }
 
 .certificate-kpi__accent {
@@ -285,48 +253,48 @@ $cert-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, m
   left: 0;
   top: 0;
   bottom: 0;
-  width: 4px;
+  width: .25rem;
 }
 
 .certificate-kpi__label {
-  font-size: 11px;
-  color: #687784;
+  font-size: .6875rem;
+  color: var(--pgn-color-gray-500);
   text-transform: uppercase;
   letter-spacing: .6px;
   font-weight: 600;
 }
 
 .certificate-kpi__value {
-  font-size: 26px;
+  font-size: 1.625rem;
   font-weight: 800;
-  margin-top: 5px;
+  margin-top: .3125rem;
   letter-spacing: -.5px;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
 .certificate-kpi__sub {
-  font-size: 11.5px;
-  color: #687784;
-  margin-top: 5px;
+  font-size: .7188rem;
+  color: var(--pgn-color-gray-500);
+  margin-top: .3125rem;
 }
 
 // ── Status pills (match mockup) ─────────────────────────────────────────────
 .certificate-pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 12px;
+  gap: .3125rem;
+  font-size: .75rem;
   font-weight: 600;
-  padding: 3px 10px;
+  padding: .1875rem .625rem;
   border-radius: 999px;
   border: 1px solid;
   white-space: nowrap;
 }
 
 .certificate-pill .pgn__icon {
-  width: 14px;
-  height: 14px;
+  width: .875rem;
+  height: .875rem;
 }
 
 .certificate-pill--awarded {
@@ -348,269 +316,16 @@ $cert-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, m
   justify-content: space-between;
   flex-wrap: wrap;
   gap: .5rem;
-  padding: 10px 14px;
-  border-top: 1px solid #e3e6ea;
-  background: #fafbfc;
-  font-size: 12.5px;
-  color: #687784;
+  padding: .625rem .875rem;
+  border-top: 1px solid var(--pgn-color-light-400);
+  background: var(--pgn-color-light-100);
+  font-size: .7813rem;
+  color: var(--pgn-color-gray-500);
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// The certificate document (mirrors credentials PR #29).
+// The `.fbr-cert` document box + all its inner elements are styled by the
+// backend template's inlined `<style>` (injected via CertificateHtmlView),
+// including the `transform: scale(var(--fit-scale))` this wrapper drives.
 //
-// The design is authored at a fixed 1123×710px so print output is pixel-exact.
-// On screen we scale that fixed box to the container width with container-query
-// units, preserving every internal proportion.
-// ─────────────────────────────────────────────────────────────────────────
-.fbr-cert-scale {
-  width: 100%;
-  aspect-ratio: #{$cert-w} / #{$cert-h};
-  overflow: hidden;
-  // Frame the certificate on screen (removed for print).
-  border: 1px solid #e3e6ea;
-  border-radius: 8px;
-}
-
-.fbr-cert {
-  position: relative;
-  width: #{$cert-w}px;
-  height: #{$cert-h}px;
-  transform-origin: top left;
-  // --fit-scale is set from the container width in JS (see useFitScale).
-  transform: scale(var(--fit-scale, 1));
-  overflow: hidden;
-  background:
-    radial-gradient(circle at top center, rgba(59, 81, 180, 0.03), transparent 44%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.998), rgba(255, 252, 246, 0.992)),
-    #fffdfa;
-  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.14);
-  color: #151515;
-  font-family: Georgia, "Times New Roman", serif;
-  // Print the paper tint + colours even when "Background graphics" is off.
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
-
-  .fbr-cert__watermark {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-    opacity: 0.05;
-    overflow: hidden;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: fill;
-      filter: grayscale(1) contrast(0.92) brightness(1.02);
-      mix-blend-mode: multiply;
-    }
-  }
-
-  .fbr-cert__content {
-    position: relative;
-    z-index: 1;
-    height: 100%;
-    padding: 20px 42px 8px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .fbr-cert__topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    min-height: 112px;
-    padding: 4px 10px 0;
-  }
-
-  .fbr-cert__logo-left,
-  .fbr-cert__logo-right {
-    object-fit: contain;
-    object-position: top center;
-    width: 162px;
-    height: 118px;
-  }
-
-  .fbr-cert__logo-right {
-    transform: scale(1.16);
-    transform-origin: top center;
-  }
-
-  .fbr-cert__title-block {
-    margin-top: 44px;
-    text-align: center;
-  }
-
-  .fbr-cert__title {
-    margin: 0;
-    color: #000087;
-    font-family: "Algerian", "Baskerville Old Face", Georgia, serif;
-    font-size: 34px;
-    line-height: 1.02;
-    font-weight: 400;
-    letter-spacing: 1.1px;
-    text-transform: uppercase;
-  }
-
-  .fbr-cert__dates {
-    margin-top: 16px;
-    color: #545454;
-    font-family: "Bookman Old Style", "Book Antiqua", Georgia, serif;
-    font-size: 16px;
-    line-height: 1.15;
-    font-weight: 400;
-  }
-
-  .fbr-cert__presented-to {
-    margin-top: 18px;
-    text-align: center;
-    font-family: "Bookman Old Style", "Book Antiqua", Georgia, serif;
-    font-size: 16px;
-    font-weight: 700;
-    color: #111;
-  }
-
-  .fbr-cert__name-wrap {
-    margin-top: 56px;
-    display: flex;
-    justify-content: center;
-  }
-
-  .fbr-cert__name-box {
-    width: 45%;
-    min-width: 420px;
-    padding: 0 24px 8px;
-    border-bottom: 1.5px dashed #000000;
-    text-align: center;
-  }
-
-  .fbr-cert__name {
-    margin: 0;
-    color: #2171ae;
-    font-family: "Monotype Corsiva", "Segoe Script", cursive;
-    font-size: 24px;
-    line-height: 1;
-    font-style: normal;
-    font-weight: 400;
-  }
-
-  .fbr-cert__body {
-    margin: 16px auto 0;
-    max-width: 1040px;
-    text-align: center;
-    font-family: "Bookman Old Style", "Book Antiqua", Georgia, serif;
-    font-size: 18px;
-    line-height: 1.18;
-    font-weight: 400;
-    color: #181818;
-
-    .fbr-cert__body-line {
-      display: block;
-      white-space: nowrap;
-    }
-  }
-
-  .fbr-cert__sigs {
-    margin-top: auto;
-    display: grid;
-    // Columns are overridden inline per signatory count (1/2/3 in one row).
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 32px;
-    padding: 0 32px 8px;
-  }
-
-  .fbr-cert__sig {
-    text-align: center;
-  }
-
-  // Uploaded signature image, printed above the dashed line.
-  .fbr-cert__sig-image {
-    display: block;
-    width: auto;
-    max-width: 70%;
-    max-height: 44px;
-    margin: 0 auto 4px;
-    object-fit: contain;
-  }
-
-  .fbr-cert__sig-line {
-    width: 60%;
-    margin: 0 auto 4px;
-    border-top: 1.5px dashed #000000;
-  }
-
-  .fbr-cert__sig-name {
-    margin: 0;
-    font-family: "Open Sans Cert", Arial, sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    color: #161616;
-  }
-
-  .fbr-cert__sig-title {
-    margin: 3px 0 0;
-    color: #404040;
-    font-family: "Open Sans Cert", Arial, sans-serif;
-    font-size: 12px;
-  }
-}
-
-// ── Print / PDF: only the certificate prints, on a single 297mm × 188mm page ─
-//
-// The print copy is a direct child of <body> (portalled from the modal), so it
-// is free of the modal's scrolling fixed layer. Sizing it in physical mm units
-// reproduces the native design exactly (297mm = the 1123px design width), which
-// keeps every element aligned regardless of the browser's paper/margin choice.
-@media print {
-  // Collapse the document to exactly one page so the fixed certificate does not
-  // repeat across the (hidden) page content underneath it.
-  html,
-  body {
-    width: 297mm;
-    height: 188mm;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-  }
-
-  body * {
-    visibility: hidden;
-  }
-
-  .fbr-cert-print-area,
-  .fbr-cert-print-area * {
-    visibility: visible;
-  }
-
-  .fbr-cert-print-area {
-    display: block;
-    position: fixed;
-    inset: 0;
-    padding: 0;
-    margin: 0;
-  }
-
-  .fbr-cert-print-area .fbr-cert-scale {
-    width: 297mm;
-    height: 188mm;
-    aspect-ratio: auto;
-    overflow: visible;
-    border: none;
-    border-radius: 0;
-  }
-
-  .fbr-cert-print-area .fbr-cert {
-    width: 297mm;
-    height: 188mm;
-    transform: none;
-    box-shadow: none;
-  }
-
-  @page {
-    size: 297mm 188mm;
-    margin: 0;
-  }
-}
+// Printing is handled by printCertificate.ts (an isolated off-screen iframe
+// carrying its own `@page`), so there are no print rules in this stylesheet.
