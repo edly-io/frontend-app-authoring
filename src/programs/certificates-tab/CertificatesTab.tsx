@@ -16,7 +16,7 @@ import {
 import { EmojiEvents, Settings } from '@openedx/paragon/icons';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { ToastContext } from '../../generic/toast-context';
-import type { CertificateConfig, CertificateRosterRow } from '../data/types';
+import type { AwardResult, CertificateConfig, CertificateRosterRow } from '../data/types';
 import {
   useAwardCertificates,
   useCertificateConfig,
@@ -141,20 +141,42 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
 
   const clearSelection = () => setSelected(new Set());
 
+  // The award endpoint returns HTTP 200 with an { ok, errors } envelope even for
+  // rejected trainees (e.g. ineligible), so a resolved mutation is not proof of
+  // success — the result has to be inspected to give the user honest feedback.
+  const reportAwardResult = (result: AwardResult, scope: AwardingScope) => {
+    const awardedCount = result.ok.length;
+    const failedCount = result.errors.length;
+
+    // Single row/modal award: the row's own pill flips to "Awarded" on success,
+    // so we only speak up when it silently failed.
+    if (scope !== 'bulk') {
+      if (failedCount > 0 || awardedCount === 0) {
+        showToast(intl.formatMessage(messages.awardError));
+      }
+      return;
+    }
+
+    // Bulk award: always summarise, and never hide partial failures.
+    if (awardedCount === 0) {
+      showToast(intl.formatMessage(messages.awardError));
+      return;
+    }
+    if (failedCount > 0) {
+      showToast(intl.formatMessage(messages.awardedPartial, { awarded: awardedCount, failed: failedCount }));
+      return;
+    }
+    showToast(awardedCount === 1
+      ? intl.formatMessage(messages.awardedOne)
+      : intl.formatMessage(messages.awardedMany, { count: awardedCount }));
+  };
+
   const handleAward = (usernames: string[], scope: AwardingScope) => {
     setAwardingScope(scope);
     awardCertificates.mutate(usernames, {
       onSuccess: (result) => {
         clearSelection();
-        // A single row's own pill flipping to "Awarded" is confirmation
-        // enough; a bulk award touches several rows at once (and can
-        // partially fail), so it gets a summary toast.
-        if (scope === 'bulk') {
-          const count = result.ok.length;
-          showToast(count === 1
-            ? intl.formatMessage(messages.awardedOne)
-            : intl.formatMessage(messages.awardedMany, { count }));
-        }
+        reportAwardResult(result, scope);
       },
       onError: () => showToast(intl.formatMessage(messages.awardError)),
       onSettled: () => setAwardingScope(null),
@@ -188,7 +210,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
     if (isLoading) {
       return (
         <div className="d-flex justify-content-center py-5">
-          <Spinner animation="border" screenReaderText="Loading" />
+          <Spinner animation="border" screenReaderText={intl.formatMessage(messages.loading)} />
         </div>
       );
     }
@@ -267,7 +289,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
           )}
           className="pt-3"
         >
-          <CertificateConfigPanel programId={programId} />
+          <CertificateConfigPanel programId={programId} isActive={isActive} />
         </Tab>
       </Tabs>
 

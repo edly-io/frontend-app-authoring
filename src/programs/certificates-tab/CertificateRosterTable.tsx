@@ -1,12 +1,13 @@
 import React from 'react';
 import {
-  Button, Form, Icon, Pagination, Spinner,
+  Button, Form, Icon, Pagination,
 } from '@openedx/paragon';
 import { CheckCircle, Schedule } from '@openedx/paragon/icons';
 import { useIntl } from '@edx/frontend-platform/i18n';
-import UserIdentity from '../../components/UserIdentity';
+import { UserIdentity } from '@edly-io/frontend-component-fbr';
 import type { CertificateRosterRow } from '../data/types';
 import { formatShortDate } from './dateFormat';
+import SpinnerButton from './SpinnerButton';
 import messages from './messages';
 
 interface CertificateRosterTableProps {
@@ -54,11 +55,18 @@ const CertificateRosterTable: React.FC<CertificateRosterTableProps> = ({
 
   return (
     <>
+      {/*
+        Intentionally a hand-rolled <table> rather than Paragon DataTable: the
+        roster needs the bespoke pill/KPI styling and per-page selection model
+        this feature defines, which DataTable doesn't express cleanly. Semantics
+        are kept accessible via <caption> and scope="col" below.
+      */}
       <div className="certificates-table-wrapper">
         <table className="certificate-roster-table">
+          <caption className="sr-only">{intl.formatMessage(messages.tableCaption)}</caption>
           <thead>
             <tr>
-              <th style={{ width: '2.5rem' }}>
+              <th scope="col" className="certificate-select-col">
                 <Form.Checkbox
                   checked={allPageSelected}
                   isIndeterminate={!allPageSelected && somePageSelected}
@@ -67,10 +75,10 @@ const CertificateRosterTable: React.FC<CertificateRosterTableProps> = ({
                   aria-label={intl.formatMessage(messages.selectAll)}
                 />
               </th>
-              <th>{intl.formatMessage(messages.colTrainee)}</th>
-              <th className="text-right">{intl.formatMessage(messages.colScore)}</th>
-              <th>{intl.formatMessage(messages.colStatus)}</th>
-              <th className="text-right">{intl.formatMessage(messages.colActions)}</th>
+              <th scope="col">{intl.formatMessage(messages.colTrainee)}</th>
+              <th scope="col" className="text-right">{intl.formatMessage(messages.colScore)}</th>
+              <th scope="col">{intl.formatMessage(messages.colStatus)}</th>
+              <th scope="col" className="text-right">{intl.formatMessage(messages.colActions)}</th>
             </tr>
           </thead>
           <tbody>
@@ -98,7 +106,7 @@ const CertificateRosterTable: React.FC<CertificateRosterTableProps> = ({
                       <UserIdentity
                         name={row.fullName}
                         avatarValue={row.avatarUrl ?? ''}
-                        badges={['Trainee']}
+                        badges={[intl.formatMessage(messages.badgeTrainee)]}
                         size="compact"
                       />
                     </div>
@@ -127,28 +135,24 @@ const CertificateRosterTable: React.FC<CertificateRosterTableProps> = ({
                       {intl.formatMessage(cert ? messages.view : messages.preview)}
                     </Button>
                     {cert ? (
-                      <Button
+                      <SpinnerButton
                         variant="tertiary"
                         size="sm"
                         className="text-danger"
+                        label={intl.formatMessage(messages.revoke)}
                         onClick={() => onRevoke(cert.certificateNumber)}
+                        isPending={isRowRevoking(cert.certificateNumber)}
                         disabled={isRevokeDisabled}
-                      >
-                        {isRowRevoking(cert.certificateNumber) ? (
-                          <Spinner animation="border" size="sm" screenReaderText={intl.formatMessage(messages.revoke)} />
-                        ) : intl.formatMessage(messages.revoke)}
-                      </Button>
+                      />
                     ) : (
-                      <Button
+                      <SpinnerButton
                         variant="primary"
                         size="sm"
+                        label={intl.formatMessage(messages.award)}
                         onClick={() => onAward(row.username)}
+                        isPending={isRowAwarding(row.username)}
                         disabled={isAwardDisabled}
-                      >
-                        {isRowAwarding(row.username) ? (
-                          <Spinner animation="border" size="sm" screenReaderText={intl.formatMessage(messages.award)} />
-                        ) : intl.formatMessage(messages.award)}
-                      </Button>
+                      />
                     )}
                   </td>
                 </tr>

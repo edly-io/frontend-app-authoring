@@ -4,12 +4,21 @@ import {
 import CertificateConfigPanel from './CertificateConfigPanel';
 
 const mockUpdateConfigMutate = jest.fn();
+const mockUpdateConfigReset = jest.fn();
 const mockUploadSignatureMutateAsync = jest.fn();
 const mockUseCertificateConfig = jest.fn();
+const mockUseUpdateCertificateConfig = jest.fn();
+
+// Stub the shared cert renderer (its own suite covers it); this panel only
+// feeds it preview HTML, so a no-op keeps these tests hermetic.
+jest.mock('@edly-io/frontend-component-fbr', () => ({
+  __esModule: true,
+  CertificateHtmlView: () => null,
+}));
 
 jest.mock('@src/programs/data/apiHooks', () => ({
   useCertificateConfig: (...args: any[]) => mockUseCertificateConfig(...args),
-  useUpdateCertificateConfig: () => ({ mutate: mockUpdateConfigMutate, isPending: false }),
+  useUpdateCertificateConfig: () => mockUseUpdateCertificateConfig(),
   useUploadCertificateSignature: () => ({ mutateAsync: mockUploadSignatureMutateAsync, isPending: false }),
   useCertificatePreview: () => ({ data: '<div class="fbr-cert" />', isFetching: false }),
 }));
@@ -30,6 +39,13 @@ describe('<CertificateConfigPanel />', () => {
     mockUseCertificateConfig.mockReturnValue({
       data: { issuedBy: 'Directorate of Training', signatories: [{ name: 'A. Director', title: 'DG' }] },
       isLoading: false,
+    });
+    mockUseUpdateCertificateConfig.mockReturnValue({
+      mutate: mockUpdateConfigMutate,
+      reset: mockUpdateConfigReset,
+      isPending: false,
+      isSuccess: false,
+      isError: false,
     });
   });
 
@@ -105,7 +121,32 @@ describe('<CertificateConfigPanel />', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Save settings$/i }));
     expect(mockUpdateConfigMutate).toHaveBeenCalledWith(
       { issuedBy: 'Directorate of Training', signatories: [{ name: 'A. Director', title: 'DG' }] },
-      expect.anything(),
     );
+  });
+
+  it('shows a spinner and disables the button while saving', () => {
+    mockUseUpdateCertificateConfig.mockReturnValue({
+      mutate: mockUpdateConfigMutate, reset: mockUpdateConfigReset, isPending: true, isSuccess: false, isError: false,
+    });
+    renderPanel();
+    // StatefulButton signals disablement via aria-disabled, not the native attr.
+    expect(screen.getByRole('button', { name: /Saving/i })).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('status')).toBeInTheDocument();
+  });
+
+  it('shows the saved state on the button after a successful save', () => {
+    mockUseUpdateCertificateConfig.mockReturnValue({
+      mutate: mockUpdateConfigMutate, reset: mockUpdateConfigReset, isPending: false, isSuccess: true, isError: false,
+    });
+    renderPanel();
+    expect(screen.getByRole('button', { name: /^Saved$/i })).toBeInTheDocument();
+  });
+
+  it('shows an error alert when saving fails', () => {
+    mockUseUpdateCertificateConfig.mockReturnValue({
+      mutate: mockUpdateConfigMutate, reset: mockUpdateConfigReset, isPending: false, isSuccess: false, isError: true,
+    });
+    renderPanel();
+    expect(screen.getByText('Could not save certificate settings. Please try again.')).toBeInTheDocument();
   });
 });

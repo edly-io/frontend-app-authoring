@@ -1,6 +1,7 @@
 import { defineMessages } from '@edx/frontend-platform/i18n';
 
 const messages = defineMessages({
+  // ── Tab shell / roster ────────────────────────────────────────────────────
   pageTitle: { id: 'programs.certificates.pageTitle', defaultMessage: 'Certificate Awards' },
   pageDescription: {
     id: 'programs.certificates.description',
@@ -8,6 +9,9 @@ const messages = defineMessages({
   },
   awardsTab: { id: 'programs.certificates.tab.awards', defaultMessage: 'Awards & Summary' },
   settingsTab: { id: 'programs.certificates.tab.settings', defaultMessage: 'Configuration' },
+  loading: { id: 'programs.certificates.loading', defaultMessage: 'Loading' },
+  badgeTrainee: { id: 'programs.certificates.badge.trainee', defaultMessage: 'Trainee' },
+  tableCaption: { id: 'programs.certificates.table.caption', defaultMessage: 'Trainee certificate roster' },
   kpiTotal: { id: 'programs.certificates.kpi.total', defaultMessage: 'Total trainees' },
   kpiTotalSub: { id: 'programs.certificates.kpi.total.sub', defaultMessage: 'in this program' },
   kpiAwarded: { id: 'programs.certificates.kpi.awarded', defaultMessage: 'Certificates awarded' },
@@ -42,9 +46,85 @@ const messages = defineMessages({
   loadError: { id: 'programs.certificates.load.error', defaultMessage: 'Could not load the certificate roster.' },
   awardedOne: { id: 'programs.certificates.toast.awardedOne', defaultMessage: 'Certificate awarded.' },
   awardedMany: { id: 'programs.certificates.toast.awardedMany', defaultMessage: '{count} certificates awarded.' },
+  awardedPartial: {
+    id: 'programs.certificates.toast.awardedPartial',
+    defaultMessage: '{awarded} awarded, {failed} could not be awarded.',
+  },
   awardError: { id: 'programs.certificates.toast.awardError', defaultMessage: 'Could not award the certificate. Please try again.' },
   revokeError: { id: 'programs.certificates.toast.revokeError', defaultMessage: 'Could not revoke the certificate. Please try again.' },
   paginationLabel: { id: 'programs.certificates.pagination', defaultMessage: 'Trainee roster pages' },
+
+  // ── Preview / award modal ─────────────────────────────────────────────────
+  modalPreviewTitle: { id: 'programs.certificates.modal.preview', defaultMessage: 'Certificate preview' },
+  modalAwardedTitle: { id: 'programs.certificates.modal.awarded', defaultMessage: 'Awarded certificate' },
+  modalPrint: { id: 'programs.certificates.modal.print', defaultMessage: 'Print / PDF' },
+  modalAward: { id: 'programs.certificates.modal.award', defaultMessage: 'Award certificate' },
+  modalRevoke: { id: 'programs.certificates.modal.revoke', defaultMessage: 'Revoke certificate' },
+  modalClose: { id: 'programs.certificates.modal.close', defaultMessage: 'Close' },
+
+  // ── Configuration panel ───────────────────────────────────────────────────
+  heading: { id: 'programs.certificates.config.heading', defaultMessage: 'Certificate settings' },
+  subheading: {
+    id: 'programs.certificates.config.subheading',
+    defaultMessage: 'Set the issuing authority and signatories. The template layout is fixed for all programs.',
+  },
+  issuedByLabel: { id: 'programs.certificates.config.issuedBy', defaultMessage: 'Issued by' },
+  issuedByHelp: {
+    id: 'programs.certificates.config.issuedBy.help',
+    defaultMessage: 'The issuing authority printed on the certificate.',
+  },
+  issuedByPlaceholder: {
+    id: 'programs.certificates.config.issuedBy.placeholder',
+    defaultMessage: 'e.g. Directorate of Training (Direct Taxes), FBR',
+  },
+  signatoriesLabel: { id: 'programs.certificates.config.signatories', defaultMessage: 'Signatories' },
+  signatoriesHint: {
+    id: 'programs.certificates.config.signatories.hint',
+    defaultMessage: 'Up to 3 signatories, shown in a single row on the certificate.',
+  },
+  signatoryName: { id: 'programs.certificates.config.signatory.name', defaultMessage: 'Full name' },
+  signatoryTitle: { id: 'programs.certificates.config.signatory.title', defaultMessage: 'Designation' },
+  signatureUpload: { id: 'programs.certificates.config.signatory.signature', defaultMessage: 'Upload signature' },
+  signatureReplace: { id: 'programs.certificates.config.signatory.signature.replace', defaultMessage: 'Replace' },
+  signatureFormatHint: {
+    id: 'programs.certificates.config.signatory.signature.hint',
+    defaultMessage: 'Image must be in PNG format.',
+  },
+  signatureFormatError: {
+    id: 'programs.certificates.config.signatory.signature.error',
+    defaultMessage: 'Image must be in PNG format.',
+  },
+  signatureSizeError: {
+    id: 'programs.certificates.config.signatory.signature.size.error',
+    defaultMessage: 'Image must be under {maxKb} KB.',
+  },
+  signatureUploadError: {
+    id: 'programs.certificates.config.signatory.signature.upload.error',
+    defaultMessage: 'Could not upload signature. Please try again.',
+  },
+  signatureUploading: {
+    id: 'programs.certificates.config.signatory.signature.uploading',
+    defaultMessage: 'Uploading…',
+  },
+  signatureRemove: { id: 'programs.certificates.config.signatory.signature.remove', defaultMessage: 'Remove signature' },
+  removeSignatory: { id: 'programs.certificates.config.signatory.remove', defaultMessage: 'Remove signatory' },
+  addSignatory: { id: 'programs.certificates.config.signatory.add', defaultMessage: 'Add signatory' },
+  save: { id: 'programs.certificates.config.save', defaultMessage: 'Save settings' },
+  saving: { id: 'programs.certificates.config.saving', defaultMessage: 'Saving…' },
+  saveComplete: { id: 'programs.certificates.config.save.complete', defaultMessage: 'Saved' },
+  saveError: {
+    id: 'programs.certificates.config.save.error',
+    defaultMessage: 'Could not save certificate settings. Please try again.',
+  },
+  previewTitle: { id: 'programs.certificates.config.preview.title', defaultMessage: 'Live preview' },
+  previewHint: {
+    id: 'programs.certificates.config.preview.hint',
+    defaultMessage: "Sample name shown — each trainee's real name is used on their certificate.",
+  },
+  previewUpdating: {
+    id: 'programs.certificates.config.preview.updating',
+    defaultMessage: 'Updating preview…',
+  },
 });
 
 export default messages;

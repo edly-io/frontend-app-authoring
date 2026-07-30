@@ -3,21 +3,13 @@ import {
   ActionRow,
   Button,
   ModalDialog,
-  Spinner,
 } from '@openedx/paragon';
-import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
+import { useIntl } from '@edx/frontend-platform/i18n';
 import { CertificateHtmlView, PrintCertificateButton } from '@edly-io/frontend-component-fbr';
 import type { CertificateConfig, CertificateRosterRow } from '../data/types';
 import { useCertificatePreview } from '../data/apiHooks';
-
-const messages = defineMessages({
-  previewTitle: { id: 'programs.certificates.modal.preview', defaultMessage: 'Certificate preview' },
-  awardedTitle: { id: 'programs.certificates.modal.awarded', defaultMessage: 'Awarded certificate' },
-  print: { id: 'programs.certificates.modal.print', defaultMessage: 'Print / PDF' },
-  award: { id: 'programs.certificates.modal.award', defaultMessage: 'Award certificate' },
-  revoke: { id: 'programs.certificates.modal.revoke', defaultMessage: 'Revoke certificate' },
-  close: { id: 'programs.certificates.modal.close', defaultMessage: 'Close' },
-});
+import SpinnerButton from './SpinnerButton';
+import messages from './messages';
 
 interface CertificateModalProps {
   isOpen: boolean;
@@ -63,7 +55,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
 
   return (
     <ModalDialog
-      title={intl.formatMessage(isAwarded ? messages.awardedTitle : messages.previewTitle)}
+      title={intl.formatMessage(isAwarded ? messages.modalAwardedTitle : messages.modalPreviewTitle)}
       isOpen={isOpen}
       onClose={onClose}
       size="xl"
@@ -74,7 +66,7 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
     >
       <ModalDialog.Header>
         <ModalDialog.Title>
-          {intl.formatMessage(isAwarded ? messages.awardedTitle : messages.previewTitle)}
+          {intl.formatMessage(isAwarded ? messages.modalAwardedTitle : messages.modalPreviewTitle)}
         </ModalDialog.Title>
       </ModalDialog.Header>
       <ModalDialog.Body>
@@ -86,27 +78,31 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
       <ModalDialog.Footer>
         <ActionRow>
           <Button variant="tertiary" onClick={onClose}>
-            {intl.formatMessage(messages.close)}
+            {intl.formatMessage(messages.modalClose)}
           </Button>
           <ActionRow.Spacer />
           <PrintCertificateButton
             html={html ?? ''}
             traineeName={row.fullName}
             programName={programName}
-            label={intl.formatMessage(messages.print)}
+            label={intl.formatMessage(messages.modalPrint)}
           />
           {award ? (
-            <Button variant="danger" onClick={() => onRevoke(award.certificateNumber)} disabled={isRevoking}>
-              {isRevoking ? (
-                <Spinner animation="border" size="sm" screenReaderText={intl.formatMessage(messages.revoke)} />
-              ) : intl.formatMessage(messages.revoke)}
-            </Button>
+            <SpinnerButton
+              variant="danger"
+              label={intl.formatMessage(messages.modalRevoke)}
+              onClick={() => onRevoke(award.certificateNumber)}
+              isPending={isRevoking}
+              disabled={isRevoking}
+            />
           ) : (
-            <Button variant="primary" onClick={() => onAward(row.username)} disabled={isAwarding}>
-              {isAwarding ? (
-                <Spinner animation="border" size="sm" screenReaderText={intl.formatMessage(messages.award)} />
-              ) : intl.formatMessage(messages.award)}
-            </Button>
+            <SpinnerButton
+              variant="primary"
+              label={intl.formatMessage(messages.modalAward)}
+              onClick={() => onAward(row.username)}
+              isPending={isAwarding}
+              disabled={isAwarding}
+            />
           )}
         </ActionRow>
       </ModalDialog.Footer>

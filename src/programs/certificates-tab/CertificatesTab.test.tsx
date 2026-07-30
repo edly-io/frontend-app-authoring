@@ -13,12 +13,24 @@ const mockUseCertificateConfig = jest.fn();
 const mockUseAwardCertificates = jest.fn();
 const mockUseRevokeCertificate = jest.fn();
 
+// The shared cert renderer is exercised in frontend-component-fbr's own suite;
+// here it's a leaf that only injects preview HTML, so stub it to keep these
+// tests hermetic (and independent of the sibling package's build).
+jest.mock('@edly-io/frontend-component-fbr', () => ({
+  __esModule: true,
+  CertificateHtmlView: () => null,
+  PrintCertificateButton: () => null,
+  UserIdentity: ({ name }: { name?: string }) => name ?? null,
+}));
+
 jest.mock('@src/programs/data/apiHooks', () => ({
   useCertificateRoster: (...args: any[]) => mockUseCertificateRoster(...args),
   useCertificateConfig: (...args: any[]) => mockUseCertificateConfig(...args),
   useAwardCertificates: () => mockUseAwardCertificates(),
   useRevokeCertificate: () => mockUseRevokeCertificate(),
-  useUpdateCertificateConfig: () => ({ mutate: mockUpdateConfigMutate, isPending: false }),
+  useUpdateCertificateConfig: () => ({
+    mutate: mockUpdateConfigMutate, reset: jest.fn(), isPending: false, isSuccess: false, isError: false,
+  }),
   useUploadCertificateSignature: () => ({ mutateAsync: mockUploadSignatureMutateAsync, isPending: false }),
   useCertificatePreview: () => ({ data: '<div class="fbr-cert" />', isFetching: false }),
 }));
@@ -105,6 +117,38 @@ describe('<CertificatesTab />', () => {
     });
     renderTab();
     fireEvent.click(screen.getByRole('button', { name: /^Award$/i }));
+    expect(mockShowToast).toHaveBeenCalledWith('Could not award the certificate. Please try again.');
+  });
+
+  it('reports a silently-rejected single award (200 with an errors envelope)', () => {
+    mockAwardMutate.mockImplementation((usernames: string[], opts?: any) => {
+      opts?.onSuccess?.({ ok: [], errors: [{ username: usernames[0], code: 'ineligible', detail: 'x' }] });
+      opts?.onSettled?.();
+    });
+    renderTab();
+    fireEvent.click(screen.getByRole('button', { name: /^Award$/i }));
+    expect(mockShowToast).toHaveBeenCalledWith('Could not award the certificate. Please try again.');
+  });
+
+  it('summarises a partial bulk award failure instead of hiding it', () => {
+    mockAwardMutate.mockImplementation((_usernames: string[], opts?: any) => {
+      opts?.onSuccess?.({ ok: ['FBR-CERT-NEW'], errors: [{ username: 'someone', code: 'ineligible', detail: 'x' }] });
+      opts?.onSettled?.();
+    });
+    renderTab();
+    fireEvent.click(screen.getByRole('checkbox', { name: /Select Jawad Ali/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Award selected/i }));
+    expect(mockShowToast).toHaveBeenCalledWith('1 awarded, 1 could not be awarded.');
+  });
+
+  it('shows an error toast when a bulk award wholly fails', () => {
+    mockAwardMutate.mockImplementation((_usernames: string[], opts?: any) => {
+      opts?.onSuccess?.({ ok: [], errors: [{ username: 'jawad.ali', code: 'ineligible', detail: 'x' }] });
+      opts?.onSettled?.();
+    });
+    renderTab();
+    fireEvent.click(screen.getByRole('checkbox', { name: /Select Jawad Ali/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Award selected/i }));
     expect(mockShowToast).toHaveBeenCalledWith('Could not award the certificate. Please try again.');
   });
 

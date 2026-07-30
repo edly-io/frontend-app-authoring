@@ -1,9 +1,10 @@
 import React from 'react';
 import {
-  Button, Form, Icon, Spinner,
+  Button, Form, Icon,
 } from '@openedx/paragon';
 import { Search } from '@openedx/paragon/icons';
 import { useIntl } from '@edx/frontend-platform/i18n';
+import SpinnerButton from './SpinnerButton';
 import messages from './messages';
 
 export type StatusFilter = 'all' | 'awarded' | 'notAwarded';
@@ -58,27 +59,21 @@ const CertificateRosterToolbar: React.FC<CertificateRosterToolbarProps> = ({
         </Form.Control>
       </Form.Group>
       {selectedCount > 0 && (
-        <div className="d-flex align-items-center gap-2 ml-auto">
+        <div className="d-flex align-items-center certificate-bulk-actions ml-auto">
           <span className="small font-weight-bold">
             {intl.formatMessage(messages.selectedCount, { count: selectedCount })}
           </span>
           <Button variant="tertiary" size="sm" onClick={onClearSelection}>
             {intl.formatMessage(messages.clearSelection)}
           </Button>
-          <Button
+          <SpinnerButton
             variant="primary"
             size="sm"
+            label={intl.formatMessage(messages.awardSelected)}
             onClick={onBulkAward}
+            isPending={isBulkAwarding}
             disabled={isBulkAwardDisabled}
-          >
-            {isBulkAwarding ? (
-              <Spinner
-                animation="border"
-                size="sm"
-                screenReaderText={intl.formatMessage(messages.awardSelected)}
-              />
-            ) : intl.formatMessage(messages.awardSelected)}
-          </Button>
+          />
         </div>
       )}
     </div>

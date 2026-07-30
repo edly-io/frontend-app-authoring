@@ -26,10 +26,29 @@ $cert-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, m
   overflow-x: auto;
 }
 
+// Bulk-selection controls in the roster toolbar. Real `gap` because Paragon
+// ships no `.gap-*` utilities, so the count/Clear/Award buttons would touch.
+.certificate-bulk-actions {
+  gap: .5rem;
+}
+
+// FBR brand accent literals used by the KPI accent bars and status pills.
+// Kept as explicit values (not Paragon tokens) because they mirror the FBR
+// program certificate's brand palette, which has no Paragon token equivalent;
+// centralised here so every accent is defined in one place.
+$cert-accent-info: #1A7FC4;
+$cert-accent-success: #117A44;
+$cert-accent-warning: #A8740A;
+$cert-accent-brand: #6E003B;
+
 .certificate-roster-table {
   width: 100%;
   border-collapse: collapse;
   min-width: 44rem;
+
+  .certificate-select-col {
+    width: 2.5rem;
+  }
 
   th,
   td {
@@ -57,6 +76,11 @@ $cert-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, m
   .certificate-actions-cell {
     text-align: right;
     white-space: nowrap;
+
+    // Paragon ships no `.gap-*` utilities, so space adjacent action buttons here.
+    .btn + .btn {
+      margin-left: .5rem;
+    }
   }
 }
 
@@ -254,6 +278,11 @@ $cert-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, m
   top: 0;
   bottom: 0;
   width: .25rem;
+
+  &--info { background: $cert-accent-info; }
+  &--success { background: $cert-accent-success; }
+  &--warning { background: $cert-accent-warning; }
+  &--brand { background: $cert-accent-brand; }
 }
 
 .certificate-kpi__label {
@@ -297,15 +326,17 @@ $cert-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, m
   height: .875rem;
 }
 
+// Foreground uses the shared brand accents; the soft background/border tints
+// are pill-specific and have no accent/token equivalent.
 .certificate-pill--awarded {
   background: #e4f3ea;
-  color: #117a44;
+  color: $cert-accent-success;
   border-color: #cfe8da;
 }
 
 .certificate-pill--pending {
   background: #fbf2dc;
-  color: #a8740a;
+  color: $cert-accent-warning;
   border-color: #ecdcae;
 }
 

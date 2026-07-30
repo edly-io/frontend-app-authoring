@@ -1,19 +1,21 @@
 import React, {
-  useContext, useEffect, useMemo, useRef, useState,
+  useEffect, useMemo, useRef, useState,
 } from 'react';
 import {
+  Alert,
   Button,
   Card,
   Form,
+  Icon,
   IconButton,
   Spinner,
+  StatefulButton,
 } from '@openedx/paragon';
 import {
-  Add, Close, CloudUpload, DeleteOutline,
+  Add, CheckCircle, Close, CloudUpload, DeleteOutline,
 } from '@openedx/paragon/icons';
-import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
+import { useIntl } from '@edx/frontend-platform/i18n';
 import { CertificateHtmlView } from '@edly-io/frontend-component-fbr';
-import { ToastContext } from '../../generic/toast-context';
 import type { CertificateConfig, Signatory } from '../data/types';
 import {
   useCertificateConfig,
@@ -22,74 +24,13 @@ import {
   useUploadCertificateSignature,
 } from '../data/apiHooks';
 import { useDebouncedValue } from './useDebouncedValue';
-
-const messages = defineMessages({
-  heading: { id: 'programs.certificates.config.heading', defaultMessage: 'Certificate settings' },
-  subheading: {
-    id: 'programs.certificates.config.subheading',
-    defaultMessage: 'Set the issuing authority and signatories. The template layout is fixed for all programs.',
-  },
-  issuedByLabel: { id: 'programs.certificates.config.issuedBy', defaultMessage: 'Issued by' },
-  issuedByHelp: {
-    id: 'programs.certificates.config.issuedBy.help',
-    defaultMessage: 'The issuing authority printed on the certificate.',
-  },
-  issuedByPlaceholder: {
-    id: 'programs.certificates.config.issuedBy.placeholder',
-    defaultMessage: 'e.g. Directorate of Training (Direct Taxes), FBR',
-  },
-  signatoriesLabel: { id: 'programs.certificates.config.signatories', defaultMessage: 'Signatories' },
-  signatoriesHint: {
-    id: 'programs.certificates.config.signatories.hint',
-    defaultMessage: 'Up to 3 signatories, shown in a single row on the certificate.',
-  },
-  signatoryName: { id: 'programs.certificates.config.signatory.name', defaultMessage: 'Full name' },
-  signatoryTitle: { id: 'programs.certificates.config.signatory.title', defaultMessage: 'Designation' },
-  signatureUpload: { id: 'programs.certificates.config.signatory.signature', defaultMessage: 'Upload signature' },
-  signatureReplace: { id: 'programs.certificates.config.signatory.signature.replace', defaultMessage: 'Replace' },
-  signatureFormatHint: {
-    id: 'programs.certificates.config.signatory.signature.hint',
-    defaultMessage: 'Image must be in PNG format.',
-  },
-  signatureFormatError: {
-    id: 'programs.certificates.config.signatory.signature.error',
-    defaultMessage: 'Image must be in PNG format.',
-  },
-  signatureSizeError: {
-    id: 'programs.certificates.config.signatory.signature.size.error',
-    defaultMessage: 'Image must be under {maxKb} KB.',
-  },
-  signatureUploadError: {
-    id: 'programs.certificates.config.signatory.signature.upload.error',
-    defaultMessage: 'Could not upload signature. Please try again.',
-  },
-  signatureUploading: {
-    id: 'programs.certificates.config.signatory.signature.uploading',
-    defaultMessage: 'Uploading…',
-  },
-  signatureRemove: { id: 'programs.certificates.config.signatory.signature.remove', defaultMessage: 'Remove signature' },
-  removeSignatory: { id: 'programs.certificates.config.signatory.remove', defaultMessage: 'Remove signatory' },
-  addSignatory: { id: 'programs.certificates.config.signatory.add', defaultMessage: 'Add signatory' },
-  save: { id: 'programs.certificates.config.save', defaultMessage: 'Save settings' },
-  saving: { id: 'programs.certificates.config.saving', defaultMessage: 'Saving…' },
-  saved: { id: 'programs.certificates.config.saved', defaultMessage: 'Certificate settings saved.' },
-  saveError: {
-    id: 'programs.certificates.config.save.error',
-    defaultMessage: 'Could not save certificate settings. Please try again.',
-  },
-  previewTitle: { id: 'programs.certificates.config.preview.title', defaultMessage: 'Live preview' },
-  previewHint: {
-    id: 'programs.certificates.config.preview.hint',
-    defaultMessage: "Sample name shown — each trainee's real name is used on their certificate.",
-  },
-  previewUpdating: {
-    id: 'programs.certificates.config.preview.updating',
-    defaultMessage: 'Updating preview…',
-  },
-});
+import messages from './messages';
 
 const PREVIEW_TRAINEE_NAME = 'Trainee Name';
 const PREVIEW_DEBOUNCE_MS = 400;
+// How long the "Saved" confirmation lingers on the button before it returns to
+// its default label.
+const SAVED_STATE_VISIBLE_MS = 2000;
 const MAX_SIGNATORIES = 3;
 // Must match fbr.cms.program_certificates.models.MAX_SIGNATURE_IMAGE_BYTES —
 // checked client-side too so oversized files fail fast, before a network call.
@@ -97,13 +38,18 @@ const MAX_SIGNATURE_BYTES = 300 * 1024;
 
 interface CertificateConfigPanelProps {
   programId: string;
+  // Whether the certificates tab is the active program tab. Paragon mounts
+  // inactive tab panes, so without this gate the config + live-preview requests
+  // would fire (including a server-side preview render) before the admin ever
+  // opens this tab. Defaults to active for standalone use.
+  isActive?: boolean;
 }
 
-const CertificateConfigPanel: React.FC<CertificateConfigPanelProps> = ({ programId }) => {
+const CertificateConfigPanel: React.FC<CertificateConfigPanelProps> = ({ programId, isActive = true }) => {
   const intl = useIntl();
-  const { showToast } = useContext(ToastContext);
-  const { data: savedConfig, isLoading } = useCertificateConfig(programId);
+  const { data: savedConfig, isLoading } = useCertificateConfig(programId, isActive);
   const updateConfig = useUpdateCertificateConfig(programId);
+  const { reset: resetSaveState } = updateConfig;
   const uploadSignature = useUploadCertificateSignature(programId);
 
   const [issuedBy, setIssuedBy] = useState('');
@@ -251,6 +197,24 @@ const CertificateConfigPanel: React.FC<CertificateConfigPanelProps> = ({ program
     () => JSON.stringify({ issuedBy, signatories }),
     [issuedBy, signatories],
   );
+  // Return the Save button to its default state as soon as the admin makes a
+  // fresh edit, so a lingering "Saved" (or a stale error) never implies the
+  // latest changes are persisted. Keyed on the serialized config so it fires
+  // only on a real content change, not on programmatic reseeding.
+  useEffect(() => {
+    resetSaveState();
+  }, [configJson, resetSaveState]);
+
+  // Also auto-clear the "Saved" confirmation after a short delay, so it doesn't
+  // stick indefinitely when the admin makes no further edits.
+  useEffect(() => {
+    if (!updateConfig.isSuccess) {
+      return undefined;
+    }
+    const timer = setTimeout(resetSaveState, SAVED_STATE_VISIBLE_MS);
+    return () => clearTimeout(timer);
+  }, [updateConfig.isSuccess, resetSaveState]);
+
   const debouncedConfigJson = useDebouncedValue(configJson, PREVIEW_DEBOUNCE_MS);
   const previewConfig = useMemo(
     () => JSON.parse(debouncedConfigJson) as CertificateConfig,
@@ -259,18 +223,18 @@ const CertificateConfigPanel: React.FC<CertificateConfigPanelProps> = ({ program
   const { data: previewHtml, isFetching: isPreviewFetching } = useCertificatePreview(
     programId,
     { config: previewConfig, traineeName: PREVIEW_TRAINEE_NAME },
-    !isLoading,
+    isActive && !isLoading,
   );
 
-  const handleSave = () => {
-    updateConfig.mutate(
-      { issuedBy, signatories },
-      {
-        onSuccess: () => showToast(intl.formatMessage(messages.saved)),
-        onError: () => showToast(intl.formatMessage(messages.saveError)),
-      },
-    );
-  };
+  // Feedback lives on the button (pending → complete) and, on failure, in the
+  // error alert below it — both driven by the mutation's own state, so no toast.
+  const handleSave = () => updateConfig.mutate({ issuedBy, signatories });
+
+  const saveState = (() => {
+    if (updateConfig.isPending) { return 'pending'; }
+    if (updateConfig.isSuccess) { return 'complete'; }
+    return 'default';
+  })();
 
   if (isLoading) {
     return (
@@ -368,15 +332,26 @@ const CertificateConfigPanel: React.FC<CertificateConfigPanelProps> = ({ program
             </Button>
           )}
         </Card.Section>
-        <Card.Footer>
-          <Button
+        <Card.Footer className="flex-column align-items-stretch">
+          {updateConfig.isError && (
+            <Alert variant="danger" className="mb-2">
+              {intl.formatMessage(messages.saveError)}
+            </Alert>
+          )}
+          <StatefulButton
             onClick={handleSave}
-            disabled={updateConfig.isPending}
-          >
-            {updateConfig.isPending
-              ? intl.formatMessage(messages.saving)
-              : intl.formatMessage(messages.save)}
-          </Button>
+            state={saveState}
+            labels={{
+              default: intl.formatMessage(messages.save),
+              pending: intl.formatMessage(messages.saving),
+              complete: intl.formatMessage(messages.saveComplete),
+            }}
+            icons={{
+              pending: <Spinner animation="border" size="sm" screenReaderText={intl.formatMessage(messages.saving)} />,
+              complete: <Icon src={CheckCircle} />,
+            }}
+            disabledStates={['pending']}
+          />
         </Card.Footer>
       </Card>
 

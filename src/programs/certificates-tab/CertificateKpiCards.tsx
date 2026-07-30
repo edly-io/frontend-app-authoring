@@ -26,28 +26,28 @@ const CertificateKpiCards: React.FC<CertificateKpiCardsProps> = ({ stats }) => {
       label: intl.formatMessage(messages.kpiTotal),
       value: stats.total,
       sub: intl.formatMessage(messages.kpiTotalSub),
-      accent: '#1a7fc4',
+      accentModifier: 'certificate-kpi__accent--info',
     },
     {
       key: 'awarded',
       label: intl.formatMessage(messages.kpiAwarded),
       value: stats.awarded,
       sub: intl.formatMessage(messages.kpiAwardedSub, { percent: awardedPercent }),
-      accent: '#117a44',
+      accentModifier: 'certificate-kpi__accent--success',
     },
     {
       key: 'notAwarded',
       label: intl.formatMessage(messages.kpiNotAwarded),
       value: stats.notAwarded,
       sub: intl.formatMessage(stats.notAwarded ? messages.kpiNotAwardedSub : messages.kpiAllAwardedSub),
-      accent: stats.notAwarded ? '#a8740a' : '#117a44',
+      accentModifier: stats.notAwarded ? 'certificate-kpi__accent--warning' : 'certificate-kpi__accent--success',
     },
     {
       key: 'average',
       label: intl.formatMessage(messages.kpiAverage),
       value: stats.average === null ? '—' : `${stats.average}%`,
       sub: intl.formatMessage(messages.kpiAverageSub),
-      accent: '#6E003B',
+      accentModifier: 'certificate-kpi__accent--brand',
     },
   ];
 
@@ -55,7 +55,7 @@ const CertificateKpiCards: React.FC<CertificateKpiCardsProps> = ({ stats }) => {
     <div className="certificate-kpis">
       {kpis.map((kpi) => (
         <div className="certificate-kpi" key={kpi.key}>
-          <span className="certificate-kpi__accent" style={{ background: kpi.accent }} />
+          <span className={`certificate-kpi__accent ${kpi.accentModifier}`} />
           <div className="certificate-kpi__label">{kpi.label}</div>
           <div className="certificate-kpi__value">{kpi.value}</div>
           <div className="certificate-kpi__sub">{kpi.sub}</div>
