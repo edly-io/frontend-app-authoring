@@ -1,0 +1,362 @@
+// Program Certificates tab.
+//
+// App chrome (KPIs, roster, config form, modal shell) uses Paragon components
+// + utility classes. The certificate document itself (`.fbr-cert`) mirrors the
+// FBR program certificate from edly-io/credentials PR #29 — same fonts, logos,
+// layout, colours, and print size (297mm × 188mm) — so Studio previews match
+// the certificate the credentials service issues.
+
+// The certificate document itself — fonts (@font-face), logos, and all
+// `.fbr-cert` layout/colour rules — is owned by the backend template's inlined
+// `<style>` (rendered server-side and injected by CertificateHtmlView). Only
+// the host-side scale wrapper, modal, and print rules live here.
+
+// Native certificate dimensions (must match the backend template).
+$cert-w: 1123;
+$cert-h: 710;
+$cert-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+// ── Tab layout helpers ──────────────────────────────────────────────────────
+.certificates-tab-section {
+  padding-top: .25rem;
+}
+
+.certificates-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+// Bulk-selection controls in the roster toolbar. Real `gap` because Paragon
+// ships no `.gap-*` utilities, so the count/Clear/Award buttons would touch.
+.certificate-bulk-actions {
+  gap: .5rem;
+}
+
+// FBR brand accent literals used by the KPI accent bars and status pills.
+// Kept as explicit values (not Paragon tokens) because they mirror the FBR
+// program certificate's brand palette, which has no Paragon token equivalent;
+// centralised here so every accent is defined in one place.
+$cert-accent-info: #1A7FC4;
+$cert-accent-success: #117A44;
+$cert-accent-warning: #A8740A;
+$cert-accent-brand: #6E003B;
+
+.certificate-roster-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 44rem;
+
+  .certificate-select-col {
+    width: 2.5rem;
+  }
+
+  th,
+  td {
+    padding: .625rem .75rem;
+    border-bottom: 1px solid var(--pgn-color-light-400);
+    vertical-align: middle;
+    text-align: left;
+  }
+
+  th {
+    font-size: .75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--pgn-color-gray-500);
+    white-space: nowrap;
+  }
+
+  td.certificate-score-cell {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+
+  .certificate-actions-cell {
+    text-align: right;
+    white-space: nowrap;
+
+    // Paragon ships no `.gap-*` utilities, so space adjacent action buttons here.
+    .btn + .btn {
+      margin-left: .5rem;
+    }
+  }
+}
+
+.certificate-trainee-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .125rem;
+}
+
+.certificate-await-meta {
+  font-size: .75rem;
+  color: var(--pgn-color-gray-500);
+  font-family: $cert-mono;
+  margin-top: .125rem;
+}
+
+.certificate-signatory-row {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  padding: .75rem;
+  margin-bottom: .5rem;
+  border: 1px solid var(--pgn-color-light-400);
+  border-radius: .5rem;
+  background: var(--pgn-color-light-100);
+}
+
+.certificate-signatory-fields {
+  display: flex;
+  gap: .5rem;
+  align-items: flex-start;
+
+  &__inputs {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+.certificate-signatories-hint {
+  display: block;
+  margin-bottom: .5rem;
+}
+
+// Per-signature upload: hidden file input + thumbnail / upload button.
+.certificate-signatory-signature {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+
+  &__input {
+    display: none;
+  }
+
+  &__thumb {
+    max-height: 2.5rem;
+    max-width: 10rem;
+    width: auto;
+    object-fit: contain;
+    border: 1px solid var(--pgn-color-light-400);
+    border-radius: .25rem;
+    background: var(--pgn-color-white);
+  }
+
+  &__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+  }
+
+  &__hint {
+    font-size: .75rem;
+    color: var(--pgn-color-gray-500);
+    white-space: nowrap;
+  }
+}
+
+.certificate-config-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+
+  @media (max-width: 62rem) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.certificate-preview-hint {
+  font-size: .75rem;
+  color: var(--pgn-color-gray-500);
+  text-align: center;
+  margin-top: .625rem;
+}
+
+.certificate-search {
+  flex: 0 1 20rem;
+  min-width: 14rem;
+}
+
+// Paragon's modal wrapper resets `h1`/`p` to `text-align: start`, which would
+// left-align the certificate's title, awardee name, and signatory text. The
+// certificate centers these via their containers, so re-assert inheritance with
+// specificity that beats Paragon's `.pgn__modal-content-container h1, p` rule.
+.fbr-cert .fbr-cert__content h1,
+.fbr-cert .fbr-cert__content p {
+  text-align: inherit;
+}
+
+// ── Modal preview (View / Preview) ──────────────────────────────────────────
+// Sizing is driven entirely from JS (useFitScale, mode="fit"): the scale
+// wrapper is sized in px to hug the scaled certificate, so this container just
+// centres it. No dependency on Paragon's modal height/flex, hence no scrollbar.
+//
+// The dialog width also tracks the certificate's height-limited width so the
+// modal hugs the document (minimal side gaps) instead of staying full xl width.
+.certificate-preview-modal.pgn__modal {
+  max-width: min(92vw, calc((100vh - 16rem) * #{$cert-w} / #{$cert-h} + 3rem));
+}
+
+.fbr-cert-modal-view {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+// In the modal the wrapper's width/height are set inline by JS to the scaled
+// document size; the certificate keeps its native box and only the transform
+// scales it (origin top-left so it fills the hugged wrapper).
+.fbr-cert-modal-view .fbr-cert-scale {
+  aspect-ratio: auto;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.fbr-cert-modal-view .fbr-cert {
+  transform-origin: top left;
+  border: 1px solid var(--pgn-color-light-400);
+  border-radius: .5rem;
+}
+
+// ── Intro (section heading + muted subtitle) ────────────────────────────────
+.certificate-intro {
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--pgn-color-light-400);
+}
+
+.certificate-intro__title {
+  margin: 0 0 .25rem;
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -.2px;
+  color: var(--pgn-color-gray-900);
+}
+
+.certificate-intro__subtitle {
+  margin: 0;
+  color: var(--pgn-color-gray-500);
+  font-size: .875rem;
+  line-height: 1.5;
+}
+
+// ── KPI cards (match mockup: accent bar + label + big value + sub) ───────────
+.certificate-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .75rem;
+  margin-bottom: 1rem;
+
+  @media (max-width: 62rem) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.certificate-kpi {
+  position: relative;
+  overflow: hidden;
+  background: var(--pgn-color-white);
+  border: 1px solid var(--pgn-color-light-400);
+  border-radius: .625rem;
+  padding: .875rem 1rem;
+}
+
+.certificate-kpi__accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: .25rem;
+
+  &--info { background: $cert-accent-info; }
+  &--success { background: $cert-accent-success; }
+  &--warning { background: $cert-accent-warning; }
+  &--brand { background: $cert-accent-brand; }
+}
+
+.certificate-kpi__label {
+  font-size: .6875rem;
+  color: var(--pgn-color-gray-500);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  font-weight: 600;
+}
+
+.certificate-kpi__value {
+  font-size: 1.625rem;
+  font-weight: 800;
+  margin-top: .3125rem;
+  letter-spacing: -.5px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.certificate-kpi__sub {
+  font-size: .7188rem;
+  color: var(--pgn-color-gray-500);
+  margin-top: .3125rem;
+}
+
+// ── Status pills (match mockup) ─────────────────────────────────────────────
+.certificate-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .3125rem;
+  font-size: .75rem;
+  font-weight: 600;
+  padding: .1875rem .625rem;
+  border-radius: 999px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.certificate-pill .pgn__icon {
+  width: .875rem;
+  height: .875rem;
+}
+
+// Foreground uses the shared brand accents; the soft background/border tints
+// are pill-specific and have no accent/token equivalent.
+.certificate-pill--awarded {
+  background: #e4f3ea;
+  color: $cert-accent-success;
+  border-color: #cfe8da;
+}
+
+.certificate-pill--pending {
+  background: #fbf2dc;
+  color: $cert-accent-warning;
+  border-color: #ecdcae;
+}
+
+// ── Table footer ────────────────────────────────────────────────────────────
+.certificate-table-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .5rem;
+  padding: .625rem .875rem;
+  border-top: 1px solid var(--pgn-color-light-400);
+  background: var(--pgn-color-light-100);
+  font-size: .7813rem;
+  color: var(--pgn-color-gray-500);
+}
+
+// The `.fbr-cert` document box + all its inner elements are styled by the
+// backend template's inlined `<style>` (injected via CertificateHtmlView),
+// including the `transform: scale(var(--fit-scale))` this wrapper drives.
+//
+// Printing is handled by printCertificate.ts (an isolated off-screen iframe
+// carrying its own `@page`), so there are no print rules in this stylesheet.

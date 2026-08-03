@@ -33,6 +33,13 @@ import {
   getFeedbackDashboardComments,
   getFeedbackDashboardInitiations,
   getFeedbackDashboardReport,
+  getCertificateConfig,
+  updateCertificateConfig,
+  uploadCertificateSignature,
+  getCertificatePreview,
+  getCertificateRoster,
+  awardCertificates,
+  revokeCertificate,
   type GetCoursesParams,
   type GetInstructorsParams,
   type GetLearnersParams,
@@ -43,6 +50,8 @@ import type {
   FeedbackFiltersState,
   InitiateFeedbackPayload,
   Program,
+  CertificateConfig,
+  CertificateRosterRow,
 } from './types';
 import { getProgramCapabilities } from './permissions';
 
@@ -403,3 +412,88 @@ export const useFeedbackDashboardComments = (
   queryFn: () => getFeedbackDashboardComments(programId, initiationId!, subjectId!),
   enabled: enabled && !!programId && !!initiationId && !!subjectId,
 });
+
+// ── Program Certificates ──────────────────────────────────────────────────
+export const useCertificateConfig = (programId: string, enabled = true) => useQuery({
+  queryKey: ['certificateConfig', programId],
+  queryFn: () => getCertificateConfig(programId),
+  enabled: enabled && !!programId,
+});
+
+export const useCertificateRoster = (programId: string, enabled = true) => useQuery({
+  queryKey: ['certificateRoster', programId],
+  queryFn: () => getCertificateRoster(programId),
+  enabled: enabled && !!programId,
+});
+
+export const useUpdateCertificateConfig = (programId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (config: CertificateConfig) => updateCertificateConfig(programId, config),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['certificateConfig', programId] });
+    },
+  });
+};
+
+export const useUploadCertificateSignature = (programId: string) => useMutation({
+  mutationFn: (file: File) => uploadCertificateSignature(programId, file),
+});
+
+/**
+ * Server-rendered certificate HTML for the admin preview. The caller passes the
+ * current (possibly unsaved) config + a sample/real trainee; keying on the
+ * serialized input means an unchanged config re-uses the cached HTML, and
+ * `placeholderData` keeps the previous render visible while a new one loads.
+ */
+export const useCertificatePreview = (
+  programId: string,
+  input: { config: CertificateConfig; traineeName: string; issuedAt?: string },
+  enabled = true,
+) => useQuery({
+  queryKey: ['certificatePreview', programId, input],
+  queryFn: () => getCertificatePreview(programId, input),
+  enabled: enabled && !!programId,
+  placeholderData: (previous) => previous,
+  staleTime: Infinity,
+});
+
+export const useAwardCertificates = (programId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (usernames: string[]) => awardCertificates(programId, usernames),
+    onSuccess: (result, usernames) => {
+      // A single-username award unambiguously matches its one result — patch
+      // the cache directly so the row updates instantly, no refetch round
+      // trip. A bulk award's `ok` list isn't paired with usernames, so it
+      // falls back to a refetch.
+      if (usernames.length === 1 && result.ok.length === 1) {
+        const [username] = usernames;
+        const [certificateNumber] = result.ok;
+        queryClient.setQueryData<CertificateRosterRow[]>(
+          ['certificateRoster', programId],
+          (rows) => rows?.map((row) => (row.username === username
+            ? { ...row, certificate: { certificateNumber, status: 'active', issuedAt: new Date().toISOString() } }
+            : row)),
+        );
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ['certificateRoster', programId] });
+    },
+  });
+};
+
+export const useRevokeCertificate = (programId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (certificateNumber: string) => revokeCertificate(certificateNumber),
+    onSuccess: (_data, certificateNumber) => {
+      queryClient.setQueryData<CertificateRosterRow[]>(
+        ['certificateRoster', programId],
+        (rows) => rows?.map((row) => (row.certificate?.certificateNumber === certificateNumber
+          ? { ...row, certificate: null }
+          : row)),
+      );
+    },
+  });
+};

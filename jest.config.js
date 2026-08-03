@@ -1,6 +1,6 @@
 const { createConfig } = require('@openedx/frontend-build');
 
-module.exports = createConfig('jest', {
+const config = createConfig('jest', {
   setupFilesAfterEnv: [
     'jest-expect-message',
     '<rootDir>/src/setupTest.js',
@@ -19,3 +19,12 @@ module.exports = createConfig('jest', {
   modulePathIgnorePatterns: [
   ],
 });
+
+// @edly-io/frontend-component-fbr is installed from node_modules and ships ESM
+// (like @openedx/paragon), so Babel must transpile it for Jest. createConfig
+// merges via webpack-merge, which *concatenates* arrays — appending would leave
+// the base preset's `(?!@(open)?edx)` pattern in place and it would still ignore
+// @edly-io. Replace the key outright to add @edly-io while keeping @openedx/@edx.
+config.transformIgnorePatterns = ['/node_modules/(?!(@openedx|@edx|@edly-io))'];
+
+module.exports = config;

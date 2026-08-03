@@ -77,6 +77,7 @@ export interface ProgramCapabilities {
   canManageInstructors: boolean;
   /** Only a Super Admin may edit/add scores on a trainee row once finalized. */
   canEditFinalizedResults: boolean;
+  canManageCertificates: boolean;
   isReadOnly: boolean;
 }
 
@@ -321,4 +322,65 @@ export interface FeedbackDashboardCommentsResponse {
   subject: FeedbackDashboardCommentUser;
   total: number;
   comments: FeedbackDashboardComment[];
+}
+
+// ── Program Certificates ──────────────────────────────────────────────────
+export type CertificateStatus = 'active' | 'revoked';
+export type TraineeResultOutcome = 'pass' | 'fail';
+export type TraineeResultStatus = 'finalized' | 'in_progress';
+
+/** One signatory printed above a signature line on the certificate. */
+export interface Signatory {
+  name: string;
+  title: string;
+  /** Slug of the uploaded ProgramCertificateAsset row, or null/undefined if none yet. */
+  signatureSlug?: string | null;
+  /** Absolute URL for the uploaded signature image, printed above the dashed line. */
+  signatureUrl?: string;
+}
+
+/** Per-program certificate presentation. Editable; rendered live. */
+export interface CertificateConfig {
+  issuedBy: string;
+  signatories: Signatory[];
+}
+
+/** Result of uploading a signature image: slug to reference + URL to preview. */
+export interface CertificateAssetUploadResult {
+  slug: string;
+  url: string;
+}
+
+/** An issued certificate's immutable facts + current status. */
+export interface CertificateAward {
+  certificateNumber: string;
+  status: CertificateStatus;
+  issuedAt: string;
+}
+
+/**
+ * One roster row: a trainee, their score/result state, and any award.
+ * percent/result/status are null when the program has no grading scheme set
+ * up at all — certificates don't require Program Results to be configured.
+ */
+export interface CertificateRosterRow {
+  username: string;
+  fullName: string;
+  avatarUrl: string | null;
+  percent: string | null;
+  result: TraineeResultOutcome | null;
+  status: TraineeResultStatus | null;
+  certificate: CertificateAward | null;
+}
+
+export interface AwardError {
+  username: string;
+  code: string;
+  detail: string;
+}
+
+/** Result of a bulk award: which numbers were issued, which failed and why. */
+export interface AwardResult {
+  ok: string[];
+  errors: AwardError[];
 }

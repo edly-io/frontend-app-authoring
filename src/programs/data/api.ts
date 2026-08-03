@@ -31,6 +31,11 @@ import type {
   FeedbackFormTemplate,
   FeedbackRequest,
   InitiateFeedbackPayload,
+  CertificateConfig,
+  CertificateRosterRow,
+  CertificateAssetUploadResult,
+  AwardResult,
+  Signatory,
 } from './types';
 
 export { getCurrentFbrProfile, getCurrentFbrProfileUrl } from '@src/fbr-access/api';
@@ -888,4 +893,108 @@ export const getFeedbackDashboardComments = async (
     { params: { initiation_id: initiationId, subject_id: subjectId } },
   );
   return toFeedbackDashboardCommentsResponse(data);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Program Certificates
+// ─────────────────────────────────────────────────────────────────────────
+
+const getCertificatesBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/cms/certificates`;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toSignatory = (s: any): Signatory => ({
+  name: s.name,
+  title: s.title,
+  signatureSlug: s.signature_slug ?? null,
+  signatureUrl: s.signature_url ?? undefined,
+});
+
+const fromSignatory = (s: Signatory) => ({
+  name: s.name,
+  title: s.title,
+  signature_slug: s.signatureSlug ?? null,
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const toRosterRow = (d: any): CertificateRosterRow => ({
+  username: d.username,
+  fullName: d.full_name,
+  avatarUrl: d.avatar_url ?? null,
+  percent: d.percent,
+  result: d.result,
+  status: d.status,
+  certificate: d.certificate ? {
+    certificateNumber: d.certificate.certificate_number,
+    status: d.certificate.status,
+    issuedAt: d.certificate.issued_at,
+  } : null,
+});
+
+export const getCertificateConfig = async (programId: string): Promise<CertificateConfig> => {
+  const url = `${getCertificatesBaseUrl()}/${getEncodedProgramId(programId)}/config/`;
+  const { data } = await getAuthenticatedHttpClient().get(url);
+  return { issuedBy: data.issued_by, signatories: (data.signatories ?? []).map(toSignatory) };
+};
+
+export const updateCertificateConfig = async (
+  programId: string,
+  config: CertificateConfig,
+): Promise<CertificateConfig> => {
+  const url = `${getCertificatesBaseUrl()}/${getEncodedProgramId(programId)}/config/`;
+  await getAuthenticatedHttpClient().put(url, {
+    issued_by: config.issuedBy,
+    signatories: config.signatories.map(fromSignatory),
+  });
+  return config;
+};
+
+export const uploadCertificateSignature = async (
+  programId: string,
+  file: File,
+): Promise<CertificateAssetUploadResult> => {
+  const url = `${getCertificatesBaseUrl()}/${getEncodedProgramId(programId)}/assets/`;
+  const formData = new FormData();
+  formData.append('image', file);
+  const { data } = await getAuthenticatedHttpClient().post(url, formData);
+  return { slug: data.slug, url: data.url };
+};
+
+/**
+ * Render the certificate to HTML for the admin live preview. Sends the current
+ * (possibly unsaved) config so the preview reflects edits before save; the
+ * backend fills all placeholders and returns final HTML.
+ */
+export const getCertificatePreview = async (
+  programId: string,
+  input: { config: CertificateConfig; traineeName: string; issuedAt?: string },
+): Promise<string> => {
+  const url = `${getCertificatesBaseUrl()}/${getEncodedProgramId(programId)}/certificate/preview/`;
+  const { data } = await getAuthenticatedHttpClient().post(url, {
+    issued_by: input.config.issuedBy,
+    signatories: input.config.signatories.map(fromSignatory),
+    trainee_name: input.traineeName,
+    ...(input.issuedAt ? { issued_at: input.issuedAt } : {}),
+  });
+  return data.html;
+};
+
+export const getCertificateRoster = async (programId: string): Promise<CertificateRosterRow[]> => {
+  const url = `${getCertificatesBaseUrl()}/${getEncodedProgramId(programId)}/awards/`;
+  const { data } = await getAuthenticatedHttpClient().get(url);
+  const rows = Array.isArray(data) ? data : data.results;
+  return rows.map(toRosterRow);
+};
+
+export const awardCertificates = async (
+  programId: string,
+  usernames: string[],
+): Promise<AwardResult> => {
+  const url = `${getCertificatesBaseUrl()}/${getEncodedProgramId(programId)}/awards/`;
+  const { data } = await getAuthenticatedHttpClient().post(url, { usernames });
+  return data;
+};
+
+export const revokeCertificate = async (certificateNumber: string): Promise<void> => {
+  const url = `${getCertificatesBaseUrl()}/awards/${encodeURIComponent(certificateNumber)}/revoke/`;
+  await getAuthenticatedHttpClient().post(url);
 };
