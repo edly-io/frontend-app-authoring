@@ -23,6 +23,7 @@ import OrganizationSection from './organization-section';
 import VerifyEmailLayout from './verify-email-layout';
 import CreateNewCourseForm from './create-new-course-form';
 import CreateNewProgramForm from './create-new-program-form';
+import CreateNewInstructorForm from './create-new-instructor-form';
 import messages from './messages';
 import { useStudioHome } from './hooks';
 import AlertMessage from '../generic/alert-message';
@@ -42,11 +43,13 @@ const StudioHome = () => {
     anyQueryIsPending,
     showNewCourseContainer,
     showNewProgramContainer,
+    showNewInstructorContainer,
     isShowOrganizationDropdown,
     hasAbilityToCreateNewCourse,
     isFiltered,
     setShowNewCourseContainer,
     setShowNewProgramContainer,
+    setShowNewInstructorContainer,
     librariesV1Enabled,
     librariesV2Enabled,
   } = useStudioHome();
@@ -100,6 +103,19 @@ const StudioHome = () => {
           </Button>,
         );
       }
+      if (getConfig().ENABLE_INSTRUCTOR_MANAGEMENT) {
+        headerButtons.push(
+          <Button
+            variant="outline-primary"
+            iconBefore={AddIcon}
+            size="sm"
+            disabled={showNewInstructorContainer}
+            onClick={() => setShowNewInstructorContainer(true)}
+          >
+            {intl.formatMessage(messages.addNewInstructorBtnText)}
+          </Button>,
+        );
+      }
     }
 
     if ((showNewLibraryButton && !showV2LibraryURL) || (showV2LibraryURL && showNewLibraryV2Button)) {
@@ -124,7 +140,20 @@ const StudioHome = () => {
     }
 
     return headerButtons;
-  }, [location, userIsActive, isFailedLoadingPage]);
+  }, [
+    location,
+    userIsActive,
+    isFailedLoadingPage,
+    isShowEmailStaff,
+    studioRequestEmail,
+    hasAbilityToCreateNewCourse,
+    showNewCourseContainer,
+    showNewProgramContainer,
+    showNewInstructorContainer,
+    showV2LibraryURL,
+    showNewLibraryButton,
+    showNewLibraryV2Button,
+  ]);
 
   const headerButtons = userIsActive ? getHeaderButtons() : [];
   if (isLoadingPage && !isFiltered) {
@@ -164,10 +193,14 @@ const StudioHome = () => {
             {showNewProgramContainer && (
               <CreateNewProgramForm handleOnClickCancel={() => setShowNewProgramContainer(false)} />
             )}
+            {showNewInstructorContainer && (
+              <CreateNewInstructorForm handleOnClickCancel={() => setShowNewInstructorContainer(false)} />
+            )}
             {isShowOrganizationDropdown && <OrganizationSection />}
             <TabsSection
               showNewCourseContainer={showNewCourseContainer}
               showNewProgramContainer={showNewProgramContainer}
+              showNewInstructorContainer={showNewInstructorContainer}
               onClickNewCourse={() => setShowNewCourseContainer(true)}
               isShowProcessing={Boolean(isShowProcessing) && !isFiltered}
               librariesV1Enabled={librariesV1Enabled}

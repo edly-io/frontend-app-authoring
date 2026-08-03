@@ -28,6 +28,7 @@ import CourseAuthoringRoutes from './CourseAuthoringRoutes';
 import Head from './head/Head';
 import { StudioHome } from './studio-home';
 import { ProgramDetailPage } from './programs';
+import { InstructorDetailPage } from './instructors';
 import CourseRerun from './course-rerun';
 import { TaxonomyLayout, TaxonomyDetailPage, TaxonomyListPage } from './taxonomy';
 import { ContentTagsDrawer } from './content-tags-drawer';
@@ -68,6 +69,8 @@ const App = () => {
         <Route path="/home" element={<StudioHome />} />
         <Route path="/programs" element={<StudioHome />} />
         <Route path="/programs/:programId" element={<ProgramDetailPage />} />
+        <Route path="/instructors" element={<StudioHome />} />
+        <Route path="/instructors/:instructorId" element={<InstructorDetailPage />} />
         <Route path="/libraries" element={<StudioHome />} />
         <Route path="/libraries-v1" element={<StudioHome />} />
         <Route path="/libraries-v1/migrate" element={<LegacyLibMigrationPage />} />

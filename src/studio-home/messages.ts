@@ -13,6 +13,10 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.add-new-program.btn.text',
     defaultMessage: 'New program',
   },
+  addNewInstructorBtnText: {
+    id: 'course-authoring.studio-home.add-new-instructor.btn.text',
+    defaultMessage: 'New Instructor',
+  },
   addNewLibraryBtnText: {
     id: 'course-authoring.studio-home.add-new-library.btn.text',
     defaultMessage: 'New library',

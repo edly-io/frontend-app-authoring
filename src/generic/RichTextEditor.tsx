@@ -21,7 +21,7 @@ if (w.tinymce && !w.tinymce.PluginManager.get('embediframe')) {
   w.tinymce.PluginManager.add('embediframe', tinyMCEEmbedIframePlugin);
 }
 
-interface ProgramRichTextEditorProps {
+interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   editorKey?: string | number;
@@ -38,7 +38,7 @@ const TOOLBAR = [
   'removeformat html-source embediframe',
 ].join(' | ');
 
-const ProgramRichTextEditor: React.FC<ProgramRichTextEditorProps> = ({
+const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
   editorKey,
@@ -74,8 +74,8 @@ const ProgramRichTextEditor: React.FC<ProgramRichTextEditorProps> = ({
   />
 );
 
-ProgramRichTextEditor.defaultProps = {
+RichTextEditor.defaultProps = {
   editorKey: undefined,
 };
 
-export default ProgramRichTextEditor;
+export default RichTextEditor;

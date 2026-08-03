@@ -14,7 +14,7 @@ SectionSubHeader.defaultProps = {
 
 SectionSubHeader.propTypes = {
   title: PropTypes.string.isRequired,
-  description: PropTypes.string,
+  description: PropTypes.node,
 };
 
 export default SectionSubHeader;

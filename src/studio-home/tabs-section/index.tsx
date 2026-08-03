@@ -18,11 +18,13 @@ import { BaseFilterState, Filter, LibrariesList } from './libraries-tab';
 import LibrariesV2List from './libraries-v2-tab/index';
 import CoursesTab from './courses-tab';
 import ProgramsTab from './programs-tab';
+import InstructorsTab from './instructors-tab';
 import { WelcomeLibrariesV2Alert } from './libraries-v2-tab/WelcomeLibrariesV2Alert';
 
 const TabsSection = ({
   showNewCourseContainer,
   showNewProgramContainer,
+  showNewInstructorContainer,
   onClickNewCourse,
   isShowProcessing,
   librariesV1Enabled,
@@ -35,6 +37,7 @@ const TabsSection = ({
   const TABS_LIST = {
     courses: 'courses',
     programs: 'programs',
+    instructors: 'instructors',
     libraries: 'libraries',
     legacyLibraries: 'legacyLibraries',
     archived: 'archived',
@@ -55,6 +58,10 @@ const TabsSection = ({
 
     if (pname.includes('/programs')) {
       return TABS_LIST.programs;
+    }
+
+    if (pname.includes('/instructors')) {
+      return TABS_LIST.instructors;
     }
 
     // Default to courses tab
@@ -79,18 +86,6 @@ const TabsSection = ({
   // the correct operation of iterating over child elements inside the Paragon Tabs component.
   const visibleTabs = useMemo(() => {
     const tabs: JSX.Element[] = [];
-    if (getConfig().ENABLE_PROGRAMS) {
-      tabs.push(
-        <Tab
-          key={TABS_LIST.programs}
-          eventKey={TABS_LIST.programs}
-          title={intl.formatMessage(messages.programsTabTitle)}
-        >
-          <ProgramsTab showNewProgramContainer={showNewProgramContainer} />
-        </Tab>,
-      );
-    }
-
     tabs.push(
       <Tab
         key={TABS_LIST.courses}
@@ -109,6 +104,30 @@ const TabsSection = ({
         />
       </Tab>,
     );
+
+    if (getConfig().ENABLE_PROGRAMS) {
+      tabs.push(
+        <Tab
+          key={TABS_LIST.programs}
+          eventKey={TABS_LIST.programs}
+          title={intl.formatMessage(messages.programsTabTitle)}
+        >
+          <ProgramsTab showNewProgramContainer={showNewProgramContainer} />
+        </Tab>,
+      );
+    }
+
+    if (getConfig().ENABLE_INSTRUCTOR_MANAGEMENT) {
+      tabs.push(
+        <Tab
+          key={TABS_LIST.instructors}
+          eventKey={TABS_LIST.instructors}
+          title={intl.formatMessage(messages.instructorsTabTitle)}
+        >
+          <InstructorsTab showNewInstructorContainer={showNewInstructorContainer} />
+        </Tab>,
+      );
+    }
 
     if (librariesV2Enabled) {
       tabs.push(
@@ -160,13 +179,21 @@ const TabsSection = ({
     }
 
     return tabs;
-  }, [showNewCourseContainer, showNewProgramContainer, isLoadingCourses, migrationFilter]);
+  }, [
+    showNewCourseContainer,
+    showNewProgramContainer,
+    showNewInstructorContainer,
+    isLoadingCourses,
+    migrationFilter,
+  ]);
 
   const handleSelectTab = (tab: TabKeyType) => {
     if (tab === TABS_LIST.courses) {
       navigate('/home');
     } else if (tab === TABS_LIST.programs) {
       navigate('/programs');
+    } else if (tab === TABS_LIST.instructors) {
+      navigate('/instructors');
     } else if (tab === TABS_LIST.legacyLibraries) {
       navigate('/libraries-v1');
     } else if (tab === TABS_LIST.libraries) {
@@ -196,6 +223,7 @@ TabsSection.propTypes = {
   librariesV1Enabled: PropTypes.bool,
   librariesV2Enabled: PropTypes.bool,
   showNewProgramContainer: PropTypes.bool,
+  showNewInstructorContainer: PropTypes.bool,
 };
 
 export default TabsSection;

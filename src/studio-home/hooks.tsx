@@ -29,6 +29,7 @@ const useStudioHome = () => {
   } = useSelector(getSavingStatuses);
   const [showNewCourseContainer, setShowNewCourseContainer] = useState(false);
   const [showNewProgramContainer, setShowNewProgramContainer] = useState(false);
+  const [showNewInstructorContainer, setShowNewInstructorContainer] = useState(false);
   const isLoadingPage = studioHomeLoadingStatus === RequestStatus.IN_PROGRESS;
   const isFailedLoadingPage = studioHomeLoadingStatus === RequestStatus.FAILED;
 
@@ -106,12 +107,14 @@ const useStudioHome = () => {
     anyQueryIsPending,
     showNewCourseContainer,
     showNewProgramContainer,
+    showNewInstructorContainer,
     courseCreatorSavingStatus,
     isShowOrganizationDropdown,
     hasAbilityToCreateNewCourse,
     isFiltered,
     setShowNewCourseContainer,
     setShowNewProgramContainer,
+    setShowNewInstructorContainer,
     librariesV1Enabled,
     librariesV2Enabled,
   };

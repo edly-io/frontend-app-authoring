@@ -9,6 +9,10 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.programs.tab.title',
     defaultMessage: 'Programs',
   },
+  instructorsTabTitle: {
+    id: 'course-authoring.studio-home.instructors.tab.title',
+    defaultMessage: 'Instructors',
+  },
   courseTabErrorMessage: {
     id: 'course-authoring.studio-home.courses.tab.error.message',
     defaultMessage: 'Failed to fetch courses. Please try again later.',

@@ -27,7 +27,7 @@ import { useProgramDetail, useUpdateProgram } from './data/apiHooks';
 import CoursesTab from './courses-tab/CoursesTab';
 import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
-import ProgramRichTextEditor from './ProgramRichTextEditor';
+import RichTextEditor from '../generic/RichTextEditor';
 import './index.scss';
 
 const messages = defineMessages({
@@ -321,7 +321,7 @@ const ProgramDetailPage: React.FC = () => {
                       {/* Detailed Description */}
                       <Form.Group className="mb-4">
                         <Form.Label>{intl.formatMessage(messages.fieldDetailedDesc)}</Form.Label>
-                        <ProgramRichTextEditor
+                        <RichTextEditor
                           editorKey={editorKey}
                           value={program.longDescription ?? ''}
                           onChange={(val) => formik.setFieldValue('longDescription', val)}
