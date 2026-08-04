@@ -283,7 +283,7 @@ const InstructorDetailPage: React.FC = () => {
                             id="instructor-featured"
                             checked={formik.values.featured}
                             onChange={(e) => formik.setFieldValue('featured', e.target.checked)}
-                            className="mt-1 mr-2"
+                            className="mt-2 mr-2"
                           />
                           <div>
                             <label htmlFor="instructor-featured" className="mb-0 font-weight-bold">
