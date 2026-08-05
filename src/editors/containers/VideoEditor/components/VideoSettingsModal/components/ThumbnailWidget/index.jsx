@@ -37,6 +37,7 @@ const ThumbnailWidget = ({
   // redux
   isLibrary,
   allowThumbnailUpload,
+  studioEndpointUrl,
   thumbnail,
   videoId,
 }) => {
@@ -51,17 +52,23 @@ const ThumbnailWidget = ({
     fileSizeError,
   });
   const edxVideo = isEdxVideo(videoId);
+  // Only the edxval path is gated on the video_image_upload_enabled switch. A
+  // non-edxval video stores its thumbnail as a course asset, which is always on.
+  const canUploadThumbnail = !edxVideo || allowThumbnailUpload;
+  // Asset thumbnails are stored as a portable `/asset-v1:...` path, which the
+  // MFE cannot resolve against its own origin.
+  const thumbnailPreview = thumbnail?.startsWith('/') ? `${studioEndpointUrl}${thumbnail}` : thumbnail;
   const deleteThumbnail = hooks.deleteThumbnail({ dispatch });
   const getSubtitle = () => {
-    if (edxVideo) {
-      if (thumbnail) {
-        return intl.formatMessage(messages.yesSubtitle);
-      }
-      return intl.formatMessage(messages.noneSubtitle);
+    if (!canUploadThumbnail) {
+      return intl.formatMessage(messages.unavailableSubtitle);
     }
-    return intl.formatMessage(messages.unavailableSubtitle);
+    if (thumbnail) {
+      return intl.formatMessage(messages.yesSubtitle);
+    }
+    return intl.formatMessage(messages.noneSubtitle);
   };
-  return (!isLibrary && edxVideo ? (
+  return (!isLibrary ? (
     <CollapsibleFormWidget
       fontSize="x-small"
       isError={Object.keys(error).length !== 0}
@@ -75,7 +82,7 @@ const ThumbnailWidget = ({
       >
         <FormattedMessage {...messages.fileSizeError} />
       </ErrorAlert>
-      {!allowThumbnailUpload && (
+      {!canUploadThumbnail && (
         <Alert variant="light">
           <FormattedMessage {...messages.unavailableMessage} />
         </Alert>
@@ -87,10 +94,10 @@ const ThumbnailWidget = ({
             fluid
             className="w-75"
             ref={imgRef}
-            src={thumbnailSrc || thumbnail}
+            src={thumbnailSrc || thumbnailPreview}
             alt={intl.formatMessage(messages.thumbnailAltText)}
           />
-          {allowThumbnailUpload && (
+          {canUploadThumbnail && (
             <IconButtonWithTooltip
               tooltipPlacement="top"
               tooltipContent={intl.formatMessage(messages.deleteThumbnail)}
@@ -115,7 +122,7 @@ const ThumbnailWidget = ({
             iconBefore={FileUpload}
             onClick={fileInput.click}
             variant="link"
-            disabled={!allowThumbnailUpload}
+            disabled={!canUploadThumbnail}
           >
             <FormattedMessage {...messages.uploadButtonLabel} />
           </Button>
@@ -131,12 +138,14 @@ ThumbnailWidget.propTypes = {
   // redux
   isLibrary: PropTypes.bool.isRequired,
   allowThumbnailUpload: PropTypes.bool.isRequired,
+  studioEndpointUrl: PropTypes.string.isRequired,
   thumbnail: PropTypes.string.isRequired,
   videoId: PropTypes.string.isRequired,
 };
 export const mapStateToProps = (state) => ({
   isLibrary: selectors.app.isLibrary(state),
   allowThumbnailUpload: selectors.video.allowThumbnailUpload(state),
+  studioEndpointUrl: selectors.app.studioEndpointUrl(state),
   thumbnail: selectors.video.thumbnail(state),
   videoId: selectors.video.videoId(state),
 });

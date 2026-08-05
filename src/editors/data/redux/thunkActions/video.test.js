@@ -1,5 +1,6 @@
 import { actions } from '..';
 import keyStore from '../../../utils/keyStore';
+import { isEdxVideo } from '../../services/cms/api';
 import * as thunkActions from './video';
 
 jest.mock('../video', () => ({
@@ -43,6 +44,7 @@ jest.mock('../../../utils', () => ({
 
 jest.mock('../../services/cms/api', () => ({
   parseYoutubeId: (args) => (args),
+  isEdxVideo: jest.fn(() => true),
 }));
 
 const thunkActionsKeys = keyStore(thunkActions);
@@ -646,6 +648,34 @@ describe('video thunkActions', () => {
     });
     it('dispatches uploadThumbnail action', () => {
       expect(dispatchedAction.uploadThumbnail).not.toEqual(undefined);
+    });
+  });
+  describe('uploadThumbnail - video without an edxval id', () => {
+    beforeEach(() => {
+      isEdxVideo.mockReturnValue(false);
+    });
+    afterEach(() => {
+      isEdxVideo.mockReturnValue(true);
+    });
+    it('dispatches uploadAsset instead of uploadThumbnail', () => {
+      thunkActions.uploadThumbnail({ thumbnail: mockThumbnail })(dispatch, getState);
+      [[dispatchedAction]] = dispatch.mock.calls;
+      expect(dispatchedAction.uploadThumbnail).toEqual(undefined);
+      expect(dispatchedAction.uploadAsset.asset).toEqual(mockThumbnail);
+    });
+    it('onSuccess: sets thumbnail to the asset url', () => {
+      thunkActions.uploadThumbnail({ thumbnail: mockThumbnail })(dispatch, getState);
+      [[dispatchedAction]] = dispatch.mock.calls;
+      dispatch.mockClear();
+      dispatchedAction.uploadAsset.onSuccess({ data: { asset: { url: mockFilename } } });
+      expect(dispatch).toHaveBeenCalledWith(
+        actions.video.updateField({ thumbnail: mockFilename }),
+      );
+    });
+    it('clears the thumbnail field on delete without uploading', () => {
+      thunkActions.uploadThumbnail({ thumbnail: mockThumbnail, emptyCanvas: true })(dispatch, getState);
+      expect(dispatch).toHaveBeenCalledWith(actions.video.updateField({ thumbnail: null }));
+      expect(dispatch).toHaveBeenCalledTimes(1);
     });
   });
   describe('importTranscript', () => {
