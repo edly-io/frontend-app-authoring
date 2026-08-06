@@ -35,6 +35,7 @@ const useCreateOrRerunCourse = (initialValues) => {
   const organizations = canCreateOrganizations ? allOrganizations : allowedOrganizations;
 
   const { specialCharsRule, noSpaceRule } = REGEX_RULES;
+  const slugCharsRule = /^[a-z0-9-]*$/;
   const validationSchema = Yup.object().shape({
     displayName: Yup.string().required(
       intl.formatMessage(messages.requiredFieldError),
@@ -60,6 +61,10 @@ const useCreateOrRerunCourse = (initialValues) => {
         intl.formatMessage(messages.disallowedCharsError),
       )
       .matches(noSpaceRule, intl.formatMessage(messages.noSpaceError)),
+    slug: Yup.string().matches(
+      slugCharsRule,
+      { message: intl.formatMessage(messages.slugInvalidCharsError), excludeEmptyString: true },
+    ),
   }).test(TOTAL_LENGTH_KEY, intl.formatMessage(messages.totalLengthError), function validateTotalLength() {
     const { org, number, run } = this?.options.originalValue || {};
     if ((org?.length || 0) + (number?.length || 0) + (run?.length || 0) > MAX_TOTAL_LENGTH) {
@@ -86,7 +91,7 @@ const useCreateOrRerunCourse = (initialValues) => {
   useEffect(() => {
     setFormFilled(
       Object.entries(values)
-        ?.filter(([key]) => key !== 'undefined')
+        ?.filter(([key]) => key !== 'undefined' && key !== 'slug')
         .every(([, value]) => value),
     );
     dispatch(updatePostErrors({}));

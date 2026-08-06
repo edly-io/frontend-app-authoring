@@ -11,6 +11,10 @@ export const getCourseRerunUrl = (courseId: string) => new URL(
   `/api/contentstore/v1/course_rerun/${courseId}`,
   getApiBaseUrl(),
 ).href;
+export const getCourseSlugUrl = (courseId: string) => new URL(
+  `/api/v1/courses/${courseId}/slug/`,
+  getApiBaseUrl(),
+).href;
 export const getOrganizationsUrl = () => new URL('organizations', getApiBaseUrl()).href;
 export const getClipboardUrl = () => `${getApiBaseUrl()}/api/content-staging/v1/clipboard/`;
 export const getTagsCountApiUrl = (contentPattern: string) => new URL(
@@ -46,6 +50,28 @@ export async function createOrRerunCourse(courseData: Object): Promise<unknown> 
     getCreateOrRerunCourseUrl(),
     convertObjectToSnakeCase(courseData, true),
   );
+  return camelCaseObject(data);
+}
+
+/**
+ * Get the current slug for a course — the explicit slug if one was set
+ * (migrated from the old platform, or entered on creation/rerun), otherwise
+ * a fallback derived from the course key. Used to pre-fill the slug field
+ * when rerunning a course from an existing source course.
+ */
+export async function getCourseSlug(courseId: string): Promise<{ slug: string }> {
+  const { data } = await getAuthenticatedHttpClient().get(getCourseSlugUrl(courseId));
+  return camelCaseObject(data);
+}
+
+/**
+ * Set/update a course's explicit slug. Called right after a course is
+ * created or rerun, once the new course id is known — course creation itself
+ * goes through core Studio's `course/` endpoint, which knows nothing about
+ * this rwaq-specific field.
+ */
+export async function updateCourseSlug(courseId: string, slug: string): Promise<{ slug: string }> {
+  const { data } = await getAuthenticatedHttpClient().put(getCourseSlugUrl(courseId), { slug });
   return camelCaseObject(data);
 }
 

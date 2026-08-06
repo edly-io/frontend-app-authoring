@@ -29,6 +29,7 @@ CourseRerunForm.propTypes = {
     org: PropTypes.string.isRequired,
     number: PropTypes.string.isRequired,
     run: PropTypes.string,
+    slug: PropTypes.string,
   }).isRequired,
   onClickCancel: PropTypes.func.isRequired,
 };

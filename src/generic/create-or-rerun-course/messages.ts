@@ -122,6 +122,30 @@ const messages = defineMessages({
     id: 'course-authoring.create-or-rerun-course.total-length-error.error',
     defaultMessage: `The combined length of the organization, course number and course run fields cannot be more than ${MAX_TOTAL_LENGTH} characters.`,
   },
+  courseSlugLabel: {
+    id: 'course-authoring.create-or-rerun-course.slug.label',
+    defaultMessage: 'Course slug (optional)',
+  },
+  courseSlugPlaceholder: {
+    id: 'course-authoring.create-or-rerun-course.slug.placeholder',
+    defaultMessage: 'e.g. introduction-to-computer-science',
+  },
+  courseSlugHelpText: {
+    id: 'course-authoring.create-or-rerun-course.slug.help-text',
+    defaultMessage: 'This slug will be used in WordPress URLs for this course. If left blank, the course ID will be used instead.',
+  },
+  slugInvalidCharsError: {
+    id: 'course-authoring.create-or-rerun-course.slug.invalid-chars.error',
+    defaultMessage: 'Please use only lowercase letters, numbers and hyphens in this field.',
+  },
+  slugDuplicateError: {
+    id: 'course-authoring.create-or-rerun-course.slug.duplicate.error',
+    defaultMessage: 'This slug is already in use by another course. Please choose a different one.',
+  },
+  slugSaveError: {
+    id: 'course-authoring.create-or-rerun-course.slug.save.error',
+    defaultMessage: 'Failed to save the course slug. Please try again.',
+  },
   alertErrorExistsAriaLabelledBy: {
     id: 'course-authoring.create-or-rerun-course.error.already-exists.labelledBy',
     defaultMessage: 'alert-already-exists-title',

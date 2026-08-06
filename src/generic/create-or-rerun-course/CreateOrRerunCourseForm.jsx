@@ -130,6 +130,14 @@ const CreateOrRerunCourseForm = ({
       disabled: false,
       ref: runFieldReference,
     },
+    {
+      label: intl.formatMessage(messages.courseSlugLabel),
+      helpText: intl.formatMessage(messages.courseSlugHelpText),
+      name: 'slug',
+      value: values.slug,
+      placeholder: intl.formatMessage(messages.courseSlugPlaceholder),
+      disabled: false,
+    },
   ];
 
   const errorMessage = errors[TOTAL_LENGTH_KEY] || postErrors?.errMsg;
@@ -144,7 +152,7 @@ const CreateOrRerunCourseForm = ({
 
   const handleOnClickCreate = () => {
     const courseData = isCreateNewCourse ? values : { ...values, sourceCourseKey: courseId };
-    dispatch(updateCreateOrRerunCourseQuery(courseData));
+    dispatch(updateCreateOrRerunCourseQuery(courseData, intl));
   };
 
   const handleOnClickCancel = () => {
@@ -290,6 +298,7 @@ CreateOrRerunCourseForm.propTypes = {
     org: PropTypes.string.isRequired,
     number: PropTypes.string.isRequired,
     run: PropTypes.string.isRequired,
+    slug: PropTypes.string,
   }).isRequired,
   isCreateNewCourse: PropTypes.bool,
   onClickCancel: PropTypes.func.isRequired,
