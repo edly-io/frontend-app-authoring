@@ -33,20 +33,53 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.programs.tab.empty-search',
     defaultMessage: 'No programs match your search.',
   },
+  emptyFilter: {
+    id: 'course-authoring.studio-home.programs.tab.empty-filter',
+    defaultMessage: 'No programs match this filter.',
+  },
+  filterAll: {
+    id: 'course-authoring.studio-home.programs.tab.filter.all',
+    defaultMessage: 'All programs',
+  },
+  filterDraft: {
+    id: 'course-authoring.studio-home.programs.tab.filter.draft',
+    defaultMessage: 'Draft',
+  },
+  filterActive: {
+    id: 'course-authoring.studio-home.programs.tab.filter.active',
+    defaultMessage: 'Active',
+  },
+  filterArchived: {
+    id: 'course-authoring.studio-home.programs.tab.filter.archived',
+    defaultMessage: 'Archived',
+  },
 });
 
 type SortOrder = 'az' | 'za';
+type StatusFilter = 'all' | 'draft' | 'active' | 'archived';
 
 const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
   const intl = useIntl();
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('az');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   // Treat API errors the same as empty — don't show a jarring error banner for the list
   const { data: programs = [], isLoading } = usePrograms();
 
+  const statusFilterOptions: Array<{ value: StatusFilter, message: typeof messages.filterAll }> = [
+    { value: 'all', message: messages.filterAll },
+    { value: 'draft', message: messages.filterDraft },
+    { value: 'active', message: messages.filterActive },
+    { value: 'archived', message: messages.filterArchived },
+  ];
+
   const filteredPrograms = useMemo(() => {
     let list = [...programs];
+
+    if (statusFilter !== 'all') {
+      list = list.filter((p) => (p.status ?? 'draft') === statusFilter);
+    }
 
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -60,7 +93,7 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
     ));
 
     return list;
-  }, [programs, search, sortOrder]);
+  }, [programs, search, sortOrder, statusFilter]);
 
   if (isLoading) {
     return (
@@ -73,11 +106,14 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
   const sortLabel = sortOrder === 'az'
     ? intl.formatMessage(messages.sortAZ)
     : intl.formatMessage(messages.sortZA);
+  const statusFilterLabel = intl.formatMessage(
+    statusFilterOptions.find((option) => option.value === statusFilter)!.message,
+  );
 
   return (
     <div className="mt-4">
 
-      {/* ── Search + sort bar ─────────────────────────────────────────── */}
+      {/* ── Search + filter + sort bar ────────────────────────────────── */}
       <div className="d-flex mb-4">
         <SearchField
           onSubmit={setSearch}
@@ -86,6 +122,27 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
           className="mr-4"
           placeholder={intl.formatMessage(messages.searchPlaceholder)}
         />
+        <Dropdown id="programs-status-filter-dropdown" className="mr-2">
+          <Dropdown.Toggle
+            id="programs-status-filter-toggle"
+            variant="outline-primary"
+          >
+            {statusFilterLabel}
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            {statusFilterOptions.map((option) => (
+              <Dropdown.Item
+                key={option.value}
+                onClick={() => setStatusFilter(option.value)}
+              >
+                <div className="d-flex align-items-center justify-content-between">
+                  {intl.formatMessage(option.message)}
+                  {statusFilter === option.value && <Icon src={Check} size="xs" className="ml-2" />}
+                </div>
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown>
         <Dropdown id="programs-sort-dropdown">
           <Dropdown.Toggle
             id="programs-sort-toggle"
@@ -117,9 +174,11 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
       {/* ── List / empty state ────────────────────────────────────────── */}
       {filteredPrograms.length === 0 ? (
         <p className="text-muted">
-          {search.trim()
-            ? intl.formatMessage(messages.emptySearch)
-            : intl.formatMessage(messages.emptyState)}
+          {(() => {
+            if (search.trim()) { return intl.formatMessage(messages.emptySearch); }
+            if (statusFilter !== 'all') { return intl.formatMessage(messages.emptyFilter); }
+            return intl.formatMessage(messages.emptyState);
+          })()}
         </p>
       ) : (
         filteredPrograms.map((program) => (
