@@ -1,4 +1,9 @@
+import { logError } from '@edx/frontend-platform/logging';
 import { uploadThumbnailAsset } from './videoThumbnailAsset';
+
+jest.mock('@edx/frontend-platform/logging', () => ({
+  logError: jest.fn(),
+}));
 
 jest.mock('../video', () => ({
   actions: {
@@ -35,10 +40,12 @@ describe('uploadThumbnailAsset', () => {
     expect(dispatch).toHaveBeenCalledWith({ updateField: { thumbnail: mockAssetUrl } });
   });
 
-  it('onFailure: does not throw', () => {
+  it('onFailure: logs the error', () => {
     uploadThumbnailAsset({ thumbnail: mockThumbnail })(dispatch);
     [[dispatchedAction]] = dispatch.mock.calls;
-    expect(() => dispatchedAction.uploadAsset.onFailure(new Error('nope'))).not.toThrow();
+    const error = new Error('nope');
+    dispatchedAction.uploadAsset.onFailure(error);
+    expect(logError).toHaveBeenCalledWith(error, { message: 'Thumbnail asset upload failed' });
   });
 
   it('clears the thumbnail field on delete without uploading anything', () => {

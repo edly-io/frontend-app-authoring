@@ -1,3 +1,4 @@
+import { logError } from '@edx/frontend-platform/logging';
 import * as requests from './requests';
 import { actions as videoActions } from '../video';
 
@@ -23,8 +24,7 @@ export const uploadThumbnailAsset = ({ thumbnail, emptyCanvas }) => (dispatch) =
       // A portable `/asset-v1:...` path, so it stays valid on export/import.
       thumbnail: response.data.asset.url,
     })),
-    // eslint-disable-next-line no-console
-    onFailure: (e) => console.log({ UploadFailure: e }, 'Thumbnail asset upload'),
+    onFailure: (error) => logError(error, { message: 'Thumbnail asset upload failed' }),
   }));
 };
 
