@@ -89,7 +89,9 @@ export const checkValidSize = ({ file, onSizeFail }) => {
   return true;
 };
 
-export const fileInput = ({ setThumbnailSrc, imgRef, fileSizeError }) => {
+export const fileInput = ({
+  setThumbnailSrc, imgRef, fileSizeError, asAsset,
+}) => {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const dispatch = useDispatch();
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -111,11 +113,11 @@ export const fileInput = ({ setThumbnailSrc, imgRef, fileSizeError }) => {
           if (!module.checkValidDimensions({ width: image.naturalWidth, height: image.naturalHeight })) {
             const [resampledUrl, resampledFile] = module.resampleImage({ image, filename: file.name });
             setThumbnailSrc(resampledUrl);
-            dispatch(thunkActions.video.uploadThumbnail({ thumbnail: resampledFile }));
+            dispatch(thunkActions.video.uploadThumbnail({ thumbnail: resampledFile, asAsset }));
             dispatch(actions.video.updateField({ thumbnail: resampledUrl }));
             return;
           }
-          dispatch(thunkActions.video.uploadThumbnail({ thumbnail: file }));
+          dispatch(thunkActions.video.uploadThumbnail({ thumbnail: file, asAsset }));
           dispatch(actions.video.updateField({ thumbnail: reader.result }));
         };
       };
@@ -141,7 +143,7 @@ export const fileSizeError = () => {
   };
 };
 
-export const deleteThumbnail = ({ dispatch }) => () => {
+export const deleteThumbnail = ({ dispatch, asAsset }) => () => {
   dispatch(actions.video.updateField({ thumbnail: null }));
   const emptyCanvas = document.createElement('canvas');
   const ctx = emptyCanvas.getContext('2d');
@@ -150,7 +152,7 @@ export const deleteThumbnail = ({ dispatch }) => () => {
   ctx.fillStyle = 'black';
   ctx.fillRect(0, 0, emptyCanvas.width, emptyCanvas.height);
   const file = createResampledFile({ canvasUrl: emptyCanvas.toDataURL(), filename: 'blankThumbnail.png', mimeType: 'image/png' });
-  dispatch(thunkActions.video.uploadThumbnail({ thumbnail: file, emptyCanvas }));
+  dispatch(thunkActions.video.uploadThumbnail({ thumbnail: file, emptyCanvas, asAsset }));
 };
 
 export default {

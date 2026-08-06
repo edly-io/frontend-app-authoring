@@ -19,6 +19,7 @@ import { DeleteOutline, FileUpload } from '@openedx/paragon/icons';
 import { selectors } from '../../../../../../data/redux';
 import { isEdxVideo } from '../../../../../../data/services/cms/api';
 
+import * as assetThumbnail from './assetThumbnail';
 import { acceptedImgKeys } from './constants';
 import * as hooks from './hooks';
 import messages from './messages';
@@ -37,7 +38,6 @@ const ThumbnailWidget = ({
   // redux
   isLibrary,
   allowThumbnailUpload,
-  studioEndpointUrl,
   thumbnail,
   videoId,
 }) => {
@@ -46,19 +46,17 @@ const ThumbnailWidget = ({
   const imgRef = React.useRef();
   const [thumbnailSrc, setThumbnailSrc] = React.useState(thumbnail);
   const { fileSizeError } = hooks.fileSizeError();
+  const edxVideo = isEdxVideo(videoId);
+  // A video with no edxval record stores its thumbnail as a course asset instead.
+  const asAsset = !edxVideo;
   const fileInput = hooks.fileInput({
     setThumbnailSrc,
     imgRef,
     fileSizeError,
+    asAsset,
   });
-  const edxVideo = isEdxVideo(videoId);
-  // Only the edxval path is gated on the video_image_upload_enabled switch. A
-  // non-edxval video stores its thumbnail as a course asset, which is always on.
-  const canUploadThumbnail = !edxVideo || allowThumbnailUpload;
-  // Asset thumbnails are stored as a portable `/asset-v1:...` path, which the
-  // MFE cannot resolve against its own origin.
-  const thumbnailPreview = thumbnail?.startsWith('/') ? `${studioEndpointUrl}${thumbnail}` : thumbnail;
-  const deleteThumbnail = hooks.deleteThumbnail({ dispatch });
+  const canUploadThumbnail = assetThumbnail.canUploadThumbnail({ isEdxVideo: edxVideo, allowThumbnailUpload });
+  const deleteThumbnail = hooks.deleteThumbnail({ dispatch, asAsset });
   const getSubtitle = () => {
     if (!canUploadThumbnail) {
       return intl.formatMessage(messages.unavailableSubtitle);
@@ -94,7 +92,7 @@ const ThumbnailWidget = ({
             fluid
             className="w-75"
             ref={imgRef}
-            src={thumbnailSrc || thumbnailPreview}
+            src={thumbnailSrc || assetThumbnail.thumbnailPreviewUrl(thumbnail)}
             alt={intl.formatMessage(messages.thumbnailAltText)}
           />
           {canUploadThumbnail && (
@@ -138,14 +136,12 @@ ThumbnailWidget.propTypes = {
   // redux
   isLibrary: PropTypes.bool.isRequired,
   allowThumbnailUpload: PropTypes.bool.isRequired,
-  studioEndpointUrl: PropTypes.string.isRequired,
   thumbnail: PropTypes.string.isRequired,
   videoId: PropTypes.string.isRequired,
 };
 export const mapStateToProps = (state) => ({
   isLibrary: selectors.app.isLibrary(state),
   allowThumbnailUpload: selectors.video.allowThumbnailUpload(state),
-  studioEndpointUrl: selectors.app.studioEndpointUrl(state),
   thumbnail: selectors.video.thumbnail(state),
   videoId: selectors.video.videoId(state),
 });

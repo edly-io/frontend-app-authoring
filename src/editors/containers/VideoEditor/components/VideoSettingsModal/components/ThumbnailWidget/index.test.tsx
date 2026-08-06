@@ -32,7 +32,6 @@ describe('ThumbnailWidget', () => {
     intl: { formatMessage },
     isLibrary: false,
     allowThumbnailUpload: false,
-    studioEndpointUrl: 'sOMEeNDpOINT',
     thumbnail: '',
     videoId: '',
     updateField: jest.fn().mockName('args.updateField'),

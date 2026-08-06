@@ -7,7 +7,8 @@ import * as requests from './requests';
 // eslint-disable-next-line import/no-self-import
 import * as module from './video';
 import { valueFromDuration } from '../../../containers/VideoEditor/components/VideoSettingsModal/components/DurationWidget/hooks';
-import { isEdxVideo, parseYoutubeId } from '../../services/cms/api';
+import { parseYoutubeId } from '../../services/cms/api';
+import { uploadThumbnailAsset } from './videoThumbnailAsset';
 import { selectors as appSelectors } from '../app';
 import { actions as videoActions, selectors as videoSelectors } from '../video';
 
@@ -253,25 +254,12 @@ export const saveVideoData = () => (dispatch, getState) => {
   return selectors.video.videoSettings(state);
 };
 
-export const uploadThumbnail = ({ thumbnail, emptyCanvas }) => (dispatch, getState) => {
+export const uploadThumbnail = ({ thumbnail, emptyCanvas, asAsset }) => (dispatch, getState) => {
   const state = getState();
   const { videoId } = state.video;
   const { studioEndpointUrl } = state.app;
-  // Videos added as a plain URL have no edxval record, so /video_images/ has no
-  // CourseVideo row to attach to. Store their thumbnail as a course asset instead.
-  if (!isEdxVideo(videoId)) {
-    if (emptyCanvas) {
-      dispatch(actions.video.updateField({ thumbnail: null }));
-      return;
-    }
-    dispatch(requests.uploadAsset({
-      asset: thumbnail,
-      onSuccess: (response) => dispatch(actions.video.updateField({
-        thumbnail: response.data.asset.url,
-      })),
-      // eslint-disable-next-line no-console
-      onFailure: (e) => console.log({ UploadFailure: e }, 'Thumbnail asset upload'),
-    }));
+  if (asAsset) {
+    dispatch(uploadThumbnailAsset({ thumbnail, emptyCanvas }));
     return;
   }
   dispatch(requests.uploadThumbnail({
