@@ -47,16 +47,13 @@ const ThumbnailWidget = ({
   const [thumbnailSrc, setThumbnailSrc] = React.useState(thumbnail);
   const { fileSizeError } = hooks.fileSizeError();
   const edxVideo = isEdxVideo(videoId);
-  // A video with no edxval record stores its thumbnail as a course asset instead.
-  const asAsset = !edxVideo;
   const fileInput = hooks.fileInput({
     setThumbnailSrc,
     imgRef,
     fileSizeError,
-    asAsset,
   });
   const canUploadThumbnail = assetThumbnail.canUploadThumbnail({ isEdxVideo: edxVideo, allowThumbnailUpload });
-  const deleteThumbnail = hooks.deleteThumbnail({ dispatch, asAsset });
+  const deleteThumbnail = hooks.deleteThumbnail({ dispatch });
   const getSubtitle = () => {
     if (!canUploadThumbnail) {
       return intl.formatMessage(messages.unavailableSubtitle);
