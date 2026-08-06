@@ -37,7 +37,7 @@ const ThumbnailWidget = ({
   intl,
   // redux
   isLibrary,
-  allowThumbnailUpload,
+  allowThumbnailUpload: allowThumbnailUploadSetting,
   thumbnail,
   videoId,
 }) => {
@@ -52,10 +52,13 @@ const ThumbnailWidget = ({
     imgRef,
     fileSizeError,
   });
-  const canUploadThumbnail = assetThumbnail.canUploadThumbnail({ isEdxVideo: edxVideo, allowThumbnailUpload });
+  const allowThumbnailUpload = assetThumbnail.canUploadThumbnail({
+    isEdxVideo: edxVideo,
+    allowThumbnailUpload: allowThumbnailUploadSetting,
+  });
   const deleteThumbnail = hooks.deleteThumbnail({ dispatch });
   const getSubtitle = () => {
-    if (!canUploadThumbnail) {
+    if (!allowThumbnailUpload) {
       return intl.formatMessage(messages.unavailableSubtitle);
     }
     if (thumbnail) {
@@ -77,7 +80,7 @@ const ThumbnailWidget = ({
       >
         <FormattedMessage {...messages.fileSizeError} />
       </ErrorAlert>
-      {!canUploadThumbnail && (
+      {!allowThumbnailUpload && (
         <Alert variant="light">
           <FormattedMessage {...messages.unavailableMessage} />
         </Alert>
@@ -92,7 +95,7 @@ const ThumbnailWidget = ({
             src={assetThumbnail.thumbnailPreviewUrl(thumbnailSrc || thumbnail)}
             alt={intl.formatMessage(messages.thumbnailAltText)}
           />
-          {canUploadThumbnail && (
+          {allowThumbnailUpload && (
             <IconButtonWithTooltip
               tooltipPlacement="top"
               tooltipContent={intl.formatMessage(messages.deleteThumbnail)}
@@ -117,7 +120,7 @@ const ThumbnailWidget = ({
             iconBefore={FileUpload}
             onClick={fileInput.click}
             variant="link"
-            disabled={!canUploadThumbnail}
+            disabled={!allowThumbnailUpload}
           >
             <FormattedMessage {...messages.uploadButtonLabel} />
           </Button>
