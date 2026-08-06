@@ -1,6 +1,5 @@
 import { actions } from '..';
 import keyStore from '../../../utils/keyStore';
-import { isEdxVideo } from '../../services/cms/api';
 import * as thunkActions from './video';
 
 jest.mock('../video', () => ({
@@ -43,8 +42,12 @@ jest.mock('../../../utils', () => ({
 }));
 
 jest.mock('../../services/cms/api', () => ({
+  ...jest.requireActual('../../services/cms/api'),
   parseYoutubeId: (args) => (args),
-  isEdxVideo: jest.fn(() => true),
+}));
+
+jest.mock('./videoThumbnailAsset', () => ({
+  uploadThumbnailAsset: (args) => ({ uploadThumbnailAsset: args }),
 }));
 
 const thunkActionsKeys = keyStore(thunkActions);
@@ -88,11 +91,12 @@ const videoSharingData = {
   video_sharing_doc_url: 'SomEUrL.Com',
   video_sharing_options: 'OpTIOns',
 };
+const mockEdxVideoId = 'a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d';
 const testState = {
   transcripts: ['la'],
   thumbnail: 'sOMefILE',
   originalThumbnail: null,
-  videoId: 'soMEvIDEo',
+  videoId: mockEdxVideoId,
 };
 const testVideosState = {
   edx_video_id: mockSelectedVideoId,
@@ -650,32 +654,18 @@ describe('video thunkActions', () => {
       expect(dispatchedAction.uploadThumbnail).not.toEqual(undefined);
     });
   });
-  describe('uploadThumbnail - video without an edxval id', () => {
+  describe('uploadThumbnail - non-edxval video', () => {
     beforeEach(() => {
-      isEdxVideo.mockReturnValue(false);
-    });
-    afterEach(() => {
-      isEdxVideo.mockReturnValue(true);
-    });
-    it('dispatches uploadAsset instead of uploadThumbnail', () => {
+      getState = jest.fn(() => ({
+        app: { studioEndpointUrl: 'soMEeNDPoiNT' },
+        video: { ...testState, videoId: 'notAnEdxValId' },
+      }));
       thunkActions.uploadThumbnail({ thumbnail: mockThumbnail })(dispatch, getState);
       [[dispatchedAction]] = dispatch.mock.calls;
+    });
+    it('dispatches uploadThumbnailAsset instead of the edxval uploadThumbnail request', () => {
+      expect(dispatchedAction.uploadThumbnailAsset).toEqual({ thumbnail: mockThumbnail, emptyCanvas: undefined });
       expect(dispatchedAction.uploadThumbnail).toEqual(undefined);
-      expect(dispatchedAction.uploadAsset.asset).toEqual(mockThumbnail);
-    });
-    it('onSuccess: sets thumbnail to the asset url', () => {
-      thunkActions.uploadThumbnail({ thumbnail: mockThumbnail })(dispatch, getState);
-      [[dispatchedAction]] = dispatch.mock.calls;
-      dispatch.mockClear();
-      dispatchedAction.uploadAsset.onSuccess({ data: { asset: { url: mockFilename } } });
-      expect(dispatch).toHaveBeenCalledWith(
-        actions.video.updateField({ thumbnail: mockFilename }),
-      );
-    });
-    it('clears the thumbnail field on delete without uploading', () => {
-      thunkActions.uploadThumbnail({ thumbnail: mockThumbnail, emptyCanvas: true })(dispatch, getState);
-      expect(dispatch).toHaveBeenCalledWith(actions.video.updateField({ thumbnail: null }));
-      expect(dispatch).toHaveBeenCalledTimes(1);
     });
   });
   describe('importTranscript', () => {
