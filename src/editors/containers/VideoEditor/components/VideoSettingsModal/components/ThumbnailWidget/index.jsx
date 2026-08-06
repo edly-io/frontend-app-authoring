@@ -89,7 +89,7 @@ const ThumbnailWidget = ({
             fluid
             className="w-75"
             ref={imgRef}
-            src={thumbnailSrc || assetThumbnail.thumbnailPreviewUrl(thumbnail)}
+            src={assetThumbnail.thumbnailPreviewUrl(thumbnailSrc || thumbnail)}
             alt={intl.formatMessage(messages.thumbnailAltText)}
           />
           {canUploadThumbnail && (

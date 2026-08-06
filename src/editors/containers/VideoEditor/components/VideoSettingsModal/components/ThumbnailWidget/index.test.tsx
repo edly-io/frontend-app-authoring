@@ -1,4 +1,5 @@
 import React from 'react';
+import { getConfig } from '@edx/frontend-platform';
 import { render, screen, initializeMocks } from '@src/testUtils';
 import { formatMessage } from '../../../../../../testUtils';
 import { ThumbnailWidgetInternal as ThumbnailWidget } from '.';
@@ -70,6 +71,15 @@ describe('ThumbnailWidget', () => {
       render(<ThumbnailWidget {...props} allowThumbnailUpload videoId="sOMeViDEoID" />);
       expect(screen.getByRole('button', { name: 'Thumbnail' })).toBeInTheDocument();
       expect(screen.queryByRole('img', { name: 'Image used as thumbnail for video' })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('thumbnail preview for an asset-backed thumbnail', () => {
+    test('resolves a stored /asset-v1:... path against Studio on mount', () => {
+      const path = '/asset-v1:org+course+run+type@asset+block@thumb.png';
+      render(<ThumbnailWidget {...props} thumbnail={path} videoId="sOMeViDEoID" />);
+      expect(screen.getByRole('img', { name: 'Image used as thumbnail for video' }))
+        .toHaveAttribute('src', `${getConfig().STUDIO_BASE_URL}${path}`);
     });
   });
 });
