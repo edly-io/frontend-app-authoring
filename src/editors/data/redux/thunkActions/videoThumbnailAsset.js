@@ -1,3 +1,4 @@
+import { logError } from '@edx/frontend-platform/logging';
 import * as requests from './requests';
 import { actions as videoActions } from '../video';
 
@@ -12,6 +13,9 @@ const actions = { video: videoActions };
  * @param {File} thumbnail - image file to upload
  * @param {HTMLCanvasElement} emptyCanvas - present when the author deleted the thumbnail
  */
+// A portable `/asset-v1:...` path, so it stays valid on export/import.
+const isAssetPath = (url) => typeof url === 'string' && url.startsWith('/asset-v1:');
+
 export const uploadThumbnailAsset = ({ thumbnail, emptyCanvas }) => (dispatch) => {
   if (emptyCanvas) {
     dispatch(actions.video.updateField({ thumbnail: null }));
@@ -19,12 +23,19 @@ export const uploadThumbnailAsset = ({ thumbnail, emptyCanvas }) => (dispatch) =
   }
   dispatch(requests.uploadAsset({
     asset: thumbnail,
-    onSuccess: (response) => dispatch(actions.video.updateField({
-      // A portable `/asset-v1:...` path, so it stays valid on export/import.
-      thumbnail: response.data.asset.url,
-    })),
-    // eslint-disable-next-line no-console
-    onFailure: (e) => console.log({ UploadFailure: e }, 'Thumbnail asset upload'),
+    onSuccess: (response) => {
+      const url = response?.data?.asset?.url;
+      if (!isAssetPath(url)) {
+        dispatch(actions.video.updateField({ thumbnail: null }));
+        logError(new Error(`Unexpected thumbnail asset upload response: ${url}`), { message: 'Thumbnail asset upload returned a non-asset path' });
+        return;
+      }
+      dispatch(actions.video.updateField({ thumbnail: url }));
+    },
+    onFailure: (error) => {
+      dispatch(actions.video.updateField({ thumbnail: null }));
+      logError(error, { message: 'Thumbnail asset upload failed' });
+    },
   }));
 };
 
