@@ -40,12 +40,25 @@ describe('uploadThumbnailAsset', () => {
     expect(dispatch).toHaveBeenCalledWith({ updateField: { thumbnail: mockAssetUrl } });
   });
 
-  it('onFailure: logs the error', () => {
+  it('onFailure: clears the placeholder and logs the error', () => {
     uploadThumbnailAsset({ thumbnail: mockThumbnail })(dispatch);
     [[dispatchedAction]] = dispatch.mock.calls;
+    dispatch.mockClear();
     const error = new Error('nope');
     dispatchedAction.uploadAsset.onFailure(error);
+    expect(dispatch).toHaveBeenCalledWith({ updateField: { thumbnail: null } });
     expect(logError).toHaveBeenCalledWith(error, { message: 'Thumbnail asset upload failed' });
+  });
+
+  it('onSuccess: rejects a non-asset url and clears the field', () => {
+    uploadThumbnailAsset({ thumbnail: mockThumbnail })(dispatch);
+    [[dispatchedAction]] = dispatch.mock.calls;
+    dispatch.mockClear();
+    logError.mockClear();
+    dispatchedAction.uploadAsset.onSuccess({ data: { asset: { url: 'https://evil.example/x.png' } } });
+    expect(dispatch).toHaveBeenCalledWith({ updateField: { thumbnail: null } });
+    expect(dispatch).not.toHaveBeenCalledWith({ updateField: { thumbnail: 'https://evil.example/x.png' } });
+    expect(logError).toHaveBeenCalled();
   });
 
   it('clears the thumbnail field on delete without uploading anything', () => {
