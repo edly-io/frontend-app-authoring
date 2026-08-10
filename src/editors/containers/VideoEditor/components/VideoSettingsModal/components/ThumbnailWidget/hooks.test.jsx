@@ -119,14 +119,14 @@ describe('fileInput', () => {
       expect(spies.checkValidSize.mock.calls.length).toEqual(1);
       expect(spies.checkValidSize).toHaveReturnedWith(false);
     });
-    it('dispatches updateField action with the first target file', () => {
+    it('dispatches uploadThumbnail thunk without a premature updateField', () => {
       const dispatch = useDispatch(); // Access the mock 'dispatch()' set up in setupEditorTest
       const checkValidSize = true;
       spies.checkValidSize = jest.spyOn(hooks, hookKeys.checkValidSize)
         .mockReturnValueOnce(checkValidSize);
       hook.addFile(eventSuccess);
       expect(spies.checkValidSize).toHaveReturnedWith(true);
-      expect(dispatch).toHaveBeenCalledWith(actions.video.updateField({ thumbnail: ' ' }));
+      expect(dispatch).not.toHaveBeenCalledWith(actions.video.updateField({ thumbnail: ' ' }));
       expect(dispatch).toHaveBeenCalledWith(
         thunkActions.video.uploadThumbnail({
           thumbnail: eventSuccess.target.files[0],
