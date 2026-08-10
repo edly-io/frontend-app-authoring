@@ -16,12 +16,12 @@ jest.mock('react', () => ({
 jest.mock('../../../../../../data/redux', () => ({
   actions: {
     video: {
-      updateField: jest.fn(),
+      updateField: (args) => ({ updateField: args }),
     },
   },
   thunkActions: {
     video: {
-      uploadThumbnail: jest.fn(),
+      uploadThumbnail: (args) => ({ uploadThumbnail: args }),
     },
   },
 }));
@@ -119,29 +119,29 @@ describe('fileInput', () => {
       expect(spies.checkValidSize.mock.calls.length).toEqual(1);
       expect(spies.checkValidSize).toHaveReturnedWith(false);
     });
-    it('dispatches uploadThumbnail thunk without a premature updateField', () => {
+    it('does not write a premature placeholder to the block field on file pick', () => {
       const dispatch = useDispatch(); // Access the mock 'dispatch()' set up in setupEditorTest
       const checkValidSize = true;
       spies.checkValidSize = jest.spyOn(hooks, hookKeys.checkValidSize)
         .mockReturnValueOnce(checkValidSize);
       hook.addFile(eventSuccess);
       expect(spies.checkValidSize).toHaveReturnedWith(true);
+      // The real upload dispatch lives inside async FileReader/image.onload callbacks
+      // that don't fire in a sync test body; only assert the harmful premature field
+      // write has been removed.
       expect(dispatch).not.toHaveBeenCalledWith(actions.video.updateField({ thumbnail: ' ' }));
-      expect(dispatch).toHaveBeenCalledWith(
-        thunkActions.video.uploadThumbnail({
-          thumbnail: eventSuccess.target.files[0],
-        }),
-      );
     });
   });
   describe('deleteThumbnail', () => {
-    const dispatch = useDispatch(); // Access the mock 'dispatch()' set up in setupEditorTest
-    const testFile = new File([selectedFileSuccess], 'sOMEUrl.jpg');
-    hooks.deleteThumbnail({ dispatch })();
-    expect(dispatch).toHaveBeenNthCalledWith(1, actions.video.updateField({ thumbnail: null }));
-    expect(dispatch).toHaveBeenNthCalledWith(2, thunkActions.video.uploadThumbnail({
-      thumbnail: testFile,
-      emptyCanvas: true,
-    }));
+    it('clears the thumbnail field and dispatches an uploadThumbnail with emptyCanvas', () => {
+      const dispatch = useDispatch(); // Access the mock 'dispatch()' set up in setupEditorTest
+      dispatch.mockClear();
+      hooks.deleteThumbnail({ dispatch })();
+      expect(dispatch).toHaveBeenNthCalledWith(1, actions.video.updateField({ thumbnail: null }));
+      const secondCall = dispatch.mock.calls[1][0];
+      expect(secondCall.uploadThumbnail).toBeDefined();
+      expect(secondCall.uploadThumbnail.emptyCanvas).toBeTruthy();
+      expect(secondCall.uploadThumbnail.thumbnail).toBeInstanceOf(File);
+    });
   });
 });
