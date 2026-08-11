@@ -7,7 +7,8 @@ import * as requests from './requests';
 // eslint-disable-next-line import/no-self-import
 import * as module from './video';
 import { valueFromDuration } from '../../../containers/VideoEditor/components/VideoSettingsModal/components/DurationWidget/hooks';
-import { parseYoutubeId } from '../../services/cms/api';
+import { isEdxVideo, parseYoutubeId } from '../../services/cms/api';
+import { uploadThumbnailAsset } from './videoThumbnailAsset';
 import { selectors as appSelectors } from '../app';
 import { actions as videoActions, selectors as videoSelectors } from '../video';
 
@@ -257,6 +258,10 @@ export const uploadThumbnail = ({ thumbnail, emptyCanvas }) => (dispatch, getSta
   const state = getState();
   const { videoId } = state.video;
   const { studioEndpointUrl } = state.app;
+  if (!isEdxVideo(videoId)) {
+    dispatch(uploadThumbnailAsset({ thumbnail, emptyCanvas }));
+    return;
+  }
   dispatch(requests.uploadThumbnail({
     thumbnail,
     videoId,

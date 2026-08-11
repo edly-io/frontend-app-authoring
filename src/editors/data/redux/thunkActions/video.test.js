@@ -43,6 +43,10 @@ jest.mock('../../../utils', () => ({
 
 jest.mock('../../services/cms/api', () => ({
   parseYoutubeId: (args) => (args),
+  // isEdxVideo must be mocked; the real implementation is a UUID regex. The
+  // existing uploadThumbnail tests exercise the edxval path (requests.uploadThumbnail),
+  // so mock it as true to preserve their behaviour.
+  isEdxVideo: jest.fn(() => true),
 }));
 
 const thunkActionsKeys = keyStore(thunkActions);
