@@ -35,7 +35,6 @@ const selectedFileSuccess = { name: testValue, size: 20000 };
 const maxFileFail = { name: testValue, size: 20000000 };
 const minFileFail = { name: testValue, size: 200 };
 const resampledFile = new File([selectedFileSuccess], testValue);
-const imgRef = React.useRef.mockReturnValueOnce({ current: undefined });
 
 describe('state hooks', () => {
   state.testGetter(state.keys.showSizeError);
@@ -96,7 +95,7 @@ describe('fileInput', () => {
   const spies = {};
   const fileSizeError = { set: jest.fn() };
   beforeEach(() => {
-    hook = hooks.fileInput({ setThumbnailSrc, imgRef, fileSizeError });
+    hook = hooks.fileInput({ setThumbnailSrc, fileSizeError });
   });
   it('returns a ref for the file input', () => {
     expect(hook.ref).toEqual({ current: undefined });
@@ -104,7 +103,7 @@ describe('fileInput', () => {
   test('click calls current.click on the ref', () => {
     const click = jest.fn();
     React.useRef.mockReturnValueOnce({ current: { click } });
-    hook = hooks.fileInput({ setThumbnailSrc, imgRef, fileSizeError });
+    hook = hooks.fileInput({ setThumbnailSrc, fileSizeError });
     hook.click();
     expect(click).toHaveBeenCalled();
   });
@@ -130,6 +129,38 @@ describe('fileInput', () => {
       // that don't fire in a sync test body; only assert the harmful premature field
       // write has been removed.
       expect(dispatch).not.toHaveBeenCalledWith(actions.video.updateField({ thumbnail: ' ' }));
+    });
+    it('measures a detached image and uploads, with no preview img mounted', async () => {
+      const dispatch = useDispatch(); // Access the mock 'dispatch()' set up in setupEditorTest
+      dispatch.mockClear();
+      spies.checkValidSize = jest.spyOn(hooks, hookKeys.checkValidSize).mockReturnValue(true);
+      const RealImage = window.Image;
+      // jsdom never decodes a data URL, so report 16:9 dimensions and fire onload on src assignment.
+      window.Image = class {
+        naturalWidth = 1280;
+
+        naturalHeight = 720;
+
+        set src(value) {
+          this.assignedSrc = value;
+          setTimeout(() => this.onload());
+        }
+      };
+      const uploaded = () => dispatch.mock.calls.some(([action]) => action.uploadThumbnail);
+      try {
+        hook.addFile(eventSuccess);
+        // FileReader and the image load each resolve on their own macrotask.
+        for (let i = 0; i < 20 && !uploaded(); i++) {
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise(resolve => { setTimeout(resolve, 0); });
+        }
+      } finally {
+        window.Image = RealImage;
+        spies.checkValidSize.mockRestore();
+      }
+      expect(dispatch).toHaveBeenCalledWith(
+        thunkActions.video.uploadThumbnail({ thumbnail: eventSuccess.target.files[0] }),
+      );
     });
   });
   describe('deleteThumbnail', () => {

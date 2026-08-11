@@ -89,7 +89,7 @@ export const checkValidSize = ({ file, onSizeFail }) => {
   return true;
 };
 
-export const fileInput = ({ setThumbnailSrc, imgRef, fileSizeError }) => {
+export const fileInput = ({ setThumbnailSrc, fileSizeError }) => {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const dispatch = useDispatch();
   // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -106,7 +106,9 @@ export const fileInput = ({ setThumbnailSrc, imgRef, fileSizeError }) => {
     })) {
       reader.onload = () => {
         setThumbnailSrc(reader.result);
-        const image = imgRef.current;
+        // Measure off a detached image: the preview <img> only mounts once the block's
+        // thumbnail field is set, which now happens after the upload, not before it.
+        const image = new Image();
         image.onload = () => {
           if (!module.checkValidDimensions({ width: image.naturalWidth, height: image.naturalHeight })) {
             const [resampledUrl, resampledFile] = module.resampleImage({ image, filename: file.name });
@@ -116,6 +118,7 @@ export const fileInput = ({ setThumbnailSrc, imgRef, fileSizeError }) => {
           }
           dispatch(thunkActions.video.uploadThumbnail({ thumbnail: file }));
         };
+        image.src = reader.result;
       };
       reader.readAsDataURL(file);
     }

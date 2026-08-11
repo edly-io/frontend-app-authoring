@@ -43,13 +43,11 @@ const ThumbnailWidget = ({
 }) => {
   const dispatch = useDispatch();
   const [error] = React.useContext(ErrorContext).thumbnail;
-  const imgRef = React.useRef();
   const [thumbnailSrc, setThumbnailSrc] = React.useState(thumbnail);
   const { fileSizeError } = hooks.fileSizeError();
   const edxVideo = isEdxVideo(videoId);
   const fileInput = hooks.fileInput({
     setThumbnailSrc,
-    imgRef,
     fileSizeError,
   });
   const allowThumbnailUpload = assetThumbnail.canUploadThumbnail({
@@ -91,7 +89,6 @@ const ThumbnailWidget = ({
             thumbnail
             fluid
             className="w-75"
-            ref={imgRef}
             src={assetThumbnail.thumbnailPreviewUrl(thumbnailSrc || thumbnail)}
             alt={intl.formatMessage(messages.thumbnailAltText)}
           />
