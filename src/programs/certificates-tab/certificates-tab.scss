@@ -14,7 +14,7 @@
 // Native certificate dimensions (must match the backend template).
 $cert-w: 1123;
 $cert-h: 710;
-$cert-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+$cert-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", menlo, consolas, monospace;
 
 // ── Tab layout helpers ──────────────────────────────────────────────────────
 .certificates-tab-section {
@@ -168,7 +168,7 @@ $cert-accent-brand: #6E003B;
   gap: 1.5rem;
   align-items: start;
 
-  @media (max-width: 62rem) {
+  @media (--pgn-size-breakpoint-max-width-md) {
     grid-template-columns: 1fr;
   }
 }
@@ -258,7 +258,7 @@ $cert-accent-brand: #6E003B;
   gap: .75rem;
   margin-bottom: 1rem;
 
-  @media (max-width: 62rem) {
+  @media (--pgn-size-breakpoint-max-width-md) {
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -329,15 +329,15 @@ $cert-accent-brand: #6E003B;
 // Foreground uses the shared brand accents; the soft background/border tints
 // are pill-specific and have no accent/token equivalent.
 .certificate-pill--awarded {
-  background: #e4f3ea;
+  background: #E4F3EA;
   color: $cert-accent-success;
-  border-color: #cfe8da;
+  border-color: #CFE8DA;
 }
 
 .certificate-pill--pending {
-  background: #fbf2dc;
+  background: #FBF2DC;
   color: $cert-accent-warning;
-  border-color: #ecdcae;
+  border-color: #ECDCAE;
 }
 
 // ── Table footer ────────────────────────────────────────────────────────────

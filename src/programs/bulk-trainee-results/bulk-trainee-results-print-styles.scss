@@ -17,15 +17,19 @@
       .bg-primary-100 {
         background: var(--pgn-color-primary-100) !important;
       }
+
       .bg-warning-100 {
         background: var(--pgn-color-warning-100) !important;
       }
+
       .bg-success-100 {
         background: var(--pgn-color-success-100) !important;
       }
+
       .bg-dark-100 {
         background: var(--pgn-color-dark-100) !important;
       }
+
       .bg-info-100 {
         background: var(--pgn-color-info-100) !important;
       }
@@ -33,6 +37,7 @@
       .studio-header {
         ~ .container-fluid {
           padding: 0 !important;
+
           > .d-flex.justify-content-between {
             display: none !important;
           }
@@ -47,6 +52,7 @@
         .action-column {
           display: none;
         }
+
         th {
           button {
             display: none;
@@ -64,6 +70,7 @@
 
       .tab-pane {
         display: none !important;
+
         &.active {
           display: block !important;
         }

@@ -4,7 +4,8 @@ import {
 } from '@openedx/paragon';
 import { Lock, RemoveRedEye, Save } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
-import UserIdentity from '../../components/UserIdentity';
+import { UserIdentity } from '@edly-io/frontend-component-fbr';
+
 import { GRID_SCORE_CELL_WIDTH } from './constants';
 import {
   computeSectionScore, focusNextScoreInputInColumn, getSectionVariant, isRowDirty,
