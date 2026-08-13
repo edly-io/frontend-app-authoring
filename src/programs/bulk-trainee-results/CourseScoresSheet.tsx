@@ -12,13 +12,13 @@ import { getSectionVariant } from './utils';
 
 const messages = defineMessages({
   sheetTitle: { id: 'programs.bulk-trainee-results.course-scores.title', defaultMessage: 'Course scores' },
+  sheetSubtitle: {
+    id: 'programs.bulk-trainee-results.course-scores.subtitle',
+    defaultMessage: 'Course scores and assessment results',
+  },
   closeAlt: { id: 'programs.bulk-trainee-results.course-scores.close-alt', defaultMessage: 'Close course scores panel' },
   loadError: { id: 'programs.bulk-trainee-results.course-scores.load-error', defaultMessage: 'Failed to load course scores.' },
   noCourses: { id: 'programs.bulk-trainee-results.course-scores.no-courses', defaultMessage: 'No course scores available yet.' },
-  moduleCountLabel: {
-    id: 'programs.bulk-trainee-results.course-scores.module-count-label',
-    defaultMessage: '{count, plural, one {# module} other {# modules}}',
-  },
   passedBadge: { id: 'programs.bulk-trainee-results.course-scores.passed-badge', defaultMessage: 'Pass' },
   failedBadge: { id: 'programs.bulk-trainee-results.course-scores.failed-badge', defaultMessage: 'Fail' },
   aggregateLabel: {
@@ -63,8 +63,13 @@ const CourseScoresSheet: React.FC<CourseScoresSheetProps> = ({
     >
       <div className="course-scores-sheet">
         <ActionRow>
-          <div className="h3 mb-0">
-            {fullName || intl.formatMessage(messages.sheetTitle)}
+          <div className="min-w-0">
+            <div className="h3 mb-1">
+              {fullName || intl.formatMessage(messages.sheetTitle)}
+            </div>
+            <p className="small text-muted mb-0">
+              {intl.formatMessage(messages.sheetSubtitle)}
+            </p>
           </div>
           <ActionRow.Spacer />
           <IconButton
@@ -98,15 +103,8 @@ const CourseScoresSheet: React.FC<CourseScoresSheetProps> = ({
                   return (
                     <div key={course.courseId} className="course-scores-sheet-row mb-4">
                       <div className={`d-flex align-items-start p-2 rounded-lg bg-${getSectionVariant(courseIndex)}-100`}>
-                        <div className="flex-grow-1 min-w-0">
-                          <div className="h4 font-weight-bold mb-1 text-truncate">{course.courseName}</div>
-                          <div className="d-flex align-items-center gap-2 small flex-wrap">
-                            <span className="text-primary-500 font-weight-bold">{course.courseCode}</span>
-                            <span className="text-muted">·</span>
-                            <span className="badge bg-primary-100 text-primary-800 rounded-pill font-weight-normal">
-                              {intl.formatMessage(messages.moduleCountLabel, { count: course.moduleCount })}
-                            </span>
-                          </div>
+                        <div className="h4 font-weight-bold mb-0 flex-grow-1 min-w-0">
+                          {course.courseName}
                         </div>
                         <div className="text-right text-nowrap ml-3">
                           <div>

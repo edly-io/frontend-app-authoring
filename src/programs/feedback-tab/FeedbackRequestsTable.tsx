@@ -7,7 +7,7 @@ import {
 } from '@openedx/paragon';
 import { RemoveRedEye as ViewIcon } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
-import UserIdentity from '../../components/UserIdentity';
+import { UserIdentity } from '@edly-io/frontend-component-fbr';
 import type {
   FeedbackRequest,
   FeedbackRequestStatus,

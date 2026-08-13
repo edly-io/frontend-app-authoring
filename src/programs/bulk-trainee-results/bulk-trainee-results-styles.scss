@@ -10,7 +10,6 @@
 
 #root:has(.bulk-trainee-results-tab) {
   ~ .sheet-container {
-
     .pgn__sheet-component {
       width: 420px;
       max-width: 90vw;
@@ -20,7 +19,7 @@
 
       .progress {
         height: 8px;
-        background: #d6d6d6;
+        background: #D6D6D6;
       }
     }
   }
@@ -31,14 +30,6 @@
   overflow-x: auto;
 }
 
-.bulk-results-grid {
-  width: 100%;
-  min-width: 960px;
-  table-layout: auto;
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
 .bulk-results-grid th,
 .bulk-results-grid td {
   padding: .5rem .75rem;
@@ -47,6 +38,12 @@
 }
 
 .bulk-results-grid {
+  width: 100%;
+  min-width: 960px;
+  table-layout: auto;
+  border-collapse: separate;
+  border-spacing: 0;
+
   thead {
     th {
       position: sticky;
@@ -65,15 +62,8 @@
     z-index: 9;
     right: 0;
     background: var(--pgn-color-white, #FFFFFF);
-    box-shadow: -2px 0 4px rgba(0, 0, 0, 0.06);
+    box-shadow: -2px 0 4px rgb(0 0 0 / .06);
   }
-}
-
-.bulk-results-grid thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  border-bottom: 2px solid var(--pgn-color-border);
 }
 
 .bulk-results-grid-sticky-col {
