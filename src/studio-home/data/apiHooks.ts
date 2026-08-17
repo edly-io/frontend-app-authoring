@@ -1,7 +1,7 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { AxiosError } from 'axios';
 import { useQuery } from '@tanstack/react-query';
-import { CourseRerunActionStatus, getStudioHomeData, getStudioHomeLibraries } from './api';
+import { CourseRerunActionStatus, getStudioHomeCourses, getStudioHomeLibraries } from './api';
 
 export const studioHomeQueryKeys = {
   all: ['studioHome'],
@@ -39,8 +39,11 @@ export const useCourseRerunStatus = (courseId: string, enabled: boolean) => (
   useQuery<CourseRerunActionStatus | null, AxiosError>({
     queryKey: studioHomeQueryKeys.courseRerunStatus(courseId),
     queryFn: async () => {
-      const { inProcessCourseActions = [] } = await getStudioHomeData();
-      return inProcessCourseActions.find((action) => action.courseKey === courseId) ?? null;
+      // `inProcessCourseActions` is returned by the /home/courses endpoint, not /home.
+      const { inProcessCourseActions = [] } = await getStudioHomeCourses('');
+      return inProcessCourseActions.find(
+        (action: CourseRerunActionStatus) => action.courseKey === courseId,
+      ) ?? null;
     },
     enabled,
     retry: false,

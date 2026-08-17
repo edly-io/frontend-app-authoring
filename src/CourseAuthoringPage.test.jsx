@@ -6,7 +6,7 @@ import { executeThunk } from './utils';
 import { fetchCourseApps } from './pages-and-resources/data/thunks';
 import { fetchCourseDetail } from './data/thunks';
 import { getApiWaffleFlagsUrl } from './data/api';
-import { getStudioHomeApiUrl } from './studio-home/data/api';
+import { getApiBaseUrl } from './studio-home/data/api';
 import { generateGetStudioHomeDataApiResponse } from './studio-home/factories/mockApiResponses';
 import { initializeMocks, render, waitFor } from './testUtils';
 
@@ -87,7 +87,7 @@ describe('Course authoring page', () => {
   };
   test('redirects to Studio Home when the course truly does not exist (no rerun in progress)', async () => {
     await mockStoreNotFound();
-    axiosMock.onGet(getStudioHomeApiUrl()).reply(200, {
+    axiosMock.onGet(`${getApiBaseUrl()}/api/contentstore/v1/home/courses`).reply(200, {
       ...generateGetStudioHomeDataApiResponse(),
       inProcessCourseActions: [],
     });
@@ -99,7 +99,7 @@ describe('Course authoring page', () => {
 
   test('shows a loading state (not a bare "Not found") while a course rerun is still in progress', async () => {
     await mockStoreNotFound();
-    axiosMock.onGet(getStudioHomeApiUrl()).reply(200, {
+    axiosMock.onGet(`${getApiBaseUrl()}/api/contentstore/v1/home/courses`).reply(200, {
       ...generateGetStudioHomeDataApiResponse(),
       inProcessCourseActions: [{
         courseKey: courseId,

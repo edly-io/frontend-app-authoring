@@ -1,7 +1,9 @@
 import { initializeMocks, render, waitFor } from '@src/testUtils';
-import { getStudioHomeApiUrl } from '@src/studio-home/data/api';
-import { generateGetStudioHomeDataApiResponse } from '@src/studio-home/factories/mockApiResponses';
+import { getApiBaseUrl } from '@src/studio-home/data/api';
 import CourseNotFoundHandler from '.';
+
+// `inProcessCourseActions` is served by the /home/courses endpoint (not /home).
+const coursesApiUrl = () => `${getApiBaseUrl()}/api/contentstore/v1/home/courses`;
 
 const courseId = 'course-v1:edX+TestX+Test_Course';
 
@@ -27,10 +29,7 @@ beforeEach(() => {
 });
 
 const mockHomeResponse = (inProcessCourseActions) => {
-  axiosMock.onGet(getStudioHomeApiUrl()).reply(200, {
-    ...generateGetStudioHomeDataApiResponse(),
-    inProcessCourseActions,
-  });
+  axiosMock.onGet(coursesApiUrl()).reply(200, { inProcessCourseActions });
 };
 
 describe('<CourseNotFoundHandler />', () => {
@@ -90,7 +89,7 @@ describe('<CourseNotFoundHandler />', () => {
     // A promise that never resolves within this test -- simulates the request still
     // being in flight, so we can assert there's no premature redirect before we know
     // whether a rerun record exists.
-    axiosMock.onGet(getStudioHomeApiUrl()).reply(() => new Promise(() => {}));
+    axiosMock.onGet(coursesApiUrl()).reply(() => new Promise(() => {}));
 
     const wrapper = render(<CourseNotFoundHandler courseId={courseId} />);
 
