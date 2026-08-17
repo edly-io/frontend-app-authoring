@@ -7,10 +7,27 @@ export const getStudioHomeApiUrl = () => new URL('api/contentstore/v1/home', get
 export const getRequestCourseCreatorUrl = () => new URL('request_course_creator', getApiBaseUrl()).href;
 export const getCourseNotificationUrl = (url) => new URL(url, getApiBaseUrl()).href;
 
+/** An entry in `inProcessCourseActions`: a course rerun that hasn't (yet) succeeded. */
+export interface CourseRerunActionStatus {
+  courseKey: string;
+  displayName: string;
+  org: string;
+  number: string;
+  run: string;
+  isFailed: boolean;
+  isInProgress: boolean;
+  dismissLink: string;
+}
+
+export interface StudioHomeApiResponse {
+  inProcessCourseActions?: CourseRerunActionStatus[];
+  [key: string]: unknown;
+}
+
 /**
  * Get's studio home data.
  */
-export async function getStudioHomeData(): Promise<object> {
+export async function getStudioHomeData(): Promise<StudioHomeApiResponse> {
   const { data } = await getAuthenticatedHttpClient().get(getStudioHomeApiUrl());
   return camelCaseObject(data);
 }
