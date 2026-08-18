@@ -60,7 +60,7 @@ const ProblemEditor: React.FC<Props> = ({
     return (<SelectTypeModal onClose={onClose} />);
   }
 
-  return (<EditProblemView returnFunction={returnFunction} />);
+  return (<EditProblemView onClose={onClose} returnFunction={returnFunction} />);
 };
 
 export default ProblemEditor;
