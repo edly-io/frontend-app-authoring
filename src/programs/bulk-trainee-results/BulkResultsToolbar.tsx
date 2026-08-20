@@ -98,7 +98,9 @@ const BulkResultsToolbar: React.FC<BulkResultsToolbarProps> = ({
               onClick={() => onFocusSectionChange(index)}
             >
               <span className={`bulk-results-focus-filter-swatch bg-${getSectionVariant(index)}-800`} aria-hidden="true" />
-              {section.title}
+              <span className="bulk-results-focus-filter-swatch-label text-truncate">
+                {section.title}
+              </span>
             </button>
           ))}
         </div>

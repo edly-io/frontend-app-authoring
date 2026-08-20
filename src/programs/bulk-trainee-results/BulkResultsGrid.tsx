@@ -114,7 +114,7 @@ const BulkResultsGrid: React.FC<BulkResultsGridProps> = ({
                               iconBefore={Tune}
                               variant="outline-primary"
                               size="inline"
-                              className="w-100"
+                              className="w-100 btn-fill"
                               aria-label={intl.formatMessage(messages.fillColumnAlt, { label: subsection.title })}
                               onClick={() => onRequestFillColumn(subsection.id, subsection.title, subsection.maxMarks)}
                             >

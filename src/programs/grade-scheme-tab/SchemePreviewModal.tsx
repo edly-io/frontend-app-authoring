@@ -31,6 +31,7 @@ const SchemePreviewModal: React.FC<SchemePreviewModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={intl.formatMessage(messages.title)}
+      size="lg"
       hasCloseButton
       isFullscreenOnMobile
       isOverflowVisible={false}
@@ -45,12 +46,12 @@ const SchemePreviewModal: React.FC<SchemePreviewModalProps> = ({
           <Stack gap={3}>
             {sections.map((section, index) => (
               <div key={section.localId}>
-                <div className="d-flex justify-content-between fw-bold">
+                <div className="d-flex justify-content-between font-weight-bold">
                   <span>{index + 1}. {section.title}</span>
                   <span>{sectionTotals[index]}</span>
                 </div>
                 {section.subsections.length > 0 && (
-                  <ul className="mb-0 mt-1">
+                  <ul className="grade-scheme-module_popup_list mb-0 mt-1">
                     {section.subsections.map((subsection) => (
                       <li key={subsection.localId} className="d-flex justify-content-between text-muted">
                         <span>{subsection.title}</span>
@@ -61,7 +62,7 @@ const SchemePreviewModal: React.FC<SchemePreviewModalProps> = ({
                 )}
               </div>
             ))}
-            <div className="d-flex justify-content-between border-top pt-2 fw-bold">
+            <div className="d-flex justify-content-between border-top pt-2 font-weight-bold">
               <span>{intl.formatMessage(messages.schemeTotalLabel)}</span>
               <span>{grandTotal} / {targetTotal}</span>
             </div>

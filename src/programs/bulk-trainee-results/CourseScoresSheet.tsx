@@ -19,8 +19,7 @@ const messages = defineMessages({
   closeAlt: { id: 'programs.bulk-trainee-results.course-scores.close-alt', defaultMessage: 'Close course scores panel' },
   loadError: { id: 'programs.bulk-trainee-results.course-scores.load-error', defaultMessage: 'Failed to load course scores.' },
   noCourses: { id: 'programs.bulk-trainee-results.course-scores.no-courses', defaultMessage: 'No course scores available yet.' },
-  passedBadge: { id: 'programs.bulk-trainee-results.course-scores.passed-badge', defaultMessage: 'Pass' },
-  failedBadge: { id: 'programs.bulk-trainee-results.course-scores.failed-badge', defaultMessage: 'Fail' },
+  passedBadge: { id: 'programs.bulk-trainee-results.course-scores.passed-badge', defaultMessage: 'Pass . ' },
   aggregateLabel: {
     id: 'programs.bulk-trainee-results.course-scores.aggregate-label',
     defaultMessage: 'Overall score {percent}%',
@@ -99,7 +98,7 @@ const CourseScoresSheet: React.FC<CourseScoresSheetProps> = ({
               <div className="mt-3">
                 {data.courses.map((course, courseIndex) => {
                   const roundedPercent = Math.round(course.percent);
-                  const statusVariant = course.passed ? 'success' : 'danger';
+                  const statusVariant = course.passed ? 'success' : 'info';
                   return (
                     <div key={course.courseId} className="course-scores-sheet-row mb-4">
                       <div className={`d-flex align-items-start p-2 rounded-lg bg-${getSectionVariant(courseIndex)}-100`}>
@@ -112,8 +111,7 @@ const CourseScoresSheet: React.FC<CourseScoresSheetProps> = ({
                             <span className="text-muted h5">/100</span>
                           </div>
                           <span className={`badge rounded-pill bg-${statusVariant}-100 text-${statusVariant}-800`}>
-                            {intl.formatMessage(course.passed ? messages.passedBadge : messages.failedBadge)}
-                            {' · '}
+                            {course.passed && intl.formatMessage(messages.passedBadge)}
                             {`${roundedPercent}%`}
                           </span>
                         </div>
@@ -137,7 +135,7 @@ const CourseScoresSheet: React.FC<CourseScoresSheetProps> = ({
                                   />
                                 </ProgressBar>
                                 <div className="d-flex align-items-center small">
-                                  <span className="course-scores-sheet-module-name text-truncate mr-3">
+                                  <span className="course-scores-sheet-module-name mr-3">
                                     {courseModule.name}
                                   </span>
                                   <span className="text-nowrap">

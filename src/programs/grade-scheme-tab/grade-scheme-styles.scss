@@ -2,4 +2,16 @@
   .progress {
     height: 8px;
   }
+
+  .grade-scheme-footer  {
+    position: sticky;
+    bottom: 0;
+    z-index: 9999;
+  }
+}
+
+.grade-scheme-module_popup_list {
+  li {
+    border-bottom: 1px dashed var(--pgn-color-gray-300);
+  }
 }

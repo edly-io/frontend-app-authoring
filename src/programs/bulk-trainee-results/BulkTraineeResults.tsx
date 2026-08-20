@@ -34,6 +34,14 @@ const messages = defineMessages({
     id: 'programs.bulk-trainee-results.no-scheme.body',
     defaultMessage: 'Publish a grade scheme on the Grade Scheme tab before scoring trainees.',
   },
+  schemeDraftTitle: {
+    id: 'programs.bulk-trainee-results.scheme-draft.title',
+    defaultMessage: 'The grade scheme is currently in draft.',
+  },
+  schemeDraftBody: {
+    id: 'programs.bulk-trainee-results.scheme-draft.body',
+    defaultMessage: 'Publish the grade scheme on the Grade Scheme tab before scoring trainees.',
+  },
   saveSuccess: { id: 'programs.bulk-trainee-results.save-success', defaultMessage: 'Result saved.' },
   bulkSaveSuccess: {
     id: 'programs.bulk-trainee-results.bulk-save-success',
@@ -102,6 +110,9 @@ const BulkTraineeResults: React.FC<BulkTraineeResultsProps> = ({
     || getStatusCode(schemeError) === 403
     || getStatusCode(gridError) === 403;
   const isSchemeNotYetBuilt = getStatusCode(schemeError) === 404;
+  // Scoring surfaces (read or write) reject with 409 while the scheme exists
+  // but hasn't been published yet — see `SchemeNotPublished` on the backend.
+  const isSchemeDraft = getStatusCode(schemeError) === 409 || getStatusCode(gridError) === 409;
 
   // Rebuild the local editable draft whenever a fresh page arrives, but keep
   // any not-yet-saved edits intact (see `mergeEditableRows`) — saving or
@@ -332,6 +343,18 @@ const BulkTraineeResults: React.FC<BulkTraineeResultsProps> = ({
           <strong>{intl.formatMessage(messages.noSchemeTitle)}</strong>
           {' '}
           {intl.formatMessage(messages.noSchemeBody)}
+        </Alert>
+      </div>
+    );
+  }
+
+  if (isSchemeDraft) {
+    return (
+      <div className="pt-4">
+        <Alert variant="info">
+          <strong>{intl.formatMessage(messages.schemeDraftTitle)}</strong>
+          {' '}
+          {intl.formatMessage(messages.schemeDraftBody)}
         </Alert>
       </div>
     );
