@@ -1,3 +1,5 @@
+@use "@openedx/paragon/styles/css/core/custom-media-breakpoints" as paragonCustomMediaBreakpoints;
+
 .bulk-trainee-results-tab {
   .progress {
     height: 8px;
@@ -28,6 +30,10 @@
 .bulk-results-grid-wrapper {
   width: 100%;
   overflow-x: auto;
+
+  .btn-fill {
+    max-width: 150px;
+  }
 }
 
 .bulk-results-grid th,
@@ -145,8 +151,16 @@
   font-weight: 500;
   color: var(--pgn-color-gray-500, #6C7688);
   white-space: nowrap;
+  max-width: 250px;
   cursor: pointer;
   transition: background-color .1s ease-in, color .1s ease-in;
+
+  @media (--pgn-size-breakpoint-max-width-xs) {
+    flex-grow: 1;
+    display: flex;
+    width: 100%;
+    max-width: calc(100vw - 57px);
+  }
 
   &:hover {
     color: var(--pgn-color-gray-700, #454545);

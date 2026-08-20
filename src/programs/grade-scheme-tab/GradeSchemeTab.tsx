@@ -345,7 +345,7 @@ const GradeSchemeTab: React.FC<GradeSchemeTabProps> = ({ program, programId = ''
         </Col>
       </Row>
 
-      <div className="bg-white border-top d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 py-3 mt-4">
+      <div className="grade-scheme-footer bg-white border-top d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 py-3 mt-4">
         <span>
           {hasUnsavedChanges && canManage ? (
             <span className="text-warning-800">{intl.formatMessage(messages.unsavedChanges)}</span>
