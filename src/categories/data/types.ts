@@ -1,0 +1,22 @@
+import type { Course } from '../../programs/data/types';
+
+export interface CategorySummary {
+  id: number;
+  name: string;
+  arabicName?: string;
+  slug: string;
+  isActive: boolean;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  arabicName?: string;
+  slug: string;
+  isActive: boolean;
+  courses?: Course[];
+}
+
+export interface CategoryDetailResponse {
+  category: Category;
+}

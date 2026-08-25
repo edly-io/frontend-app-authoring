@@ -17,6 +17,10 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.add-new-instructor.btn.text',
     defaultMessage: 'New Instructor',
   },
+  addNewCategoryBtnText: {
+    id: 'course-authoring.studio-home.add-new-category.btn.text',
+    defaultMessage: 'New Category',
+  },
   addNewLibraryBtnText: {
     id: 'course-authoring.studio-home.add-new-library.btn.text',
     defaultMessage: 'New library',
