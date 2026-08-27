@@ -6,6 +6,7 @@ export const getApiBaseUrl = () => getConfig().STUDIO_BASE_URL;
 export const getStudioHomeApiUrl = () => new URL('api/contentstore/v1/home', getApiBaseUrl()).href;
 export const getRequestCourseCreatorUrl = () => new URL('request_course_creator', getApiBaseUrl()).href;
 export const getCourseNotificationUrl = (url) => new URL(url, getApiBaseUrl()).href;
+export const getTrackingEventsUrl = () => new URL('api/edly_panel/v1/tracking-events', getApiBaseUrl()).href;
 
 /**
  * Get's studio home data.
@@ -69,4 +70,12 @@ export async function handleCourseNotification(url: string): Promise<object> {
 export async function sendRequestForCourseCreator(): Promise<object> {
   const { data } = await getAuthenticatedHttpClient().post(getRequestCourseCreatorUrl());
   return camelCaseObject(data);
+}
+
+/**
+ * Notify the panel backend that the user opened a course, for HubSpot's `has_viewed_course`
+ * tracking. Fire-and-forget: callers must not let a failure here block navigation.
+ */
+export async function postCourseViewedTracking(): Promise<void> {
+  await getAuthenticatedHttpClient().post(getTrackingEventsUrl(), { event_data: { has_viewed_course: 'true' } });
 }
