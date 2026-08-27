@@ -29,6 +29,7 @@ import Head from './head/Head';
 import { StudioHome } from './studio-home';
 import { ProgramDetailPage } from './programs';
 import { InstructorDetailPage } from './instructors';
+import { CategoryDetailPage } from './categories';
 import CourseRerun from './course-rerun';
 import { TaxonomyLayout, TaxonomyDetailPage, TaxonomyListPage } from './taxonomy';
 import { ContentTagsDrawer } from './content-tags-drawer';
@@ -71,6 +72,8 @@ const App = () => {
         <Route path="/programs/:programId" element={<ProgramDetailPage />} />
         <Route path="/instructors" element={<StudioHome />} />
         <Route path="/instructors/:instructorId" element={<InstructorDetailPage />} />
+        <Route path="/categories" element={<StudioHome />} />
+        <Route path="/categories/:categoryId" element={<CategoryDetailPage />} />
         <Route path="/libraries" element={<StudioHome />} />
         <Route path="/libraries-v1" element={<StudioHome />} />
         <Route path="/libraries-v1/migrate" element={<LegacyLibMigrationPage />} />

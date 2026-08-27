@@ -43,6 +43,9 @@ const toProgram = (d: any): Program => ({
   endDate: d.end_date ?? '',
   image: d.card_image ?? '',
   courses: d.courses?.map(toCourse) ?? [],
+  isPaid: d.is_paid ?? false,
+  pricingMode: d.pricing_mode ?? 'collective',
+  customPrice: d.custom_price ?? null,
 });
 
 // ── Config — GET /rwaq/api/programs/config/ ───────────────────────────────────
@@ -102,6 +105,14 @@ export const updateProgram = async (
   if (data.isFeatured !== undefined) { formData.append('is_featured', String(data.isFeatured)); }
   if (data.startDate !== undefined) { formData.append('start_date', data.startDate ?? ''); }
   if (data.endDate !== undefined) { formData.append('end_date', data.endDate ?? ''); }
+  if (data.isPaid !== undefined) {
+    formData.append('is_paid', String(data.isPaid));
+    // pricing_mode and custom_price are only meaningful when is_paid=true
+    if (data.isPaid) {
+      if (data.pricingMode !== undefined) { formData.append('pricing_mode', data.pricingMode ?? 'collective'); }
+      if (data.pricingMode === 'custom' && data.customPrice) { formData.append('custom_price', data.customPrice); }
+    }
+  }
   if (imageFile) { formData.append('card_image', imageFile); }
 
   // Intentionally not sent: org / programType / run (immutable after creation)

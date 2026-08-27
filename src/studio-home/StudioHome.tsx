@@ -24,6 +24,7 @@ import VerifyEmailLayout from './verify-email-layout';
 import CreateNewCourseForm from './create-new-course-form';
 import CreateNewProgramForm from './create-new-program-form';
 import CreateNewInstructorForm from './create-new-instructor-form';
+import CreateNewCategoryForm from './create-new-category-form';
 import messages from './messages';
 import { useStudioHome } from './hooks';
 import AlertMessage from '../generic/alert-message';
@@ -44,12 +45,14 @@ const StudioHome = () => {
     showNewCourseContainer,
     showNewProgramContainer,
     showNewInstructorContainer,
+    showNewCategoryContainer,
     isShowOrganizationDropdown,
     hasAbilityToCreateNewCourse,
     isFiltered,
     setShowNewCourseContainer,
     setShowNewProgramContainer,
     setShowNewInstructorContainer,
+    setShowNewCategoryContainer,
     librariesV1Enabled,
     librariesV2Enabled,
   } = useStudioHome();
@@ -116,6 +119,19 @@ const StudioHome = () => {
           </Button>,
         );
       }
+      if (getConfig().ENABLE_CATEGORY_MANAGEMENT) {
+        headerButtons.push(
+          <Button
+            variant="outline-primary"
+            iconBefore={AddIcon}
+            size="sm"
+            disabled={showNewCategoryContainer}
+            onClick={() => setShowNewCategoryContainer(true)}
+          >
+            {intl.formatMessage(messages.addNewCategoryBtnText)}
+          </Button>,
+        );
+      }
     }
 
     if ((showNewLibraryButton && !showV2LibraryURL) || (showV2LibraryURL && showNewLibraryV2Button)) {
@@ -150,6 +166,7 @@ const StudioHome = () => {
     showNewCourseContainer,
     showNewProgramContainer,
     showNewInstructorContainer,
+    showNewCategoryContainer,
     showV2LibraryURL,
     showNewLibraryButton,
     showNewLibraryV2Button,
@@ -196,11 +213,15 @@ const StudioHome = () => {
             {showNewInstructorContainer && (
               <CreateNewInstructorForm handleOnClickCancel={() => setShowNewInstructorContainer(false)} />
             )}
+            {showNewCategoryContainer && (
+              <CreateNewCategoryForm handleOnClickCancel={() => setShowNewCategoryContainer(false)} />
+            )}
             {isShowOrganizationDropdown && <OrganizationSection />}
             <TabsSection
               showNewCourseContainer={showNewCourseContainer}
               showNewProgramContainer={showNewProgramContainer}
               showNewInstructorContainer={showNewInstructorContainer}
+              showNewCategoryContainer={showNewCategoryContainer}
               onClickNewCourse={() => setShowNewCourseContainer(true)}
               isShowProcessing={Boolean(isShowProcessing) && !isFiltered}
               librariesV1Enabled={librariesV1Enabled}
