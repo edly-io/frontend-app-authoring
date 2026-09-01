@@ -5,6 +5,7 @@ import {
   getInstructorDetail,
   getInstructors,
   getInstructorsForCourse,
+  getInstructorsPage,
   linkInstructorToCourse,
   removeCourseFromInstructor,
   unlinkInstructorFromCourse,
@@ -12,9 +13,24 @@ import {
 } from './api';
 import type { InstructorProfile } from './types';
 
+// Every instructor across all pages. For callers that need the whole list
+// rather than one page (e.g. the course "link an instructor" modal).
 export const useInstructors = () => useQuery({
   queryKey: ['instructors'],
   queryFn: getInstructors,
+});
+
+// One page, with search and sort applied server-side. The params are part of
+// the query key so each page/search/sort combination is cached separately and
+// paging back and forth doesn't refetch.
+export const useInstructorsPage = (
+  params: { page?: number; search?: string; ordering?: string } = {},
+) => useQuery({
+  queryKey: ['instructors', 'page', params.page ?? 1, params.search ?? '', params.ordering ?? ''],
+  queryFn: () => getInstructorsPage(params),
+  // Keeps the previous page visible while the next one loads, instead of
+  // flashing the loading spinner on every page change.
+  placeholderData: (previous) => previous,
 });
 
 export const useInstructorDetail = (instructorId: string) => useQuery({

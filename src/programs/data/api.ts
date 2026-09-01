@@ -9,12 +9,18 @@ import type {
   Learner,
   PaginatedCourses,
   PaginatedLearners,
+  PaginatedPrograms,
   Program,
   ProgramConfig,
   ProgramDetailResponse,
 } from './types';
 
 const getProgramsBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/rwaq/api/programs`;
+
+// Safety bound on getPrograms()'s page walk. At the API's page_size of 10 this
+// allows 5,000 programs, while still guaranteeing the loop terminates if the
+// API returns an inconsistent count/page_size pair.
+const MAX_LIST_PAGES = 500;
 
 // ── Response → Course type transformation ────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,11 +66,55 @@ export const getProgramsConfig = async (): Promise<ProgramConfig> => {
 };
 
 // ── List — GET /rwaq/api/programs/ ────────────────────────────────────────────
-export const getPrograms = async (): Promise<Program[]> => {
-  const { data } = await getAuthenticatedHttpClient().get(`${getProgramsBaseUrl()}/`);
-  // Handle both paginated { results: [...] } and flat array responses
+// The endpoint paginates at 10 per page and supports ?search=, ?ordering= and
+// ?status=, so all three are passed through to the server. Filtering
+// client-side instead would only ever match within the page already fetched.
+export const getProgramsPage = async (
+  params: { page?: number; search?: string; ordering?: string; status?: string } = {},
+): Promise<PaginatedPrograms> => {
+  const { data } = await getAuthenticatedHttpClient().get(`${getProgramsBaseUrl()}/`, {
+    params: {
+      page: params.page,
+      search: params.search || undefined,
+      ordering: params.ordering,
+      // 'all' is a UI-only value; omit it so the server returns every status.
+      status: params.status && params.status !== 'all' ? params.status : undefined,
+    },
+  });
+
+  // rwaq-features' list endpoints use edx_rest_framework_extensions'
+  // NamespacedPageNumberPagination, which nests metadata under a "pagination"
+  // key rather than DRF's default flat { count, next, results } shape — same
+  // convention as getCourses()/getLearners() below. Also handle a flat array
+  // response, which means the endpoint isn't paginating at all.
   const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
-  return results.map(toProgram);
+  const pagination = Array.isArray(data) ? null : data.pagination;
+
+  return {
+    results: results.map(toProgram),
+    count: pagination?.count ?? results.length,
+    numPages: pagination?.num_pages ?? 1,
+  };
+};
+
+// Every program across all pages, for callers that need the whole list rather
+// than a page.
+export const getPrograms = async (): Promise<Program[]> => {
+  const all: Program[] = [];
+  let page = 1;
+
+  // Bounded rather than while(true): a malformed count/page_size pair should
+  // degrade to a truncated list, not spin forever against the API.
+  for (; page <= MAX_LIST_PAGES; page += 1) {
+    // eslint-disable-next-line no-await-in-loop
+    const { results, numPages } = await getProgramsPage({ page });
+    all.push(...results);
+    if (page >= numPages) {
+      break;
+    }
+  }
+
+  return all;
 };
 
 // ── Detail — GET /rwaq/api/programs/<program_key>/ ───────────────────────────

@@ -11,6 +11,12 @@ export interface PaginatedCourses {
   numPages: number;
 }
 
+export interface PaginatedPrograms {
+  results: Program[];
+  count: number;
+  numPages: number;
+}
+
 export type PricingMode = 'collective' | 'custom';
 
 export interface Program {

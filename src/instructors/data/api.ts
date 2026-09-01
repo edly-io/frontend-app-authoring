@@ -9,9 +9,16 @@ import type {
   InstructorOrganization,
   InstructorProfile,
   InstructorSummary,
+  PaginatedInstructorProfiles,
 } from './types';
 
 const getInstructorsBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/rwaq/api/instructors`;
+
+// Safety bound on getInstructors()'s page walk. At the API's page_size of 10
+// this allows 5,000 instructors — far beyond the ~200 in the real data — while
+// still guaranteeing the loop terminates if the API returns an inconsistent
+// count/page_size pair.
+const MAX_LIST_PAGES = 500;
 
 // ── Response → Course type transformation ────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,12 +52,56 @@ const toInstructorProfile = (d: any): InstructorProfile => ({
 });
 
 // ── List — GET /rwaq/api/instructors/ ─────────────────────────────────────────
-export const getInstructors = async (): Promise<InstructorProfile[]> => {
-  const { data } = await getAuthenticatedHttpClient().get(`${getInstructorsBaseUrl()}/`);
-  // Handle both paginated { results: [...] } and flat array responses
+// The endpoint paginates at 10 per page and supports ?search= / ?ordering=,
+// so both are passed through to the server. Filtering client-side instead
+// would only ever match within the page already fetched.
+export const getInstructorsPage = async (
+  params: { page?: number; search?: string; ordering?: string } = {},
+): Promise<PaginatedInstructorProfiles> => {
+  const { data } = await getAuthenticatedHttpClient().get(`${getInstructorsBaseUrl()}/`, {
+    params: {
+      page: params.page,
+      search: params.search || undefined,
+      ordering: params.ordering,
+    },
+  });
+
+  // rwaq-features' list endpoints use edx_rest_framework_extensions'
+  // NamespacedPageNumberPagination, which nests metadata under a "pagination"
+  // key instead of DRF's default flat { count, next, results } shape:
+  //   { results: [...], pagination: { count, num_pages, next, previous } }
+  // Also handle a flat array response — that means the endpoint isn't
+  // paginating at all, so it is all one page.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
-  return results.map(toInstructorProfile);
+  const pagination = Array.isArray(data) ? null : data.pagination;
+
+  return {
+    results: results.map(toInstructorProfile),
+    count: pagination?.count ?? results.length,
+    numPages: pagination?.num_pages ?? 1,
+  };
+};
+
+// Every instructor, walking pages until the last one. For callers that need the
+// full list rather than a page — e.g. the course "link an instructor" modal,
+// which must be able to find any instructor, not just the first page's worth.
+export const getInstructors = async (): Promise<InstructorProfile[]> => {
+  const all: InstructorProfile[] = [];
+  let page = 1;
+
+  // Bounded rather than while(true): a malformed count/page_size pair should
+  // degrade to a truncated list, not spin forever against the API.
+  for (; page <= MAX_LIST_PAGES; page += 1) {
+    // eslint-disable-next-line no-await-in-loop
+    const { results, numPages } = await getInstructorsPage({ page });
+    all.push(...results);
+    if (page >= numPages) {
+      break;
+    }
+  }
+
+  return all;
 };
 
 // ── Detail — GET /rwaq/api/instructors/<id>/ ──────────────────────────────────
