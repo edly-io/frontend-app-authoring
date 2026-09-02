@@ -8,6 +8,7 @@ import {
 import { Add, Launch } from '@openedx/paragon/icons';
 import { getConfig } from '@edx/frontend-platform';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
+import { useNavigate } from 'react-router-dom';
 import type { Course } from '../../programs/data/types';
 import type { InstructorProfile } from '../data/types';
 import { useRemoveCourseFromInstructor } from '../data/apiHooks';
@@ -33,6 +34,7 @@ interface InstructorCoursesTabProps {
 
 const InstructorCoursesTab: React.FC<InstructorCoursesTabProps> = ({ instructor, instructorId }) => {
   const intl = useIntl();
+  const navigate = useNavigate();
   const [isModalOpen, openModal, closeModal] = useToggle(false);
   const [confirmCourseId, setConfirmCourseId] = useState<string | null>(null);
   const removeCourse = useRemoveCourseFromInstructor();
@@ -144,8 +146,12 @@ const InstructorCoursesTab: React.FC<InstructorCoursesTabProps> = ({ instructor,
         )}
         btnLabel={intl.formatMessage(messages.confirmRemoveBtn)}
         onDeleteSubmit={async () => {
+          const isLastCourse = courses.length === 1;
           await removeCourse.mutateAsync({ instructorId, courseId: confirmCourseId! });
           setConfirmCourseId(null);
+          if (isLastCourse) {
+            navigate('/instructors');
+          }
         }}
       />
     </div>
