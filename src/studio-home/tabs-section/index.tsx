@@ -11,6 +11,7 @@ import { getConfig } from '@edx/frontend-platform';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { useNavigate, useLocation } from 'react-router-dom';
 
+import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import { RequestStatus } from '@src/data/constants';
 import { getLoadingStatuses, getStudioHomeData } from '../data/selectors';
 import messages from './messages';
@@ -136,7 +137,7 @@ const TabsSection = ({
       );
     }
 
-    if (getConfig().ENABLE_CATEGORY_MANAGEMENT) {
+    if (getAuthenticatedUser()?.administrator) {
       tabs.push(
         <Tab
           key={TABS_LIST.categories}

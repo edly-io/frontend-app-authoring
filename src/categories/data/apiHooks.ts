@@ -10,7 +10,7 @@ import {
   unlinkCategoryFromCourse,
   updateCategory,
 } from './api';
-import type { Category } from './types';
+import type { Category, CategoryCreatePayload } from './types';
 
 export const useCategories = () => useQuery({
   queryKey: ['categories'],
@@ -26,7 +26,7 @@ export const useCategoryDetail = (categoryId: string) => useQuery({
 export const useCreateCategory = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: createCategory,
+    mutationFn: (payload: CategoryCreatePayload) => createCategory(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
     },

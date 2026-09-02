@@ -48,7 +48,7 @@ const CategoriesTab: React.FC = () => {
 
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter((c) => c.name.toLowerCase().includes(q) || c.slug.includes(q));
+      list = list.filter((c) => c.name.toLowerCase().includes(q) || (c.slug ?? '').includes(q));
     }
 
     list.sort((a, b) => (
