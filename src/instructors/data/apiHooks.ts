@@ -70,6 +70,7 @@ export const useRemoveCourseFromInstructor = () => {
     ),
     onSuccess: (_, { instructorId }) => {
       queryClient.invalidateQueries({ queryKey: ['instructor', instructorId] });
+      queryClient.invalidateQueries({ queryKey: ['instructors'] });
     },
   });
 };
