@@ -23,7 +23,6 @@ const toCategory = (d: any): Category => ({
   id: d.id,
   name: d.name,
   arabicName: d.arabic_name ?? '',
-  slug: d.slug,
   isActive: d.is_active ?? true,
   courses: d.courses?.map(toCourse) ?? [],
 });
@@ -33,7 +32,6 @@ const toCategorySummary = (d: any): CategorySummary => ({
   id: d.id,
   name: d.name,
   arabicName: d.arabic_name ?? '',
-  slug: d.slug,
   isActive: d.is_active ?? true,
 });
 
@@ -52,11 +50,10 @@ export const getCategoryDetail = async (categoryId: string): Promise<CategoryDet
 };
 
 // ── Create — POST /rwaq/api/categories/ ──────────────────────────────────────
-export const createCategory = async (input: { name: string; arabicName?: string; slug: string }): Promise<Category> => {
+export const createCategory = async (input: { name: string; arabicName?: string }): Promise<Category> => {
   const { data } = await getAuthenticatedHttpClient().post(`${getCategoriesBaseUrl()}/`, {
     name: input.name,
     arabic_name: input.arabicName ?? '',
-    slug: input.slug,
   });
   return toCategory(data);
 };
@@ -64,12 +61,11 @@ export const createCategory = async (input: { name: string; arabicName?: string;
 // ── Update — PATCH /rwaq/api/categories/<id>/ ─────────────────────────────────
 export const updateCategory = async (
   categoryId: string,
-  payload: Partial<Pick<Category, 'name' | 'arabicName' | 'slug' | 'isActive'>>,
+  payload: Partial<Pick<Category, 'name' | 'arabicName' | 'isActive'>>,
 ): Promise<Category> => {
   const body: Record<string, unknown> = {};
   if (payload.name !== undefined) { body.name = payload.name; }
   if (payload.arabicName !== undefined) { body.arabic_name = payload.arabicName; }
-  if (payload.slug !== undefined) { body.slug = payload.slug; }
   if (payload.isActive !== undefined) { body.is_active = payload.isActive; }
 
   const { data } = await getAuthenticatedHttpClient().patch(
