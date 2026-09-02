@@ -12,7 +12,7 @@ interface Props {
 
 const CategoryCard: React.FC<Props> = ({ category }) => {
   const {
-    id, name, slug, isActive, courses,
+    id, name, isActive, courses,
   } = category;
   const courseCount = courses?.length ?? 0;
 
@@ -29,7 +29,7 @@ const CategoryCard: React.FC<Props> = ({ category }) => {
               {!isActive && <Badge variant="secondary" style={{ fontSize: '0.7em' }}>Inactive</Badge>}
             </Stack>
           )}
-          subtitle={`${slug} · ${courseCount} course${courseCount === 1 ? '' : 's'}`}
+          subtitle={`${courseCount} course${courseCount === 1 ? '' : 's'}`}
           actions={(
             <Stack direction="horizontal" gap={2} className="align-items-center">
               <Link to={`/categories/${id}`}>
