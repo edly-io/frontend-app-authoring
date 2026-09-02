@@ -40,9 +40,6 @@ export const MOCK_PROGRAMS: Program[] = [
     startDate: '2024-01-15',
     endDate: '2024-04-15',
     courses: MOCK_COURSES.filter((c) => ['course-001', 'course-003'].includes(c.id)),
-    isPaid: true,
-    pricingMode: 'custom',
-    customPrice: '499.00',
   },
   {
     id: 'prog-002',
@@ -56,8 +53,5 @@ export const MOCK_PROGRAMS: Program[] = [
     startDate: '2024-04-01',
     endDate: '2024-06-30',
     courses: MOCK_COURSES.filter((c) => c.id === 'course-002'),
-    isPaid: false,
-    pricingMode: 'collective',
-    customPrice: null,
   },
 ];

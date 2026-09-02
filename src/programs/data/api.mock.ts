@@ -34,9 +34,6 @@ export const mockProgram = (overrides: Partial<Program> = {}): Program => ({
   programType: 'certificate',
   run: '2025',
   courses: [],
-  isPaid: false,
-  pricingMode: 'collective',
-  customPrice: null,
   ...overrides,
 });
 
