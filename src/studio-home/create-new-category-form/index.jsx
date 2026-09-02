@@ -20,15 +20,11 @@ const CreateNewCategoryForm = ({ handleOnClickCancel }) => {
 
   const validationSchema = Yup.object({
     name: Yup.string().trim().required(intl.formatMessage(messages.categoryNameRequired)),
-    slug: Yup.string()
-      .trim()
-      .required(intl.formatMessage(messages.categorySlugRequired))
-      .matches(/^[a-z0-9-]+$/, 'Slug must be lowercase letters, numbers, and hyphens only.'),
   });
 
   const handleSubmit = async (values, { setStatus }) => {
     try {
-      const created = await createCategory({ name: values.name, slug: values.slug });
+      const created = await createCategory({ name: values.name });
       navigate(`/categories/${created.id}`);
     } catch (e) {
       setStatus({ error: e.message || 'Failed to create category.' });
@@ -40,7 +36,7 @@ const CreateNewCategoryForm = ({ handleOnClickCancel }) => {
       <h3 className="mb-3">{intl.formatMessage(messages.createNewCategory)}</h3>
 
       <Formik
-        initialValues={{ name: '', slug: '' }}
+        initialValues={{ name: '' }}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
@@ -51,7 +47,6 @@ const CreateNewCategoryForm = ({ handleOnClickCancel }) => {
           handleChange,
           handleBlur,
           handleSubmit: formikSubmit,
-          setFieldValue,
           status,
         }) => (
           <Form onSubmit={formikSubmit}>
@@ -66,39 +61,11 @@ const CreateNewCategoryForm = ({ handleOnClickCancel }) => {
                 name="name"
                 placeholder={intl.formatMessage(messages.categoryNamePlaceholder)}
                 value={values.name}
-                onChange={(e) => {
-                  handleChange(e);
-                  // Auto-generate slug from name when slug hasn't been manually edited
-                  if (!touched.slug) {
-                    const autoSlug = e.target.value
-                      .toLowerCase()
-                      .replace(/[^a-z0-9\s-]/g, '')
-                      .replace(/\s+/g, '-')
-                      .replace(/-+/g, '-');
-                    setFieldValue('slug', autoSlug);
-                  }
-                }}
+                onChange={handleChange}
                 onBlur={handleBlur}
               />
               {touched.name && errors.name && (
                 <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>
-              )}
-            </Form.Group>
-
-            {/* Slug */}
-            <Form.Group isInvalid={touched.slug && !!errors.slug}>
-              <Form.Label>{intl.formatMessage(messages.categorySlugLabel)}</Form.Label>
-              <Form.Control
-                name="slug"
-                placeholder={intl.formatMessage(messages.categorySlugPlaceholder)}
-                value={values.slug}
-                onChange={handleChange}
-                onBlur={handleBlur}
-              />
-              {touched.slug && errors.slug ? (
-                <Form.Control.Feedback type="invalid">{errors.slug}</Form.Control.Feedback>
-              ) : (
-                <Form.Text muted>{intl.formatMessage(messages.categorySlugHint)}</Form.Text>
               )}
             </Form.Group>
 
