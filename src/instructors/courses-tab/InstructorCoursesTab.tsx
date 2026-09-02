@@ -147,10 +147,15 @@ const InstructorCoursesTab: React.FC<InstructorCoursesTabProps> = ({ instructor,
         btnLabel={intl.formatMessage(messages.confirmRemoveBtn)}
         onDeleteSubmit={async () => {
           const isLastCourse = courses.length === 1;
-          await removeCourse.mutateAsync({ instructorId, courseId: confirmCourseId! });
-          setConfirmCourseId(null);
-          if (isLastCourse) {
-            navigate('/instructors');
+          try {
+            await removeCourse.mutateAsync({ instructorId, courseId: confirmCourseId! });
+            setConfirmCourseId(null);
+            if (isLastCourse) {
+              navigate('/instructors');
+            }
+          } catch {
+            // mutation error surfaced by React Query's own error state;
+            // dialog stays open for the user to retry or cancel
           }
         }}
       />
