@@ -136,7 +136,7 @@ const TabsSection = ({
       );
     }
 
-    if (getConfig().ENABLE_CATEGORY_MANAGEMENT) {
+    if (getAuthenticatedUser()?.administrator) {
       tabs.push(
         <Tab
           key={TABS_LIST.categories}
