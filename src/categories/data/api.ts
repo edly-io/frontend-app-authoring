@@ -4,7 +4,12 @@
 import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import type { Course } from '../../programs/data/types';
-import type { Category, CategoryDetailResponse, CategorySummary } from './types';
+import type {
+  Category,
+  CategoryCreatePayload,
+  CategoryDetailResponse,
+  CategorySummary,
+} from './types';
 
 const getCategoriesBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/rwaq/api/categories`;
 
@@ -52,12 +57,14 @@ export const getCategoryDetail = async (categoryId: string): Promise<CategoryDet
 };
 
 // ── Create — POST /rwaq/api/categories/ ──────────────────────────────────────
-export const createCategory = async (input: { name: string; arabicName?: string; slug: string }): Promise<Category> => {
-  const { data } = await getAuthenticatedHttpClient().post(`${getCategoriesBaseUrl()}/`, {
+export const createCategory = async (input: CategoryCreatePayload): Promise<Category> => {
+  const body: Record<string, unknown> = {
     name: input.name,
     arabic_name: input.arabicName ?? '',
-    slug: input.slug,
-  });
+    is_active: input.isActive ?? true,
+  };
+  if (input.slug !== undefined) { body.slug = input.slug; }
+  const { data } = await getAuthenticatedHttpClient().post(`${getCategoriesBaseUrl()}/`, body);
   return toCategory(data);
 };
 
