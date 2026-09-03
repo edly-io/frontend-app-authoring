@@ -10,7 +10,7 @@ import {
   unlinkCategoryFromCourse,
   updateCategory,
 } from './api';
-import type { Category } from './types';
+import type { Category, CategoryCreatePayload } from './types';
 
 export const useCategories = () => useQuery({
   queryKey: ['categories'],
@@ -84,7 +84,7 @@ export const useAddCourseToCat = () => {
 
       return { previous };
     },
-    onError: (_err, { categoryId }, context: any) => {
+    onError: (_err, { categoryId }, context: { previous: unknown } | undefined) => {
       // Roll back to the snapshot if the mutation fails.
       if (context?.previous !== undefined) {
         queryClient.setQueryData(['category', categoryId], context.previous);

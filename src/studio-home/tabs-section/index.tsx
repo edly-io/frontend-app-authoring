@@ -89,6 +89,7 @@ const TabsSection = ({
   } = useSelector(getLoadingStatuses);
   const isLoadingCourses = courseLoadingStatus === RequestStatus.IN_PROGRESS;
   const isFailedCoursesPage = courseLoadingStatus === RequestStatus.FAILED;
+  const isAdministrator = getAuthenticatedUser()?.administrator ?? false;
 
   // Controlling the visibility of tabs when using conditional rendering is necessary for
   // the correct operation of iterating over child elements inside the Paragon Tabs component.
@@ -137,7 +138,7 @@ const TabsSection = ({
       );
     }
 
-    if (getConfig().ENABLE_CATEGORY_MANAGEMENT && getAuthenticatedUser()?.administrator) {
+    if (getConfig().ENABLE_CATEGORY_MANAGEMENT && isAdministrator) {
       tabs.push(
         <Tab
           key={TABS_LIST.categories}
@@ -206,6 +207,7 @@ const TabsSection = ({
     showNewCategoryContainer,
     isLoadingCourses,
     migrationFilter,
+    isAdministrator,
   ]);
 
   const handleSelectTab = (tab: TabKeyType) => {

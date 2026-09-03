@@ -22,7 +22,6 @@ export interface CategoryDetailResponse {
 export interface CategoryCreatePayload {
   name: string;
   arabicName?: string;
-  isActive?: boolean;
 }
 
 export interface CategoryUpdatePayload {
