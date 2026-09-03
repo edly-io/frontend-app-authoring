@@ -24,7 +24,6 @@ import Header from '../header';
 import { LoadingSpinner } from '../generic/Loading';
 import { ToastContext } from '../generic/toast-context';
 import { useProgramDetail, useUpdateProgram } from './data/apiHooks';
-import type { PricingMode } from './data/types';
 import CoursesTab from './courses-tab/CoursesTab';
 import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
@@ -65,17 +64,6 @@ const messages = defineMessages({
   fieldStatus: { id: 'programs.detail.field.status', defaultMessage: 'Program Status' },
   fieldFeatured: { id: 'programs.detail.field.featured', defaultMessage: 'Feature this program' },
   fieldFeaturedHint: { id: 'programs.detail.field.featured.hint', defaultMessage: 'Featured programs are highlighted in the program catalog.' },
-  sectionPricing: { id: 'programs.detail.section.pricing', defaultMessage: 'Pricing' },
-  sectionPricingSubtitle: { id: 'programs.detail.section.pricing.sub', defaultMessage: 'Configure how learners pay for this program' },
-  fieldIsPaid: { id: 'programs.detail.field.is-paid', defaultMessage: 'This is a paid program' },
-  fieldIsPaidHint: { id: 'programs.detail.field.is-paid.hint', defaultMessage: 'Enable to require learners to pay before enrolling.' },
-  pricingModeCollective: { id: 'programs.detail.field.pricing-mode.collective', defaultMessage: 'Use the total collective cost of all courses in the program' },
-  pricingModeCustom: { id: 'programs.detail.field.pricing-mode.custom', defaultMessage: 'Set a custom price for the entire program' },
-  fieldCustomPrice: { id: 'programs.detail.field.custom-price', defaultMessage: 'Program Price (SAR)' },
-  fieldCustomPriceHint: { id: 'programs.detail.field.custom-price.hint', defaultMessage: 'Fixed price learners pay to enroll in the program.' },
-  fieldCustomPriceRequired: { id: 'programs.detail.field.custom-price.required', defaultMessage: 'Price is required when using a custom program price.' },
-  fieldCustomPriceInvalid: { id: 'programs.detail.field.custom-price.invalid', defaultMessage: 'Price must be a positive number.' },
-  fieldPricingMode: { id: 'programs.detail.field.pricing-mode', defaultMessage: 'Pricing Mode' },
   summaryOrg: { id: 'programs.detail.summary.org', defaultMessage: 'Organization' },
   summaryType: { id: 'programs.detail.summary.type', defaultMessage: 'Program Type' },
   summaryRun: { id: 'programs.detail.summary.run', defaultMessage: 'Program Run' },
@@ -154,23 +142,10 @@ const ProgramDetailPage: React.FC = () => {
       startDate: program?.startDate ?? '',
       endDate: program?.endDate ?? '',
       image: program?.image ?? '',
-      isPaid: program?.isPaid ?? false,
-      pricingMode: (program?.pricingMode ?? 'collective') as PricingMode,
-      customPrice: program?.customPrice ?? '',
     },
     enableReinitialize: true,
     validationSchema: Yup.object({
       displayName: Yup.string().trim().required(intl.formatMessage(messages.fieldTitleRequired)),
-      customPrice: Yup.string().when(['isPaid', 'pricingMode'], {
-        is: (isPaid: boolean, pricingMode: string) => isPaid && pricingMode === 'custom',
-        then: (schema) => schema
-          .required(intl.formatMessage(messages.fieldCustomPriceRequired))
-          .test('positive', intl.formatMessage(messages.fieldCustomPriceInvalid), (val) => {
-            const n = parseFloat(val ?? '');
-            return !Number.isNaN(n) && n > 0;
-          }),
-        otherwise: (schema) => schema.notRequired(),
-      }),
     }),
     onSubmit: async (values) => {
       try {
@@ -379,7 +354,17 @@ const ProgramDetailPage: React.FC = () => {
                         </div>
                         <Form.Text muted>{intl.formatMessage(messages.fieldIntroVideoHint)}</Form.Text>
                         {formik.values.introVideoId && (
-                          <div className="mt-3" style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '8px', background: '#000' }}>
+                          <div
+                            className="mt-3"
+                            style={{
+                              position: 'relative',
+                              paddingBottom: '56.25%',
+                              height: 0,
+                              overflow: 'hidden',
+                              borderRadius: '8px',
+                              background: '#000',
+                            }}
+                          >
                             <iframe
                               title="Program intro video preview"
                               src={`https://www.youtube.com/embed/${formik.values.introVideoId}`}
@@ -467,165 +452,6 @@ const ProgramDetailPage: React.FC = () => {
                         </div>
                       </Form.Group>
                     </Form>
-                  </Card.Section>
-                </Card>
-
-                <Card className="mb-4">
-                  <Card.Header
-                    title={intl.formatMessage(messages.sectionPricing)}
-                    subtitle={intl.formatMessage(messages.sectionPricingSubtitle)}
-                  />
-                  <Card.Section>
-
-                    {/* Is Paid checkbox */}
-                    <Form.Group className="mb-4">
-                      <div className="d-flex align-items-start">
-                        <input
-                          type="checkbox"
-                          id="isPaid"
-                          checked={formik.values.isPaid}
-                          onChange={(e) => {
-                            formik.setFieldValue('isPaid', e.target.checked);
-                            if (!e.target.checked) {
-                              formik.setFieldValue('pricingMode', 'collective');
-                              formik.setFieldValue('customPrice', '');
-                            }
-                          }}
-                          className="mt-1 mr-2"
-                          style={{
-                            cursor: 'pointer', width: '16px', height: '16px', flexShrink: 0,
-                          }}
-                        />
-                        <div>
-                          {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                          <label htmlFor="isPaid" className="mb-0 font-weight-bold" style={{ cursor: 'pointer' }}>
-                            {intl.formatMessage(messages.fieldIsPaid)}
-                          </label>
-                          <p className="small text-muted mb-0">{intl.formatMessage(messages.fieldIsPaidHint)}</p>
-                        </div>
-                      </div>
-                    </Form.Group>
-
-                    {formik.values.isPaid && (
-                      <>
-                        <Form.Group className="mb-4">
-                          <Form.Label className="font-weight-bold">{intl.formatMessage(messages.fieldPricingMode)}</Form.Label>
-
-                          {/* Collective option */}
-                          <div
-                            className="d-flex align-items-start mb-2 p-3"
-                            style={{
-                              border: `2px solid ${formik.values.pricingMode === 'collective' ? '#0075b4' : '#dee2e6'}`,
-                              borderRadius: '8px',
-                              cursor: 'pointer',
-                              background: formik.values.pricingMode === 'collective' ? '#f0f8ff' : 'transparent',
-                            }}
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => {
-                              formik.setFieldValue('pricingMode', 'collective');
-                              formik.setFieldValue('customPrice', '');
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                formik.setFieldValue('pricingMode', 'collective');
-                                formik.setFieldValue('customPrice', '');
-                              }
-                            }}
-                          >
-                            <input
-                              type="radio"
-                              id="pricingModeCollective"
-                              name="pricingMode"
-                              value="collective"
-                              checked={formik.values.pricingMode === 'collective'}
-                              onChange={() => {
-                                formik.setFieldValue('pricingMode', 'collective');
-                                formik.setFieldValue('customPrice', '');
-                              }}
-                              className="mt-1 mr-2"
-                              style={{ cursor: 'pointer', flexShrink: 0 }}
-                            />
-                            <div>
-                              {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                              <label htmlFor="pricingModeCollective" className="mb-0 font-weight-bold" style={{ cursor: 'pointer' }}>
-                                {intl.formatMessage(messages.pricingModeCollective)}
-                              </label>
-                              <p className="small text-muted mb-0">
-                                The program price is the sum of all individual course prices.
-                              </p>
-                            </div>
-                          </div>
-
-                          <div
-                            className="d-flex align-items-start p-3"
-                            style={{
-                              border: `2px solid ${formik.values.pricingMode === 'custom' ? '#0075b4' : '#dee2e6'}`,
-                              borderRadius: '8px',
-                              cursor: 'pointer',
-                              background: formik.values.pricingMode === 'custom' ? '#f0f8ff' : 'transparent',
-                            }}
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => formik.setFieldValue('pricingMode', 'custom')}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                formik.setFieldValue('pricingMode', 'custom');
-                              }
-                            }}
-                          >
-                            <input
-                              type="radio"
-                              id="pricingModeCustom"
-                              name="pricingMode"
-                              value="custom"
-                              checked={formik.values.pricingMode === 'custom'}
-                              onChange={() => formik.setFieldValue('pricingMode', 'custom')}
-                              className="mt-1 mr-2"
-                              style={{ cursor: 'pointer', flexShrink: 0 }}
-                            />
-                            <div>
-                              {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-                              <label htmlFor="pricingModeCustom" className="mb-0 font-weight-bold" style={{ cursor: 'pointer' }}>
-                                {intl.formatMessage(messages.pricingModeCustom)}
-                              </label>
-                              <p className="small text-muted mb-0">
-                                Set a single fixed price for the entire program.
-                              </p>
-                            </div>
-                          </div>
-                        </Form.Group>
-
-                        {formik.values.pricingMode === 'custom' && (
-                          <Form.Group
-                            isInvalid={formik.touched.customPrice && !!formik.errors.customPrice}
-                            className="mb-0"
-                          >
-                            <Form.Label>{intl.formatMessage(messages.fieldCustomPrice)}</Form.Label>
-                            <div className="d-flex align-items-center gap-2">
-                              <span className="font-weight-bold text-muted">SAR</span>
-                              <Form.Control
-                                name="customPrice"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                placeholder="e.g. 499.00"
-                                value={formik.values.customPrice ?? ''}
-                                onChange={formik.handleChange}
-                                onBlur={formik.handleBlur}
-                                style={{ maxWidth: '200px' }}
-                              />
-                            </div>
-                            {formik.touched.customPrice && formik.errors.customPrice && (
-                              <Form.Control.Feedback type="invalid">
-                                {formik.errors.customPrice}
-                              </Form.Control.Feedback>
-                            )}
-                            <Form.Text muted>{intl.formatMessage(messages.fieldCustomPriceHint)}</Form.Text>
-                          </Form.Group>
-                        )}
-                      </>
-                    )}
                   </Card.Section>
                 </Card>
 

@@ -1,5 +1,5 @@
 import React, {
-  useCallback, useEffect, useRef, useState,
+  useCallback, useContext, useEffect, useRef, useState,
 } from 'react';
 import {
   ActionRow,
@@ -15,6 +15,7 @@ import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import type { Course } from '../../programs/data/types';
 import { useCourses } from '../../programs/data/apiHooks';
 import { useAddCourseToCat } from '../data/apiHooks';
+import { ToastContext } from '../../generic/toast-context';
 
 const messages = defineMessages({
   title: { id: 'categories.courses.modal.title', defaultMessage: 'Link Course to Category' },
@@ -27,6 +28,7 @@ const messages = defineMessages({
   noResults: { id: 'categories.courses.modal.no-results', defaultMessage: 'No courses match your search.' },
   loading: { id: 'categories.courses.modal.loading', defaultMessage: 'Loading courses...' },
   addError: { id: 'categories.courses.modal.add-error', defaultMessage: 'Failed to link course. Please try again.' },
+  addSuccess: { id: 'categories.courses.modal.add-success', defaultMessage: 'Course linked to category successfully.' },
   paginationLabel: { id: 'categories.courses.modal.pagination', defaultMessage: 'Course list pagination' },
 });
 
@@ -77,10 +79,14 @@ const AddCourseToCategoryModal: React.FC<AddCourseToCategoryModalProps> = ({
   isOpen, onClose, categoryId, alreadyAddedIds,
 }) => {
   const intl = useIntl();
+  const { showToast } = useContext(ToastContext);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [addingId, setAddingId] = useState<string | null>(null);
   const [addError, setAddError] = useState(false);
+  // Track IDs linked in this session so the "Linked" badge shows immediately
+  // without waiting for the background refetch to propagate.
+  const [newlyLinkedIds, setNewlyLinkedIds] = useState<Set<string>>(new Set());
   const listRef = useRef<HTMLDivElement>(null);
   const { data, isLoading, isFetching } = useCourses({ page: currentPage, search: searchQuery });
   const { mutateAsync: addCourse } = useAddCourseToCat();
@@ -99,6 +105,8 @@ const AddCourseToCategoryModal: React.FC<AddCourseToCategoryModalProps> = ({
     setAddError(false);
     try {
       await addCourse({ categoryId, courseId });
+      setNewlyLinkedIds((prev) => new Set(prev).add(courseId));
+      showToast(intl.formatMessage(messages.addSuccess));
     } catch {
       setAddError(true);
     } finally {
@@ -110,6 +118,7 @@ const AddCourseToCategoryModal: React.FC<AddCourseToCategoryModalProps> = ({
     setSearchQuery('');
     setCurrentPage(1);
     setAddError(false);
+    setNewlyLinkedIds(new Set());
     onClose();
   };
 
@@ -155,7 +164,7 @@ const AddCourseToCategoryModal: React.FC<AddCourseToCategoryModalProps> = ({
             <CourseRow
               key={course.id}
               course={course}
-              isAdded={alreadyAddedIds.includes(course.id)}
+              isAdded={alreadyAddedIds.includes(course.id) || newlyLinkedIds.has(course.id)}
               isAdding={addingId === course.id}
               onAdd={handleAdd}
               intl={intl}

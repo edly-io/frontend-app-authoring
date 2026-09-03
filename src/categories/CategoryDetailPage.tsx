@@ -34,7 +34,7 @@ const messages = defineMessages({
   tabDetails: { id: 'categories.detail.tab.details', defaultMessage: 'Category Details' },
   tabCourses: { id: 'categories.detail.tab.courses', defaultMessage: 'Linked Courses' },
   sectionBasicInfo: { id: 'categories.detail.section.basic', defaultMessage: 'Basic Information' },
-  sectionBasicSubtitle: { id: 'categories.detail.section.basic.sub', defaultMessage: "Set the core details of this category" },
+  sectionBasicSubtitle: { id: 'categories.detail.section.basic.sub', defaultMessage: 'Set the core details of this category' },
   sectionSummary: { id: 'categories.detail.section.summary', defaultMessage: 'Category Summary' },
   unsavedBannerMessage: { id: 'categories.detail.unsaved.message', defaultMessage: 'You have unsaved changes.' },
   unsavedBannerDiscard: { id: 'categories.detail.unsaved.discard', defaultMessage: 'Discard changes' },
@@ -42,9 +42,6 @@ const messages = defineMessages({
   fieldName: { id: 'categories.detail.field.name', defaultMessage: 'Category Name (English)' },
   fieldNameRequired: { id: 'categories.detail.field.name.required', defaultMessage: 'Category name is required.' },
   fieldArabicName: { id: 'categories.detail.field.arabic-name', defaultMessage: 'Category Name (Arabic)' },
-  fieldSlug: { id: 'categories.detail.field.slug', defaultMessage: 'Slug' },
-  fieldSlugHint: { id: 'categories.detail.field.slug.hint', defaultMessage: 'URL-friendly identifier used for filtering (e.g. programming).' },
-  fieldSlugRequired: { id: 'categories.detail.field.slug.required', defaultMessage: 'Slug is required.' },
   fieldActive: { id: 'categories.detail.field.active', defaultMessage: 'Active' },
   fieldActiveHint: { id: 'categories.detail.field.active.hint', defaultMessage: 'Inactive categories are hidden from the public API.' },
   summaryCourseCount: { id: 'categories.detail.summary.course-count', defaultMessage: 'Courses' },
@@ -84,13 +81,11 @@ const CategoryDetailPage: React.FC = () => {
     initialValues: {
       name: category?.name ?? '',
       arabicName: category?.arabicName ?? '',
-      slug: category?.slug ?? '',
       isActive: category?.isActive ?? true,
     },
     enableReinitialize: true,
     validationSchema: Yup.object({
       name: Yup.string().trim().required(intl.formatMessage(messages.fieldNameRequired)),
-      slug: Yup.string().trim().required(intl.formatMessage(messages.fieldSlugRequired)),
     }),
     onSubmit: async (values) => {
       try {
@@ -238,23 +233,6 @@ const CategoryDetailPage: React.FC = () => {
                         />
                       </Form.Group>
 
-                      {/* Slug */}
-                      <Form.Group isInvalid={!!formik.touched.slug && !!formik.errors.slug}>
-                        <Form.Label>{intl.formatMessage(messages.fieldSlug)}</Form.Label>
-                        <Form.Control
-                          name="slug"
-                          value={formik.values.slug}
-                          onChange={formik.handleChange}
-                          onBlur={formik.handleBlur}
-                          placeholder="e.g. programming"
-                        />
-                        {formik.touched.slug && formik.errors.slug ? (
-                          <Form.Control.Feedback type="invalid">{formik.errors.slug}</Form.Control.Feedback>
-                        ) : (
-                          <Form.Text muted>{intl.formatMessage(messages.fieldSlugHint)}</Form.Text>
-                        )}
-                      </Form.Group>
-
                       {/* Active toggle */}
                       <Form.Group className="mb-0">
                         <div className="d-flex align-items-start">
@@ -291,11 +269,6 @@ const CategoryDetailPage: React.FC = () => {
                     <SummaryField label={intl.formatMessage(messages.summaryCourseCount)}>
                       <p className="mb-0">{category.courses?.length ?? 0}</p>
                     </SummaryField>
-                    {category.slug && (
-                      <SummaryField label="Slug">
-                        <code className="small">{category.slug}</code>
-                      </SummaryField>
-                    )}
                   </Card.Section>
                 </Card>
               </Layout.Element>

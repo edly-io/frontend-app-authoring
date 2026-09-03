@@ -11,7 +11,11 @@ export interface PaginatedCourses {
   numPages: number;
 }
 
-export type PricingMode = 'collective' | 'custom';
+export interface PaginatedPrograms {
+  results: Program[];
+  count: number;
+  numPages: number;
+}
 
 export interface Program {
   id: string;
@@ -28,9 +32,6 @@ export interface Program {
   endDate?: string;
   image?: string;
   courses?: Course[];
-  isPaid?: boolean;
-  pricingMode?: PricingMode;
-  customPrice?: string | null;
 }
 
 export interface OrgOption {
