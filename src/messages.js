@@ -8,7 +8,7 @@ const messages = defineMessages({
   },
   supportText: {
     id: 'authoring.alert.support.text',
-    defaultMessage: 'support@edly.io',
+    defaultMessage: 'customersuccess@edly.io',
   },
 });
 

@@ -14,7 +14,7 @@ const SaveFormConnectionErrorAlert = () => {
         defaultMessage="We encountered a technical error when applying changes. This might be a temporary issue, so please try again in a few minutes. If the problem persists, please email us at {supportLink} for help."
         values={{
           supportLink: (
-            <Alert.Link href={`mailto:${getConfig().SUPPORT_EMAIL || 'support@edly.io'}`}>
+            <Alert.Link href={`mailto:${getConfig().SUPPORT_EMAIL || 'customersuccess@edly.io'}`}>
               {intl.formatMessage(messages.supportText)}
             </Alert.Link>
           ),
