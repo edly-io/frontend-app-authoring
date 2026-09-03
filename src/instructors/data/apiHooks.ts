@@ -11,7 +11,7 @@ import {
   unlinkInstructorFromCourse,
   updateInstructor,
 } from './api';
-import type { InstructorProfile } from './types';
+import type { InstructorDetailResponse, InstructorProfile } from './types';
 
 // Every instructor across all pages. For callers that need the whole list
 // rather than one page (e.g. the course "link an instructor" modal).
@@ -85,8 +85,25 @@ export const useRemoveCourseFromInstructor = () => {
     mutationFn: ({ instructorId, courseId }: { instructorId: string; courseId: string }) => (
       removeCourseFromInstructor(instructorId, courseId)
     ),
-    onSuccess: (_, { instructorId }) => {
-      queryClient.invalidateQueries({ queryKey: ['instructor', instructorId] });
+    onSuccess: (_, { instructorId, courseId }) => {
+      // Update the cache directly instead of triggering a GET refetch.
+      // After the org admin unlinks their last course for this instructor,
+      // a refetch of GET /api/instructors/<id>/ would return 403 (the
+      // instructor is no longer in their administered set) and show a
+      // spurious "permission denied" error even though the DELETE succeeded.
+      queryClient.setQueryData<InstructorDetailResponse>(
+        ['instructor', instructorId],
+        (old) => {
+          if (!old) { return old; }
+          return {
+            ...old,
+            instructor: {
+              ...old.instructor,
+              courses: (old.instructor.courses ?? []).filter((c) => c.id !== courseId),
+            },
+          };
+        },
+      );
       queryClient.invalidateQueries({ queryKey: ['instructors'] });
     },
   });
