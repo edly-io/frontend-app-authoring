@@ -10,7 +10,7 @@ import {
   unlinkCategoryFromCourse,
   updateCategory,
 } from './api';
-import type { Category, CategoryCreatePayload } from './types';
+import type { Category } from './types';
 
 export const useCategories = () => useQuery({
   queryKey: ['categories'],
@@ -74,7 +74,9 @@ export const useAddCourseToCat = () => {
             ...old.category,
             courses: [
               ...(old.category.courses ?? []),
-              { id: courseId, displayName: courseId, org: '', run: '' },
+              {
+                id: courseId, displayName: courseId, org: '', run: '',
+              },
             ],
           },
         };

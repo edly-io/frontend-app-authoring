@@ -13,7 +13,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import { RequestStatus } from '@src/data/constants';
-import { useIsSuperuser } from '../data/useIsSuperuser';
 import { getLoadingStatuses, getStudioHomeData } from '../data/selectors';
 import messages from './messages';
 import { BaseFilterState, Filter, LibrariesList } from './libraries-tab';
@@ -38,7 +37,6 @@ const TabsSection = ({
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [migrationFilter, setMigrationFilter] = useState<Filter[]>(BaseFilterState);
-  const isSuperuser = useIsSuperuser();
   const TABS_LIST = {
     courses: 'courses',
     programs: 'programs',
