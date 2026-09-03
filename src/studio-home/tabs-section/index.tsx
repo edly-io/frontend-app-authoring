@@ -139,7 +139,7 @@ const TabsSection = ({
       );
     }
 
-    if (isSuperuser) {
+    if (getConfig().ENABLE_CATEGORY_MANAGEMENT && getAuthenticatedUser()?.administrator) {
       tabs.push(
         <Tab
           key={TABS_LIST.categories}

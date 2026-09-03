@@ -34,7 +34,7 @@ const messages = defineMessages({
   tabDetails: { id: 'categories.detail.tab.details', defaultMessage: 'Category Details' },
   tabCourses: { id: 'categories.detail.tab.courses', defaultMessage: 'Linked Courses' },
   sectionBasicInfo: { id: 'categories.detail.section.basic', defaultMessage: 'Basic Information' },
-  sectionBasicSubtitle: { id: 'categories.detail.section.basic.sub', defaultMessage: "Set the core details of this category" },
+  sectionBasicSubtitle: { id: 'categories.detail.section.basic.sub', defaultMessage: 'Set the core details of this category' },
   sectionSummary: { id: 'categories.detail.section.summary', defaultMessage: 'Category Summary' },
   unsavedBannerMessage: { id: 'categories.detail.unsaved.message', defaultMessage: 'You have unsaved changes.' },
   unsavedBannerDiscard: { id: 'categories.detail.unsaved.discard', defaultMessage: 'Discard changes' },

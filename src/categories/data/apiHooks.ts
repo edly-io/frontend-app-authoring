@@ -39,7 +39,7 @@ export const useUpdateCategory = () => {
     mutationFn: ({
       categoryId,
       data,
-    }: { categoryId: string; data: Partial<Pick<Category, 'name' | 'arabicName'| 'isActive'>> }) => (
+    }: { categoryId: string; data: Partial<Pick<Category, 'name' | 'arabicName' | 'isActive'>> }) => (
       updateCategory(categoryId, data)
     ),
     onSuccess: (_, { categoryId }) => {

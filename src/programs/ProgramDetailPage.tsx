@@ -354,7 +354,17 @@ const ProgramDetailPage: React.FC = () => {
                         </div>
                         <Form.Text muted>{intl.formatMessage(messages.fieldIntroVideoHint)}</Form.Text>
                         {formik.values.introVideoId && (
-                          <div className="mt-3" style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '8px', background: '#000' }}>
+                          <div
+                            className="mt-3"
+                            style={{
+                              position: 'relative',
+                              paddingBottom: '56.25%',
+                              height: 0,
+                              overflow: 'hidden',
+                              borderRadius: '8px',
+                              background: '#000',
+                            }}
+                          >
                             <iframe
                               title="Program intro video preview"
                               src={`https://www.youtube.com/embed/${formik.values.introVideoId}`}

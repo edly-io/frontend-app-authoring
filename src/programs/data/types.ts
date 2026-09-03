@@ -17,7 +17,6 @@ export interface PaginatedPrograms {
   numPages: number;
 }
 
-
 export interface Program {
   id: string;
   displayName: string;
