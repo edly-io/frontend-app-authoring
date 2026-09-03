@@ -11,10 +11,10 @@ const SaveFormConnectionErrorAlert = () => {
     <Alert variant="danger" data-testid="connectionErrorAlert">
       <FormattedMessage
         id="authoring.alert.save.error.connection"
-        defaultMessage="We encountered a technical error when applying changes. This might be a temporary issue, so please try again in a few minutes. If the problem persists, please go to the {supportLink} for help."
+        defaultMessage="We encountered a technical error when applying changes. This might be a temporary issue, so please try again in a few minutes. If the problem persists, please email us at {supportLink} for help."
         values={{
           supportLink: (
-            <Alert.Link href={getConfig().SUPPORT_URL}>
+            <Alert.Link href={`mailto:${getConfig().SUPPORT_EMAIL || 'customersuccess@edly.io'}`}>
               {intl.formatMessage(messages.supportText)}
             </Alert.Link>
           ),

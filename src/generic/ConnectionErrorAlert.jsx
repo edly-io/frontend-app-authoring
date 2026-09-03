@@ -13,7 +13,7 @@ const ConnectionErrorAlert = () => {
         {...messages.connectionError}
         values={{
           supportLink: (
-            <Alert.Link href={getConfig().SUPPORT_URL}>
+            <Alert.Link href={`mailto:${getConfig().SUPPORT_EMAIL || 'customersuccess@edly.io'}`}>
               {intl.formatMessage(messages.supportText)}
             </Alert.Link>
           ),
