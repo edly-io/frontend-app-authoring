@@ -12,6 +12,7 @@ import { IntlProvider } from '@edx/frontend-platform/i18n';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import { AppProvider } from '@edx/frontend-platform/react';
 import MockAdapter from 'axios-mock-adapter';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import studioHomeMock from '@src/studio-home/__mocks__/studioHomeMock';
 import { getStudioHomeApiUrl } from '../../studio-home/data/api';
@@ -41,12 +42,16 @@ ReactDOM.createPortal = jest.fn(node => node);
 
 const onClickCancelMock = jest.fn();
 
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
 const RootWrapper = (props) => (
-  <IntlProvider locale="en">
-    <AppProvider store={store}>
-      <CreateOrRerunCourseForm {...props} />
-    </AppProvider>
-  </IntlProvider>
+  <QueryClientProvider client={queryClient}>
+    <IntlProvider locale="en">
+      <AppProvider store={store}>
+        <CreateOrRerunCourseForm {...props} />
+      </AppProvider>
+    </IntlProvider>
+  </QueryClientProvider>
 );
 
 const props = {
@@ -63,12 +68,21 @@ const props = {
 
 const mockStore = async () => {
   axiosMock.onGet(getStudioHomeApiUrl()).reply(200, studioHomeMock);
+  // useProgramsConfig() in hooks.jsx calls /rwaq/api/programs/config/ — mock it so
+  // tests don't fail with "No QueryClient" or make real network requests.
+  axiosMock.onGet(/\/rwaq\/api\/programs\/config\//).reply(200, {
+    organizations: [],
+    program_types: [],
+  });
 
   await executeThunk(fetchStudioHomeData, store.dispatch);
 };
 
 describe('<CreateOrRerunCourseForm />', () => {
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => {
+    jest.clearAllMocks();
+    queryClient.clear();
+  });
   beforeEach(async () => {
     initializeMockApp({
       authenticatedUser: {
