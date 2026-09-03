@@ -289,7 +289,7 @@ describe('DiscussionsSettings', () => {
       const alert = queryByRole(container, 'alert');
       expect(alert).toBeInTheDocument();
       expect(alert.textContent).toEqual(expect.stringContaining('We encountered a technical error when loading this page.'));
-      expect(alert.innerHTML).toEqual(expect.stringContaining(getConfig().SUPPORT_URL));
+      expect(alert.innerHTML).toEqual(expect.stringContaining('mailto:support@edly.io'));
     });
   });
 
@@ -322,7 +322,7 @@ describe('DiscussionsSettings', () => {
       const alert = await findByRole(container, 'alert');
       expect(alert).toBeInTheDocument();
       expect(alert.textContent).toEqual(expect.stringContaining('We encountered a technical error when applying changes.'));
-      expect(alert.innerHTML).toEqual(expect.stringContaining(getConfig().SUPPORT_URL));
+      expect(alert.innerHTML).toEqual(expect.stringContaining('mailto:support@edly.io'));
     });
   });
 
