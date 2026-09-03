@@ -1,6 +1,7 @@
 import React from 'react';
 import { useIntl, FormattedMessage } from '@edx/frontend-platform/i18n';
 import { Alert } from '@openedx/paragon';
+import { getConfig } from '@edx/frontend-platform';
 
 import messages from '../messages';
 
@@ -12,7 +13,7 @@ const ConnectionErrorAlert = () => {
         {...messages.connectionError}
         values={{
           supportLink: (
-            <Alert.Link href="mailto:support@edly.io">
+            <Alert.Link href={`mailto:${getConfig().SUPPORT_EMAIL || 'support@edly.io'}`}>
               {intl.formatMessage(messages.supportText)}
             </Alert.Link>
           ),
