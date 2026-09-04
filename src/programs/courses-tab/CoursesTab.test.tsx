@@ -3,6 +3,7 @@ import {
 } from '@src/testUtils';
 import CoursesTab from './CoursesTab';
 import { mockCourse, mockProgram } from '../data/api.mock';
+import { useCourseAttribution } from '@src/course-lifecycle/data/apiHooks';
 
 const mockRemoveMutate = jest.fn();
 
@@ -11,6 +12,10 @@ jest.mock('@src/programs/data/apiHooks', () => ({
   // AddCourseModal is rendered as a child; supply stubs so it doesn't throw
   useCourses: () => ({ data: { results: [], count: 0, numPages: 1 }, isLoading: false, isFetching: false }),
   useAddCourseToProgram: () => ({ mutateAsync: jest.fn(), isPending: false }),
+}));
+
+jest.mock('@src/course-lifecycle/data/apiHooks', () => ({
+  useCourseAttribution: jest.fn(() => ({ data: {} })),
 }));
 
 const programId = 'prog-key-1';
@@ -105,5 +110,34 @@ describe('<CoursesTab />', () => {
     screen.getAllByRole('button', { name: /^Remove$/, hidden: true }).forEach((btn) => {
       expect(btn).toBeDisabled();
     });
+  });
+
+  it('shows attribution line when course has been submitted and approved', () => {
+    const course = mockCourse({ id: 'course-v1:Org+X+2025', displayName: 'Attribution Course' });
+    (useCourseAttribution as jest.Mock).mockReturnValue({
+      data: {
+        'course-v1:Org+X+2025': {
+          submittedBy: 'instructor1',
+          submittedAt: '2026-09-01T00:00:00',
+          approvedBy: 'admin1',
+          approvedAt: '2026-09-02T00:00:00',
+          publishedAt: '2026-09-02T00:00:00',
+          updatedBy: null,
+        },
+      },
+    });
+    const program = mockProgram({ courses: [course] });
+    render(<CoursesTab program={program} programId={programId} />);
+    expect(screen.getByText(/Submitted by instructor1/i)).toBeInTheDocument();
+    expect(screen.getByText(/Approved by admin1/i)).toBeInTheDocument();
+  });
+
+  it('shows nothing when attribution data is empty', () => {
+    (useCourseAttribution as jest.Mock).mockReturnValue({ data: {} });
+    const course = mockCourse({ displayName: 'Plain Course' });
+    const program = mockProgram({ courses: [course] });
+    render(<CoursesTab program={program} programId={programId} />);
+    expect(screen.queryByText(/Submitted by/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Approved by/i)).not.toBeInTheDocument();
   });
 });
