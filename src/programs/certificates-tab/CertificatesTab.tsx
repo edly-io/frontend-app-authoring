@@ -14,7 +14,7 @@ import {
   useToggle,
 } from '@openedx/paragon';
 import { EmojiEvents, Settings } from '@openedx/paragon/icons';
-import { useIntl } from '@edx/frontend-platform/i18n';
+import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import { ToastContext } from '../../generic/toast-context';
 import type { AwardResult, CertificateConfig, CertificateRosterRow } from '../data/types';
 import {
@@ -28,8 +28,14 @@ import CertificateModal from './CertificateModal';
 import CertificateKpiCards from './CertificateKpiCards';
 import CertificateRosterToolbar, { type StatusFilter } from './CertificateRosterToolbar';
 import CertificateRosterTable from './CertificateRosterTable';
+import AuditLogTable from '../../shared/AuditLogTable';
 import messages from './messages';
 import './certificates-tab.scss';
+
+const auditMessages = defineMessages({
+  listTab: { id: 'programs.certificates.tab.list', defaultMessage: 'List' },
+  auditLogTab: { id: 'programs.certificates.tab.audit-log', defaultMessage: 'Audit Log' },
+});
 
 const PAGE_SIZE = 25;
 
@@ -63,6 +69,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
   const [isModalOpen, openModal, closeModal] = useToggle(false);
   const [page, setPage] = useState(1);
   const [awardingScope, setAwardingScope] = useState<AwardingScope | null>(null);
+  const [awardsView, setAwardsView] = useState<'list' | 'audit-log'>('list');
 
   const effectiveConfig: CertificateConfig = config ?? { issuedBy: '', signatories: [] };
 
@@ -207,21 +214,61 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
   };
 
   const renderAwardsPanel = () => {
+    const toggle = (
+      <div className="page-view-toggle mb-3">
+        <button
+          type="button"
+          className={`page-view-toggle__tab${awardsView === 'list' ? ' page-view-toggle__tab--active' : ''}`}
+          onClick={() => setAwardsView('list')}
+        >
+          {intl.formatMessage(auditMessages.listTab)}
+        </button>
+        <button
+          type="button"
+          className={`page-view-toggle__tab${awardsView === 'audit-log' ? ' page-view-toggle__tab--active' : ''}`}
+          onClick={() => setAwardsView('audit-log')}
+        >
+          {intl.formatMessage(auditMessages.auditLogTab)}
+        </button>
+      </div>
+    );
+
+    if (awardsView === 'audit-log') {
+      return (
+        <>
+          {toggle}
+          <AuditLogTable
+            appLabel="program_certificates"
+            models={['programcertificate', 'programcertificateconfig']}
+            programKey={programId}
+          />
+        </>
+      );
+    }
+
     if (isLoading) {
       return (
-        <div className="d-flex justify-content-center py-5">
-          <Spinner animation="border" screenReaderText={intl.formatMessage(messages.loading)} />
-        </div>
+        <>
+          {toggle}
+          <div className="d-flex justify-content-center py-5">
+            <Spinner animation="border" screenReaderText={intl.formatMessage(messages.loading)} />
+          </div>
+        </>
       );
     }
     if (isError) {
-      return <Alert variant="danger">{intl.formatMessage(messages.loadError)}</Alert>;
+      return (
+        <>
+          {toggle}
+          <Alert variant="danger">{intl.formatMessage(messages.loadError)}</Alert>
+        </>
+      );
     }
 
     return (
       <>
+        {toggle}
         <CertificateKpiCards stats={stats} />
-
         <Card>
           <CertificateRosterToolbar
             query={query}

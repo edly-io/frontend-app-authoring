@@ -699,6 +699,7 @@ const ProgramDetailPage: React.FC = () => {
               />
             </Tab>
           )}
+
         </Tabs>
 
       </Container>

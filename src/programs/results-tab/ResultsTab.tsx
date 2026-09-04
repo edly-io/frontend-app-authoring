@@ -7,8 +7,11 @@ import {
 import type { Program } from '../data/types';
 import GradeSchemeTab from '../grade-scheme-tab/GradeSchemeTab';
 import BulkTraineeResults from '../bulk-trainee-results/BulkTraineeResults';
+import AuditLogTable from '../../shared/AuditLogTable';
 
 const messages = defineMessages({
+  listTab: { id: 'programs.results.tab.list', defaultMessage: 'List' },
+  auditLogTab: { id: 'programs.results.tab.audit-log', defaultMessage: 'Audit Log' },
   pageTitle: { id: 'programs.results.title', defaultMessage: 'Trainees Results' },
   pageSubtitle: {
     id: 'programs.results.subtitle',
@@ -30,6 +33,7 @@ const ResultsTab: React.FC<ResultsTabProps> = ({
   program, programId = '', canManage = false, canEditFinalized = false,
 }) => {
   const [activeTab, setActiveTab] = React.useState('grade-scheme');
+  const [activeView, setActiveView] = React.useState<'list' | 'audit-log'>('list');
   const intl = useIntl();
 
   useEffect(() => {
@@ -47,6 +51,34 @@ const ResultsTab: React.FC<ResultsTabProps> = ({
           <p className="text-muted small mb-0">{intl.formatMessage(messages.pageSubtitle)}</p>
         </div>
       </div>
+
+      {/* List | Audit Log toggle */}
+      <div className="page-view-toggle">
+        <button
+          type="button"
+          className={`page-view-toggle__tab${activeView === 'list' ? ' page-view-toggle__tab--active' : ''}`}
+          onClick={() => setActiveView('list')}
+        >
+          {intl.formatMessage(messages.listTab)}
+        </button>
+        <button
+          type="button"
+          className={`page-view-toggle__tab${activeView === 'audit-log' ? ' page-view-toggle__tab--active' : ''}`}
+          onClick={() => setActiveView('audit-log')}
+        >
+          {intl.formatMessage(messages.auditLogTab)}
+        </button>
+      </div>
+
+      {activeView === 'audit-log' && (
+        <AuditLogTable
+          appLabel="program_results"
+          models={['programgradingscheme', 'schemesection', 'schemesubsection', 'traineescore', 'traineeresult']}
+          programKey={programId}
+        />
+      )}
+
+      {activeView === 'list' && (
       <Tabs
         variant="tabs"
         activeKey={activeTab}
@@ -68,6 +100,7 @@ const ResultsTab: React.FC<ResultsTabProps> = ({
           />
         </Tab>
       </Tabs>
+      )}
     </>
   );
 };

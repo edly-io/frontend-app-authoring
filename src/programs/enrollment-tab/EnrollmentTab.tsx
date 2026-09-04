@@ -16,8 +16,11 @@ import { useProgramEnrollments, useUnenrollLearner } from '../data/apiHooks';
 import DeleteModal from '../../generic/delete-modal/DeleteModal';
 import AddLearnerModal from './AddLearnerModal';
 import EnrollBatchModal from './EnrollBatchModal';
+import AuditLogTable from '../../shared/AuditLogTable';
 
 const messages = defineMessages({
+  listTab: { id: 'programs.enrollment.tab.list', defaultMessage: 'List' },
+  auditLogTab: { id: 'programs.enrollment.tab.audit-log', defaultMessage: 'Audit Log' },
   sectionTitle: { id: 'programs.enrollment.title', defaultMessage: 'Learner Enrollment' },
   sectionSubtitle: { id: 'programs.enrollment.subtitle', defaultMessage: 'Enroll learners into this program' },
   enrollLearnerBtn: { id: 'programs.enrollment.add-btn', defaultMessage: 'Enroll Learner' },
@@ -53,6 +56,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
   const [enrolledSearch, setEnrolledSearch] = useState('');
   const [enrolledPage, setEnrolledPage] = useState(1);
   const [confirmUnenrollUsername, setConfirmUnenrollUsername] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<'list' | 'audit-log'>('list');
 
   const { data, isLoading, isFetching } = useProgramEnrollments(
     programId,
@@ -75,7 +79,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
         </div>
-        {canManage && (
+        {canManage && activeView === 'list' && (
           <Stack direction="horizontal" gap={2}>
             <Button
               variant="outline-primary"
@@ -97,6 +101,34 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
         )}
       </div>
 
+      {/* List | Audit Log toggle */}
+      <div className="page-view-toggle">
+        <button
+          type="button"
+          className={`page-view-toggle__tab${activeView === 'list' ? ' page-view-toggle__tab--active' : ''}`}
+          onClick={() => setActiveView('list')}
+        >
+          {intl.formatMessage(messages.listTab)}
+        </button>
+        <button
+          type="button"
+          className={`page-view-toggle__tab${activeView === 'audit-log' ? ' page-view-toggle__tab--active' : ''}`}
+          onClick={() => setActiveView('audit-log')}
+        >
+          {intl.formatMessage(messages.auditLogTab)}
+        </button>
+      </div>
+
+      {activeView === 'audit-log' && (
+        <AuditLogTable
+          appLabel="fbr_programs"
+          models={['enrollment']}
+          programKey={programId}
+        />
+      )}
+
+      {activeView === 'list' && (
+      <>
       <div className="mb-3">
         <SearchField
           onSubmit={handleSearch}
@@ -196,6 +228,8 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
           onPageSelect={(page: number) => setEnrolledPage(page)}
           className="mt-3"
         />
+      )}
+      </>
       )}
 
       {canManage && (

@@ -11,6 +11,7 @@ import {
   getBlockState,
   getBulkCourseAggregateStates,
   getCourseAggregateState,
+  getCourseAttribution,
   getCourseComments,
   requestChanges,
   requestCourseChanges,
@@ -26,6 +27,7 @@ export const lifecycleQueryKeys = {
   courseState: (courseId: string) => ['lifecycle', 'course', courseId, 'state'],
   courseComments: (courseId: string) => ['lifecycle', 'course', courseId, 'comments'],
   bulkCourseStates: (courseIds: string[]) => ['lifecycle', 'courses', 'bulk', ...courseIds],
+  courseAttribution: (courseIds: string[]) => ['lifecycle', 'courses', 'attribution', ...courseIds],
 };
 
 export const useBulkCourseAggregateStates = (courseIds: string[], options?: { enabled?: boolean }) => {
@@ -41,6 +43,18 @@ export const useBulkCourseAggregateStates = (courseIds: string[], options?: { en
   });
 
   return { ...query, isAccessPending, isAccessDenied };
+};
+
+export const useCourseAttribution = (courseIds: string[], options?: { enabled?: boolean }) => {
+  const { isPending: isAccessPending, capabilities } = useLifecycleAccess();
+  return useQuery({
+    queryKey: lifecycleQueryKeys.courseAttribution(courseIds),
+    queryFn: () => getCourseAttribution(courseIds),
+    enabled: (options?.enabled ?? true)
+      && courseIds.length > 0
+      && !isAccessPending
+      && capabilities.canAccessLifecycle,
+  });
 };
 
 export const useCourseAggregateState = (courseId: string, options?: { enabled?: boolean }) => {
