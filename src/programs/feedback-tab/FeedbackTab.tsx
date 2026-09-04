@@ -24,6 +24,7 @@ import FeedbackDashboard from './dashboard/FeedbackDashboard';
 import InitiateFeedbackRequestModal from './InitiateFeedbackRequestModal';
 import FeedbackRequestsTable from './FeedbackRequestsTable';
 import FeedbackResponseModal from './FeedbackResponseModal';
+import AuditLogTable from '../../shared/AuditLogTable';
 import './feedback-tab.scss';
 
 const defaultFeedbackFilters: FeedbackFiltersState = {
@@ -38,6 +39,8 @@ const messages = defineMessages({
   sectionSubtitle: { id: 'programs.feedback.subtitle', defaultMessage: 'View feedback summaries and individual responses for this program' },
   summaryTab: { id: 'programs.feedback.tab.summary', defaultMessage: 'Summary' },
   responsesTab: { id: 'programs.feedback.tab.responses', defaultMessage: 'Individual Responses' },
+  listTab: { id: 'programs.feedback.tab.list', defaultMessage: 'List' },
+  auditLogTab: { id: 'programs.feedback.tab.audit-log', defaultMessage: 'Audit Log' },
   initiateButton: { id: 'programs.feedback.initiate.button', defaultMessage: 'Initiate Feedback Request' },
   emptyState: { id: 'programs.feedback.empty', defaultMessage: 'No feedback has been submitted for this program yet.' },
   noResults: {
@@ -76,6 +79,7 @@ const FeedbackTab: React.FC<FeedbackTabProps> = ({ programId, isActive = true })
   const { showToast } = useContext(ToastContext);
   const [isInitiateModalOpen, openInitiateModal, closeInitiateModal] = useToggle(false);
   const [activeFeedbackView, setActiveFeedbackView] = useState<FeedbackTabView>('summary');
+  const [responsesAuditView, setResponsesAuditView] = useState<'list' | 'audit-log'>('list');
   const [filters, setFilters] = useState<FeedbackFiltersState>(defaultFeedbackFilters);
   const [selectedResponseRequestId, setSelectedResponseRequestId] = useState<number | null>(null);
   const {
@@ -138,7 +142,33 @@ const FeedbackTab: React.FC<FeedbackTabProps> = ({ programId, isActive = true })
         </Tab>
 
         <Tab eventKey="responses" title={intl.formatMessage(messages.responsesTab)}>
-          <Card className="mt-3">
+          <div className="page-view-toggle mt-3">
+            <button
+              type="button"
+              className={`page-view-toggle__tab${responsesAuditView === 'list' ? ' page-view-toggle__tab--active' : ''}`}
+              onClick={() => setResponsesAuditView('list')}
+            >
+              {intl.formatMessage(messages.listTab)}
+            </button>
+            <button
+              type="button"
+              className={`page-view-toggle__tab${responsesAuditView === 'audit-log' ? ' page-view-toggle__tab--active' : ''}`}
+              onClick={() => setResponsesAuditView('audit-log')}
+            >
+              {intl.formatMessage(messages.auditLogTab)}
+            </button>
+          </div>
+
+          {responsesAuditView === 'audit-log' && (
+            <AuditLogTable
+              appLabel="fbr_feedback"
+              models={['feedbackinitiation', 'feedbackrequest']}
+              programKey={programId}
+            />
+          )}
+
+          {responsesAuditView === 'list' && (
+          <Card>
             <Card.Section className="feedback-tab-section">
               <FeedbackFilters
                 filters={filters}
@@ -174,6 +204,7 @@ const FeedbackTab: React.FC<FeedbackTabProps> = ({ programId, isActive = true })
               )}
             </Card.Section>
           </Card>
+          )}
         </Tab>
       </Tabs>
 

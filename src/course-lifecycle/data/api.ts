@@ -2,7 +2,9 @@ import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import { camelCaseObject } from '@edx/frontend-platform/utils';
 
-import type { BlockReviewComment, BlockReviewState, CourseAggregateState } from './types';
+import type {
+  BlockReviewComment, BlockReviewState, CourseAggregateState, CourseAttribution,
+} from './types';
 
 const getLifecycleBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/lifecycle`;
 
@@ -26,6 +28,16 @@ export async function getBulkCourseAggregateStates(courseIds: string[]): Promise
     { params: { course_ids: courseIds.join(',') } },
   );
   return data as Record<string, string>;
+}
+
+export async function getCourseAttribution(
+  courseIds: string[],
+): Promise<Record<string, CourseAttribution>> {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getLifecycleBaseUrl()}/v1/courses/attribution`,
+    { params: { course_ids: courseIds.join(',') } },
+  );
+  return camelCaseObject(data) as Record<string, CourseAttribution>;
 }
 
 export async function submitForReview(usageKey: string): Promise<BlockReviewState> {
