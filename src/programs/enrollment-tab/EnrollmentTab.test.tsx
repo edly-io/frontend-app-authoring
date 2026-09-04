@@ -4,6 +4,10 @@ import {
 import EnrollmentTab from './EnrollmentTab';
 import { mockLearner, mockPaginatedLearners } from '../data/api.mock';
 
+jest.mock('../../shared/AuditLogTable', () => function MockAuditLogTable() {
+  return <div data-testid="audit-log-table">No activity recorded yet.</div>;
+});
+
 const mockUnenrollMutate = jest.fn();
 const mockUseProgramEnrollments = jest.fn();
 
@@ -115,5 +119,21 @@ describe('<EnrollmentTab />', () => {
     render(<EnrollmentTab programId={programId} />);
     fireEvent.click(screen.getByRole('button', { name: /Enroll Learner/i }));
     expect(screen.getByText('Enroll Learner in Program')).toBeInTheDocument();
+  });
+
+  it('shows List and Audit Log tab buttons', () => {
+    render(<EnrollmentTab programId={programId} />);
+    expect(screen.getByRole('button', { name: /^List$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Audit Log$/i })).toBeInTheDocument();
+  });
+
+  it('switches to audit log view when Audit Log tab is clicked', async () => {
+    render(<EnrollmentTab programId={programId} />);
+    expect(screen.getByText('Alice Smith')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Audit Log$/i }));
+    await waitFor(() => {
+      expect(screen.getByTestId('audit-log-table')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Alice Smith')).not.toBeInTheDocument();
   });
 });
