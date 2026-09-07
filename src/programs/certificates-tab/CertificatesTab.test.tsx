@@ -23,6 +23,10 @@ jest.mock('@edly-io/frontend-component-fbr', () => ({
   UserIdentity: ({ name }: { name?: string }) => name ?? null,
 }));
 
+jest.mock('../../shared/AuditLogTable', () => function MockAuditLogTable() {
+  return <div data-testid="audit-log-table">No activity recorded yet.</div>;
+});
+
 jest.mock('@src/programs/data/apiHooks', () => ({
   useCertificateRoster: (...args: any[]) => mockUseCertificateRoster(...args),
   useCertificateConfig: (...args: any[]) => mockUseCertificateConfig(...args),
@@ -243,5 +247,21 @@ describe('<CertificatesTab />', () => {
     await waitFor(() => {
       expect(screen.getByDisplayValue('Directorate of Training')).toBeInTheDocument();
     });
+  });
+
+  it('shows List and Audit Log tab buttons', () => {
+    renderTab();
+    expect(screen.getByRole('button', { name: /^List$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Audit Log$/i })).toBeInTheDocument();
+  });
+
+  it('switches to audit log view when Audit Log tab is clicked', async () => {
+    renderTab();
+    expect(screen.getByText('Ayesha Tariq')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Audit Log$/i }));
+    await waitFor(() => {
+      expect(screen.getByTestId('audit-log-table')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Ayesha Tariq')).not.toBeInTheDocument();
   });
 });

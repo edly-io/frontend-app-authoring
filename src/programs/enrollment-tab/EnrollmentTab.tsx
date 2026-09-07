@@ -16,8 +16,11 @@ import { useProgramEnrollments, useUnenrollLearner } from '../data/apiHooks';
 import DeleteModal from '../../generic/delete-modal/DeleteModal';
 import AddLearnerModal from './AddLearnerModal';
 import EnrollBatchModal from './EnrollBatchModal';
+import AuditLogTable from '../../shared/AuditLogTable';
 
 const messages = defineMessages({
+  listTab: { id: 'programs.enrollment.tab.list', defaultMessage: 'List' },
+  auditLogTab: { id: 'programs.enrollment.tab.audit-log', defaultMessage: 'Audit Log' },
   sectionTitle: { id: 'programs.enrollment.title', defaultMessage: 'Learner Enrollment' },
   sectionSubtitle: { id: 'programs.enrollment.subtitle', defaultMessage: 'Enroll learners into this program' },
   enrollLearnerBtn: { id: 'programs.enrollment.add-btn', defaultMessage: 'Enroll Learner' },
@@ -53,6 +56,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
   const [enrolledSearch, setEnrolledSearch] = useState('');
   const [enrolledPage, setEnrolledPage] = useState(1);
   const [confirmUnenrollUsername, setConfirmUnenrollUsername] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<'list' | 'audit-log'>('list');
 
   const { data, isLoading, isFetching } = useProgramEnrollments(
     programId,
@@ -75,7 +79,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
         </div>
-        {canManage && (
+        {canManage && activeView === 'list' && (
           <Stack direction="horizontal" gap={2}>
             <Button
               variant="outline-primary"
@@ -97,98 +101,126 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
         )}
       </div>
 
-      <div className="mb-3">
-        <SearchField
-          onSubmit={handleSearch}
-          onChange={handleSearch}
-          onClear={() => handleSearch('')}
-          value={enrolledSearch}
-          placeholder={intl.formatMessage(messages.searchPlaceholder)}
-        />
+      {/* List | Audit Log toggle */}
+      <div className="page-view-toggle">
+        <Button
+          variant="tertiary"
+          className={`page-view-toggle__tab${activeView === 'list' ? ' page-view-toggle__tab--active' : ''}`}
+          onClick={() => setActiveView('list')}
+        >
+          {intl.formatMessage(messages.listTab)}
+        </Button>
+        <Button
+          variant="tertiary"
+          className={`page-view-toggle__tab${activeView === 'audit-log' ? ' page-view-toggle__tab--active' : ''}`}
+          onClick={() => setActiveView('audit-log')}
+        >
+          {intl.formatMessage(messages.auditLogTab)}
+        </Button>
       </div>
 
-      {isLoading && (
+      {activeView === 'audit-log' && (
+        <AuditLogTable
+          appLabel="fbr_programs"
+          models={['enrollment']}
+          programKey={programId}
+        />
+      )}
+
+      {activeView === 'list' && (
+      <>
+        <div className="mb-3">
+          <SearchField
+            onSubmit={handleSearch}
+            onChange={handleSearch}
+            onClear={() => handleSearch('')}
+            value={enrolledSearch}
+            placeholder={intl.formatMessage(messages.searchPlaceholder)}
+          />
+        </div>
+
+        {isLoading && (
         <div className="d-flex justify-content-center py-4">
           <Spinner animation="border" screenReaderText={intl.formatMessage(messages.loading)} />
         </div>
-      )}
+        )}
 
-      {!isLoading && (!data || data.results.length === 0) && !isFetching && (
+        {!isLoading && (!data || data.results.length === 0) && !isFetching && (
         <p className="text-muted text-center py-4">
           {enrolledSearch
             ? intl.formatMessage(messages.noResults)
             : intl.formatMessage(messages.emptyEnrollment)}
         </p>
-      )}
+        )}
 
-      <div style={{ opacity: isFetching && !isLoading ? 0.4 : 1, transition: 'opacity 0.15s' }}>
-        {!isLoading && data?.results.map((learner, index) => (
-          <div
-            key={learner.id}
-            className="d-flex align-items-center py-3"
-            style={{ borderBottom: '1px solid #dee2e6' }}
-          >
-            <span
-              className="mr-3 font-weight-bold text-muted"
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                background: '#f0f0f0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                fontSize: '0.8em',
-              }}
+        <div style={{ opacity: isFetching && !isLoading ? 0.4 : 1, transition: 'opacity 0.15s' }}>
+          {!isLoading && data?.results.map((learner, index) => (
+            <div
+              key={learner.id}
+              className="d-flex align-items-center py-3"
+              style={{ borderBottom: '1px solid #dee2e6' }}
             >
-              {(enrolledPage - 1) * 5 + index + 1}
-            </span>
-            <div className="flex-grow-1">
-              <p className="mb-0 font-weight-bold">{learner.name}</p>
-              <Stack direction="horizontal" gap={1} className="flex-wrap mt-1">
-                <Badge variant="light">{learner.email}</Badge>
-              </Stack>
-            </div>
-            {canManage && (
-              hasStarted ? (
-                <OverlayTrigger
-                  trigger={['hover', 'focus']}
-                  placement="top"
-                  overlay={(
-                    <Tooltip id={`unenroll-disabled-${learner.id}`}>
-                      Learners cannot be unenrolled after a program has started.
-                    </Tooltip>
+              <span
+                className="mr-3 font-weight-bold text-muted"
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  background: '#f0f0f0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  fontSize: '0.8em',
+                }}
+              >
+                {(enrolledPage - 1) * 5 + index + 1}
+              </span>
+              <div className="flex-grow-1">
+                <p className="mb-0 font-weight-bold">{learner.name}</p>
+                <Stack direction="horizontal" gap={1} className="flex-wrap mt-1">
+                  <Badge variant="light">{learner.email}</Badge>
+                </Stack>
+              </div>
+              {canManage && (
+                hasStarted ? (
+                  <OverlayTrigger
+                    trigger={['hover', 'focus']}
+                    placement="top"
+                    overlay={(
+                      <Tooltip id={`unenroll-disabled-${learner.id}`}>
+                        Learners cannot be unenrolled after a program has started.
+                      </Tooltip>
                   )}
-                >
-                  <span>
-                    <Button variant="outline-danger" size="sm" disabled style={{ pointerEvents: 'none' }}>
-                      {intl.formatMessage(messages.unenrollBtn)}
-                    </Button>
-                  </span>
-                </OverlayTrigger>
-              ) : (
-                <Button
-                  variant="outline-danger"
-                  size="sm"
-                  onClick={() => setConfirmUnenrollUsername(learner.username)}
-                  disabled={confirmUnenrollUsername !== null}
-                >
-                  {intl.formatMessage(messages.unenrollBtn)}
-                </Button>
-              )
-            )}
-          </div>
-        ))}
-      </div>
+                  >
+                    <span>
+                      <Button variant="outline-danger" size="sm" disabled style={{ pointerEvents: 'none' }}>
+                        {intl.formatMessage(messages.unenrollBtn)}
+                      </Button>
+                    </span>
+                  </OverlayTrigger>
+                ) : (
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={() => setConfirmUnenrollUsername(learner.username)}
+                    disabled={confirmUnenrollUsername !== null}
+                  >
+                    {intl.formatMessage(messages.unenrollBtn)}
+                  </Button>
+                )
+              )}
+            </div>
+          ))}
+        </div>
 
-      {isFetching && !isLoading && (
+        {isFetching && !isLoading && (
         <div className="d-flex justify-content-center py-2">
           <Spinner animation="border" screenReaderText={intl.formatMessage(messages.loading)} />
         </div>
-      )}
+        )}
 
-      {data && data.numPages > 1 && (
+        {data && data.numPages > 1 && (
         <Pagination
           paginationLabel={intl.formatMessage(messages.paginationLabel)}
           pageCount={data.numPages}
@@ -196,6 +228,8 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
           onPageSelect={(page: number) => setEnrolledPage(page)}
           className="mt-3"
         />
+        )}
+      </>
       )}
 
       {canManage && (

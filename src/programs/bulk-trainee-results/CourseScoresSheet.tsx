@@ -9,7 +9,6 @@ import { LoadingSpinner } from '../../generic/Loading';
 import { useCourseScores } from './data/apiHooks';
 import { getSectionVariant } from './utils';
 
-
 const messages = defineMessages({
   sheetTitle: { id: 'programs.bulk-trainee-results.course-scores.title', defaultMessage: 'Course scores' },
   sheetSubtitle: {

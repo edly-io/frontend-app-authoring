@@ -29,6 +29,15 @@ export interface CourseAggregateState {
   canPublish: boolean;
 }
 
+export interface CourseAttribution {
+  submittedBy: string | null;
+  submittedAt: string | null;
+  approvedBy: string | null;
+  approvedAt: string | null;
+  publishedAt: string | null;
+  updatedBy: string | null;
+}
+
 export interface BlockReviewComment {
   id: number;
   usageKey: string;

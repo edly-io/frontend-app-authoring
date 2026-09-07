@@ -145,6 +145,7 @@ const UserIdentity = ({
       overlay={hoverCard}
       trigger={['hover', 'focus']}
     >
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
       <div className="user-identity__hover-trigger" tabIndex={0}>
         {identity}
       </div>

@@ -45,7 +45,7 @@ const BulkResultsFinalizeBar: React.FC<BulkResultsFinalizeBarProps> = ({
 
   const handlePrint = () => {
     window.print();
-  }
+  };
 
   if (!canManage) {
     return null;
