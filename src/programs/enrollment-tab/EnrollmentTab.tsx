@@ -129,98 +129,98 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
 
       {activeView === 'list' && (
       <>
-      <div className="mb-3">
-        <SearchField
-          onSubmit={handleSearch}
-          onChange={handleSearch}
-          onClear={() => handleSearch('')}
-          value={enrolledSearch}
-          placeholder={intl.formatMessage(messages.searchPlaceholder)}
-        />
-      </div>
+        <div className="mb-3">
+          <SearchField
+            onSubmit={handleSearch}
+            onChange={handleSearch}
+            onClear={() => handleSearch('')}
+            value={enrolledSearch}
+            placeholder={intl.formatMessage(messages.searchPlaceholder)}
+          />
+        </div>
 
-      {isLoading && (
+        {isLoading && (
         <div className="d-flex justify-content-center py-4">
           <Spinner animation="border" screenReaderText={intl.formatMessage(messages.loading)} />
         </div>
-      )}
+        )}
 
-      {!isLoading && (!data || data.results.length === 0) && !isFetching && (
+        {!isLoading && (!data || data.results.length === 0) && !isFetching && (
         <p className="text-muted text-center py-4">
           {enrolledSearch
             ? intl.formatMessage(messages.noResults)
             : intl.formatMessage(messages.emptyEnrollment)}
         </p>
-      )}
+        )}
 
-      <div style={{ opacity: isFetching && !isLoading ? 0.4 : 1, transition: 'opacity 0.15s' }}>
-        {!isLoading && data?.results.map((learner, index) => (
-          <div
-            key={learner.id}
-            className="d-flex align-items-center py-3"
-            style={{ borderBottom: '1px solid #dee2e6' }}
-          >
-            <span
-              className="mr-3 font-weight-bold text-muted"
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                background: '#f0f0f0',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                fontSize: '0.8em',
-              }}
+        <div style={{ opacity: isFetching && !isLoading ? 0.4 : 1, transition: 'opacity 0.15s' }}>
+          {!isLoading && data?.results.map((learner, index) => (
+            <div
+              key={learner.id}
+              className="d-flex align-items-center py-3"
+              style={{ borderBottom: '1px solid #dee2e6' }}
             >
-              {(enrolledPage - 1) * 5 + index + 1}
-            </span>
-            <div className="flex-grow-1">
-              <p className="mb-0 font-weight-bold">{learner.name}</p>
-              <Stack direction="horizontal" gap={1} className="flex-wrap mt-1">
-                <Badge variant="light">{learner.email}</Badge>
-              </Stack>
-            </div>
-            {canManage && (
-              hasStarted ? (
-                <OverlayTrigger
-                  trigger={['hover', 'focus']}
-                  placement="top"
-                  overlay={(
-                    <Tooltip id={`unenroll-disabled-${learner.id}`}>
-                      Learners cannot be unenrolled after a program has started.
-                    </Tooltip>
+              <span
+                className="mr-3 font-weight-bold text-muted"
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  background: '#f0f0f0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  fontSize: '0.8em',
+                }}
+              >
+                {(enrolledPage - 1) * 5 + index + 1}
+              </span>
+              <div className="flex-grow-1">
+                <p className="mb-0 font-weight-bold">{learner.name}</p>
+                <Stack direction="horizontal" gap={1} className="flex-wrap mt-1">
+                  <Badge variant="light">{learner.email}</Badge>
+                </Stack>
+              </div>
+              {canManage && (
+                hasStarted ? (
+                  <OverlayTrigger
+                    trigger={['hover', 'focus']}
+                    placement="top"
+                    overlay={(
+                      <Tooltip id={`unenroll-disabled-${learner.id}`}>
+                        Learners cannot be unenrolled after a program has started.
+                      </Tooltip>
                   )}
-                >
-                  <span>
-                    <Button variant="outline-danger" size="sm" disabled style={{ pointerEvents: 'none' }}>
-                      {intl.formatMessage(messages.unenrollBtn)}
-                    </Button>
-                  </span>
-                </OverlayTrigger>
-              ) : (
-                <Button
-                  variant="outline-danger"
-                  size="sm"
-                  onClick={() => setConfirmUnenrollUsername(learner.username)}
-                  disabled={confirmUnenrollUsername !== null}
-                >
-                  {intl.formatMessage(messages.unenrollBtn)}
-                </Button>
-              )
-            )}
-          </div>
-        ))}
-      </div>
+                  >
+                    <span>
+                      <Button variant="outline-danger" size="sm" disabled style={{ pointerEvents: 'none' }}>
+                        {intl.formatMessage(messages.unenrollBtn)}
+                      </Button>
+                    </span>
+                  </OverlayTrigger>
+                ) : (
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={() => setConfirmUnenrollUsername(learner.username)}
+                    disabled={confirmUnenrollUsername !== null}
+                  >
+                    {intl.formatMessage(messages.unenrollBtn)}
+                  </Button>
+                )
+              )}
+            </div>
+          ))}
+        </div>
 
-      {isFetching && !isLoading && (
+        {isFetching && !isLoading && (
         <div className="d-flex justify-content-center py-2">
           <Spinner animation="border" screenReaderText={intl.formatMessage(messages.loading)} />
         </div>
-      )}
+        )}
 
-      {data && data.numPages > 1 && (
+        {data && data.numPages > 1 && (
         <Pagination
           paginationLabel={intl.formatMessage(messages.paginationLabel)}
           pageCount={data.numPages}
@@ -228,7 +228,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
           onPageSelect={(page: number) => setEnrolledPage(page)}
           className="mt-3"
         />
-      )}
+        )}
       </>
       )}
 

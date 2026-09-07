@@ -1,9 +1,9 @@
 import {
   fireEvent, initializeMocks, render, screen, waitFor,
 } from '@src/testUtils';
+import { useCourseAttribution } from '@src/course-lifecycle/data/apiHooks';
 import CoursesTab from './CoursesTab';
 import { mockCourse, mockProgram } from '../data/api.mock';
-import { useCourseAttribution } from '@src/course-lifecycle/data/apiHooks';
 
 const mockRemoveMutate = jest.fn();
 

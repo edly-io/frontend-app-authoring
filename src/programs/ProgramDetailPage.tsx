@@ -573,10 +573,9 @@ const ProgramDetailPage: React.FC = () => {
                       </div>
                     )}
                     {!formik.values.image && capabilities.canEditProgram && (
-                      <button
-                        type="button"
-                        className="w-100 border-0 bg-transparent p-0"
-                        style={{ cursor: 'pointer' }}
+                      <Button
+                        variant="link"
+                        className="w-100 p-0 text-left d-block"
                         onClick={() => document.getElementById('program-image-input')?.click()}
                       >
                         <div
@@ -601,7 +600,7 @@ const ProgramDetailPage: React.FC = () => {
                             {intl.formatMessage(messages.imageUploadHint)}
                           </span>
                         </div>
-                      </button>
+                      </Button>
                     )}
                     {!formik.values.image && !capabilities.canEditProgram && (
                       <p className="text-muted mb-0">No program image uploaded.</p>

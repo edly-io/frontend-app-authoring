@@ -893,7 +893,7 @@ export const getFeedbackDashboardComments = async (
     { params: { initiation_id: initiationId, subject_id: subjectId } },
   );
   return toFeedbackDashboardCommentsResponse(data);
-}
+};
 
 // ─────────────────────────────────────────────────────────────────────────
 // Program Certificates
