@@ -17,22 +17,6 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.new-category.name.required',
     defaultMessage: 'Category name is required.',
   },
-  categorySlugLabel: {
-    id: 'course-authoring.studio-home.new-category.slug.label',
-    defaultMessage: 'Slug',
-  },
-  categorySlugPlaceholder: {
-    id: 'course-authoring.studio-home.new-category.slug.placeholder',
-    defaultMessage: 'e.g. programming',
-  },
-  categorySlugRequired: {
-    id: 'course-authoring.studio-home.new-category.slug.required',
-    defaultMessage: 'Slug is required.',
-  },
-  categorySlugHint: {
-    id: 'course-authoring.studio-home.new-category.slug.hint',
-    defaultMessage: 'URL-friendly identifier (lowercase, hyphens only).',
-  },
   cancelBtn: {
     id: 'course-authoring.studio-home.new-category.cancel.btn',
     defaultMessage: 'Cancel',

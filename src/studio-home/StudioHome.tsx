@@ -13,7 +13,7 @@ import { useIntl } from '@edx/frontend-platform/i18n';
 import { StudioFooterSlot } from '@edx/frontend-component-footer';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { useIsSuperuser } from './data/useIsSuperuser';
+import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import Loading from '../generic/Loading';
 import InternetConnectionAlert from '../generic/internet-connection-alert';
 import Header from '../header';
@@ -57,8 +57,6 @@ const StudioHome = () => {
     librariesV1Enabled,
     librariesV2Enabled,
   } = useStudioHome();
-
-  const isSuperuser = useIsSuperuser();
 
   const v1LibraryTab = librariesV1Enabled && location?.pathname.split('/').pop() === 'libraries-v1';
   const showV2LibraryURL = librariesV2Enabled && !v1LibraryTab;
@@ -122,7 +120,7 @@ const StudioHome = () => {
           </Button>,
         );
       }
-      if (isSuperuser && getConfig().ENABLE_CATEGORY_MANAGEMENT) {
+      if (getAuthenticatedUser()?.administrator && getConfig().ENABLE_CATEGORY_MANAGEMENT) {
         headerButtons.push(
           <Button
             variant="outline-primary"

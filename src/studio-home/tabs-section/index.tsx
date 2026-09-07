@@ -13,7 +13,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import { RequestStatus } from '@src/data/constants';
-import { useIsSuperuser } from '../data/useIsSuperuser';
 import { getLoadingStatuses, getStudioHomeData } from '../data/selectors';
 import messages from './messages';
 import { BaseFilterState, Filter, LibrariesList } from './libraries-tab';
@@ -38,7 +37,6 @@ const TabsSection = ({
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [migrationFilter, setMigrationFilter] = useState<Filter[]>(BaseFilterState);
-  const isSuperuser = useIsSuperuser();
   const TABS_LIST = {
     courses: 'courses',
     programs: 'programs',
@@ -91,6 +89,7 @@ const TabsSection = ({
   } = useSelector(getLoadingStatuses);
   const isLoadingCourses = courseLoadingStatus === RequestStatus.IN_PROGRESS;
   const isFailedCoursesPage = courseLoadingStatus === RequestStatus.FAILED;
+  const isAdministrator = getAuthenticatedUser()?.administrator ?? false;
 
   // Controlling the visibility of tabs when using conditional rendering is necessary for
   // the correct operation of iterating over child elements inside the Paragon Tabs component.
@@ -139,7 +138,7 @@ const TabsSection = ({
       );
     }
 
-    if (isSuperuser) {
+    if (getConfig().ENABLE_CATEGORY_MANAGEMENT && isAdministrator) {
       tabs.push(
         <Tab
           key={TABS_LIST.categories}
@@ -208,6 +207,7 @@ const TabsSection = ({
     showNewCategoryContainer,
     isLoadingCourses,
     migrationFilter,
+    isAdministrator,
   ]);
 
   const handleSelectTab = (tab: TabKeyType) => {

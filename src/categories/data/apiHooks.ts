@@ -39,7 +39,7 @@ export const useUpdateCategory = () => {
     mutationFn: ({
       categoryId,
       data,
-    }: { categoryId: string; data: Partial<Pick<Category, 'name' | 'arabicName' | 'slug' | 'isActive'>> }) => (
+    }: { categoryId: string; data: Partial<Pick<Category, 'name' | 'arabicName' | 'isActive'>> }) => (
       updateCategory(categoryId, data)
     ),
     onSuccess: (_, { categoryId }) => {
@@ -55,7 +55,43 @@ export const useAddCourseToCat = () => {
     mutationFn: ({ categoryId, courseId }: { categoryId: string; courseId: string }) => (
       addCourseToCat(categoryId, courseId)
     ),
-    onSuccess: (_, { categoryId }) => {
+    onMutate: async ({ categoryId, courseId }) => {
+      // Cancel any in-flight refetches so they don't overwrite the optimistic update.
+      await queryClient.cancelQueries({ queryKey: ['category', categoryId] });
+
+      // Snapshot the current cached data for rollback on error.
+      const previous = queryClient.getQueryData(['category', categoryId]);
+
+      // Optimistically add a placeholder course so the "Linked Courses" tab
+      // updates instantly without waiting for the server round-trip.
+      queryClient.setQueryData(['category', categoryId], (old: any) => {
+        if (!old?.category) { return old; }
+        const alreadyLinked = old.category.courses?.some((c: any) => c.id === courseId);
+        if (alreadyLinked) { return old; }
+        return {
+          ...old,
+          category: {
+            ...old.category,
+            courses: [
+              ...(old.category.courses ?? []),
+              {
+                id: courseId, displayName: courseId, org: '', run: '',
+              },
+            ],
+          },
+        };
+      });
+
+      return { previous };
+    },
+    onError: (_err, { categoryId }, context: { previous: unknown } | undefined) => {
+      // Roll back to the snapshot if the mutation fails.
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(['category', categoryId], context.previous);
+      }
+    },
+    onSettled: (_, __, { categoryId }) => {
+      // Always refetch so the placeholder is replaced with real server data.
       queryClient.invalidateQueries({ queryKey: ['category', categoryId] });
     },
   });
