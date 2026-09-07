@@ -4,6 +4,7 @@ import { render } from '@testing-library/react';
 import { initializeMockApp } from '@edx/frontend-platform';
 import { IntlProvider } from '@edx/frontend-platform/i18n';
 import { AppProvider } from '@edx/frontend-platform/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import studioHomeMock from '@src/studio-home/__mocks__/studioHomeMock';
 import initializeStore from '../../store';
@@ -18,13 +19,16 @@ jest.mock('react-redux', () => ({
 let store;
 
 const onClickCancelMock = jest.fn();
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
 const RootWrapper = (props) => (
-  <IntlProvider locale="en">
-    <AppProvider store={store}>
-      <CourseNewCourseForm {...props} />
-    </AppProvider>
-  </IntlProvider>
+  <QueryClientProvider client={queryClient}>
+    <IntlProvider locale="en">
+      <AppProvider store={store}>
+        <CourseNewCourseForm {...props} />
+      </AppProvider>
+    </IntlProvider>
+  </QueryClientProvider>
 );
 
 const props = {

@@ -34,7 +34,7 @@ const useCreateOrRerunCourse = (initialValues) => {
   // The programs config endpoint already scopes the org list server-side:
   // global staff and superadmins receive all orgs; org admins receive only
   // the orgs they administer. No frontend permission check is needed.
-  const { data: programsConfig } = useProgramsConfig();
+  const { data: programsConfig, isLoading: isOrgsLoading } = useProgramsConfig();
   const configOrgs = programsConfig?.orgs?.map((org) => org.shortName) ?? [];
 
   const organizations = canCreateOrganizations ? configOrgs : allowedOrganizations;
@@ -129,6 +129,7 @@ const useCreateOrRerunCourse = (initialValues) => {
     postErrors,
     isFormFilled,
     isFormInvalid,
+    isOrgsLoading: canCreateOrganizations ? isOrgsLoading : false,
     organizations,
     showErrorBanner,
     dispatch,

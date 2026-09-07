@@ -6,7 +6,6 @@ import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import type { Course } from '../../programs/data/types';
 import type {
   Category,
-  CategoryCreatePayload,
   CategoryDetailResponse,
   CategorySummary,
 } from './types';
