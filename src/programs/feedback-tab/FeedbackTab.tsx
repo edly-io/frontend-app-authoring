@@ -143,20 +143,20 @@ const FeedbackTab: React.FC<FeedbackTabProps> = ({ programId, isActive = true })
 
         <Tab eventKey="responses" title={intl.formatMessage(messages.responsesTab)}>
           <div className="page-view-toggle mt-3">
-            <button
-              type="button"
+            <Button
+              variant="tertiary"
               className={`page-view-toggle__tab${responsesAuditView === 'list' ? ' page-view-toggle__tab--active' : ''}`}
               onClick={() => setResponsesAuditView('list')}
             >
               {intl.formatMessage(messages.listTab)}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="tertiary"
               className={`page-view-toggle__tab${responsesAuditView === 'audit-log' ? ' page-view-toggle__tab--active' : ''}`}
               onClick={() => setResponsesAuditView('audit-log')}
             >
               {intl.formatMessage(messages.auditLogTab)}
-            </button>
+            </Button>
           </div>
 
           {responsesAuditView === 'audit-log' && (

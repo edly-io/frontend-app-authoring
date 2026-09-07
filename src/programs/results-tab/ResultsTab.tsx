@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useIntl, defineMessages } from '@edx/frontend-platform/i18n';
 import {
+  Button,
   Tab,
   Tabs,
 } from '@openedx/paragon';
@@ -54,20 +55,20 @@ const ResultsTab: React.FC<ResultsTabProps> = ({
 
       {/* List | Audit Log toggle */}
       <div className="page-view-toggle">
-        <button
-          type="button"
+        <Button
+          variant="tertiary"
           className={`page-view-toggle__tab${activeView === 'list' ? ' page-view-toggle__tab--active' : ''}`}
           onClick={() => setActiveView('list')}
         >
           {intl.formatMessage(messages.listTab)}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="tertiary"
           className={`page-view-toggle__tab${activeView === 'audit-log' ? ' page-view-toggle__tab--active' : ''}`}
           onClick={() => setActiveView('audit-log')}
         >
           {intl.formatMessage(messages.auditLogTab)}
-        </button>
+        </Button>
       </div>
 
       {activeView === 'audit-log' && (

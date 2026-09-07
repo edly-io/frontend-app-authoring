@@ -6,6 +6,7 @@ import React, {
 } from 'react';
 import {
   Alert,
+  Button,
   Card,
   Icon,
   Spinner,
@@ -216,20 +217,20 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
   const renderAwardsPanel = () => {
     const toggle = (
       <div className="page-view-toggle mb-3">
-        <button
-          type="button"
+        <Button
+          variant="tertiary"
           className={`page-view-toggle__tab${awardsView === 'list' ? ' page-view-toggle__tab--active' : ''}`}
           onClick={() => setAwardsView('list')}
         >
           {intl.formatMessage(auditMessages.listTab)}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="tertiary"
           className={`page-view-toggle__tab${awardsView === 'audit-log' ? ' page-view-toggle__tab--active' : ''}`}
           onClick={() => setAwardsView('audit-log')}
         >
           {intl.formatMessage(auditMessages.auditLogTab)}
-        </button>
+        </Button>
       </div>
     );
 
