@@ -8,10 +8,10 @@ import {
   Tabs,
 } from '@openedx/paragon';
 import { getConfig } from '@edx/frontend-platform';
+import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import { RequestStatus } from '@src/data/constants';
 import { getLoadingStatuses, getStudioHomeData } from '../data/selectors';
 import messages from './messages';
@@ -20,14 +20,12 @@ import LibrariesV2List from './libraries-v2-tab/index';
 import CoursesTab from './courses-tab';
 import ProgramsTab from './programs-tab';
 import InstructorsTab from './instructors-tab';
-import CategoriesTab from './categories-tab';
 import { WelcomeLibrariesV2Alert } from './libraries-v2-tab/WelcomeLibrariesV2Alert';
 
 const TabsSection = ({
   showNewCourseContainer,
   showNewProgramContainer,
   showNewInstructorContainer,
-  showNewCategoryContainer,
   onClickNewCourse,
   isShowProcessing,
   librariesV1Enabled,
@@ -41,7 +39,6 @@ const TabsSection = ({
     courses: 'courses',
     programs: 'programs',
     instructors: 'instructors',
-    categories: 'categories',
     libraries: 'libraries',
     legacyLibraries: 'legacyLibraries',
     archived: 'archived',
@@ -66,10 +63,6 @@ const TabsSection = ({
 
     if (pname.includes('/instructors')) {
       return TABS_LIST.instructors;
-    }
-
-    if (pname.includes('/categories')) {
-      return TABS_LIST.categories;
     }
 
     // Default to courses tab
@@ -138,18 +131,6 @@ const TabsSection = ({
       );
     }
 
-    if (getConfig().ENABLE_CATEGORY_MANAGEMENT && isAdministrator) {
-      tabs.push(
-        <Tab
-          key={TABS_LIST.categories}
-          eventKey={TABS_LIST.categories}
-          title={intl.formatMessage(messages.categoriesTabTitle)}
-        >
-          <CategoriesTab />
-        </Tab>,
-      );
-    }
-
     if (librariesV2Enabled) {
       tabs.push(
         <Tab
@@ -204,7 +185,6 @@ const TabsSection = ({
     showNewCourseContainer,
     showNewProgramContainer,
     showNewInstructorContainer,
-    showNewCategoryContainer,
     isLoadingCourses,
     migrationFilter,
     isAdministrator,
@@ -217,8 +197,6 @@ const TabsSection = ({
       navigate('/programs');
     } else if (tab === TABS_LIST.instructors) {
       navigate('/instructors');
-    } else if (tab === TABS_LIST.categories) {
-      navigate('/categories');
     } else if (tab === TABS_LIST.legacyLibraries) {
       navigate('/libraries-v1');
     } else if (tab === TABS_LIST.libraries) {
@@ -249,7 +227,6 @@ TabsSection.propTypes = {
   librariesV2Enabled: PropTypes.bool,
   showNewProgramContainer: PropTypes.bool,
   showNewInstructorContainer: PropTypes.bool,
-  showNewCategoryContainer: PropTypes.bool,
 };
 
 export default TabsSection;

@@ -30,7 +30,6 @@ const useStudioHome = () => {
   const [showNewCourseContainer, setShowNewCourseContainer] = useState(false);
   const [showNewProgramContainer, setShowNewProgramContainer] = useState(false);
   const [showNewInstructorContainer, setShowNewInstructorContainer] = useState(false);
-  const [showNewCategoryContainer, setShowNewCategoryContainer] = useState(false);
   const isLoadingPage = studioHomeLoadingStatus === RequestStatus.IN_PROGRESS;
   const isFailedLoadingPage = studioHomeLoadingStatus === RequestStatus.FAILED;
 
@@ -109,7 +108,6 @@ const useStudioHome = () => {
     showNewCourseContainer,
     showNewProgramContainer,
     showNewInstructorContainer,
-    showNewCategoryContainer,
     courseCreatorSavingStatus,
     isShowOrganizationDropdown,
     hasAbilityToCreateNewCourse,
@@ -117,7 +115,6 @@ const useStudioHome = () => {
     setShowNewCourseContainer,
     setShowNewProgramContainer,
     setShowNewInstructorContainer,
-    setShowNewCategoryContainer,
     librariesV1Enabled,
     librariesV2Enabled,
   };
