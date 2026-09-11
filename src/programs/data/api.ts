@@ -240,6 +240,10 @@ export interface GetLearnersParams {
   search?: string;
   programKey?: string;
   pageSize?: number;
+  // When true, request the full enrollable pool (eligible trainees, enrolled or
+  // not) instead of only already-enrolled trainees. Used by the Enroll Learner
+  // modal, which badges the already-enrolled rows.
+  enrollable?: boolean;
 }
 
 export type PlatformUserRole = FbrRole | 'learner';
@@ -594,6 +598,7 @@ export const getPlatformUsers = async (
         page_size: pageSize,
         ...(params.search ? { search: params.search } : {}),
         ...(params.programKey ? { program_key: params.programKey } : {}),
+        ...(params.enrollable ? { enrollable: 'true' } : {}),
       },
     },
   );

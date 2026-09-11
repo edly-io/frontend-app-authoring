@@ -250,7 +250,9 @@ export const useRemoveInstructorFromCourse = () => {
 
 export const useLearners = (params: GetLearnersParams = {}, enabled = true) => useQuery({
   queryKey: ['learners', params.programKey ?? '', params.page ?? 1, params.search ?? '', params.pageSize ?? 5],
-  queryFn: () => getPlatformUsers({ role: 'learner', ...params }),
+  // enrollable: return the full eligible pool (enrolled + not-enrolled) so the
+  // Enroll Learner modal can find trainees to enroll; enrolled rows are badged.
+  queryFn: () => getPlatformUsers({ role: 'learner', enrollable: true, ...params }),
   placeholderData: keepPreviousData,
   staleTime: 0,
   enabled,
