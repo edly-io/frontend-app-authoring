@@ -7,6 +7,7 @@ import React, {
 import {
   Alert,
   Button,
+  ButtonGroup,
   Card,
   Icon,
   Spinner,
@@ -216,22 +217,24 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
 
   const renderAwardsPanel = () => {
     const toggle = (
-      <div className="page-view-toggle mb-3">
+      <ButtonGroup size="sm" className="mb-3">
         <Button
-          variant="tertiary"
-          className={`page-view-toggle__tab${awardsView === 'list' ? ' page-view-toggle__tab--active' : ''}`}
+          variant={awardsView === 'list' ? 'primary' : 'outline-primary'}
+          size="sm"
+          aria-pressed={awardsView === 'list'}
           onClick={() => setAwardsView('list')}
         >
           {intl.formatMessage(auditMessages.listTab)}
         </Button>
         <Button
-          variant="tertiary"
-          className={`page-view-toggle__tab${awardsView === 'audit-log' ? ' page-view-toggle__tab--active' : ''}`}
+          variant={awardsView === 'audit-log' ? 'primary' : 'outline-primary'}
+          size="sm"
+          aria-pressed={awardsView === 'audit-log'}
           onClick={() => setAwardsView('audit-log')}
         >
           {intl.formatMessage(auditMessages.auditLogTab)}
         </Button>
-      </div>
+      </ButtonGroup>
     );
 
     if (awardsView === 'audit-log') {

@@ -44,7 +44,7 @@ const BulkResultsToolbar: React.FC<BulkResultsToolbarProps> = ({
     <Stack gap={3} className="mb-3">
       <Stack direction="horizontal" gap={3} className="flex-wrap align-items-center justify-content-between">
         <Stack direction="horizontal" gap={3} className="flex-wrap align-items-center flex-grow-1">
-          <div style={{ maxWidth: 320 }} className="flex-grow-1">
+          <div className="bulk-results-search">
             <DebouncedSearchField
               value={search}
               onSearch={onSearchChange}
@@ -57,7 +57,7 @@ const BulkResultsToolbar: React.FC<BulkResultsToolbarProps> = ({
             value={status ?? NO_FILTER}
             onChange={(e) => onStatusChange(e.target.value === NO_FILTER ? undefined : e.target.value as ScoringStatus)}
             aria-label={intl.formatMessage(messages.statusFilterAria)}
-            style={{ maxWidth: 180 }}
+            className="bulk-results-status"
           >
             <option value={NO_FILTER}>{intl.formatMessage(messages.statusFilterAll)}</option>
             <option value="in_progress">{intl.formatMessage(messages.statusFilterInProgress)}</option>

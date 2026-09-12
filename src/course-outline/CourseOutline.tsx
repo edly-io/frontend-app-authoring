@@ -332,8 +332,8 @@ const CourseOutline = ({ courseId }: CourseOutlineProps) => {
             )}
           />
           <Layout
-            lg={[{ span: 9 }, { span: 3 }]}
-            md={[{ span: 9 }, { span: 3 }]}
+            lg={[{ span: 12 }, { span: 12 }]}
+            md={[{ span: 12 }, { span: 12 }]}
             sm={[{ span: 12 }, { span: 12 }]}
             xs={[{ span: 12 }, { span: 12 }]}
             xl={[{ span: 9 }, { span: 3 }]}

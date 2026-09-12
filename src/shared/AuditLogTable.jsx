@@ -3,73 +3,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
-  Alert, Badge, Button, DataTable, Icon, Pagination, Spinner,
+  Alert, Badge, Button, DataTable, Form, Icon, Pagination, Spinner,
 } from '@openedx/paragon';
 import { History, Search } from '@openedx/paragon/icons';
+import { UserIdentity } from '@edly-io/frontend-component-fbr';
 import { getAuditLogs } from './auditLogApi';
+import { toRoleBadges } from './roleLabels';
 import './AuditLogTable.scss';
-
-const ROLE_LABELS = {
-  super_admin: 'Super Admin',
-  middle_admin: 'Middle Admin',
-  data_admin: 'Data Admin',
-  instructor: 'Instructor',
-  trainee: 'Trainee',
-};
-
-const ROLE_TONES = {
-  'Super Admin': 'super-admin',
-  'Middle Admin': 'middle-admin',
-  'Data Admin': 'data-admin',
-  Instructor: 'instructor',
-  Trainee: 'trainee',
-};
-
-const ROLE_CODES = {
-  'Super Admin': 'SA',
-  'Middle Admin': 'MA',
-  'Data Admin': 'DA',
-  Instructor: 'IN',
-  Trainee: 'TR',
-};
-
-const getInitials = (name) => {
-  if (!name) { return '?'; }
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) { return parts[0][0].toUpperCase(); }
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-};
-
-const ActorBadge = ({ name, role }) => {
-  const label = ROLE_LABELS[role] || '';
-  const tone = ROLE_TONES[label] || 'default';
-  const code = ROLE_CODES[label] || '';
-  const initials = getInitials(name);
-  return (
-    <div className="user-identity user-identity--compact">
-      <div className="user-identity__avatar-wrap user-identity__avatar-wrap--compact">
-        <div className={`user-identity__avatar-shell user-identity__avatar-shell--${tone}`}>
-          <span className="user-identity__avatar-initials">{initials}</span>
-        </div>
-        {code && (
-          <span className={`user-identity__corner-badge user-identity__corner-badge--${tone}`}>{code}</span>
-        )}
-      </div>
-      <div className="user-identity__content">
-        <div className="user-identity__name">{name}</div>
-        {label && (
-          <div className={`user-identity__role-label user-identity__role-label--${tone}`}>{label}</div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-ActorBadge.propTypes = {
-  name: PropTypes.string.isRequired,
-  role: PropTypes.string,
-};
-ActorBadge.defaultProps = { role: undefined };
 
 const PAGE_SIZE = 20;
 
@@ -297,7 +237,11 @@ const RecordHistoryModal = ({
                       </td>
                       <td className="audit-modal__td">
                         {entry.actor_name ? (
-                          <ActorBadge name={entry.actor_name} role={entry.actor_role} />
+                          <UserIdentity
+                            name={entry.actor_name}
+                            badges={toRoleBadges(entry.actor_role)}
+                            size="compact"
+                          />
                         ) : (
                           <span className="text-muted">System</span>
                         )}
@@ -454,7 +398,13 @@ const AuditLogTable = ({
         if (!name) {
           return <span className="text-muted">System</span>;
         }
-        return <ActorBadge name={name} role={role} />;
+        return (
+          <UserIdentity
+            name={name}
+            badges={toRoleBadges(role)}
+            size="compact"
+          />
+        );
       },
     },
     {
@@ -487,7 +437,7 @@ const AuditLogTable = ({
       Cell: ({ row }) => {
         const entry = row.original;
         return (
-          <div>
+          <div className="audit-log__record">
             <div className="audit-log__record-repr">{entry.object_repr || '—'}</div>
             {entry.object_pk && (
               <div className="audit-log__record-id">ID: {entry.object_pk}</div>
@@ -496,8 +446,10 @@ const AuditLogTable = ({
               variant="link"
               onClick={() => setHistoryModal(entry)}
               className="audit-log__history-btn"
+              iconBefore={History}
+              size="sm"
             >
-              <Icon src={History} /> Full history
+              Full history
             </Button>
           </div>
         );
@@ -559,43 +511,50 @@ const AuditLogTable = ({
       )}
 
       <div className="audit-log__filters">
-        <div className="audit-log__search-wrap">
-          <Icon src={Search} className="audit-log__search-icon" />
-          <input
+        <div className="audit-log__search">
+          <Form.Control
             type="text"
             value={searchText}
             onChange={handleSearchChange}
             placeholder="Search by record name…"
-            className="audit-log__search-input audit-log__search-input--with-icon"
+            leadingElement={<Icon src={Search} className="text-gray-500" />}
+            aria-label="Search by record name"
           />
         </div>
-        <select
-          value={actionFilter}
-          onChange={handleActionChange}
-          className="audit-log__action-select"
-        >
-          {ACTION_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+        <div className="audit-log__action">
+          <Form.Control
+            as="select"
+            value={actionFilter}
+            onChange={handleActionChange}
+            aria-label="Filter by action"
+          >
+            {ACTION_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </Form.Control>
+        </div>
         <div className="audit-log__date-range">
-          <label htmlFor="audit-date-from" className="audit-log__date-label">From</label>
-          <input
-            id="audit-date-from"
-            type="date"
-            value={dateFrom}
-            onChange={handleDateFromChange}
-            className="audit-log__date-input"
-          />
-          <label htmlFor="audit-date-to" className="audit-log__date-label">To</label>
-          <input
-            id="audit-date-to"
-            type="date"
-            value={dateTo}
-            min={dateFrom || undefined}
-            onChange={handleDateToChange}
-            className="audit-log__date-input"
-          />
+          <div className="audit-log__date-field">
+            <Form.Label htmlFor="audit-date-from" className="audit-log__date-label">From</Form.Label>
+            <Form.Control
+              id="audit-date-from"
+              type="date"
+              value={dateFrom}
+              onChange={handleDateFromChange}
+              className="audit-log__date-input"
+            />
+          </div>
+          <div className="audit-log__date-field">
+            <Form.Label htmlFor="audit-date-to" className="audit-log__date-label">To</Form.Label>
+            <Form.Control
+              id="audit-date-to"
+              type="date"
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={handleDateToChange}
+              className="audit-log__date-input"
+            />
+          </div>
         </div>
         <span className="audit-log__count">
           {count} result{count !== 1 ? 's' : ''}

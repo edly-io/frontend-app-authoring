@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useIntl, defineMessages } from '@edx/frontend-platform/i18n';
 import {
   Button,
+  ButtonGroup,
   Tab,
   Tabs,
 } from '@openedx/paragon';
@@ -46,30 +47,31 @@ const ResultsTab: React.FC<ResultsTabProps> = ({
 
   return (
     <>
-      <div className="trainee-page-sub-header d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3 pt-4">
+      <div className="trainee-page-sub-header program-page-header mb-3 pt-4">
         <div>
           <h3 className="mb-1">{intl.formatMessage(messages.pageTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.pageSubtitle)}</p>
         </div>
       </div>
 
-      {/* List | Audit Log toggle */}
-      <div className="page-view-toggle">
+      <ButtonGroup size="sm" className="mb-3">
         <Button
-          variant="tertiary"
-          className={`page-view-toggle__tab${activeView === 'list' ? ' page-view-toggle__tab--active' : ''}`}
+          variant={activeView === 'list' ? 'primary' : 'outline-primary'}
+          size="sm"
+          aria-pressed={activeView === 'list'}
           onClick={() => setActiveView('list')}
         >
           {intl.formatMessage(messages.listTab)}
         </Button>
         <Button
-          variant="tertiary"
-          className={`page-view-toggle__tab${activeView === 'audit-log' ? ' page-view-toggle__tab--active' : ''}`}
+          variant={activeView === 'audit-log' ? 'primary' : 'outline-primary'}
+          size="sm"
+          aria-pressed={activeView === 'audit-log'}
           onClick={() => setActiveView('audit-log')}
         >
           {intl.formatMessage(messages.auditLogTab)}
         </Button>
-      </div>
+      </ButtonGroup>
 
       {activeView === 'audit-log' && (
         <AuditLogTable

@@ -143,8 +143,8 @@ const SchemeTree: React.FC<SchemeTreeProps> = ({
 
   return (
     <Card className="p-3">
-      <Card.Body>
-        <div role="table" aria-label={intl.formatMessage(messages.treeAriaLabel)}>
+      <Card.Body className="grade-scheme-tree-scroll">
+        <div role="table" className="grade-scheme-tree" aria-label={intl.formatMessage(messages.treeAriaLabel)}>
           <div
             role="row"
             className="d-flex align-items-center gap-2 px-3 py-2 small text-uppercase text-muted font-weight-bold"
