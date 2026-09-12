@@ -189,8 +189,8 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
               )}
             </Form.Group>
 
-            <div className="d-flex justify-content-end gap-2 mt-3">
-              <Button variant="tertiary" onClick={handleOnClickCancel}>
+            <div className="d-flex justify-content-start gap-2 mt-3">
+              <Button variant="outline-primary" onClick={handleOnClickCancel}>
                 {intl.formatMessage(messages.cancelBtn)}
               </Button>
               <StatefulButton
@@ -202,6 +202,7 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
                   pending: intl.formatMessage(messages.pendingBtn),
                 }}
                 disabledStates={['pending']}
+                className="ml-3"
               />
             </div>
           </Form>

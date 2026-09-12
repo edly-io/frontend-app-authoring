@@ -44,15 +44,55 @@
 
   .nav-link {
     border-bottom: .125rem solid var(--pgn-color-light-400);
+    white-space: nowrap;
+
+    &.pgn__tab_more {
+      margin-bottom: calc(var(--pgn-size-nav-tabs-border-width) * -1);
+    }
   }
 
   .nav-link.active {
     background-color: transparent;
   }
+
+
 }
 
 .courses-tab {
   margin: 1.625rem 0;
+}
+
+.programs-filters {
+  gap: var(--pgn-spacing-spacer-3);
+
+  &__search {
+    flex: 1 1 100%;
+  }
+
+  &__control {
+    flex: 1 1 0;
+    min-width: 0;
+
+    .btn {
+      width: 100%;
+    }
+  }
+
+  @media (--pgn-size-breakpoint-min-width-md) {
+    gap: 0;
+
+    &__search {
+      flex: 0 1 auto;
+    }
+
+    &__control {
+      flex: 0 0 auto;
+
+      .btn {
+        width: auto;
+      }
+    }
+  }
 }
 
 .card-item {

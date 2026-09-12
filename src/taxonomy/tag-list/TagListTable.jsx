@@ -77,7 +77,7 @@ const TagListTable = ({ taxonomyId }) => {
   };
 
   return (
-    <div className="tag-list-table">
+    <div className="tag-list-table mb-3">
       <DataTable
         isLoading={isLoading}
         isPaginated

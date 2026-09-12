@@ -68,6 +68,7 @@ const DeleteModal = ({
             }}
             variant={buttonVariant}
             label={defaultBtnLabel}
+            className="ml-2"
           />
         </ActionRow>
       )}

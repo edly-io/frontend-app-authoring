@@ -70,3 +70,9 @@ mark {
 .border-left-purple {
   border-left: 3px solid #5E35B1 !important;
 }
+
+.pagination {
+  .page-of-count {
+    white-space: nowrap;
+  }
+}

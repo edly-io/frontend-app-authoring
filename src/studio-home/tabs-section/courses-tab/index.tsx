@@ -136,20 +136,22 @@ const CoursesTab: React.FC<Props> = ({
       />
     ) : (
       <div className="courses-tab-container">
-        <div className="d-flex flex-row align-items-center justify-content-between my-4">
+        <div className="my-4">
           {isShowProcessing && <ProcessingCourses />}
           <CoursesFilters
             dispatch={dispatch}
             locationValue={locationValue}
             isLoading={isLoading}
             showLifecycleFilter={canAccessLifecycle}
+            resultsInfo={(
+              <p data-testid="pagination-info" className="my-0">
+                {intl.formatMessage(messages.coursesPaginationInfo, {
+                  length: coursesDataItems.length,
+                  total: coursesCount,
+                })}
+              </p>
+            )}
           />
-          <p data-testid="pagination-info" className="my-0">
-            {intl.formatMessage(messages.coursesPaginationInfo, {
-              length: coursesDataItems.length,
-              total: coursesCount,
-            })}
-          </p>
         </div>
         {hasCourses ? (
           <>
