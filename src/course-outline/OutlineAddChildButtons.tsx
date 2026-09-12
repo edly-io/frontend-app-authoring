@@ -20,7 +20,7 @@ const OutlineAddChildButtons = ({
   handleUseFromLibraryClick,
   childType,
   btnVariant = 'outline-primary',
-  btnClasses = 'mt-4 border-gray-500 rounded-0',
+  btnClasses = 'mt-1 border-gray-500 rounded-0',
   btnSize,
 }: NewChildButtonsProps) => {
   // WARNING: Do not use "useStudioHome" to get "librariesV2Enabled" flag below,
@@ -59,7 +59,7 @@ const OutlineAddChildButtons = ({
   }
 
   return (
-    <Stack direction="horizontal" gap={3}>
+    <Stack direction="horizontal" gap={3} className="flex-column flex-md-row">
       <Button
         className={btnClasses}
         variant={btnVariant}

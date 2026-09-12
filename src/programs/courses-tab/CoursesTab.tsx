@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Badge,
   Button,
+  ButtonGroup,
   OverlayTrigger,
   Stack,
   Tooltip,
@@ -64,7 +65,7 @@ const CoursesTab: React.FC<CoursesTabProps> = ({
   return (
     <div className="mt-4">
       {/* Section header */}
-      <div className="d-flex justify-content-between align-items-start mb-4">
+      <div className="program-page-header mb-4">
         <div>
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
@@ -84,23 +85,24 @@ const CoursesTab: React.FC<CoursesTabProps> = ({
         )}
       </div>
 
-      {/* List | Audit Log toggle */}
-      <div className="page-view-toggle">
+      <ButtonGroup size="sm" className="mb-3">
         <Button
-          variant="tertiary"
-          className={`page-view-toggle__tab${activeView === 'list' ? ' page-view-toggle__tab--active' : ''}`}
+          variant={activeView === 'list' ? 'primary' : 'outline-primary'}
+          size="sm"
+          aria-pressed={activeView === 'list'}
           onClick={() => setActiveView('list')}
         >
           {intl.formatMessage(messages.listTab)}
         </Button>
         <Button
-          variant="tertiary"
-          className={`page-view-toggle__tab${activeView === 'audit-log' ? ' page-view-toggle__tab--active' : ''}`}
+          variant={activeView === 'audit-log' ? 'primary' : 'outline-primary'}
+          size="sm"
+          aria-pressed={activeView === 'audit-log'}
           onClick={() => setActiveView('audit-log')}
         >
           {intl.formatMessage(messages.auditLogTab)}
         </Button>
-      </div>
+      </ButtonGroup>
 
       {activeView === 'audit-log' && (
         <AuditLogTable

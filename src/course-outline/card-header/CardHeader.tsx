@@ -205,24 +205,26 @@ const CardHeader = ({
             />
           </>
         )}
-        <div className="ml-auto d-flex align-items-center">
-          {(isVertical || isSequential) && (
-            <CardStatus status={status} showDiscussionsEnabledBadge={showDiscussionsEnabledBadge || false} />
-          )}
-          {lifecycleState && (
-            // eslint-disable-next-line jsx-a11y/interactive-supports-focus
-            <span
-              role="button"
-              className="mr-1 cursor-pointer"
-              onClick={onClickLifecycle}
-              onKeyDown={(e) => { if (e.key === 'Enter') { onClickLifecycle?.(); } }}
-            >
-              <LifecycleBadge state={lifecycleState} />
-            </span>
-          )}
-          { getConfig().ENABLE_TAGGING_TAXONOMY_PAGES === 'true' && !!contentTagCount && (
-            <TagCount count={contentTagCount} onClick={openManageTagsDrawer} />
-          )}
+        <div className="item-card-header__actions ml-auto d-flex align-items-center">
+          <div className="item-card-header__badges">
+            {(isVertical || isSequential) && (
+              <CardStatus status={status} showDiscussionsEnabledBadge={showDiscussionsEnabledBadge || false} />
+            )}
+            {lifecycleState && (
+              // eslint-disable-next-line jsx-a11y/interactive-supports-focus
+              <span
+                role="button"
+                className="mr-1 cursor-pointer"
+                onClick={onClickLifecycle}
+                onKeyDown={(e) => { if (e.key === 'Enter') { onClickLifecycle?.(); } }}
+              >
+                <LifecycleBadge state={lifecycleState} />
+              </span>
+            )}
+            { getConfig().ENABLE_TAGGING_TAXONOMY_PAGES === 'true' && !!contentTagCount && (
+              <TagCount count={contentTagCount} onClick={openManageTagsDrawer} />
+            )}
+          </div>
           {extraActionsComponent}
           {readyToSync && (
             <IconButtonWithTooltip

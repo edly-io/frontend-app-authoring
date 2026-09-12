@@ -1,19 +1,20 @@
 import React, { useState, useCallback } from 'react';
 import {
   Alert,
-  Badge,
   Button,
   Form,
   Spinner,
-  Stack,
   useToggle,
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
+import { UserIdentity } from '@edly-io/frontend-component-fbr';
 import type { Program } from '../data/types';
 import { useCourseTeam, useRemoveInstructorFromCourse } from '../data/apiHooks';
 import DeleteModal from '../../generic/delete-modal/DeleteModal';
 import AddInstructorModal from './AddInstructorModal';
+import { getInitials } from '../feedback-tab/dashboard/feedbackDashboardUtils';
+import { toRoleBadges } from '../../shared/roleLabels';
 
 const messages = defineMessages({
   sectionTitle: { id: 'programs.instructors.title', defaultMessage: 'Course Instructors' },
@@ -58,7 +59,7 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
 
   return (
     <div className="mt-4">
-      <div className="d-flex justify-content-between align-items-start mb-4">
+      <div className="program-page-header mb-4">
         <div>
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
@@ -79,7 +80,7 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
       {courses.length === 0 ? (
         <Alert variant="info">{intl.formatMessage(messages.noCoursesMsg)}</Alert>
       ) : (
-        <Form.Group className="mb-4" style={{ maxWidth: '480px' }}>
+        <Form.Group className="mb-4 instructor-course-select">
           <Form.Label>{intl.formatMessage(messages.courseSelectLabel)}</Form.Label>
           <Form.Control
             as="select"
@@ -115,7 +116,7 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
               {team.map((instructor, index) => (
                 <div
                   key={instructor.id}
-                  className="d-flex align-items-center py-3"
+                  className="instructor-row d-flex align-items-center py-3"
                   style={{ borderBottom: '1px solid #dee2e6' }}
                 >
                   <span
@@ -134,12 +135,16 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
                   >
                     {index + 1}
                   </span>
-                  <div className="flex-grow-1">
-                    <p className="mb-0 font-weight-bold">{instructor.name}</p>
-                    <Stack direction="horizontal" gap={1} className="flex-wrap mt-1">
-                      <Badge variant="light">{instructor.email}</Badge>
-                      {instructor.role && <Badge variant="secondary">{instructor.role}</Badge>}
-                    </Stack>
+                  <div className="instructor-row__main flex-grow-1 d-flex flex-wrap align-items-center">
+                    <div className="instructor-row__identity">
+                      <UserIdentity
+                        name={instructor.name}
+                        badges={toRoleBadges(instructor.role)}
+                        size="compact"
+                        avatarValue={instructor.avatar || getInitials(instructor.name)}
+                      />
+                    </div>
+                    <span className="instructor-row__email text-muted">{instructor.email}</span>
                   </div>
                   {canManage && (
                     <Button

@@ -95,6 +95,7 @@ export interface Instructor {
   email: string;
   name: string;
   role?: string;
+  avatar?: string | null;
 }
 
 export interface PaginatedInstructors {

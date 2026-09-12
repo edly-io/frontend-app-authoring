@@ -67,7 +67,7 @@ const SortableItem = ({
     <Row
       ref={setNodeRef}
       style={style}
-      className="mx-0"
+      className="mx-0 flex-nowrap"
     >
       <Col className="extend-margin px-0">
         {children}
@@ -77,7 +77,7 @@ const SortableItem = ({
           ref={setActivatorNodeRef}
           key="drag-to-reorder-icon"
           aria-label={intl.formatMessage(messages.tooltipContent)}
-          className="btn-icon btn-icon-secondary btn-icon-md"
+          className="btn-icon btn-icon-secondary btn-icon-md flex-shrink-0"
           type="button"
           {...attributes}
           {...listeners}

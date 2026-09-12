@@ -64,21 +64,27 @@
   }
 
   .action-column {
-    position: sticky;
-    z-index: 9;
-    right: 0;
     background: var(--pgn-color-white, #FFFFFF);
     box-shadow: -2px 0 4px rgb(0 0 0 / .06);
+
+    @media (--pgn-size-breakpoint-min-width-lg) {
+      position: sticky;
+      z-index: 9;
+      right: 0;
+    }
   }
 }
 
 .bulk-results-grid-sticky-col {
-  position: sticky;
-  left: 0;
-  z-index: 1;
   background-color: var(--pgn-color-white, #FFFFFF);
   box-shadow: 2px 0 4px rgb(0 0 0 / .06);
   border-left: 3px solid transparent;
+
+  @media (--pgn-size-breakpoint-min-width-lg) {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+  }
 
   &.unsaved {
     border-left-color: var(--pgn-color-warning-800);
@@ -191,4 +197,24 @@
 
 .course-scores-sheet-module-name {
   flex: 1;
+}
+
+.bulk-results-search {
+  flex: 1 1 100%;
+  min-width: 0;
+
+  @media (--pgn-size-breakpoint-min-width-md) {
+    flex: 1 1 auto;
+    max-width: 20rem;
+  }
+}
+
+.bulk-results-status {
+  flex: 1 1 100%;
+  min-width: 0;
+
+  @media (--pgn-size-breakpoint-min-width-md) {
+    flex: 0 1 auto;
+    max-width: 11.25rem;
+  }
 }
