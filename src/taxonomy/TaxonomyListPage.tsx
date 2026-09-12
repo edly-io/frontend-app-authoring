@@ -138,7 +138,7 @@ const OrganizationFilterSelector = ({
   return (
     <SelectMenu
       className="flex-d x-small taxonomy-orgs-filter-selector"
-      variant="tertiary"
+      variant="outline-primary"
       defaultMessage={intl.formatMessage(messages.orgInputSelectDefaultValue)}
       data-testid="taxonomy-orgs-filter-selector"
     >
@@ -184,7 +184,7 @@ export const TaxonomyListPage = () => {
       <Helmet>
         <title>{getPageHeadTitle('', intl.formatMessage(messages.headerTitle))}</title>
       </Helmet>
-      <div className="pt-4.5 pr-4.5 pl-4.5 pb-2 bg-light-100 box-shadow-down-2">
+      <div className="pt-4.5 px-2 px-md-4.5 pb-2 bg-light-100 box-shadow-down-2">
         <Container size="xl">
           <SubHeader
             title={intl.formatMessage(messages.headerTitle)}
@@ -225,7 +225,7 @@ export const TaxonomyListPage = () => {
               ]}
             >
               <CardView
-                className="bg-light-400 p-5"
+                className="bg-light-400 p-5 px-2"
                 CardComponent={(row) => TaxonomyCard(row)}
               />
             </DataTable>

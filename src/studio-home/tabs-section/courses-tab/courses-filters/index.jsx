@@ -26,6 +26,7 @@ const CoursesFilters = ({
   onSubmitSearchField,
   isLoading,
   showLifecycleFilter,
+  resultsInfo,
 }) => {
   const studioHomeCoursesParams = useSelector(getStudioHomeCoursesParams);
   const {
@@ -110,13 +111,12 @@ const CoursesFilters = ({
   );
 
   return (
-    <div className="d-flex">
-      <div className="d-flex flex-row">
+    <div className="courses-filters">
+      <div className="courses-filters__search">
         <SearchField
           onSubmit={onSubmitSearchField}
           onChange={handleSearchCoursesDebounced}
           value={cleanFilters ? '' : inputSearchValue}
-          className="mr-4"
           data-testid="input-filter-courses-search"
           placeholder={intl.formatMessage(messages.coursesSearchPlaceholder)}
         />
@@ -127,11 +127,21 @@ const CoursesFilters = ({
         )}
       </div>
 
-      <CoursesTypesFilterMenu onItemMenuSelected={handleMenuFilterItemSelected} />
-      <CoursesOrderFilterMenu onItemMenuSelected={handleMenuFilterItemSelected} />
-      {showLifecycleFilter && (
-        <CoursesLifecycleFilterMenu onItemMenuSelected={handleLifecycleFilterSelected} />
-      )}
+      <div className="courses-filters__menus">
+        <div className="courses-filters__menu">
+          <CoursesTypesFilterMenu onItemMenuSelected={handleMenuFilterItemSelected} />
+        </div>
+        <div className="courses-filters__menu">
+          <CoursesOrderFilterMenu onItemMenuSelected={handleMenuFilterItemSelected} />
+        </div>
+        {showLifecycleFilter && (
+          <div className="courses-filters__menu">
+            <CoursesLifecycleFilterMenu onItemMenuSelected={handleLifecycleFilterSelected} />
+          </div>
+        )}
+      </div>
+
+      {resultsInfo && <div className="courses-filters__results">{resultsInfo}</div>}
     </div>
   );
 };
@@ -141,6 +151,7 @@ CoursesFilters.defaultProps = {
   onSubmitSearchField: () => {},
   isLoading: false,
   showLifecycleFilter: false,
+  resultsInfo: null,
 };
 
 CoursesFilters.propTypes = {
@@ -149,6 +160,7 @@ CoursesFilters.propTypes = {
   onSubmitSearchField: PropTypes.func,
   isLoading: PropTypes.bool,
   showLifecycleFilter: PropTypes.bool,
+  resultsInfo: PropTypes.node,
 };
 
 export default CoursesFilters;
