@@ -1,13 +1,13 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/no-unstable-nested-components */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   Alert, Badge, Button, DataTable, Form, Icon, Pagination, Spinner,
 } from '@openedx/paragon';
 import { History, Search } from '@openedx/paragon/icons';
 import { UserIdentity } from '@edly-io/frontend-component-fbr';
-import { getAuditLogs } from './auditLogApi';
+import { useAuditLogs, useRecordHistory } from './auditLogApiHooks';
 import { toRoleBadges } from './roleLabels';
 import './AuditLogTable.scss';
 
@@ -150,34 +150,21 @@ ChangesModal.propTypes = {
 const RecordHistoryModal = ({
   appLabel, recordType, objectId, objectRepr, onClose,
 }) => {
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [page, setPage] = useState(1);
-  const [count, setCount] = useState(0);
   const [changesEntry, setChangesEntry] = useState(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    (async () => {
-      try {
-        const result = await getAuditLogs({
-          appLabel,
-          models: recordType ? [recordType] : [],
-          objectId,
-          page,
-          pageSize: PAGE_SIZE,
-        });
-        if (!cancelled) { setLogs(result.results); setCount(result.count); }
-      } catch (err) {
-        if (!cancelled) { setError(err?.message || 'Failed to load history.'); }
-      } finally {
-        if (!cancelled) { setLoading(false); }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [appLabel, recordType, objectId, page]);
+  const { data, isPending, error: queryError } = useRecordHistory({
+    appLabel,
+    models: recordType ? [recordType] : [],
+    objectId,
+    page,
+    pageSize: PAGE_SIZE,
+  });
+
+  const logs = data?.results ?? [];
+  const count = data?.count ?? 0;
+  const loading = isPending;
+  const error = queryError ? (queryError.message || 'Failed to load history.') : '';
 
   const pageCount = Math.ceil(count / PAGE_SIZE);
 
@@ -299,11 +286,7 @@ RecordHistoryModal.defaultProps = { recordType: undefined };
 const AuditLogTable = ({
   appLabel, models, objectId, programKey, courseKey, recordFilter, onClearFilter,
 }) => {
-  const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [page, setPage] = useState(1);
-  const [count, setCount] = useState(0);
 
   const [actionFilter, setActionFilter] = useState('');
   const [searchText, setSearchText] = useState('');
@@ -340,37 +323,26 @@ const AuditLogTable = ({
     setPage(1);
   };
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError('');
-    (async () => {
-      try {
-        const result = await getAuditLogs({
-          appLabel,
-          models,
-          objectId: activeObjectId,
-          action: actionFilter || undefined,
-          search: debouncedSearch || undefined,
-          programKey,
-          courseKey,
-          dateFrom: dateFrom || undefined,
-          dateTo: dateTo || undefined,
-          page,
-          pageSize: PAGE_SIZE,
-        });
-        if (!cancelled) { setLogs(result.results); setCount(result.count); }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err?.response?.data?.detail || err?.message || 'Failed to load audit log.');
-        }
-      } finally {
-        if (!cancelled) { setLoading(false); }
-      }
-    })();
-    return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appLabel, models, activeObjectId, actionFilter, debouncedSearch, programKey, courseKey, dateFrom, dateTo, page]);
+  const { data, isPending, error: queryError } = useAuditLogs({
+    appLabel,
+    models,
+    objectId: activeObjectId,
+    action: actionFilter || undefined,
+    search: debouncedSearch || undefined,
+    programKey,
+    courseKey,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    page,
+    pageSize: PAGE_SIZE,
+  });
+
+  const logs = data?.results ?? [];
+  const count = data?.count ?? 0;
+  const loading = isPending;
+  const error = queryError
+    ? (queryError.response?.data?.detail || queryError.message || 'Failed to load audit log.')
+    : '';
 
   const isPageLevel = !objectId;
   const pageCount = Math.ceil(count / PAGE_SIZE);
