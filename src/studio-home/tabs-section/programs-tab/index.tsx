@@ -118,15 +118,16 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
     <div className="mt-4">
 
       {/* ── Search + sort + status filter bar ────────────────────────── */}
-      <div className="d-flex mb-4">
-        <SearchField
-          onSubmit={setSearch}
-          onChange={setSearch}
-          value={search}
-          className="mr-4"
-          placeholder={intl.formatMessage(messages.searchPlaceholder)}
-        />
-        <Dropdown id="programs-status-filter-dropdown" className="mr-2">
+      <div className="programs-filters d-flex flex-wrap mb-4">
+        <div className="programs-filters__search mr-md-4">
+          <SearchField
+            onSubmit={setSearch}
+            onChange={setSearch}
+            value={search}
+            placeholder={intl.formatMessage(messages.searchPlaceholder)}
+          />
+        </div>
+        <Dropdown id="programs-status-filter-dropdown" className="programs-filters__control mr-md-2">
           <Dropdown.Toggle
             id="programs-status-filter-toggle"
             variant="outline-primary"
@@ -144,7 +145,7 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
             ))}
           </Dropdown.Menu>
         </Dropdown>
-        <Dropdown id="programs-sort-dropdown">
+        <Dropdown id="programs-sort-dropdown" className="programs-filters__control">
           <Dropdown.Toggle
             id="programs-sort-toggle"
             variant="outline-primary"

@@ -29,7 +29,7 @@ const SubHeader = ({
         )}
       </h2>
       {headerActions && (
-        <ActionRow className="ml-auto flex-shrink-0 sub-header-actions">
+        <ActionRow className="ml-lg-auto flex-lg-shrink-0 sub-header-actions">
           {headerActions}
         </ActionRow>
       )}

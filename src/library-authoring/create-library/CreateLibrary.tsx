@@ -367,6 +367,7 @@ export const CreateLibrary = ({
                     'justify-content-start': !showInModal,
                     'justify-content-end': showInModal,
                   },
+                  'align-items-start',
                 )
               }
               >
@@ -379,7 +380,7 @@ export const CreateLibrary = ({
                 <StatefulButton
                   type="submit"
                   variant="primary"
-                  className="action btn-primary"
+                  className="action btn-primary ml-3"
                   state={isPending ? 'disabled' : 'enabled'}
                   disabledStates={['disabled']}
                   labels={{

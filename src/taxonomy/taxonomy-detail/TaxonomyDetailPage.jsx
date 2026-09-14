@@ -81,10 +81,10 @@ const TaxonomyDetailPage = () => {
       <div className="bg-light-400 m-4">
         <Container size="xl">
           <Layout
+            xs={[{ span: 12 }, { span: 12 }]}
+            sm={[{ span: 12 }, { span: 12 }]}
+            md={[{ span: 12 }, { span: 12 }]}
             lg={[{ span: 9 }, { span: 3 }]}
-            md={[{ span: 9 }, { span: 3 }]}
-            sm={[{ span: 9 }, { span: 3 }]}
-            xs={[{ span: 9 }, { span: 3 }]}
             xl={[{ span: 9 }, { span: 3 }]}
           >
             <Layout.Element>

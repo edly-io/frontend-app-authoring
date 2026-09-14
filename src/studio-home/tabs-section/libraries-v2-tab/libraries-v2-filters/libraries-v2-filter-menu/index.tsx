@@ -36,7 +36,7 @@ const LibrariesV2FilterMenu: React.FC<{
       <Dropdown.Toggle
         alt="dropdown-toggle-menu-items"
         id={idProp}
-        variant="none"
+        variant="outline-primary"
         className="dropdown-toggle-menu-items"
       >
         {itemMenuSelected}

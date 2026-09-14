@@ -1,4 +1,86 @@
+@use "@openedx/paragon/styles/css/core/custom-media-breakpoints" as paragonCustomMediaBreakpoints;
+
+.courses-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--pgn-spacing-spacer-3);
+
+  &__search {
+    display: flex;
+    align-items: center;
+    flex: 1 1 100%;
+    gap: var(--pgn-spacing-spacer-2);
+
+    .pgn__searchfield {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+  }
+
+  &__menus {
+    display: flex;
+    flex-wrap: wrap;
+    flex: 1 1 100%;
+    gap: var(--pgn-spacing-spacer-2);
+  }
+
+  &__menu {
+    flex: 1 1 auto;
+
+    .btn {
+      width: 100%;
+    }
+  }
+
+  &__results {
+    flex: 1 1 100%;
+  }
+
+  @media (--pgn-size-breakpoint-min-width-md) {
+    &__search {
+      flex: 1 1 0;
+    }
+
+    &__results {
+      flex: 0 0 auto;
+      order: 2;
+    }
+
+    &__menus {
+      order: 3;
+      column-gap: var(--pgn-spacing-spacer-4);
+    }
+
+    &__menu {
+      flex: 0 0 auto;
+
+      .btn {
+        width: auto;
+      }
+    }
+  }
+
+  @media (--pgn-size-breakpoint-min-width-xl) {
+    flex-wrap: nowrap;
+
+    &__search {
+      flex: 0 1 auto;
+      min-width: 0;
+    }
+
+    &__menus {
+      order: 0;
+      flex: 0 0 auto;
+    }
+
+    &__results {
+      order: 0;
+      margin-left: auto;
+    }
+  }
+}
+
 .search-field-loading {
-  margin-left: -25%;
-  margin-top: .5rem;
+  flex-shrink: 0;
 }
