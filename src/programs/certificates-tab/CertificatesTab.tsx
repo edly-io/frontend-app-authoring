@@ -217,24 +217,26 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
 
   const renderAwardsPanel = () => {
     const toggle = (
-      <ButtonGroup size="sm" className="mb-3">
-        <Button
-          variant={awardsView === 'list' ? 'primary' : 'outline-primary'}
-          size="sm"
-          aria-pressed={awardsView === 'list'}
-          onClick={() => setAwardsView('list')}
-        >
-          {intl.formatMessage(auditMessages.listTab)}
-        </Button>
-        <Button
-          variant={awardsView === 'audit-log' ? 'primary' : 'outline-primary'}
-          size="sm"
-          aria-pressed={awardsView === 'audit-log'}
-          onClick={() => setAwardsView('audit-log')}
-        >
-          {intl.formatMessage(auditMessages.auditLogTab)}
-        </Button>
-      </ButtonGroup>
+      <div className="d-flex justify-content-end mb-3">
+        <ButtonGroup size="sm">
+          <Button
+            variant={awardsView === 'list' ? 'primary' : 'outline-primary'}
+            size="sm"
+            aria-pressed={awardsView === 'list'}
+            onClick={() => setAwardsView('list')}
+          >
+            {intl.formatMessage(auditMessages.listTab)}
+          </Button>
+          <Button
+            variant={awardsView === 'audit-log' ? 'primary' : 'outline-primary'}
+            size="sm"
+            aria-pressed={awardsView === 'audit-log'}
+            onClick={() => setAwardsView('audit-log')}
+          >
+            {intl.formatMessage(auditMessages.auditLogTab)}
+          </Button>
+        </ButtonGroup>
+      </div>
     );
 
     if (awardsView === 'audit-log') {

@@ -143,24 +143,26 @@ const FeedbackTab: React.FC<FeedbackTabProps> = ({ programId, isActive = true })
         </Tab>
 
         <Tab eventKey="responses" title={intl.formatMessage(messages.responsesTab)}>
-          <ButtonGroup size="sm" className="mb-3 mt-3">
-            <Button
-              variant={responsesAuditView === 'list' ? 'primary' : 'outline-primary'}
-              size="sm"
-              aria-pressed={responsesAuditView === 'list'}
-              onClick={() => setResponsesAuditView('list')}
-            >
-              {intl.formatMessage(messages.listTab)}
-            </Button>
-            <Button
-              variant={responsesAuditView === 'audit-log' ? 'primary' : 'outline-primary'}
-              size="sm"
-              aria-pressed={responsesAuditView === 'audit-log'}
-              onClick={() => setResponsesAuditView('audit-log')}
-            >
-              {intl.formatMessage(messages.auditLogTab)}
-            </Button>
-          </ButtonGroup>
+          <div className="d-flex justify-content-end mb-3 mt-3">
+            <ButtonGroup size="sm">
+              <Button
+                variant={responsesAuditView === 'list' ? 'primary' : 'outline-primary'}
+                size="sm"
+                aria-pressed={responsesAuditView === 'list'}
+                onClick={() => setResponsesAuditView('list')}
+              >
+                {intl.formatMessage(messages.listTab)}
+              </Button>
+              <Button
+                variant={responsesAuditView === 'audit-log' ? 'primary' : 'outline-primary'}
+                size="sm"
+                aria-pressed={responsesAuditView === 'audit-log'}
+                onClick={() => setResponsesAuditView('audit-log')}
+              >
+                {intl.formatMessage(messages.auditLogTab)}
+              </Button>
+            </ButtonGroup>
+          </div>
 
           {responsesAuditView === 'audit-log' && (
             <AuditLogTable

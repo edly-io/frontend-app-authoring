@@ -102,24 +102,26 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
         )}
       </div>
 
-      <ButtonGroup size="sm" className="mb-3">
-        <Button
-          variant={activeView === 'list' ? 'primary' : 'outline-primary'}
-          size="sm"
-          aria-pressed={activeView === 'list'}
-          onClick={() => setActiveView('list')}
-        >
-          {intl.formatMessage(messages.listTab)}
-        </Button>
-        <Button
-          variant={activeView === 'audit-log' ? 'primary' : 'outline-primary'}
-          size="sm"
-          aria-pressed={activeView === 'audit-log'}
-          onClick={() => setActiveView('audit-log')}
-        >
-          {intl.formatMessage(messages.auditLogTab)}
-        </Button>
-      </ButtonGroup>
+      <div className="d-flex justify-content-end mb-3">
+        <ButtonGroup size="sm">
+          <Button
+            variant={activeView === 'list' ? 'primary' : 'outline-primary'}
+            size="sm"
+            aria-pressed={activeView === 'list'}
+            onClick={() => setActiveView('list')}
+          >
+            {intl.formatMessage(messages.listTab)}
+          </Button>
+          <Button
+            variant={activeView === 'audit-log' ? 'primary' : 'outline-primary'}
+            size="sm"
+            aria-pressed={activeView === 'audit-log'}
+            onClick={() => setActiveView('audit-log')}
+          >
+            {intl.formatMessage(messages.auditLogTab)}
+          </Button>
+        </ButtonGroup>
+      </div>
 
       {activeView === 'audit-log' && (
         <AuditLogTable
