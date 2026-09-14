@@ -1,4 +1,8 @@
 .extend-margin {
+  // .col has no min-width: 0, so it cannot shrink past its content and the row wraps
+  // the drag handle onto its own line.
+  min-width: 0;
+
   .item-children {
     margin-right: -2.75rem;
   }

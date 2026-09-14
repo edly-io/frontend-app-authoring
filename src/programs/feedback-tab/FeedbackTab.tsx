@@ -2,6 +2,7 @@ import React, { useContext, useMemo, useState } from 'react';
 import {
   Alert,
   Button,
+  ButtonGroup,
   Card,
   Spinner,
   Tab,
@@ -120,7 +121,7 @@ const FeedbackTab: React.FC<FeedbackTabProps> = ({ programId, isActive = true })
 
   return (
     <div className="mt-4">
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-start mb-4">
+      <div className="program-page-header mb-4">
         <div>
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
@@ -142,22 +143,24 @@ const FeedbackTab: React.FC<FeedbackTabProps> = ({ programId, isActive = true })
         </Tab>
 
         <Tab eventKey="responses" title={intl.formatMessage(messages.responsesTab)}>
-          <div className="page-view-toggle mt-3">
+          <ButtonGroup size="sm" className="mb-3 mt-3">
             <Button
-              variant="tertiary"
-              className={`page-view-toggle__tab${responsesAuditView === 'list' ? ' page-view-toggle__tab--active' : ''}`}
+              variant={responsesAuditView === 'list' ? 'primary' : 'outline-primary'}
+              size="sm"
+              aria-pressed={responsesAuditView === 'list'}
               onClick={() => setResponsesAuditView('list')}
             >
               {intl.formatMessage(messages.listTab)}
             </Button>
             <Button
-              variant="tertiary"
-              className={`page-view-toggle__tab${responsesAuditView === 'audit-log' ? ' page-view-toggle__tab--active' : ''}`}
+              variant={responsesAuditView === 'audit-log' ? 'primary' : 'outline-primary'}
+              size="sm"
+              aria-pressed={responsesAuditView === 'audit-log'}
               onClick={() => setResponsesAuditView('audit-log')}
             >
               {intl.formatMessage(messages.auditLogTab)}
             </Button>
-          </div>
+          </ButtonGroup>
 
           {responsesAuditView === 'audit-log' && (
             <AuditLogTable

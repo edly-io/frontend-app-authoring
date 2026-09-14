@@ -1,3 +1,5 @@
+@use "@openedx/paragon/styles/css/core/custom-media-breakpoints" as paragonCustomMediaBreakpoints;
+
 // Program Certificates tab.
 //
 // App chrome (KPIs, roster, config form, modal shell) uses Paragon components
@@ -185,6 +187,44 @@ $cert-accent-brand: #6E003B;
   min-width: 14rem;
 }
 
+// ActionRow is a non-wrapping flex row, so the preview modal's three footer buttons
+// squash and their labels wrap. Stack them on small screens: column-reverse puts the
+// primary action on top, and the spacer collapses so the gap stays even.
+.certificate-preview-modal {
+  @media (--pgn-size-breakpoint-max-width-xs) {
+    .pgn__action-row {
+      flex-direction: column-reverse;
+      align-items: stretch;
+      gap: var(--pgn-spacing-action-row-gap-x);
+
+      > * + * {
+        margin-inline-start: 0;
+      }
+    }
+
+    .pgn__action-row-spacer {
+      display: none;
+    }
+  }
+}
+
+// Paragon ships no `.gap-*` utilities, so the toolbar's spacing has to be a real
+// declaration; the `gap-2` class it used to carry did nothing.
+.certificate-roster-toolbar {
+  gap: var(--pgn-spacing-spacer-3);
+
+  @media (--pgn-size-breakpoint-max-width-sm) {
+    .certificate-search,
+    .certificate-status-filter {
+      flex: 1 1 100%;
+    }
+
+    .certificate-search {
+      min-width: 0;
+    }
+  }
+}
+
 // Paragon's modal wrapper resets `h1`/`p` to `text-align: start`, which would
 // left-align the certificate's title, awardee name, and signatory text. The
 // certificate centers these via their containers, so re-assert inheritance with
@@ -201,9 +241,6 @@ $cert-accent-brand: #6E003B;
 //
 // The dialog width also tracks the certificate's height-limited width so the
 // modal hugs the document (minimal side gaps) instead of staying full xl width.
-.certificate-preview-modal.pgn__modal {
-  max-width: min(92vw, calc((100vh - 16rem) * #{$cert-w} / #{$cert-h} + 3rem));
-}
 
 .fbr-cert-modal-view {
   width: 100%;

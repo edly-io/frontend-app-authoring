@@ -1,6 +1,7 @@
 .item-card-header {
   display: flex;
   align-items: center;
+  overflow-x: auto;
 
   .item-card-header__title-btn {
     justify-content: flex-start;
@@ -20,6 +21,25 @@
         min-width: 100px;
         -webkit-box-orient: vertical;  /* stylelint-disable-line value-no-vendor-prefix */
       }
+  }
+
+  // Without this the actions cluster keeps a content-based minimum size and refuses
+  // to shrink, so the badges never get the chance to scroll.
+  .item-card-header__actions {
+    min-width: 0;
+  }
+
+  // The status badges are the widest part of the header. Let them scroll on small
+  // screens instead of squashing the row. The menu and the sync button stay outside
+  // this container: an overflow ancestor clips their popups.
+  .item-card-header__badges {
+    display: flex;
+    align-items: center;
+
+    > * {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
   }
 
   .item-card-button-icon {

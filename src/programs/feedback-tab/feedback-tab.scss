@@ -33,12 +33,6 @@
   transform: translateY(-50%);
 }
 
-.feedback-initiate-modal-body {
-  max-height: calc(100vh - 11rem);
-  min-height: 68vh;
-  overflow-y: auto;
-}
-
 .feedback-user-picker {
   border: 1px solid var(--pgn-color-gray-300, #D1D7DC);
   border-radius: .5rem;
@@ -67,6 +61,7 @@
   font-weight: 600;
   min-height: 2.25rem;
   padding: .375rem .75rem;
+  white-space: nowrap;
 }
 
 .feedback-user-role-tab:hover {

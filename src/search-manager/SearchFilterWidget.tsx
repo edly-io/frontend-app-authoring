@@ -56,33 +56,48 @@ const SearchFilterWidget: React.FC<{
           ) : null}
         </Button>
       </div>
-      <ModalPopup
-        positionRef={target}
-        isOpen={isOpen}
-        onClose={close}
-      >
-        <div
-          className="bg-white rounded shadow"
-          style={{ textAlign: 'start' }}
+      {/* Mounted only while open so Popper measures the real popup size. Neither
+        * Popper nor react-popper observes the popup's own resize, so a popup that
+        * is empty when Popper is created never gets repositioned once it fills in
+        * and preventOverflow cannot keep it inside the viewport. */}
+      {isOpen && (
+        <ModalPopup
+          positionRef={target}
+          isOpen={isOpen}
+          onClose={close}
+          modifiers={[
+            { name: 'flip', enabled: true },
+            {
+              name: 'preventOverflow',
+              options: {
+                boundary: 'viewport', padding: 8, tether: false, altAxis: true,
+              },
+            },
+          ]}
         >
-          {props.children}
+          <div
+            className="bg-white rounded shadow"
+            style={{ textAlign: 'start' }}
+          >
+            {props.children}
 
-          {
-            !!appliedFilters.length
-            && (
-              <div className="d-flex justify-content-end">
-                <Button
-                  onClick={clearAndClose}
-                  variant="link"
-                  className="text-info-500 text-decoration-none clear-filter-button"
-                >
-                  { intl.formatMessage(messages.clearFilter) }
-                </Button>
-              </div>
-            )
-          }
-        </div>
-      </ModalPopup>
+            {
+              !!appliedFilters.length
+              && (
+                <div className="d-flex justify-content-end">
+                  <Button
+                    onClick={clearAndClose}
+                    variant="link"
+                    className="text-info-500 text-decoration-none clear-filter-button"
+                  >
+                    { intl.formatMessage(messages.clearFilter) }
+                  </Button>
+                </div>
+              )
+            }
+          </div>
+        </ModalPopup>
+      )}
     </>
   );
 };

@@ -25,3 +25,16 @@
     top: -3rem;
   }
 }
+
+// Keep the filter dropdowns inside the viewport on small screens; the menu keeps
+// its own overflow so long tag names stay reachable.
+@media (--pgn-size-breakpoint-max-width-sm) {
+  .pgn__modal-popup__tooltip {
+    max-width: calc(100vw - 1rem);
+
+    .pgn__menu,
+    .pgn__menu-item {
+      max-width: 100%;
+    }
+  }
+}

@@ -1,6 +1,18 @@
 .outline-status-bar {
   margin-bottom: .25rem;
 
+  // Stack lays this out as one flex row that squashes on small screens; let it wrap
+  // into several columns and rows there instead.
+  @media (--pgn-size-breakpoint-max-width-sm) {
+    flex-wrap: wrap;
+
+    > * {
+      flex: 1 1 7.5rem;
+      min-width: 0;
+      align-self: start;
+    }
+  }
+
   .outline-status-bar__item {
     display: flex;
     flex-direction: column;

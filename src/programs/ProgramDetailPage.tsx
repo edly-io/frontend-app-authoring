@@ -32,6 +32,7 @@ import EnrollmentTab from './enrollment-tab/EnrollmentTab';
 import FeedbackTab from './feedback-tab/FeedbackTab';
 import ResultsTab from './results-tab/ResultsTab';
 import CertificatesTab from './certificates-tab/CertificatesTab';
+import './index.scss';
 
 const messages = defineMessages({
   backToPrograms: { id: 'programs.detail.back', defaultMessage: '← Back to Programs' },
@@ -264,7 +265,7 @@ const ProgramDetailPage: React.FC = () => {
       <Container size="xl" className="p-4 mt-3">
 
         {/* ── Page header ─────────────────────────────────────────────── */}
-        <div className="d-flex justify-content-between align-items-start mb-4">
+        <div className="program-page-header mb-4">
           <div>
             <Link to="/programs" className="small text-muted text-decoration-none">
               {intl.formatMessage(messages.backToPrograms)}
@@ -332,14 +333,15 @@ const ProgramDetailPage: React.FC = () => {
           variant="tabs"
           activeKey={activeTab}
           onSelect={(k) => setActiveTab(k ?? 'details')}
+          className="program-detail-tabs"
         >
           {/* Program Details ─────────────────────────────────────────── */}
-          <Tab eventKey="details" title={intl.formatMessage(messages.tabDetails)}>
+          <Tab eventKey="details" title={intl.formatMessage(messages.tabDetails)} className="pt-4">
             <Layout
-              lg={[{ span: 8 }, { span: 4 }]}
-              md={[{ span: 8 }, { span: 4 }]}
-              sm={[{ span: 12 }, { span: 12 }]}
               xs={[{ span: 12 }, { span: 12 }]}
+              sm={[{ span: 12 }, { span: 12 }]}
+              md={[{ span: 12 }, { span: 12 }]}
+              lg={[{ span: 8 }, { span: 4 }]}
               xl={[{ span: 8 }, { span: 4 }]}
               className="mt-4"
             >
@@ -541,7 +543,7 @@ const ProgramDetailPage: React.FC = () => {
                 </Card>
 
                 {/* Program Card Image */}
-                <Card>
+                <Card className="mb-4">
                   <Card.Header
                     title={intl.formatMessage(messages.sectionImage)}
                     subtitle={intl.formatMessage(messages.sectionImageSubtitle)}

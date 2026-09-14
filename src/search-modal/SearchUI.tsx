@@ -42,9 +42,9 @@ const SearchUI: React.FC<{
         * But it can't be more then 9 because the close button has z-index 10. */}
       <ModalDialog.Header style={{ zIndex: 9 }} className="border-bottom">
         <ModalDialog.Title><FormattedMessage {...messages.title} /></ModalDialog.Title>
-        <div className="d-flex mt-3">
+        <div className="d-flex flex-column flex-sm-row mt-3">
           <SearchKeywordsField
-            className="flex-grow-1 mr-2"
+            className="flex-grow-1 mb-2 mb-sm-0 mr-sm-2"
             autoFocus={props.autoFocus}
           />
           <SelectMenu variant="primary">

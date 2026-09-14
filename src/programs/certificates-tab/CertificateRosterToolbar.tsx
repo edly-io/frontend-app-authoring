@@ -35,7 +35,7 @@ const CertificateRosterToolbar: React.FC<CertificateRosterToolbarProps> = ({
   const intl = useIntl();
 
   return (
-    <div className="d-flex flex-wrap align-items-end gap-2 p-3 border-bottom">
+    <div className="certificate-roster-toolbar d-flex flex-wrap align-items-end p-3 border-bottom">
       <Form.Group className="mb-0 certificate-search">
         <Form.Control
           type="search"
@@ -46,7 +46,7 @@ const CertificateRosterToolbar: React.FC<CertificateRosterToolbarProps> = ({
           leadingElement={<Icon src={Search} className="text-gray-500" />}
         />
       </Form.Group>
-      <Form.Group className="mb-0">
+      <Form.Group className="mb-0 certificate-status-filter">
         <Form.Control
           as="select"
           value={statusFilter}
