@@ -19,6 +19,7 @@ import { DeleteOutline, FileUpload } from '@openedx/paragon/icons';
 import { selectors } from '../../../../../../data/redux';
 import { isEdxVideo } from '../../../../../../data/services/cms/api';
 
+import * as assetThumbnail from './assetThumbnail';
 import { acceptedImgKeys } from './constants';
 import * as hooks from './hooks';
 import messages from './messages';
@@ -36,32 +37,34 @@ const ThumbnailWidget = ({
   intl,
   // redux
   isLibrary,
-  allowThumbnailUpload,
+  allowThumbnailUpload: allowThumbnailUploadSetting,
   thumbnail,
   videoId,
 }) => {
   const dispatch = useDispatch();
   const [error] = React.useContext(ErrorContext).thumbnail;
-  const imgRef = React.useRef();
   const [thumbnailSrc, setThumbnailSrc] = React.useState(thumbnail);
   const { fileSizeError } = hooks.fileSizeError();
+  const edxVideo = isEdxVideo(videoId);
   const fileInput = hooks.fileInput({
     setThumbnailSrc,
-    imgRef,
     fileSizeError,
   });
-  const edxVideo = isEdxVideo(videoId);
+  const allowThumbnailUpload = assetThumbnail.canUploadThumbnail({
+    isEdxVideo: edxVideo,
+    allowThumbnailUpload: allowThumbnailUploadSetting,
+  });
   const deleteThumbnail = hooks.deleteThumbnail({ dispatch });
   const getSubtitle = () => {
-    if (edxVideo) {
-      if (thumbnail) {
-        return intl.formatMessage(messages.yesSubtitle);
-      }
-      return intl.formatMessage(messages.noneSubtitle);
+    if (!allowThumbnailUpload) {
+      return intl.formatMessage(messages.unavailableSubtitle);
     }
-    return intl.formatMessage(messages.unavailableSubtitle);
+    if (thumbnail) {
+      return intl.formatMessage(messages.yesSubtitle);
+    }
+    return intl.formatMessage(messages.noneSubtitle);
   };
-  return (!isLibrary && edxVideo ? (
+  return (!isLibrary ? (
     <CollapsibleFormWidget
       fontSize="x-small"
       isError={Object.keys(error).length !== 0}
@@ -86,8 +89,7 @@ const ThumbnailWidget = ({
             thumbnail
             fluid
             className="w-75"
-            ref={imgRef}
-            src={thumbnailSrc || thumbnail}
+            src={assetThumbnail.thumbnailPreviewUrl(thumbnailSrc || thumbnail)}
             alt={intl.formatMessage(messages.thumbnailAltText)}
           />
           {allowThumbnailUpload && (
