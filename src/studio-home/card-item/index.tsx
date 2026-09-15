@@ -18,9 +18,15 @@ import { COURSE_CREATOR_STATES } from '@src/constants';
 import { parseLibraryKey } from '@src/generic/key-utils';
 import classNames from 'classnames';
 import { getStudioHomeData } from '../data/selectors';
+import { postCourseViewedTracking } from '../data/api';
 import messages from '../messages';
 import { trimSlashes } from './utils';
 import ArchiveUnarchiveActions from './ArchiveUnarchiveActions';
+
+// Fires at most once per page load, mirroring the "has this trial user opened a course"
+// intent of the legacy Studio producer this replaces. Module-scoped so it survives
+// across every CardItem instance rendered on Studio Home.
+let viewedCourseSent = false;
 
 const PrevToNextName = ({ from, to }: { from: React.ReactNode, to?: React.ReactNode }) => (
   <Stack direction="horizontal" gap={2}>
@@ -36,15 +42,16 @@ const PrevToNextName = ({ from, to }: { from: React.ReactNode, to?: React.ReactN
 );
 
 const MakeLinkOrSpan = ({
-  when, to, children, className,
+  when, to, children, className, onClick,
 }: {
   when: boolean,
   to: string,
   children: React.ReactNode;
   className?: string,
+  onClick?: () => void,
 }) => {
   if (when) {
-    return <Link className={className} to={to}>{children}</Link>;
+    return <Link className={className} to={to} onClick={onClick}>{children}</Link>;
   }
   return <span className={className}>{children}</span>;
 };
@@ -58,6 +65,7 @@ interface CardTitleProps {
   isMigrated?: boolean;
   migratedToKey?: string;
   migratedToTitle?: string;
+  onTitleClick?: () => void;
 }
 
 const CardTitle: React.FC<CardTitleProps> = ({
@@ -69,6 +77,7 @@ const CardTitle: React.FC<CardTitleProps> = ({
   isMigrated,
   migratedToTitle,
   migratedToKey,
+  onTitleClick,
 }) => {
   const getTitle = useCallback(() => (
     <div style={{ marginTop: selectMode ? '-3px' : '' }}>
@@ -78,6 +87,7 @@ const CardTitle: React.FC<CardTitleProps> = ({
             when={!readOnlyItem && !selectMode}
             to={destinationUrl}
             className="card-item-title"
+            onClick={onTitleClick}
           >
             {title}
           </MakeLinkOrSpan>
@@ -102,6 +112,7 @@ const CardTitle: React.FC<CardTitleProps> = ({
     migratedToTitle,
     title,
     selectMode,
+    onTitleClick,
   ]);
 
   if (selectMode) {
@@ -207,6 +218,14 @@ const CardItem: React.FC<Props> = ({
     && courseCreatorStatus === COURSE_CREATOR_STATES.granted;
   const title = (displayName ?? '').trim().length ? displayName : courseKey;
 
+  const trackCourseViewed = useCallback(() => {
+    if (isLibraries || viewedCourseSent) {
+      return;
+    }
+    viewedCourseSent = true;
+    postCourseViewedTracking().catch(() => {});
+  }, [isLibraries]);
+
   const getSubtitle = useCallback(() => {
     let subtitle = isLibraries ? <>{org} / {number}</> : <>{org} / {number} / {run}</>;
     if (isMigrated && migratedToKey) {
@@ -254,6 +273,7 @@ const CardItem: React.FC<Props> = ({
               isMigrated={isMigrated}
               migratedToTitle={migratedToTitle}
               migratedToKey={migratedToKey}
+              onTitleClick={trackCourseViewed}
             />
           )}
           subtitle={getSubtitle()}
