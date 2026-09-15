@@ -30,7 +30,7 @@ import { saveBlock } from '../../../../hooks';
 import { selectors } from '../../../../data/redux';
 import { ProblemEditorContextProvider } from './ProblemEditorContext';
 
-const EditProblemView = ({ returnFunction }) => {
+const EditProblemView = ({ onClose, returnFunction }) => {
   const intl = useIntl();
   const dispatch = useDispatch();
   const editorRef = useRef(null);
@@ -70,6 +70,7 @@ const EditProblemView = ({ returnFunction }) => {
           lmsEndpointUrl,
         })}
         isDirty={checkIfDirty}
+        onClose={onClose}
         returnFunction={returnFunction}
       >
         <AlertModal
@@ -143,10 +144,12 @@ const EditProblemView = ({ returnFunction }) => {
   );
 };
 EditProblemView.defaultProps = {
+  onClose: null,
   returnFunction: null,
 };
 
 EditProblemView.propTypes = {
+  onClose: PropTypes.func,
   returnFunction: PropTypes.func,
 };
 

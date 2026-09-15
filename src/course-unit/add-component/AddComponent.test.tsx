@@ -10,7 +10,7 @@ import {
   initializeMocks,
 } from '../../testUtils';
 import { executeThunk } from '../../utils';
-import { fetchCourseSectionVerticalData } from '../data/thunk';
+import { deleteUnitItemQuery, fetchCourseSectionVerticalData } from '../data/thunk';
 import { getCourseSectionVerticalApiUrl } from '../data/api';
 import { courseSectionVerticalMock } from '../__mocks__';
 import { COMPONENT_TYPES } from '../../generic/block-type-utils/constants';
@@ -18,6 +18,37 @@ import AddComponent, { AddComponentProps } from './AddComponent';
 import messages from './messages';
 import { IframeProvider } from '../../generic/hooks/context/iFrameContext';
 import { messageTypes } from '../constants';
+import { mockWaffleFlags } from '../../data/apiHooks.mock';
+
+// Keep the real fetchCourseSectionVerticalData thunk (used by the initial data load in
+// beforeEach) but replace deleteUnitItemQuery with a spy so the cancel-flow tests below
+// can assert exactly what it was dispatched with, without needing to mock its HTTP calls.
+jest.mock('../data/thunk', () => ({
+  ...jest.requireActual('../data/thunk'),
+  deleteUnitItemQuery: jest.fn(() => ({ type: 'MOCK_DELETE_UNIT_ITEM' })),
+}));
+
+// EditorPage and VideoSelectorPage each mount their own separate redux store and a full
+// rich editor, which is unnecessary to exercise here -- AddComponent's own cancel/save
+// wiring is what's under test. Capture the props each one is rendered with so tests can
+// invoke onClose/onCancel/returnFunction directly, the same way the real child would.
+let mockEditorPageProps: { onClose?: () => void, returnFunction?: () => (() => void) } = {};
+jest.mock('@src/editors/EditorPage', () => ({
+  __esModule: true,
+  default: (props: any) => {
+    mockEditorPageProps = props;
+    return <div data-testid="mock-editor-page" />;
+  },
+}));
+
+let mockVideoSelectorPageProps: { onCancel?: () => void, returnFunction?: () => (() => void) } = {};
+jest.mock('@src/editors/VideoSelectorPage', () => ({
+  __esModule: true,
+  default: (props: any) => {
+    mockVideoSelectorPageProps = props;
+    return <div data-testid="mock-video-selector-page" />;
+  },
+}));
 
 let store;
 let axiosMock;
@@ -76,6 +107,10 @@ describe('<AddComponent />', () => {
       .onGet(getCourseSectionVerticalApiUrl(blockId))
       .reply(200, courseSectionVerticalMock);
     await executeThunk(fetchCourseSectionVerticalData(blockId), store.dispatch);
+
+    mockEditorPageProps = {};
+    mockVideoSelectorPageProps = {};
+    (deleteUnitItemQuery as jest.Mock).mockClear();
   });
 
   it('render AddComponent component correctly', () => {
@@ -600,6 +635,99 @@ describe('<AddComponent />', () => {
 
       await user.hover(provisionallySupportLabel);
       expect(getByText(messages.modalComponentSupportTooltipProvisionallySupported.defaultMessage)).toBeInTheDocument();
+    });
+  });
+
+  describe('cancelling/saving an eagerly-created XBlock', () => {
+    it('deletes the eagerly-created XBlock when the Problem editor is cancelled', async () => {
+      const user = userEvent.setup();
+      const { getByRole } = renderComponent();
+
+      const problemButton = getByRole('button', {
+        name: new RegExp(`problem ${messages.buttonText.defaultMessage} Problem`, 'i'),
+      });
+      await user.click(problemButton);
+
+      const [, onXBlockCreated] = handleCreateNewCourseXBlockMock.mock.calls[
+        handleCreateNewCourseXBlockMock.mock.calls.length - 1
+      ];
+      act(() => {
+        // Simulates the backend having eagerly created the XBlock before its editor opened.
+        onXBlockCreated({ courseKey: 'course-v1:test', locator: 'new-block-id' });
+      });
+
+      expect(mockEditorPageProps.onClose).toEqual(expect.any(Function));
+
+      act(() => {
+        mockEditorPageProps.onClose!();
+      });
+
+      expect(deleteUnitItemQuery).toHaveBeenCalledTimes(1);
+      expect(deleteUnitItemQuery).toHaveBeenCalledWith(blockId, 'new-block-id', mockSendMessageToIframe);
+    });
+
+    it('does not delete the XBlock when the Problem editor is saved', async () => {
+      const user = userEvent.setup();
+      const { getByRole } = renderComponent();
+
+      const problemButton = getByRole('button', {
+        name: new RegExp(`problem ${messages.buttonText.defaultMessage} Problem`, 'i'),
+      });
+      await user.click(problemButton);
+
+      const [, onXBlockCreated] = handleCreateNewCourseXBlockMock.mock.calls[
+        handleCreateNewCourseXBlockMock.mock.calls.length - 1
+      ];
+      act(() => {
+        onXBlockCreated({ courseKey: 'course-v1:test', locator: 'new-block-id' });
+      });
+
+      expect(mockEditorPageProps.returnFunction).toEqual(expect.any(Function));
+
+      axiosMock
+        .onGet(getCourseSectionVerticalApiUrl(blockId))
+        .reply(200, courseSectionVerticalMock);
+
+      await act(async () => {
+        // Editor/VideoSelector call `returnFunction()()` to invoke the save handler.
+        mockEditorPageProps.returnFunction!()();
+      });
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('mock-editor-page')).not.toBeInTheDocument();
+      });
+      expect(deleteUnitItemQuery).not.toHaveBeenCalled();
+    });
+
+    it('only dispatches one delete when the video modal cancel fires twice in the same tick', async () => {
+      mockWaffleFlags({ useVideoGalleryFlow: true });
+      const user = userEvent.setup();
+      const { getByRole } = renderComponent();
+
+      const videoButton = getByRole('button', {
+        name: new RegExp(`${messages.buttonText.defaultMessage} Video`, 'i'),
+      });
+      await user.click(videoButton);
+
+      const [, onXBlockCreated] = handleCreateNewCourseXBlockMock.mock.calls[
+        handleCreateNewCourseXBlockMock.mock.calls.length - 1
+      ];
+      act(() => {
+        onXBlockCreated({ courseKey: 'course-v1:test', locator: 'new-video-block-id' });
+      });
+
+      expect(mockVideoSelectorPageProps.onCancel).toEqual(expect.any(Function));
+
+      act(() => {
+        // The video modal's StandardModal.onClose and VideoSelectorPage.onCancel are both
+        // wired to the same onXBlockCancel callback; simulate them firing in the same tick
+        // (e.g. ESC caught by two stacked modal portals).
+        mockVideoSelectorPageProps.onCancel!();
+        mockVideoSelectorPageProps.onCancel!();
+      });
+
+      expect(deleteUnitItemQuery).toHaveBeenCalledTimes(1);
+      expect(deleteUnitItemQuery).toHaveBeenCalledWith(blockId, 'new-video-block-id', mockSendMessageToIframe);
     });
   });
 });
