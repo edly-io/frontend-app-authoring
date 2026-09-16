@@ -239,8 +239,8 @@ export const useAddInstructorToCourse = () => {
 export const useRemoveInstructorFromCourse = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ courseId, email }: { courseId: string; email: string }) => (
-      removeInstructorFromCourse(courseId, email)
+    mutationFn: ({ courseId, username }: { courseId: string; username: string }) => (
+      removeInstructorFromCourse(courseId, username)
     ),
     onSuccess: (_, { courseId }) => {
       queryClient.invalidateQueries({ queryKey: ['courseTeam', courseId] });
@@ -258,6 +258,16 @@ export const useLearners = (params: GetLearnersParams = {}, enabled = true) => u
   enabled,
 });
 
+export const useEnrolledLearnerIds = (programId: string, enabled = true) => useQuery({
+  queryKey: ['enrolledLearnerIds', programId],
+  queryFn: async () => {
+    const { results } = await getPlatformUsers({ role: 'learner', programKey: programId, noPage: true });
+    return new Set(results.map((l) => l.id));
+  },
+  enabled: !!programId && enabled,
+  staleTime: 0,
+});
+
 export const useEnrollLearner = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -266,6 +276,7 @@ export const useEnrollLearner = () => {
     ),
     onSuccess: (_, { programId }) => {
       queryClient.invalidateQueries({ queryKey: ['programEnrollments', programId] });
+      queryClient.invalidateQueries({ queryKey: ['enrolledLearnerIds', programId] });
     },
   });
 };
@@ -278,6 +289,7 @@ export const useUnenrollLearner = () => {
     ),
     onSuccess: (_, { programId }) => {
       queryClient.invalidateQueries({ queryKey: ['programEnrollments', programId] });
+      queryClient.invalidateQueries({ queryKey: ['enrolledLearnerIds', programId] });
     },
   });
 };

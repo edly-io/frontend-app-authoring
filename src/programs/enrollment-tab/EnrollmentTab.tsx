@@ -65,7 +65,6 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
   );
   const unenrollLearner = useUnenrollLearner();
 
-  const enrolledIds = data?.results.map((l) => l.id) ?? [];
   const confirmLearner = data?.results.find((l) => l.username === confirmUnenrollUsername);
 
   const handleSearch = useCallback((q: string) => {
@@ -242,14 +241,12 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
             isOpen={isModalOpen}
             onClose={closeModal}
             programId={programId}
-            alreadyEnrolledIds={enrolledIds}
           />
 
           <EnrollBatchModal
             isOpen={isBatchModalOpen}
             onClose={closeBatchModal}
             programId={programId}
-            alreadyEnrolledIds={enrolledIds}
           />
 
           <DeleteModal

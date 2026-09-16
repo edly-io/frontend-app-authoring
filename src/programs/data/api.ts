@@ -244,6 +244,7 @@ export interface GetLearnersParams {
   // not) instead of only already-enrolled trainees. Used by the Enroll Learner
   // modal, which badges the already-enrolled rows.
   enrollable?: boolean;
+  noPage?: boolean;
 }
 
 export type PlatformUserRole = FbrRole | 'learner';
@@ -588,6 +589,20 @@ const toFeedbackDashboardCommentsResponse = (value: unknown): FeedbackDashboardC
 export const getPlatformUsers = async (
   params: { role: PlatformUserRole } & GetLearnersParams,
 ): Promise<PaginatedLearners> => {
+  if (params.noPage) {
+    const { data } = await getAuthenticatedHttpClient().get(
+      `${getProgramsBaseUrl()}/users/`,
+      {
+        params: {
+          role: params.role,
+          program_key: params.programKey,
+          no_page: '',
+        },
+      },
+    );
+    const results = (Array.isArray(data) ? data : (data.results ?? [])).map(toUser);
+    return { results, count: results.length, numPages: 1 };
+  }
   const pageSize = params.pageSize ?? 5;
   const { data } = await getAuthenticatedHttpClient().get(
     `${getProgramsBaseUrl()}/users/`,
@@ -635,10 +650,10 @@ export const addInstructorToCourse = async (courseId: string, username: string):
   );
 };
 
-// ── Remove instructor from course — DELETE ${STUDIO_BASE_URL}/course_team/<id>/<email>
-export const removeInstructorFromCourse = async (courseId: string, email: string): Promise<void> => {
+// ── Remove instructor from course — DELETE /fbr/api/programs/courses/<course_key>/team/?username=
+export const removeInstructorFromCourse = async (courseId: string, username: string): Promise<void> => {
   await getAuthenticatedHttpClient().delete(
-    `${getConfig().STUDIO_BASE_URL}/course_team/${courseId}/${email}`,
+    `${getProgramsBaseUrl()}/courses/${encodeURIComponent(courseId)}/team/?username=${encodeURIComponent(username)}`,
   );
 };
 

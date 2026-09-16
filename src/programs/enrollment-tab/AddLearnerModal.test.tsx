@@ -6,17 +6,18 @@ import { mockLearner, mockPaginatedLearners } from '../data/api.mock';
 
 const mockEnrollMutate = jest.fn();
 const mockUseLearners = jest.fn();
+const mockUseEnrolledLearnerIds = jest.fn();
 
 jest.mock('@src/programs/data/apiHooks', () => ({
   useLearners: (...args: any[]) => mockUseLearners(...args),
   useEnrollLearner: () => ({ mutateAsync: mockEnrollMutate, isPending: false }),
+  useEnrolledLearnerIds: (...args: any[]) => mockUseEnrolledLearnerIds(...args),
 }));
 
 const defaultProps = {
   isOpen: true,
   onClose: jest.fn(),
   programId: 'prog-key-1',
-  alreadyEnrolledIds: [],
 };
 
 describe('<AddLearnerModal />', () => {
@@ -28,6 +29,7 @@ describe('<AddLearnerModal />', () => {
       isLoading: false,
       isFetching: false,
     });
+    mockUseEnrolledLearnerIds.mockReturnValue({ data: new Set<string>() });
   });
 
   it('renders learner list when open', () => {
@@ -43,7 +45,8 @@ describe('<AddLearnerModal />', () => {
       isLoading: false,
       isFetching: false,
     });
-    render(<AddLearnerModal {...defaultProps} alreadyEnrolledIds={['student.alice']} />);
+    mockUseEnrolledLearnerIds.mockReturnValue({ data: new Set(['student.alice']) });
+    render(<AddLearnerModal {...defaultProps} />);
     expect(screen.getByText('Enrolled')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^Enroll$/i })).not.toBeInTheDocument();
   });
