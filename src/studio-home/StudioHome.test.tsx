@@ -1,4 +1,6 @@
 import * as reactRedux from 'react-redux';
+import { getConfig, setConfig } from '@edx/frontend-platform';
+import { useSearchParams } from 'react-router-dom';
 
 import {
   fireEvent,
@@ -228,6 +230,161 @@ describe('<StudioHome />', () => {
       render(<StudioHome />, { path: '/home' });
       expect(screen.getByText('Looking for help with Studio?')).toBeInTheDocument();
       expect(screen.getByText('LMS')).toHaveAttribute('href', process.env.LMS_BASE_URL);
+    });
+
+    describe('creation forms are mutually exclusive', () => {
+      /** The three creation forms, keyed by the header button that opens each one. */
+      const FORMS = {
+        course: { buttonName: 'New course', testId: 'create-course-form' },
+        program: { buttonName: 'New program', testId: 'create-program-form' },
+        instructor: { buttonName: 'New Instructor', testId: 'create-instructor-form' },
+      } as const;
+      type FormName = keyof typeof FORMS;
+      const allForms = Object.keys(FORMS) as FormName[];
+
+      let originalConfig: ReturnType<typeof getConfig>;
+
+      beforeEach(() => {
+        originalConfig = getConfig();
+        setConfig({
+          ...originalConfig,
+          ENABLE_PROGRAMS: true,
+          ENABLE_INSTRUCTOR_MANAGEMENT: true,
+        });
+        mockUseSelector.mockReturnValue({
+          ...studioHomeMock,
+          courseCreatorStatus: COURSE_CREATOR_STATES.granted,
+        });
+      });
+
+      afterEach(() => {
+        setConfig(originalConfig);
+      });
+
+      /** Click the header button that opens the given creation form. */
+      const openForm = (form: FormName) => {
+        const header = getHeaderElement();
+        fireEvent.click(within(header).getByRole('button', { name: FORMS[form].buttonName }));
+      };
+
+      /** Assert that `form` is the only creation form on the page. */
+      const expectOnlyFormShown = (form: FormName | null) => {
+        allForms.forEach((name) => {
+          const query = screen.queryByTestId(FORMS[name].testId);
+          if (name === form) {
+            expect(query).toBeInTheDocument();
+          } else {
+            expect(query).not.toBeInTheDocument();
+          }
+        });
+      };
+
+      it.each(allForms)('shows only the %s form when opened on its own', (form) => {
+        render(<StudioHome />, { path: '/home' });
+        expectOnlyFormShown(null);
+        openForm(form);
+        expectOnlyFormShown(form);
+      });
+
+      // Every ordered pair of distinct forms: course <-> program, course <-> instructor,
+      // program <-> instructor, in both directions.
+      const transitions = allForms.flatMap(
+        (from) => allForms.filter((to) => to !== from).map((to) => [from, to] as const),
+      );
+
+      it.each(transitions)('replaces the %s form when the %s form is opened', (from, to) => {
+        render(<StudioHome />, { path: '/home' });
+        openForm(from);
+        expectOnlyFormShown(from);
+        openForm(to);
+        expectOnlyFormShown(to);
+      });
+
+      it.each(allForms)('keeps a single %s form when its button is clicked twice', (form) => {
+        render(<StudioHome />, { path: '/home' });
+        openForm(form);
+        openForm(form);
+        expect(screen.getAllByTestId(FORMS[form].testId)).toHaveLength(1);
+        expectOnlyFormShown(form);
+      });
+
+      it('leaves only the last selected form after rapid switching', () => {
+        render(<StudioHome />, { path: '/home' });
+        openForm('course');
+        openForm('program');
+        openForm('instructor');
+        openForm('course');
+        expectOnlyFormShown('course');
+      });
+
+      it('closes the active form via its own Cancel button without opening another', () => {
+        render(<StudioHome />, { path: '/home' });
+        openForm('program');
+        expectOnlyFormShown('program');
+
+        const programForm = screen.getByTestId('create-program-form');
+        fireEvent.click(within(programForm).getByRole('button', { name: 'Cancel' }));
+        expectOnlyFormShown(null);
+      });
+
+      /**
+       * Wraps the page with a control that changes the course-list query string, the way the
+       * course filters/search do. Only `useNavigate` is mocked in this file, so `useSearchParams`
+       * drives the real MemoryRouter here.
+       */
+      const CourseFilterChanger = ({ children }: { children: React.ReactNode }) => {
+        const [, setSearchParams] = useSearchParams();
+        return (
+          <>
+            <button
+              type="button"
+              data-testid="change-course-filters"
+              onClick={() => setSearchParams({ org: 'SomeOrg' })}
+            >
+              change course filters
+            </button>
+            {children}
+          </>
+        );
+      };
+
+      // The course-list effect closes ONLY the course form; an open Program/Instructor form is
+      // unrelated to that query and must survive. That asymmetry is deliberate, so pin it down —
+      // a future "simplification" to an unconditional close would otherwise pass every other test.
+      it('closes the course form when the course-list filters change', () => {
+        render(<StudioHome />, { path: '/home', extraWrapper: CourseFilterChanger });
+        openForm('course');
+        expectOnlyFormShown('course');
+
+        fireEvent.click(screen.getByTestId('change-course-filters'));
+        expectOnlyFormShown(null);
+      });
+
+      it.each(['program', 'instructor'] as const)(
+        'leaves the %s form open when the course-list filters change',
+        (form) => {
+          render(<StudioHome />, { path: '/home', extraWrapper: CourseFilterChanger });
+          openForm(form);
+          expectOnlyFormShown(form);
+
+          fireEvent.click(screen.getByTestId('change-course-filters'));
+          expectOnlyFormShown(form);
+        },
+      );
+
+      it('does not leak form state from a previous creation form', () => {
+        render(<StudioHome />, { path: '/home' });
+
+        openForm('instructor');
+        const instructorName = screen.getByPlaceholderText('e.g. Jane Doe');
+        fireEvent.change(instructorName, { target: { value: 'Ada Lovelace' } });
+        expect(instructorName).toHaveValue('Ada Lovelace');
+
+        // Switching away unmounts the form, so coming back gives a pristine one.
+        openForm('program');
+        openForm('instructor');
+        expect(screen.getByPlaceholderText('e.g. Jane Doe')).toHaveValue('');
+      });
     });
   });
 });

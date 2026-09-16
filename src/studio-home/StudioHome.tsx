@@ -47,9 +47,8 @@ const StudioHome = () => {
     isShowOrganizationDropdown,
     hasAbilityToCreateNewCourse,
     isFiltered,
-    setShowNewCourseContainer,
-    setShowNewProgramContainer,
-    setShowNewInstructorContainer,
+    openCreationForm,
+    closeCreationForm,
     librariesV1Enabled,
     librariesV2Enabled,
   } = useStudioHome();
@@ -85,7 +84,7 @@ const StudioHome = () => {
           iconBefore={AddIcon}
           size="sm"
           disabled={showNewCourseContainer}
-          onClick={() => setShowNewCourseContainer(true)}
+          onClick={() => openCreationForm('course')}
         >
           {intl.formatMessage(messages.addNewCourseBtnText)}
         </Button>,
@@ -97,7 +96,7 @@ const StudioHome = () => {
             iconBefore={AddIcon}
             size="sm"
             disabled={showNewProgramContainer}
-            onClick={() => setShowNewProgramContainer(true)}
+            onClick={() => openCreationForm('program')}
           >
             {intl.formatMessage(messages.addNewProgramBtnText)}
           </Button>,
@@ -110,7 +109,7 @@ const StudioHome = () => {
             iconBefore={AddIcon}
             size="sm"
             disabled={showNewInstructorContainer}
-            onClick={() => setShowNewInstructorContainer(true)}
+            onClick={() => openCreationForm('instructor')}
           >
             {intl.formatMessage(messages.addNewInstructorBtnText)}
           </Button>,
@@ -153,6 +152,7 @@ const StudioHome = () => {
     showV2LibraryURL,
     showNewLibraryButton,
     showNewLibraryV2Button,
+    openCreationForm,
   ]);
 
   const headerButtons = userIsActive ? getHeaderButtons() : [];
@@ -188,20 +188,20 @@ const StudioHome = () => {
         <Layout.Element>
           <section>
             {showNewCourseContainer && (
-              <CreateNewCourseForm handleOnClickCancel={() => setShowNewCourseContainer(false)} />
+              <CreateNewCourseForm handleOnClickCancel={closeCreationForm} />
             )}
             {showNewProgramContainer && (
-              <CreateNewProgramForm handleOnClickCancel={() => setShowNewProgramContainer(false)} />
+              <CreateNewProgramForm handleOnClickCancel={closeCreationForm} />
             )}
             {showNewInstructorContainer && (
-              <CreateNewInstructorForm handleOnClickCancel={() => setShowNewInstructorContainer(false)} />
+              <CreateNewInstructorForm handleOnClickCancel={closeCreationForm} />
             )}
             {isShowOrganizationDropdown && <OrganizationSection />}
             <TabsSection
               showNewCourseContainer={showNewCourseContainer}
               showNewProgramContainer={showNewProgramContainer}
               showNewInstructorContainer={showNewInstructorContainer}
-              onClickNewCourse={() => setShowNewCourseContainer(true)}
+              onClickNewCourse={() => openCreationForm('course')}
               isShowProcessing={Boolean(isShowProcessing) && !isFiltered}
               librariesV1Enabled={librariesV1Enabled}
               librariesV2Enabled={librariesV2Enabled}
