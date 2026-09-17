@@ -12,7 +12,7 @@ import {
   Spinner,
 } from '@openedx/paragon';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
-import { useLearners, useEnrollLearner } from '../data/apiHooks';
+import { useLearners, useEnrollLearner, useEnrolledLearnerIds } from '../data/apiHooks';
 
 const messages = defineMessages({
   title: { id: 'programs.enrollment.modal.title', defaultMessage: 'Enroll Learner in Program' },
@@ -32,11 +32,10 @@ interface AddLearnerModalProps {
   isOpen: boolean;
   onClose: () => void;
   programId: string;
-  alreadyEnrolledIds: string[];
 }
 
 const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
-  isOpen, onClose, programId, alreadyEnrolledIds,
+  isOpen, onClose, programId,
 }) => {
   const intl = useIntl();
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,6 +48,7 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
     { page: currentPage, search: searchQuery, programKey: programId },
     isOpen,
   );
+  const { data: enrolledIdSet } = useEnrolledLearnerIds(programId, isOpen);
   const { mutateAsync: enrollLearner } = useEnrollLearner();
 
   useEffect(() => {
@@ -118,7 +118,7 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
         <div ref={listRef} />
         <div style={{ opacity: isFetching && !isLoading ? 0.4 : 1, transition: 'opacity 0.15s' }}>
           {!isLoading && data?.results.map((learner) => {
-            const isEnrolled = alreadyEnrolledIds.includes(learner.id);
+            const isEnrolled = enrolledIdSet?.has(learner.id) ?? false;
             const isEnrolling = enrollingId === learner.id;
             return (
               <div

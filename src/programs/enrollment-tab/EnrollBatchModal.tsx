@@ -11,7 +11,7 @@ import {
   Spinner,
 } from '@openedx/paragon';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
-import { useBatches, useBatchUsers, useEnrollLearner } from '../data/apiHooks';
+import { useBatches, useBatchUsers, useEnrollLearner, useEnrolledLearnerIds } from '../data/apiHooks';
 
 const messages = defineMessages({
   title: { id: 'programs.enrollment.batch.title', defaultMessage: 'Enroll Batch' },
@@ -34,11 +34,10 @@ interface EnrollBatchModalProps {
   isOpen: boolean;
   onClose: () => void;
   programId: string;
-  alreadyEnrolledIds: string[];
 }
 
 const EnrollBatchModal: React.FC<EnrollBatchModalProps> = ({
-  isOpen, onClose, programId, alreadyEnrolledIds,
+  isOpen, onClose, programId,
 }) => {
   const intl = useIntl();
   const [selectedBatchId, setSelectedBatchId] = useState('');
@@ -48,6 +47,7 @@ const EnrollBatchModal: React.FC<EnrollBatchModalProps> = ({
 
   const { data: batches, isLoading: isBatchesLoading } = useBatches(isOpen);
   const { data: batchUsers, isLoading: isUsersLoading } = useBatchUsers(selectedBatchId, !!selectedBatchId);
+  const { data: enrolledIdSet } = useEnrolledLearnerIds(programId, isOpen);
   const { mutateAsync: enrollLearner } = useEnrollLearner();
 
   useEffect(() => {
@@ -59,7 +59,7 @@ const EnrollBatchModal: React.FC<EnrollBatchModalProps> = ({
     }
   }, [isOpen]);
 
-  const unenrolledUsers = batchUsers?.filter((u) => !alreadyEnrolledIds.includes(u.id)) ?? [];
+  const unenrolledUsers = batchUsers?.filter((u) => !(enrolledIdSet?.has(u.id) ?? false)) ?? [];
 
   const handleEnrollAll = useCallback(async () => {
     setIsEnrollingAll(true);
@@ -163,7 +163,7 @@ const EnrollBatchModal: React.FC<EnrollBatchModalProps> = ({
                 {' '}
                 learners ·
                 {' '}
-                {alreadyEnrolledIds.filter((id) => batchUsers.some((u) => u.id === id)).length}
+                {batchUsers.filter((u) => enrolledIdSet?.has(u.id)).length}
                 {' '}
                 already enrolled
               </p>
@@ -179,7 +179,7 @@ const EnrollBatchModal: React.FC<EnrollBatchModalProps> = ({
               </Button>
             </div>
             {batchUsers.map((user) => {
-              const isEnrolled = alreadyEnrolledIds.includes(user.id);
+              const isEnrolled = enrolledIdSet?.has(user.id) ?? false;
               return (
                 <div
                   key={user.id}

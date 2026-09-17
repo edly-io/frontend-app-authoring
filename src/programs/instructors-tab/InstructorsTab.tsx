@@ -44,7 +44,8 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
   const effectiveProgramId = programId || program.id;
 
   const [selectedCourseId, setSelectedCourseId] = useState('');
-  const [confirmEmail, setConfirmEmail] = useState<string | null>(null);
+  const [confirmInstructor, setConfirmInstructor] = useState<{ email: string; username: string } | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
   const [isModalOpen, openModal, closeModal] = useToggle(false);
 
   const { data: team, isLoading: isTeamLoading } = useCourseTeam(selectedCourseId, !!selectedCourseId);
@@ -150,8 +151,8 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
                     <Button
                       variant="outline-danger"
                       size="sm"
-                      onClick={() => setConfirmEmail(instructor.email)}
-                      disabled={confirmEmail !== null}
+                      onClick={() => { setRemoveError(null); setConfirmInstructor({ email: instructor.email, username: instructor.username }); }}
+                      disabled={confirmInstructor !== null}
                     >
                       {intl.formatMessage(messages.removeBtn)}
                     </Button>
@@ -175,20 +176,30 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
           />
 
           <DeleteModal
-            isOpen={!!confirmEmail}
-            close={() => setConfirmEmail(null)}
+            isOpen={!!confirmInstructor}
+            close={() => { setConfirmInstructor(null); setRemoveError(null); }}
             title={intl.formatMessage(messages.confirmRemoveTitle)}
             description={(
               <>
-                <strong>{confirmEmail}</strong>
+                <strong>{confirmInstructor?.email}</strong>
                 <br />
                 {intl.formatMessage(messages.confirmRemoveDesc)}
+                {removeError && (
+                  <Alert variant="danger" className="mt-3 mb-0">
+                    {removeError}
+                  </Alert>
+                )}
               </>
             )}
             btnLabel={intl.formatMessage(messages.confirmRemoveBtn)}
             onDeleteSubmit={async () => {
-              await removeInstructor.mutateAsync({ courseId: selectedCourseId, email: confirmEmail! });
-              setConfirmEmail(null);
+              setRemoveError(null);
+              try {
+                await removeInstructor.mutateAsync({ courseId: selectedCourseId, username: confirmInstructor!.username });
+                setConfirmInstructor(null);
+              } catch (err: any) {
+                setRemoveError(err?.response?.data?.detail ?? 'Failed to remove instructor.');
+              }
             }}
           />
         </>
