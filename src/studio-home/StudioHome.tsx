@@ -13,7 +13,6 @@ import { useIntl } from '@edx/frontend-platform/i18n';
 import { StudioFooterSlot } from '@edx/frontend-component-footer';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import Loading from '../generic/Loading';
 import InternetConnectionAlert from '../generic/internet-connection-alert';
 import Header from '../header';
@@ -25,7 +24,6 @@ import VerifyEmailLayout from './verify-email-layout';
 import CreateNewCourseForm from './create-new-course-form';
 import CreateNewProgramForm from './create-new-program-form';
 import CreateNewInstructorForm from './create-new-instructor-form';
-import CreateNewCategoryForm from './create-new-category-form';
 import messages from './messages';
 import { useStudioHome } from './hooks';
 import AlertMessage from '../generic/alert-message';
@@ -46,14 +44,11 @@ const StudioHome = () => {
     showNewCourseContainer,
     showNewProgramContainer,
     showNewInstructorContainer,
-    showNewCategoryContainer,
     isShowOrganizationDropdown,
     hasAbilityToCreateNewCourse,
     isFiltered,
-    setShowNewCourseContainer,
-    setShowNewProgramContainer,
-    setShowNewInstructorContainer,
-    setShowNewCategoryContainer,
+    openCreationForm,
+    closeCreationForm,
     librariesV1Enabled,
     librariesV2Enabled,
   } = useStudioHome();
@@ -89,7 +84,7 @@ const StudioHome = () => {
           iconBefore={AddIcon}
           size="sm"
           disabled={showNewCourseContainer}
-          onClick={() => setShowNewCourseContainer(true)}
+          onClick={() => openCreationForm('course')}
         >
           {intl.formatMessage(messages.addNewCourseBtnText)}
         </Button>,
@@ -101,7 +96,7 @@ const StudioHome = () => {
             iconBefore={AddIcon}
             size="sm"
             disabled={showNewProgramContainer}
-            onClick={() => setShowNewProgramContainer(true)}
+            onClick={() => openCreationForm('program')}
           >
             {intl.formatMessage(messages.addNewProgramBtnText)}
           </Button>,
@@ -114,22 +109,9 @@ const StudioHome = () => {
             iconBefore={AddIcon}
             size="sm"
             disabled={showNewInstructorContainer}
-            onClick={() => setShowNewInstructorContainer(true)}
+            onClick={() => openCreationForm('instructor')}
           >
             {intl.formatMessage(messages.addNewInstructorBtnText)}
-          </Button>,
-        );
-      }
-      if (getAuthenticatedUser()?.administrator && getConfig().ENABLE_CATEGORY_MANAGEMENT) {
-        headerButtons.push(
-          <Button
-            variant="outline-primary"
-            iconBefore={AddIcon}
-            size="sm"
-            disabled={showNewCategoryContainer}
-            onClick={() => setShowNewCategoryContainer(true)}
-          >
-            {intl.formatMessage(messages.addNewCategoryBtnText)}
           </Button>,
         );
       }
@@ -167,10 +149,10 @@ const StudioHome = () => {
     showNewCourseContainer,
     showNewProgramContainer,
     showNewInstructorContainer,
-    showNewCategoryContainer,
     showV2LibraryURL,
     showNewLibraryButton,
     showNewLibraryV2Button,
+    openCreationForm,
   ]);
 
   const headerButtons = userIsActive ? getHeaderButtons() : [];
@@ -206,24 +188,20 @@ const StudioHome = () => {
         <Layout.Element>
           <section>
             {showNewCourseContainer && (
-              <CreateNewCourseForm handleOnClickCancel={() => setShowNewCourseContainer(false)} />
+              <CreateNewCourseForm handleOnClickCancel={closeCreationForm} />
             )}
             {showNewProgramContainer && (
-              <CreateNewProgramForm handleOnClickCancel={() => setShowNewProgramContainer(false)} />
+              <CreateNewProgramForm handleOnClickCancel={closeCreationForm} />
             )}
             {showNewInstructorContainer && (
-              <CreateNewInstructorForm handleOnClickCancel={() => setShowNewInstructorContainer(false)} />
-            )}
-            {showNewCategoryContainer && (
-              <CreateNewCategoryForm handleOnClickCancel={() => setShowNewCategoryContainer(false)} />
+              <CreateNewInstructorForm handleOnClickCancel={closeCreationForm} />
             )}
             {isShowOrganizationDropdown && <OrganizationSection />}
             <TabsSection
               showNewCourseContainer={showNewCourseContainer}
               showNewProgramContainer={showNewProgramContainer}
               showNewInstructorContainer={showNewInstructorContainer}
-              showNewCategoryContainer={showNewCategoryContainer}
-              onClickNewCourse={() => setShowNewCourseContainer(true)}
+              onClickNewCourse={() => openCreationForm('course')}
               isShowProcessing={Boolean(isShowProcessing) && !isFiltered}
               librariesV1Enabled={librariesV1Enabled}
               librariesV2Enabled={librariesV2Enabled}

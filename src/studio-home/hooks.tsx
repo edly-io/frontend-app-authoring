@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -14,6 +14,13 @@ import {
 } from './data/selectors';
 import { updateSavingStatuses } from './data/slice';
 
+/**
+ * The creation forms rendered inline on the Studio home page. Only one of them may
+ * be open at a time, so they are tracked as a single value rather than as one
+ * boolean per form (which would allow the invalid "all three open" state).
+ */
+export type CreationFormName = 'course' | 'program' | 'instructor';
+
 const useStudioHome = () => {
   const dispatch = useDispatch();
   const [searchParams] = useSearchParams(); // The query string (location.search)
@@ -27,10 +34,12 @@ const useStudioHome = () => {
     courseCreatorSavingStatus,
     deleteNotificationSavingStatus,
   } = useSelector(getSavingStatuses);
-  const [showNewCourseContainer, setShowNewCourseContainer] = useState(false);
-  const [showNewProgramContainer, setShowNewProgramContainer] = useState(false);
-  const [showNewInstructorContainer, setShowNewInstructorContainer] = useState(false);
-  const [showNewCategoryContainer, setShowNewCategoryContainer] = useState(false);
+  const [activeCreationForm, setActiveCreationForm] = useState<CreationFormName | null>(null);
+  const openCreationForm = useCallback((form: CreationFormName) => setActiveCreationForm(form), []);
+  const closeCreationForm = useCallback(() => setActiveCreationForm(null), []);
+  const showNewCourseContainer = activeCreationForm === 'course';
+  const showNewProgramContainer = activeCreationForm === 'program';
+  const showNewInstructorContainer = activeCreationForm === 'instructor';
   const isLoadingPage = studioHomeLoadingStatus === RequestStatus.IN_PROGRESS;
   const isFailedLoadingPage = studioHomeLoadingStatus === RequestStatus.FAILED;
 
@@ -50,10 +59,16 @@ const useStudioHome = () => {
       courseListQuery.set(key, searchParams.get(key)!);
     }
   }
-  const courseListQueryString = courseListQuery.size ? `?${courseListQuery.toString()}` : '';
+  // Deliberately not `courseListQuery.size`: that getter is absent in jsdom, so under test this
+  // expression pinned to '' forever and the effect below could never re-fire. Serialising once and
+  // testing the string is equivalent in the browser and actually observable in tests.
+  const courseListQueryParams = courseListQuery.toString();
+  const courseListQueryString = courseListQueryParams ? `?${courseListQueryParams}` : '';
   useEffect(() => {
     dispatch(fetchStudioHomeData(courseListQueryString));
-    setShowNewCourseContainer(false);
+    // Changing the course list filters reloads the courses behind the "new course" form,
+    // so close it. The other creation forms are unrelated to that query and stay open.
+    setActiveCreationForm((current) => (current === 'course' ? null : current));
   }, [courseListQueryString]);
 
   useEffect(() => {
@@ -109,15 +124,12 @@ const useStudioHome = () => {
     showNewCourseContainer,
     showNewProgramContainer,
     showNewInstructorContainer,
-    showNewCategoryContainer,
     courseCreatorSavingStatus,
     isShowOrganizationDropdown,
     hasAbilityToCreateNewCourse,
     isFiltered,
-    setShowNewCourseContainer,
-    setShowNewProgramContainer,
-    setShowNewInstructorContainer,
-    setShowNewCategoryContainer,
+    openCreationForm,
+    closeCreationForm,
     librariesV1Enabled,
     librariesV2Enabled,
   };
