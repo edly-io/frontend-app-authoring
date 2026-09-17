@@ -18,6 +18,7 @@ const defaultProps = {
   isOpen: true,
   onClose: jest.fn(),
   programId: 'prog-key-1',
+  programOrg: 'TestOrg',
   alreadyAddedIds: [],
 };
 

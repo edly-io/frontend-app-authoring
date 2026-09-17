@@ -10,12 +10,11 @@ import { RequestStatus, MAX_TOTAL_LENGTH, TOTAL_LENGTH_KEY } from '../../data/co
 import { getStudioHomeData } from '../../studio-home/data/selectors';
 import {
   getRedirectUrlObj,
-  getOrganizations,
   getPostErrors,
   getSavingStatus,
 } from '../data/selectors';
 import { updateSavingStatus, updatePostErrors } from '../data/slice';
-import { fetchOrganizationsQuery } from '../data/thunks';
+import { useProgramsConfig } from '../../programs/data/apiHooks';
 import messages from './messages';
 
 const useCreateOrRerunCourse = (initialValues) => {
@@ -24,7 +23,6 @@ const useCreateOrRerunCourse = (initialValues) => {
   const navigate = useNavigate();
   const redirectUrlObj = useSelector(getRedirectUrlObj);
   const createOrRerunCourseSavingStatus = useSelector(getSavingStatus);
-  const allOrganizations = useSelector(getOrganizations);
   const postErrors = useSelector(getPostErrors);
   const {
     canCreateOrganizations,
@@ -32,7 +30,14 @@ const useCreateOrRerunCourse = (initialValues) => {
   } = useSelector(getStudioHomeData);
   const [isFormFilled, setFormFilled] = useState(false);
   const [showErrorBanner, setShowErrorBanner] = useState(false);
-  const organizations = canCreateOrganizations ? allOrganizations : allowedOrganizations;
+
+  // The programs config endpoint already scopes the org list server-side:
+  // global staff and superadmins receive all orgs; org admins receive only
+  // the orgs they administer. No frontend permission check is needed.
+  const { data: programsConfig, isLoading: isOrgsLoading } = useProgramsConfig();
+  const configOrgs = programsConfig?.orgs?.map((org) => org.shortName) ?? [];
+
+  const organizations = canCreateOrganizations ? configOrgs : allowedOrganizations;
 
   const { specialCharsRule, noSpaceRule } = REGEX_RULES;
   const slugCharsRule = /^[a-z0-9-]*$/;
@@ -83,12 +88,6 @@ const useCreateOrRerunCourse = (initialValues) => {
   });
 
   useEffect(() => {
-    if (canCreateOrganizations) {
-      dispatch(fetchOrganizationsQuery());
-    }
-  }, []);
-
-  useEffect(() => {
     setFormFilled(
       Object.entries(values)
         ?.filter(([key]) => key !== 'undefined' && key !== 'slug')
@@ -130,6 +129,7 @@ const useCreateOrRerunCourse = (initialValues) => {
     postErrors,
     isFormFilled,
     isFormInvalid,
+    isOrgsLoading: canCreateOrganizations ? isOrgsLoading : false,
     organizations,
     showErrorBanner,
     dispatch,

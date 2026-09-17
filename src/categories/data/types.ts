@@ -4,7 +4,6 @@ export interface CategorySummary {
   id: number;
   name: string;
   arabicName?: string;
-  slug: string;
   isActive: boolean;
 }
 
@@ -12,7 +11,6 @@ export interface Category {
   id: number;
   name: string;
   arabicName?: string;
-  slug: string;
   isActive: boolean;
   courses?: Course[];
 }
@@ -24,13 +22,10 @@ export interface CategoryDetailResponse {
 export interface CategoryCreatePayload {
   name: string;
   arabicName?: string;
-  slug?: string;
-  isActive?: boolean;
 }
 
 export interface CategoryUpdatePayload {
   name?: string;
   arabicName?: string;
-  slug?: string;
   isActive?: boolean;
 }

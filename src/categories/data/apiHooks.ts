@@ -39,7 +39,7 @@ export const useUpdateCategory = () => {
     mutationFn: ({
       categoryId,
       data,
-    }: { categoryId: string; data: Partial<Pick<Category, 'name' | 'arabicName' | 'slug' | 'isActive'>> }) => (
+    }: { categoryId: string; data: Partial<Pick<Category, 'name' | 'arabicName' | 'isActive'>> }) => (
       updateCategory(categoryId, data)
     ),
     onSuccess: (_, { categoryId }) => {
@@ -74,7 +74,9 @@ export const useAddCourseToCat = () => {
             ...old.category,
             courses: [
               ...(old.category.courses ?? []),
-              { id: courseId, displayName: courseId, org: '', run: '' },
+              {
+                id: courseId, displayName: courseId, org: '', run: '',
+              },
             ],
           },
         };
@@ -82,7 +84,7 @@ export const useAddCourseToCat = () => {
 
       return { previous };
     },
-    onError: (_err, { categoryId }, context: any) => {
+    onError: (_err, { categoryId }, context: { previous: unknown } | undefined) => {
       // Roll back to the snapshot if the mutation fails.
       if (context?.previous !== undefined) {
         queryClient.setQueryData(['category', categoryId], context.previous);

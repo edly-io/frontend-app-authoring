@@ -1,14 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Dropdown,
   Icon,
+  Pagination,
   Row,
   SearchField,
 } from '@openedx/paragon';
 import { Check } from '@openedx/paragon/icons';
 import { useIntl, defineMessages } from '@edx/frontend-platform/i18n';
 import { LoadingSpinner } from '@src/generic/Loading';
-import { usePrograms } from '../../../programs/data/apiHooks';
+import { useProgramsPage } from '../../../programs/data/apiHooks';
 import ProgramCard from './ProgramCard';
 import './index.scss';
 
@@ -53,6 +54,10 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.programs.tab.filter.archived',
     defaultMessage: 'Archived',
   },
+  paginationInfo: {
+    id: 'course-authoring.studio-home.programs.tab.pagination-info',
+    defaultMessage: 'Showing {length} of {total}',
+  },
 });
 
 type SortOrder = 'az' | 'za';
@@ -63,9 +68,22 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('az');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [currentPage, setCurrentPage] = useState(1);
 
+  // Search, sort and status are applied SERVER-side: the list is paginated, so
+  // filtering the current page in the browser would silently miss matches on
+  // every other page.
   // Treat API errors the same as empty — don't show a jarring error banner for the list
-  const { data: programs = [], isLoading } = usePrograms();
+  const { data, isLoading } = useProgramsPage({
+    page: currentPage,
+    search,
+    ordering: sortOrder === 'az' ? 'name' : '-name',
+    status: statusFilter,
+  });
+
+  const programs = data?.results ?? [];
+  const totalCount = data?.count ?? 0;
+  const numPages = data?.numPages ?? 1;
 
   const statusFilterOptions: Array<{ value: StatusFilter, message: typeof messages.filterAll }> = [
     { value: 'all', message: messages.filterAll },
@@ -74,26 +92,45 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
     { value: 'archived', message: messages.filterArchived },
   ];
 
-  const filteredPrograms = useMemo(() => {
-    let list = [...programs];
+  // Any change to the query has to reset to page 1 — staying on, say, page 5
+  // of an unfiltered list would land past the end of a narrower result set and
+  // show an empty page.
+  //
+  // Wrapped in useCallback (empty deps: the setters are stable) so this keeps
+  // the same function identity across renders. SearchField (Paragon)
+  // re-invokes onChange whenever the onChange PROP ITSELF changes — see
+  // SearchFieldAdvanced's `useEffect(..., [value, onChange])` — so an inline
+  // arrow function here gets treated as a new "change" on every render,
+  // including the one caused by clicking a page number, which re-fired this
+  // handler and reset straight back to page 1. Also skip the reset when the
+  // value hasn't actually changed, since that effect fires with the CURRENT
+  // value on every re-render, not just on real edits.
+  const handleSearch = useCallback((value: string) => {
+    setSearch((prev) => {
+      if (value !== prev) {
+        setCurrentPage(1);
+      }
+      return value;
+    });
+  }, []);
 
-    if (statusFilter !== 'all') {
-      list = list.filter((p) => (p.status ?? 'draft') === statusFilter);
-    }
+  const handleSort = useCallback((order: SortOrder) => {
+    setSortOrder((prev) => {
+      if (order !== prev) {
+        setCurrentPage(1);
+      }
+      return order;
+    });
+  }, []);
 
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter((p) => p.displayName.toLowerCase().includes(q));
-    }
-
-    list.sort((a, b) => (
-      sortOrder === 'az'
-        ? a.displayName.localeCompare(b.displayName)
-        : b.displayName.localeCompare(a.displayName)
-    ));
-
-    return list;
-  }, [programs, search, sortOrder, statusFilter]);
+  const handleStatusFilter = useCallback((value: StatusFilter) => {
+    setStatusFilter((prev) => {
+      if (value !== prev) {
+        setCurrentPage(1);
+      }
+      return value;
+    });
+  }, []);
 
   if (isLoading) {
     return (
@@ -114,10 +151,10 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
     <div className="mt-4">
 
       {/* ── Search + filter + sort bar ────────────────────────────────── */}
-      <div className="d-flex mb-4">
+      <div className="d-flex mb-4 align-items-center">
         <SearchField
-          onSubmit={setSearch}
-          onChange={setSearch}
+          onSubmit={handleSearch}
+          onChange={handleSearch}
           value={search}
           className="mr-4"
           placeholder={intl.formatMessage(messages.searchPlaceholder)}
@@ -133,7 +170,7 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
             {statusFilterOptions.map((option) => (
               <Dropdown.Item
                 key={option.value}
-                onClick={() => setStatusFilter(option.value)}
+                onClick={() => handleStatusFilter(option.value)}
               >
                 <div className="d-flex align-items-center justify-content-between">
                   {intl.formatMessage(option.message)}
@@ -152,7 +189,7 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
           </Dropdown.Toggle>
           <Dropdown.Menu>
             <Dropdown.Item
-              onClick={() => setSortOrder('az')}
+              onClick={() => handleSort('az')}
             >
               <div className="d-flex align-items-center justify-content-between">
                 {intl.formatMessage(messages.sortAZ)}
@@ -160,7 +197,7 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
               </div>
             </Dropdown.Item>
             <Dropdown.Item
-              onClick={() => setSortOrder('za')}
+              onClick={() => handleSort('za')}
             >
               <div className="d-flex align-items-center justify-content-between">
                 {intl.formatMessage(messages.sortZA)}
@@ -169,10 +206,16 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
             </Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>
+        <p data-testid="programs-pagination-info" className="my-0 ml-auto">
+          {intl.formatMessage(messages.paginationInfo, {
+            length: programs.length,
+            total: totalCount,
+          })}
+        </p>
       </div>
 
       {/* ── List / empty state ────────────────────────────────────────── */}
-      {filteredPrograms.length === 0 ? (
+      {programs.length === 0 ? (
         <p className="text-muted">
           {(() => {
             if (search.trim()) { return intl.formatMessage(messages.emptySearch); }
@@ -181,9 +224,21 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
           })()}
         </p>
       ) : (
-        filteredPrograms.map((program) => (
-          <ProgramCard key={program.id} program={program} />
-        ))
+        <>
+          {programs.map((program) => (
+            <ProgramCard key={program.id} program={program} />
+          ))}
+
+          {numPages > 1 && (
+            <Pagination
+              className="d-flex justify-content-center"
+              paginationLabel="programs pagination navigation"
+              pageCount={numPages}
+              currentPage={currentPage}
+              onPageSelect={setCurrentPage}
+            />
+          )}
+        </>
       )}
     </div>
   );

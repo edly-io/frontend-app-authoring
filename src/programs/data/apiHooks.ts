@@ -4,6 +4,7 @@ import {
 import {
   getProgramsConfig,
   getPrograms,
+  getProgramsPage,
   getProgramDetail,
   createProgram,
   updateProgram,
@@ -25,9 +26,25 @@ export const useProgramsConfig = () => useQuery({
   queryFn: getProgramsConfig,
 });
 
+// Every program across all pages, for callers that need the whole list.
 export const usePrograms = () => useQuery({
   queryKey: ['programs'],
   queryFn: getPrograms,
+});
+
+// One page, with search, sort and status filtering applied server-side. The
+// params are part of the query key so each combination is cached separately and
+// paging back and forth doesn't refetch.
+export const useProgramsPage = (
+  params: { page?: number; search?: string; ordering?: string; status?: string } = {},
+) => useQuery({
+  queryKey: [
+    'programs', 'page', params.page ?? 1, params.search ?? '', params.ordering ?? '', params.status ?? '',
+  ],
+  queryFn: () => getProgramsPage(params),
+  // Keeps the previous page visible while the next one loads, instead of
+  // flashing the loading spinner on every page change.
+  placeholderData: (previous) => previous,
 });
 
 export const useProgramDetail = (programId: string) => useQuery({
