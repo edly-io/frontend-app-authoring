@@ -49,9 +49,6 @@ const messages = defineMessages({
   fieldDetailHint: { id: 'instructors.detail.field.detail.hint', defaultMessage: 'Appears on the instructor\'s detail page. Provide comprehensive information.' },
   fieldFeaturedVideo: { id: 'instructors.detail.field.featured-video', defaultMessage: 'Featured Video (YouTube ID)' },
   fieldFeaturedVideoHint: { id: 'instructors.detail.field.featured-video.hint', defaultMessage: 'Enter the YouTube video ID only (e.g. dQw4w9WgXcQ), not the full URL.' },
-  fieldFeatured: { id: 'instructors.detail.field.featured', defaultMessage: 'Feature this instructor' },
-  fieldFeaturedHint: { id: 'instructors.detail.field.featured.hint', defaultMessage: 'Featured instructors are highlighted in listings.' },
-  fieldFeaturedNoCoursesNote: { id: 'instructors.detail.field.featured.requires-course', defaultMessage: 'Also link this instructor to at least one course — otherwise no courses will be shown for this featured instructor on their detail page.' },
   summaryOrganizations: { id: 'instructors.detail.summary.organizations', defaultMessage: 'Organizations' },
   summaryOrganizationsEmpty: { id: 'instructors.detail.summary.organizations.empty', defaultMessage: 'Derived automatically from linked courses.' },
   summaryCourseCount: { id: 'instructors.detail.summary.course-count', defaultMessage: 'Courses Taught' },
@@ -99,7 +96,6 @@ const InstructorDetailPage: React.FC = () => {
     initialValues: {
       name: instructor?.name ?? '',
       detail: instructor?.detail ?? '',
-      featured: instructor?.featured ?? false,
       featuredVideo: instructor?.featuredVideo ?? '',
       image: instructor?.image ?? '',
     },
@@ -162,11 +158,6 @@ const InstructorDetailPage: React.FC = () => {
             </Link>
             <h2 className="mt-1 mb-0 d-flex align-items-center gap-2">
               {formik.values.name || instructor.name}
-              {formik.values.featured && (
-                <Badge variant="primary" className="ml-2 align-middle" style={{ fontSize: '0.55em', verticalAlign: 'middle' }}>
-                  Featured
-                </Badge>
-              )}
             </h2>
             <p className="text-muted small mb-0">{intl.formatMessage(messages.configureSubtitle)}</p>
           </div>
@@ -274,28 +265,6 @@ const InstructorDetailPage: React.FC = () => {
                         />
                         <Form.Text muted>{intl.formatMessage(messages.fieldFeaturedVideoHint)}</Form.Text>
                       </Form.Group>
-
-                      {/* Featured */}
-                      <Form.Group className="mb-0">
-                        <div className="d-flex align-items-start">
-                          <input
-                            type="checkbox"
-                            id="instructor-featured"
-                            checked={formik.values.featured}
-                            onChange={(e) => formik.setFieldValue('featured', e.target.checked)}
-                            className="mt-2 mr-2"
-                          />
-                          <div>
-                            <label htmlFor="instructor-featured" className="mb-0 font-weight-bold">
-                              {intl.formatMessage(messages.fieldFeatured)}
-                            </label>
-                            <p className="small text-muted mb-0">{intl.formatMessage(messages.fieldFeaturedHint)}</p>
-                            <p className="small text-muted mb-0">
-                              {intl.formatMessage(messages.fieldFeaturedNoCoursesNote)}
-                            </p>
-                          </div>
-                        </div>
-                      </Form.Group>
                     </Form>
                   </Card.Section>
                 </Card>
@@ -379,12 +348,6 @@ const InstructorDetailPage: React.FC = () => {
                     title={intl.formatMessage(messages.sectionSummary)}
                   />
                   <Card.Section>
-
-                    {formik.values.featured && (
-                      <Stack direction="horizontal" gap={2} className="mb-4 flex-wrap">
-                        <Badge variant="primary">Featured</Badge>
-                      </Stack>
-                    )}
 
                     <SummaryField label={intl.formatMessage(messages.summaryCourseCount)}>
                       <p className="mb-0">{instructor.courses?.length ?? 0}</p>
