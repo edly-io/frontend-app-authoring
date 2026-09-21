@@ -45,7 +45,6 @@ const toInstructorProfile = (d: any): InstructorProfile => ({
   name: d.name,
   image: d.image ?? null,
   detail: d.detail ?? '',
-  featured: d.featured ?? false,
   featuredVideo: d.featured_video ?? '',
   courses: d.courses?.map(toCourse) ?? [],
   organizations: d.organizations?.map(toOrganization) ?? [],
@@ -132,7 +131,6 @@ export const updateInstructor = async (
 
   if (data.name !== undefined) { formData.append('name', data.name); }
   if (data.detail !== undefined) { formData.append('detail', data.detail ?? ''); }
-  if (data.featured !== undefined) { formData.append('featured', String(data.featured)); }
   if (data.featuredVideo !== undefined) { formData.append('featured_video', data.featuredVideo ?? ''); }
   if (imageFile) { formData.append('image', imageFile); }
 
