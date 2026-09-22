@@ -11,7 +11,6 @@ import { getConfig } from '@edx/frontend-platform';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import { getAuthenticatedUser } from '@edx/frontend-platform/auth';
 import { RequestStatus } from '@src/data/constants';
 import { getLoadingStatuses, getStudioHomeData } from '../data/selectors';
 import messages from './messages';
@@ -82,7 +81,6 @@ const TabsSection = ({
   } = useSelector(getLoadingStatuses);
   const isLoadingCourses = courseLoadingStatus === RequestStatus.IN_PROGRESS;
   const isFailedCoursesPage = courseLoadingStatus === RequestStatus.FAILED;
-  const isAdministrator = getAuthenticatedUser()?.administrator ?? false;
 
   // Controlling the visibility of tabs when using conditional rendering is necessary for
   // the correct operation of iterating over child elements inside the Paragon Tabs component.
@@ -187,7 +185,6 @@ const TabsSection = ({
     showNewInstructorContainer,
     isLoadingCourses,
     migrationFilter,
-    isAdministrator,
   ]);
 
   const handleSelectTab = (tab: TabKeyType) => {
