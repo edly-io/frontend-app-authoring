@@ -32,6 +32,11 @@ export interface Program {
   endDate?: string;
   image?: string;
   courses?: Course[];
+  /** '' / undefined means the program is free. */
+  pricingCategory?: string;
+  /** Decimal strings, not numbers — avoids float rounding on money. */
+  price?: string | null;
+  discount?: string | null;
 }
 
 export interface OrgOption {

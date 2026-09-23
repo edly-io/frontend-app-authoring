@@ -64,6 +64,14 @@ const messages = defineMessages({
   fieldStatus: { id: 'programs.detail.field.status', defaultMessage: 'Program Status' },
   fieldFeatured: { id: 'programs.detail.field.featured', defaultMessage: 'Feature this program' },
   fieldFeaturedHint: { id: 'programs.detail.field.featured.hint', defaultMessage: 'Featured programs are highlighted in the program catalog.' },
+  fieldPricingCategory: { id: 'programs.detail.field.pricing-category', defaultMessage: 'Pricing type' },
+  pricingFree: { id: 'programs.detail.field.pricing.free', defaultMessage: 'Free' },
+  pricingPaid: { id: 'programs.detail.field.pricing.paid', defaultMessage: 'Paid' },
+  fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price' },
+  fieldPriceHint: { id: 'programs.detail.field.price.hint', defaultMessage: 'Regular price shown on the marketing site.' },
+  fieldDiscount: { id: 'programs.detail.field.discount', defaultMessage: 'Discounted price' },
+  fieldDiscountHint: { id: 'programs.detail.field.discount.hint', defaultMessage: 'Optional. Leave empty when the program is not on sale.' },
+  pricingCoursesNote: { id: 'programs.detail.field.pricing.courses-note', defaultMessage: 'Courses inside a paid program are not priced separately — the program is the sellable unit.' },
   summaryOrg: { id: 'programs.detail.summary.org', defaultMessage: 'Organization' },
   summaryType: { id: 'programs.detail.summary.type', defaultMessage: 'Program Type' },
   summaryRun: { id: 'programs.detail.summary.run', defaultMessage: 'Program Run' },
@@ -142,6 +150,9 @@ const ProgramDetailPage: React.FC = () => {
       startDate: program?.startDate ?? '',
       endDate: program?.endDate ?? '',
       image: program?.image ?? '',
+      pricingCategory: program?.pricingCategory ?? '',
+      price: program?.price ?? '',
+      discount: program?.discount ?? '',
     },
     enableReinitialize: true,
     validationSchema: Yup.object({
@@ -451,6 +462,65 @@ const ProgramDetailPage: React.FC = () => {
                           </div>
                         </div>
                       </Form.Group>
+
+                      {/* Pricing */}
+                      <Form.Group className="mt-4">
+                        <Form.Label className="font-weight-bold">
+                          {intl.formatMessage(messages.fieldPricingCategory)}
+                        </Form.Label>
+                        <Form.Control
+                          as="select"
+                          name="pricingCategory"
+                          value={formik.values.pricingCategory ?? ''}
+                          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                            const { value } = e.target;
+                            formik.setFieldValue('pricingCategory', value);
+                            // Switching back to free clears the money fields so
+                            // the form matches what the backend will store.
+                            if (!value) {
+                              formik.setFieldValue('price', '');
+                              formik.setFieldValue('discount', '');
+                            }
+                          }}
+                        >
+                          <option value="">{intl.formatMessage(messages.pricingFree)}</option>
+                          <option value="is_paid">{intl.formatMessage(messages.pricingPaid)}</option>
+                        </Form.Control>
+                      </Form.Group>
+
+                      {formik.values.pricingCategory === 'is_paid' && (
+                        <>
+                          <Form.Group>
+                            <Form.Label>{intl.formatMessage(messages.fieldPrice)}</Form.Label>
+                            <Form.Control
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              name="price"
+                              value={formik.values.price ?? ''}
+                              onChange={formik.handleChange}
+                            />
+                            <Form.Text muted>{intl.formatMessage(messages.fieldPriceHint)}</Form.Text>
+                          </Form.Group>
+
+                          <Form.Group>
+                            <Form.Label>{intl.formatMessage(messages.fieldDiscount)}</Form.Label>
+                            <Form.Control
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              name="discount"
+                              value={formik.values.discount ?? ''}
+                              onChange={formik.handleChange}
+                            />
+                            <Form.Text muted>{intl.formatMessage(messages.fieldDiscountHint)}</Form.Text>
+                          </Form.Group>
+
+                          <p className="small text-muted">
+                            {intl.formatMessage(messages.pricingCoursesNote)}
+                          </p>
+                        </>
+                      )}
                     </Form>
                   </Card.Section>
                 </Card>
