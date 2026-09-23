@@ -45,9 +45,11 @@ const fromSaveSchemeInput = (input: SaveSchemeInput) => ({
   ...(input.name !== undefined && { name: input.name }),
   target_total: input.targetTotal,
   sections: input.sections.map((section) => ({
+    ...(section.id !== undefined && { id: section.id }),
     title: section.title,
     ...(section.order !== undefined && { order: section.order }),
     subsections: (section.subsections ?? []).map((subsection) => ({
+      ...(subsection.id !== undefined && { id: subsection.id }),
       title: subsection.title,
       max_marks: subsection.maxMarks,
       ...(subsection.order !== undefined && { order: subsection.order }),

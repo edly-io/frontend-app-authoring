@@ -49,6 +49,7 @@ export const useSaveScores = (programKey: string) => {
     mutationFn: (input: SaveScoresInput) => saveScores(programKey, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: scoringGridQueryKeys.all(programKey) });
+      queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
     },
   });
 };
@@ -59,6 +60,7 @@ export const useFinalizeScores = (programKey: string) => {
     mutationFn: (input: FinalizeScoresInput = {}) => finalizeScores(programKey, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: scoringGridQueryKeys.all(programKey) });
+      queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
     },
   });
 };

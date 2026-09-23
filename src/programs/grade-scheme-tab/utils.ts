@@ -20,12 +20,14 @@ export const isSchemeBalanced = (targetTotal: number, grandTotal: number): boole
 
 const toEditableSubsection = (subsection: Scheme['sections'][number]['subsections'][number]): EditableSubsection => ({
   localId: generateLocalId('subsection'),
+  serverId: subsection.id,
   title: subsection.title,
   maxMarks: subsection.maxMarks,
 });
 
 const toEditableSection = (section: Scheme['sections'][number]): EditableSection => ({
   localId: generateLocalId('section'),
+  serverId: section.id,
   title: section.title,
   subsections: section.subsections.map(toEditableSubsection),
 });
@@ -78,9 +80,11 @@ export const toSaveSchemeInput = (draft: EditableScheme): SaveSchemeInput => ({
   name: draft.name,
   targetTotal: draft.targetTotal,
   sections: draft.sections.map((section, sectionOrder) => ({
+    ...(section.serverId !== undefined && { id: section.serverId }),
     title: section.title,
     order: sectionOrder,
     subsections: section.subsections.map((subsection, subsectionOrder) => ({
+      ...(subsection.serverId !== undefined && { id: subsection.serverId }),
       title: subsection.title,
       maxMarks: subsection.maxMarks,
       order: subsectionOrder,

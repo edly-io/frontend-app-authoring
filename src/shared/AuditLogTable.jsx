@@ -35,12 +35,98 @@ const MODEL_ACTION_LABELS = {
   programcertificate: { created: 'Awarded', updated: 'Status Changed' },
   traineescore: { created: 'Score Entered', updated: 'Score Updated', deleted: 'Score Removed' },
   traineeresult: { created: 'Result Finalized' },
+  instructorassignment: { created: 'Assigned', deleted: 'Removed' },
 };
 
-const getActionLabel = (action, recordType) => {
+// Filter dropdown options per model — shown when a single model is active.
+const MODEL_FILTER_LABELS = {
+  programcourse: { 0: 'Added', 1: 'Updated', 2: 'Removed' },
+  enrollment: { 0: 'Enrolled', 1: 'Status Changed', 2: 'Removed' },
+  programcertificate: { 0: 'Awarded', 1: 'Status Changed', 2: 'Removed' },
+  feedbackinitiation: { 0: 'Initiated', 1: 'Updated', 2: 'Removed' },
+  feedbackrequest: { 0: 'Sent', 1: 'Submitted', 2: 'Removed' },
+  traineescore: { 0: 'Score Entered', 1: 'Score Updated', 2: 'Score Removed' },
+  traineeresult: { 0: 'Result Finalized', 1: 'Updated', 2: 'Removed' },
+  schemesubsection: { 0: 'Marks Updated', 1: 'Marks Updated', 2: 'Deleted' },
+  instructorassignment: { 0: 'Assigned', 1: 'Updated', 2: 'Removed' },
+};
+
+const getFilterOptions = (models) => {
+  if (models && models.length === 1 && MODEL_FILTER_LABELS[models[0]]) {
+    const labels = MODEL_FILTER_LABELS[models[0]];
+    return [
+      { value: '', label: 'All actions' },
+      { value: '0', label: labels[0] },
+      { value: '1', label: labels[1] },
+      { value: '2', label: labels[2] },
+    ];
+  }
+  return ACTION_OPTIONS;
+};
+
+// Change-aware label resolver — inspects the changes diff for semantic labels
+// beyond what the action type alone can express.
+const getActionLabel = (action, recordType, changes) => {
+  if (recordType === 'enrollment' && action === 'updated') {
+    if (changes?.is_active?.[1] === false) { return 'Unenrolled'; }
+    if (changes?.is_active?.[1] === true) { return 'Re-enrolled'; }
+    if (changes?.status?.[1] === 'withdrawn') { return 'Withdrawn'; }
+    if (changes?.status?.[1] === 'suspended') { return 'Suspended'; }
+    if (changes?.status?.[1] === 'completed') { return 'Completed'; }
+  }
+  if (recordType === 'programcertificate' && action === 'updated') {
+    if (changes?.status?.[1] === 'revoked') { return 'Revoked'; }
+    if (changes?.status?.[1] === 'active') { return 'Reinstated'; }
+  }
+  if (recordType === 'schemesubsection' && action === 'created') { return 'Marks Updated'; }
+  if (recordType === 'schemesubsection' && action === 'updated') {
+    return changes?.max_marks ? 'Marks Updated' : 'Updated';
+  }
+  if (recordType === 'schemesection' && action === 'created') { return 'Updated'; }
   const overrides = MODEL_ACTION_LABELS[recordType];
   return (overrides && overrides[action]) || action;
 };
+
+// Group consecutive entries sharing the same batch_id into collapsible batch rows.
+function groupLogs(logs, expandedBatches) {
+  const rows = [];
+  let i = 0;
+  while (i < logs.length) {
+    const entry = logs[i];
+    const batchId = entry.additional_data?.batch_id;
+    let advanced = false;
+    if (batchId) {
+      const batchEntries = [entry];
+      let j = i + 1;
+      while (j < logs.length && logs[j].additional_data?.batch_id === batchId) {
+        batchEntries.push(logs[j]);
+        j++;
+      }
+      if (batchEntries.length > 1) {
+        const first = batchEntries[0];
+        rows.push({
+          ...first,
+          id: `batch-${batchId}`,
+          rowType: 'batch',
+          batchId,
+          batchCount: batchEntries.length,
+          batchEntries,
+          action: 'batch',
+        });
+        if (expandedBatches.has(batchId)) {
+          batchEntries.forEach((e) => rows.push({ ...e, rowType: 'batch-child', batchId }));
+        }
+        i = j;
+        advanced = true;
+      }
+    }
+    if (!advanced) {
+      rows.push({ ...entry, rowType: 'entry' });
+      i += 1;
+    }
+  }
+  return rows;
+}
 
 const RECORD_TYPE_LABELS = {
   fbrprofile: 'User Profile',
@@ -70,6 +156,7 @@ const RECORD_TYPE_LABELS = {
   substituterequest: 'Substitute Request',
   location: 'Location',
   publicholiday: 'Public Holiday',
+  instructorassignment: 'Instructor Assignment',
 };
 
 // ─── Changes detail modal ─────────────────────────────────────────────────────
@@ -295,6 +382,17 @@ const AuditLogTable = ({
   const [dateTo, setDateTo] = useState('');
   const [changesModal, setChangesModal] = useState(null);
   const [historyModal, setHistoryModal] = useState(null);
+  const [expandedBatches, setExpandedBatches] = useState(new Set());
+
+  const hasActiveFilters = actionFilter !== '' || searchText !== '' || dateFrom !== '' || dateTo !== '';
+  const handleClearFilters = () => {
+    setActionFilter('');
+    setSearchText('');
+    setDebouncedSearch('');
+    setDateFrom('');
+    setDateTo('');
+    setPage(1);
+  };
 
   const activeObjectId = objectId || recordFilter;
 
@@ -338,6 +436,7 @@ const AuditLogTable = ({
   });
 
   const logs = data?.results ?? [];
+  const displayRows = groupLogs(logs, expandedBatches);
   const count = data?.count ?? 0;
   const loading = isPending;
   const error = queryError
@@ -383,10 +482,29 @@ const AuditLogTable = ({
       Header: 'Action',
       accessor: 'action',
       Cell: ({ row }) => {
-        const { action, record_type: rt } = row.original;
+        const {
+          action, record_type: rt, changes, rowType, batchId: entryBatchId, batchCount,
+        } = row.original;
+        if (rowType === 'batch') {
+          return (
+            <Button
+              variant="link"
+              size="sm"
+              onClick={() => setExpandedBatches((prev) => {
+                const next = new Set(prev);
+                if (next.has(entryBatchId)) { next.delete(entryBatchId); } else { next.add(entryBatchId); }
+                return next;
+              })}
+              className="audit-log__batch-toggle"
+            >
+              <Badge variant="light">{batchCount} entries</Badge>
+              {' '}{expandedBatches.has(entryBatchId) ? '▲' : '▼'}
+            </Button>
+          );
+        }
         return (
           <Badge variant={ACTION_VARIANT[action] || 'light'}>
-            {getActionLabel(action, rt)}
+            {getActionLabel(action, rt, changes)}
           </Badge>
         );
       },
@@ -408,21 +526,33 @@ const AuditLogTable = ({
       accessor: 'object_repr',
       Cell: ({ row }) => {
         const entry = row.original;
+        if (entry.rowType === 'batch') {
+          return (
+            <div className="audit-log__record">
+              <div className="audit-log__record-repr audit-log__batch-summary">
+                {entry.batchCount} records created together
+              </div>
+            </div>
+          );
+        }
+        const prefix = entry.rowType === 'batch-child' ? '↳ ' : '';
         return (
-          <div className="audit-log__record">
-            <div className="audit-log__record-repr">{entry.object_repr || '—'}</div>
+          <div className={`audit-log__record${entry.rowType === 'batch-child' ? ' audit-log__record--child' : ''}`}>
+            <div className="audit-log__record-repr">{prefix}{entry.object_repr || '—'}</div>
             {entry.object_pk && (
               <div className="audit-log__record-id">ID: {entry.object_pk}</div>
             )}
-            <Button
-              variant="link"
-              onClick={() => setHistoryModal(entry)}
-              className="audit-log__history-btn"
-              iconBefore={History}
-              size="sm"
-            >
-              Full history
-            </Button>
+            {entry.rowType !== 'batch-child' && (
+              <Button
+                variant="link"
+                onClick={() => setHistoryModal(entry)}
+                className="audit-log__history-btn"
+                iconBefore={History}
+                size="sm"
+              >
+                Full history
+              </Button>
+            )}
           </div>
         );
       },
@@ -500,7 +630,7 @@ const AuditLogTable = ({
             onChange={handleActionChange}
             aria-label="Filter by action"
           >
-            {ACTION_OPTIONS.map((opt) => (
+            {getFilterOptions(models).map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </Form.Control>
@@ -531,6 +661,16 @@ const AuditLogTable = ({
         <span className="audit-log__count">
           {count} result{count !== 1 ? 's' : ''}
         </span>
+        {hasActiveFilters && (
+          <Button
+            variant="tertiary"
+            size="sm"
+            onClick={handleClearFilters}
+            className="audit-log__clear-btn"
+          >
+            Clear filters
+          </Button>
+        )}
       </div>
 
       {loading && (
@@ -541,7 +681,7 @@ const AuditLogTable = ({
       {!loading && error && <Alert variant="danger">{error}</Alert>}
       {!loading && !error && (
         <>
-          <DataTable isSortable data={logs} columns={columns} itemCount={count}>
+          <DataTable isSortable data={displayRows} columns={columns} itemCount={count}>
             <DataTable.Table />
             <DataTable.EmptyTable content="No activity recorded yet." />
           </DataTable>

@@ -15,6 +15,7 @@ import DeleteModal from '../../generic/delete-modal/DeleteModal';
 import AddInstructorModal from './AddInstructorModal';
 import { getInitials } from '../feedback-tab/dashboard/feedbackDashboardUtils';
 import { toRoleBadges } from '../../shared/roleLabels';
+import AuditLogTable from '../../shared/AuditLogTable';
 
 const messages = defineMessages({
   sectionTitle: { id: 'programs.instructors.title', defaultMessage: 'Course Instructors' },
@@ -47,6 +48,7 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
   const [confirmInstructor, setConfirmInstructor] = useState<{ email: string; username: string } | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [isModalOpen, openModal, closeModal] = useToggle(false);
+  const [showAuditLog, setShowAuditLog] = useState(false);
 
   const { data: team, isLoading: isTeamLoading } = useCourseTeam(selectedCourseId, !!selectedCourseId);
   const removeInstructor = useRemoveInstructorFromCourse();
@@ -151,7 +153,10 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
                     <Button
                       variant="outline-danger"
                       size="sm"
-                      onClick={() => { setRemoveError(null); setConfirmInstructor({ email: instructor.email, username: instructor.username }); }}
+                      onClick={() => {
+                        setRemoveError(null);
+                        setConfirmInstructor({ email: instructor.email, username: instructor.username });
+                      }}
                       disabled={confirmInstructor !== null}
                     >
                       {intl.formatMessage(messages.removeBtn)}
@@ -162,6 +167,28 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
             </div>
           )}
         </>
+      )}
+
+      {selectedCourseId && (
+        <div className="mt-4">
+          <div className="d-flex align-items-center justify-content-between mb-3">
+            <h5 className="mb-0">Audit Log</h5>
+            <Button
+              variant="link"
+              size="sm"
+              onClick={() => setShowAuditLog((v) => !v)}
+            >
+              {showAuditLog ? 'Hide' : 'Show'}
+            </Button>
+          </div>
+          {showAuditLog && (
+            <AuditLogTable
+              appLabel="fbr_programs"
+              models={['instructorassignment']}
+              objectId={selectedCourseId}
+            />
+          )}
+        </div>
       )}
 
       {canManage && (
@@ -195,7 +222,10 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
             onDeleteSubmit={async () => {
               setRemoveError(null);
               try {
-                await removeInstructor.mutateAsync({ courseId: selectedCourseId, username: confirmInstructor!.username });
+                await removeInstructor.mutateAsync({
+                  courseId: selectedCourseId,
+                  username: confirmInstructor!.username,
+                });
                 setConfirmInstructor(null);
               } catch (err: any) {
                 setRemoveError(err?.response?.data?.detail ?? 'Failed to remove instructor.');
