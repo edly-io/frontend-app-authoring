@@ -51,14 +51,32 @@ const MODEL_FILTER_LABELS = {
   instructorassignment: { 0: 'Assigned', 1: 'Updated', 2: 'Removed' },
 };
 
+// Filter labels for known multi-model combinations — key is sorted model names joined by comma.
+const MULTI_MODEL_FILTER_LABELS = {
+  'programcertificate,programcertificateconfig': { 0: 'Awarded', 1: 'Status Changed', 2: 'Removed' },
+  'feedbackinitiation,feedbackrequest': { 0: 'Initiated / Sent', 1: 'Updated', 2: 'Removed' },
+  'programgradingscheme,schemesection,schemesubsection,traineescore,traineeresult': { 0: 'Created', 1: 'Marks Updated', 2: 'Deleted' },
+};
+
 const getFilterOptions = (models) => {
-  if (models && models.length === 1 && MODEL_FILTER_LABELS[models[0]]) {
+  if (!models || models.length === 0) { return ACTION_OPTIONS; }
+  if (models.length === 1 && MODEL_FILTER_LABELS[models[0]]) {
     const labels = MODEL_FILTER_LABELS[models[0]];
     return [
       { value: '', label: 'All actions' },
       { value: '0', label: labels[0] },
       { value: '1', label: labels[1] },
       { value: '2', label: labels[2] },
+    ];
+  }
+  const multiKey = [...models].sort().join(',');
+  const multiLabels = MULTI_MODEL_FILTER_LABELS[multiKey];
+  if (multiLabels) {
+    return [
+      { value: '', label: 'All actions' },
+      { value: '0', label: multiLabels[0] },
+      { value: '1', label: multiLabels[1] },
+      { value: '2', label: multiLabels[2] },
     ];
   }
   return ACTION_OPTIONS;
@@ -384,7 +402,7 @@ const AuditLogTable = ({
   const [historyModal, setHistoryModal] = useState(null);
   const [expandedBatches, setExpandedBatches] = useState(new Set());
 
-  const hasActiveFilters = actionFilter !== '' || searchText !== '' || dateFrom !== '' || dateTo !== '';
+  const hasActiveFilters = actionFilter !== '' || searchText !== '' || dateFrom !== '' || dateTo !== '' || !!recordFilter;
   const handleClearFilters = () => {
     setActionFilter('');
     setSearchText('');
@@ -392,6 +410,7 @@ const AuditLogTable = ({
     setDateFrom('');
     setDateTo('');
     setPage(1);
+    onClearFilter?.();
   };
 
   const activeObjectId = objectId || recordFilter;
