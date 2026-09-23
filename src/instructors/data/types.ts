@@ -16,7 +16,6 @@ export interface InstructorProfile {
   name: string;
   image?: string | null;
   detail?: string;
-  featured?: boolean;
   featuredVideo?: string;
   courses?: Course[];
   organizations?: InstructorOrganization[];
