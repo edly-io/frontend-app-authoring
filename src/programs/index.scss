@@ -37,6 +37,14 @@
 }
 
 .instructor-row {
+  border-bottom: 1px solid var(--pgn-color-gray-200);
+
+  &__number {
+    min-width: 1.5rem;
+    font-weight: 700;
+    color: var(--pgn-color-gray-500);
+  }
+
   &__main {
     min-width: 0;
     gap: var(--pgn-spacing-spacer-2);

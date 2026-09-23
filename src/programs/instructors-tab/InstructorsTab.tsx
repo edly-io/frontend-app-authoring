@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import {
   Alert,
   Button,
+  ButtonGroup,
   Form,
   Spinner,
   useToggle,
@@ -48,7 +49,7 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
   const [confirmInstructor, setConfirmInstructor] = useState<{ email: string; username: string } | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [isModalOpen, openModal, closeModal] = useToggle(false);
-  const [showAuditLog, setShowAuditLog] = useState(false);
+  const [activeView, setActiveView] = useState<'list' | 'audit-log'>('list');
 
   const { data: team, isLoading: isTeamLoading } = useCourseTeam(selectedCourseId, !!selectedCourseId);
   const removeInstructor = useRemoveInstructorFromCourse();
@@ -67,17 +68,37 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
         </div>
-        {canManage && (
-          <Button
-            variant="outline-primary"
-            iconBefore={Add}
-            size="sm"
-            onClick={openModal}
-            disabled={!selectedCourseId}
-          >
-            {intl.formatMessage(messages.addInstructorBtn)}
-          </Button>
-        )}
+        <div className="d-flex align-items-center gap-2">
+          {canManage && (
+            <Button
+              variant="outline-primary"
+              iconBefore={Add}
+              size="sm"
+              onClick={openModal}
+              disabled={!selectedCourseId || activeView === 'audit-log'}
+            >
+              {intl.formatMessage(messages.addInstructorBtn)}
+            </Button>
+          )}
+          {selectedCourseId && (
+            <ButtonGroup size="sm">
+              <Button
+                variant={activeView === 'list' ? 'primary' : 'outline-primary'}
+                onClick={() => setActiveView('list')}
+                aria-pressed={activeView === 'list'}
+              >
+                List
+              </Button>
+              <Button
+                variant={activeView === 'audit-log' ? 'primary' : 'outline-primary'}
+                onClick={() => setActiveView('audit-log')}
+                aria-pressed={activeView === 'audit-log'}
+              >
+                Audit Log
+              </Button>
+            </ButtonGroup>
+          )}
+        </div>
       </div>
 
       {courses.length === 0 ? (
@@ -102,7 +123,15 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
         <p className="text-muted">{intl.formatMessage(messages.selectCoursePrompt)}</p>
       )}
 
-      {selectedCourseId && (
+      {selectedCourseId && activeView === 'audit-log' && (
+        <AuditLogTable
+          appLabel="fbr_programs"
+          models={['instructorassignment']}
+          objectId={selectedCourseId}
+        />
+      )}
+
+      {selectedCourseId && activeView === 'list' && (
         <>
           {isTeamLoading && (
             <div className="d-flex justify-content-center py-4">
@@ -120,21 +149,9 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
                 <div
                   key={instructor.id}
                   className="instructor-row d-flex align-items-center py-3"
-                  style={{ borderBottom: '1px solid #dee2e6' }}
                 >
                   <span
-                    className="mr-3 font-weight-bold text-muted"
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      background: '#f0f0f0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      fontSize: '0.8em',
-                    }}
+                    className="instructor-row__number mr-3 font-weight-bold text-muted"
                   >
                     {index + 1}
                   </span>
@@ -167,28 +184,6 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
             </div>
           )}
         </>
-      )}
-
-      {selectedCourseId && (
-        <div className="mt-4">
-          <div className="d-flex align-items-center justify-content-between mb-3">
-            <h5 className="mb-0">Audit Log</h5>
-            <Button
-              variant="link"
-              size="sm"
-              onClick={() => setShowAuditLog((v) => !v)}
-            >
-              {showAuditLog ? 'Hide' : 'Show'}
-            </Button>
-          </div>
-          {showAuditLog && (
-            <AuditLogTable
-              appLabel="fbr_programs"
-              models={['instructorassignment']}
-              objectId={selectedCourseId}
-            />
-          )}
-        </div>
       )}
 
       {canManage && (
