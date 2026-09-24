@@ -19,7 +19,7 @@ const messages = defineMessages({
   },
   categoryPaid: {
     id: 'course-authoring.schedule-section.pricing.category-paid',
-    defaultMessage: 'Paid — sold on its own',
+    defaultMessage: 'Paid, sold on its own',
   },
   categoryWithinProgram: {
     id: 'course-authoring.schedule-section.pricing.category-within-program',
@@ -31,7 +31,7 @@ const messages = defineMessages({
   },
   priceLabel: {
     id: 'course-authoring.schedule-section.pricing.price-label',
-    defaultMessage: 'Price',
+    defaultMessage: 'Price ({currency})',
   },
   priceHint: {
     id: 'course-authoring.schedule-section.pricing.price-hint',
@@ -39,7 +39,7 @@ const messages = defineMessages({
   },
   discountLabel: {
     id: 'course-authoring.schedule-section.pricing.discount-label',
-    defaultMessage: 'Discounted price',
+    defaultMessage: 'Discounted price ({currency})',
   },
   discountHint: {
     id: 'course-authoring.schedule-section.pricing.discount-hint',
@@ -72,6 +72,10 @@ const messages = defineMessages({
   errorSaveFailed: {
     id: 'course-authoring.schedule-section.pricing.error-save-failed',
     defaultMessage: 'Could not save pricing. Please try again.',
+  },
+  partOfProgram: {
+    id: 'course-authoring.schedule-section.pricing.part-of-program',
+    defaultMessage: 'This course is part of the paid program {program}. Learners buy the program, so the course has no price of its own. Remove it from the program to price it here.',
   },
   managedByAdmin: {
     id: 'course-authoring.schedule-section.pricing.managed-by-admin',

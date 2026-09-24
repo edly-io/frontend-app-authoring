@@ -67,9 +67,9 @@ const messages = defineMessages({
   fieldPricingCategory: { id: 'programs.detail.field.pricing-category', defaultMessage: 'Pricing type' },
   pricingFree: { id: 'programs.detail.field.pricing.free', defaultMessage: 'Free' },
   pricingPaid: { id: 'programs.detail.field.pricing.paid', defaultMessage: 'Paid' },
-  fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price' },
+  fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price ({currency})' },
   fieldPriceHint: { id: 'programs.detail.field.price.hint', defaultMessage: 'Regular price shown on the marketing site.' },
-  fieldDiscount: { id: 'programs.detail.field.discount', defaultMessage: 'Discounted price' },
+  fieldDiscount: { id: 'programs.detail.field.discount', defaultMessage: 'Discounted price ({currency})' },
   fieldDiscountHint: { id: 'programs.detail.field.discount.hint', defaultMessage: 'Optional. Leave empty when the program is not on sale.' },
   pricingCoursesNote: { id: 'programs.detail.field.pricing.courses-note', defaultMessage: 'Courses inside a paid program are not priced separately — the program is the sellable unit.' },
   summaryOrg: { id: 'programs.detail.summary.org', defaultMessage: 'Organization' },
@@ -491,7 +491,7 @@ const ProgramDetailPage: React.FC = () => {
                       {formik.values.pricingCategory === 'is_paid' && (
                         <>
                           <Form.Group>
-                            <Form.Label>{intl.formatMessage(messages.fieldPrice)}</Form.Label>
+                            <Form.Label>{intl.formatMessage(messages.fieldPrice, { currency: program?.currency ?? 'SAR' })}</Form.Label>
                             <Form.Control
                               type="number"
                               min="0"
@@ -504,7 +504,9 @@ const ProgramDetailPage: React.FC = () => {
                           </Form.Group>
 
                           <Form.Group>
-                            <Form.Label>{intl.formatMessage(messages.fieldDiscount)}</Form.Label>
+                            <Form.Label>
+                              {intl.formatMessage(messages.fieldDiscount, { currency: program?.currency ?? 'SAR' })}
+                            </Form.Label>
                             <Form.Control
                               type="number"
                               min="0"

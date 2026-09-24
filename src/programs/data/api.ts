@@ -52,6 +52,7 @@ const toProgram = (d: any): Program => ({
   pricingCategory: d.pricing_category ?? '',
   price: d.price ?? null,
   discount: d.discount ?? null,
+  currency: d.currency ?? 'SAR',
 });
 
 // ── Config — GET /rwaq/api/programs/config/ ───────────────────────────────────
@@ -156,16 +157,10 @@ export const updateProgram = async (
   if (data.startDate !== undefined) { formData.append('start_date', data.startDate ?? ''); }
   if (data.endDate !== undefined) { formData.append('end_date', data.endDate ?? ''); }
   if (data.pricingCategory !== undefined) { formData.append('pricing_category', data.pricingCategory ?? ''); }
-  // DRF's DecimalField rejects '' outright, and multipart has no way to send a
-  // real null — so an empty money field is omitted from the payload entirely
-  // rather than sent blank. The PATCH then simply leaves the stored value
-  // alone, and clearing a price is done by switching the program back to free.
-  if (data.price !== undefined && data.price !== null && data.price !== '') {
-    formData.append('price', String(data.price));
-  }
-  if (data.discount !== undefined && data.discount !== null && data.discount !== '') {
-    formData.append('discount', String(data.discount));
-  }
+  // Multipart cannot carry a real null, so a cleared money field is sent as ''.
+  // DRF reads '' as null for these nullable fields, which clears the value.
+  if (data.price !== undefined) { formData.append('price', data.price ?? ''); }
+  if (data.discount !== undefined) { formData.append('discount', data.discount ?? ''); }
 
   if (imageFile) { formData.append('card_image', imageFile); }
 

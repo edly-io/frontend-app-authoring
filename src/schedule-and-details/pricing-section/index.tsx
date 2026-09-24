@@ -23,10 +23,12 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
   const [category, setCategory] = useState<UiCategory>('free');
   const [price, setPrice] = useState('');
   const [discount, setDiscount] = useState('');
+  const [currency, setCurrency] = useState('SAR');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
   const [isManagedByAdmin, setIsManagedByAdmin] = useState(false);
+  const [paidProgramName, setPaidProgramName] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -37,7 +39,9 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
         setCategory(pricing.pricingCategory ?? 'free');
         setPrice(pricing.price ?? '');
         setDiscount(pricing.discount ?? '');
+        setCurrency(pricing.currency ?? 'SAR');
         setIsManagedByAdmin(pricing.pricingManagedByAdmin);
+        setPaidProgramName(pricing.partOfProgram ? (pricing.partOfProgramName ?? pricing.partOfProgram) : null);
       } catch (err) {
         logError(err);
       } finally {
@@ -99,6 +103,9 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
     setError('');
   };
 
+  // Admin-managed pricing and a paid program both make this section read-only.
+  const isReadOnly = isManagedByAdmin || !!paidProgramName;
+
   if (isLoading) {
     return (
       <section className="section-container pricing-section">
@@ -118,7 +125,12 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
         description={intl.formatMessage(messages.description)}
       />
 
-      {isManagedByAdmin && (
+      {paidProgramName && (
+        <Alert variant="info" className="mb-3">
+          {intl.formatMessage(messages.partOfProgram, { program: paidProgramName })}
+        </Alert>
+      )}
+      {isManagedByAdmin && !paidProgramName && (
         <Alert variant="info" className="mb-3">{intl.formatMessage(messages.managedByAdmin)}</Alert>
       )}
       {error && <Alert variant="danger" className="mb-3">{error}</Alert>}
@@ -129,7 +141,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
         <Form.Control
           as="select"
           value={category}
-          disabled={isSaving || isManagedByAdmin}
+          disabled={isSaving || isReadOnly}
           onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onCategoryChange(e.target.value as UiCategory)}
         >
           <option value="free">{intl.formatMessage(messages.categoryFree)}</option>
@@ -138,33 +150,33 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
         </Form.Control>
       </Form.Group>
 
-      {category === 'is_within_program' && (
+      {category === 'is_within_program' && !paidProgramName && (
         <p className="small text-muted">{intl.formatMessage(messages.withinProgramHint)}</p>
       )}
 
       {showPriceFields && (
         <>
           <Form.Group>
-            <Form.Label>{intl.formatMessage(messages.priceLabel)}</Form.Label>
+            <Form.Label>{intl.formatMessage(messages.priceLabel, { currency })}</Form.Label>
             <Form.Control
               type="number"
               min="0"
               step="0.01"
               value={price}
-              disabled={isSaving || isManagedByAdmin}
+              disabled={isSaving || isReadOnly}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setPrice(e.target.value); setSaved(false); }}
             />
             <Form.Text muted>{intl.formatMessage(messages.priceHint)}</Form.Text>
           </Form.Group>
 
           <Form.Group>
-            <Form.Label>{intl.formatMessage(messages.discountLabel)}</Form.Label>
+            <Form.Label>{intl.formatMessage(messages.discountLabel, { currency })}</Form.Label>
             <Form.Control
               type="number"
               min="0"
               step="0.01"
               value={discount}
-              disabled={isSaving || isManagedByAdmin}
+              disabled={isSaving || isReadOnly}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setDiscount(e.target.value); setSaved(false); }}
             />
             <Form.Text muted>{intl.formatMessage(messages.discountHint)}</Form.Text>
@@ -172,7 +184,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
         </>
       )}
 
-      {!isManagedByAdmin && (
+      {!isReadOnly && (
         <Button variant="outline-primary" size="sm" onClick={handleSave} disabled={isSaving}>
           {intl.formatMessage(isSaving ? messages.savingBtn : messages.saveBtn)}
         </Button>
