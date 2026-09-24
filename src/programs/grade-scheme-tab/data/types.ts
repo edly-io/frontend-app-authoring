@@ -26,12 +26,14 @@ export interface Scheme {
 }
 
 export interface SaveSchemeSubsectionInput {
+  id?: number;
   title: string;
   maxMarks: number;
   order?: number;
 }
 
 export interface SaveSchemeSectionInput {
+  id?: number;
   title: string;
   order?: number;
   subsections?: SaveSchemeSubsectionInput[];

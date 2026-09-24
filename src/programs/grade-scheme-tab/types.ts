@@ -1,21 +1,23 @@
 /**
  * Component-layer (editor draft) types for the Scheme tab.
  *
- * These are distinct from the API-layer types in `data/types.ts`: server IDs
- * are never round-tripped while editing (the API assigns IDs on write), so
- * the local draft tracks rows by a client-only `localId` instead. `order` is
- * implicit in array position and is only computed when converting back to a
- * `SaveSchemeInput` for the PUT request.
+ * These are distinct from the API-layer types in `data/types.ts`. The local
+ * draft tracks rows by a client-only `localId`; `serverId` carries the DB
+ * primary key so the PUT body can round-trip it and the backend can update
+ * existing rows in-place (producing auditlog action=1 with field diffs).
+ * `order` is implicit in array position and is only computed on PUT.
  */
 
 export interface EditableSubsection {
   localId: string;
+  serverId?: number;
   title: string;
   maxMarks: number;
 }
 
 export interface EditableSection {
   localId: string;
+  serverId?: number;
   title: string;
   subsections: EditableSubsection[];
 }

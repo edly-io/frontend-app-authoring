@@ -35,6 +35,7 @@ export const useSaveProgramScheme = (programKey: string) => {
     mutationFn: (input: SaveSchemeInput) => saveProgramScheme(programKey, input),
     onSuccess: (scheme: Scheme) => {
       queryClient.setQueryData(schemeQueryKeys.scheme(programKey), scheme);
+      queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
     },
   });
 };
@@ -55,6 +56,7 @@ export const usePublishProgramScheme = (programKey: string) => {
     mutationFn: () => publishProgramScheme(programKey),
     onSuccess: (scheme: Scheme) => {
       queryClient.setQueryData(schemeQueryKeys.scheme(programKey), scheme);
+      queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
     },
   });
 };
@@ -65,6 +67,7 @@ export const useUnpublishProgramScheme = (programKey: string) => {
     mutationFn: () => unpublishProgramScheme(programKey),
     onSuccess: (scheme: Scheme) => {
       queryClient.setQueryData(schemeQueryKeys.scheme(programKey), scheme);
+      queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
     },
   });
 };

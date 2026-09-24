@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import {
   Alert,
   Button,
+  ButtonGroup,
   Form,
   Spinner,
   useToggle,
@@ -15,6 +16,7 @@ import DeleteModal from '../../generic/delete-modal/DeleteModal';
 import AddInstructorModal from './AddInstructorModal';
 import { getInitials } from '../feedback-tab/dashboard/feedbackDashboardUtils';
 import { toRoleBadges } from '../../shared/roleLabels';
+import AuditLogTable from '../../shared/AuditLogTable';
 
 const messages = defineMessages({
   sectionTitle: { id: 'programs.instructors.title', defaultMessage: 'Course Instructors' },
@@ -47,6 +49,7 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
   const [confirmInstructor, setConfirmInstructor] = useState<{ email: string; username: string } | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [isModalOpen, openModal, closeModal] = useToggle(false);
+  const [activeView, setActiveView] = useState<'list' | 'audit-log'>('list');
 
   const { data: team, isLoading: isTeamLoading } = useCourseTeam(selectedCourseId, !!selectedCourseId);
   const removeInstructor = useRemoveInstructorFromCourse();
@@ -65,17 +68,37 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
         </div>
-        {canManage && (
-          <Button
-            variant="outline-primary"
-            iconBefore={Add}
-            size="sm"
-            onClick={openModal}
-            disabled={!selectedCourseId}
-          >
-            {intl.formatMessage(messages.addInstructorBtn)}
-          </Button>
-        )}
+        <div className="d-flex align-items-center gap-2">
+          {canManage && (
+            <Button
+              variant="outline-primary"
+              iconBefore={Add}
+              size="sm"
+              onClick={openModal}
+              disabled={!selectedCourseId || activeView === 'audit-log'}
+            >
+              {intl.formatMessage(messages.addInstructorBtn)}
+            </Button>
+          )}
+          {selectedCourseId && (
+            <ButtonGroup size="sm">
+              <Button
+                variant={activeView === 'list' ? 'primary' : 'outline-primary'}
+                onClick={() => setActiveView('list')}
+                aria-pressed={activeView === 'list'}
+              >
+                List
+              </Button>
+              <Button
+                variant={activeView === 'audit-log' ? 'primary' : 'outline-primary'}
+                onClick={() => setActiveView('audit-log')}
+                aria-pressed={activeView === 'audit-log'}
+              >
+                Audit Log
+              </Button>
+            </ButtonGroup>
+          )}
+        </div>
       </div>
 
       {courses.length === 0 ? (
@@ -100,7 +123,15 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
         <p className="text-muted">{intl.formatMessage(messages.selectCoursePrompt)}</p>
       )}
 
-      {selectedCourseId && (
+      {selectedCourseId && activeView === 'audit-log' && (
+        <AuditLogTable
+          appLabel="fbr_programs"
+          models={['instructorassignment']}
+          objectId={selectedCourseId}
+        />
+      )}
+
+      {selectedCourseId && activeView === 'list' && (
         <>
           {isTeamLoading && (
             <div className="d-flex justify-content-center py-4">
@@ -118,21 +149,9 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
                 <div
                   key={instructor.id}
                   className="instructor-row d-flex align-items-center py-3"
-                  style={{ borderBottom: '1px solid #dee2e6' }}
                 >
                   <span
-                    className="mr-3 font-weight-bold text-muted"
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      background: '#f0f0f0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      fontSize: '0.8em',
-                    }}
+                    className="instructor-row__number mr-3 font-weight-bold text-muted"
                   >
                     {index + 1}
                   </span>
@@ -151,7 +170,10 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
                     <Button
                       variant="outline-danger"
                       size="sm"
-                      onClick={() => { setRemoveError(null); setConfirmInstructor({ email: instructor.email, username: instructor.username }); }}
+                      onClick={() => {
+                        setRemoveError(null);
+                        setConfirmInstructor({ email: instructor.email, username: instructor.username });
+                      }}
                       disabled={confirmInstructor !== null}
                     >
                       {intl.formatMessage(messages.removeBtn)}
@@ -195,7 +217,10 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
             onDeleteSubmit={async () => {
               setRemoveError(null);
               try {
-                await removeInstructor.mutateAsync({ courseId: selectedCourseId, username: confirmInstructor!.username });
+                await removeInstructor.mutateAsync({
+                  courseId: selectedCourseId,
+                  username: confirmInstructor!.username,
+                });
                 setConfirmInstructor(null);
               } catch (err: any) {
                 setRemoveError(err?.response?.data?.detail ?? 'Failed to remove instructor.');

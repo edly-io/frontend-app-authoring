@@ -20,6 +20,7 @@ const auditLogQueryOptions = (params) => ({
   enabled: !!params.appLabel,
   placeholderData: keepPreviousData,
   retry: retryExceptClientErrors,
+  gcTime: 0,
 });
 
 export const useAuditLogs = (params) => useQuery({
