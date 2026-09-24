@@ -69,8 +69,9 @@ describe('CertificateCreateForm', () => {
   });
 
   it('does not render signatories, which Rwaq hides in the certificate design', () => {
-    const { queryByPlaceholderText, queryByText } = renderComponent();
+    const { getByTestId, queryByPlaceholderText, queryByText } = renderComponent();
 
+    expect(getByTestId('certificates-create-form')).toBeInTheDocument();
     expect(queryByPlaceholderText(signatoryMessages.namePlaceholder.defaultMessage)).not.toBeInTheDocument();
     expect(queryByText(signatoryMessages.addSignatoryButton.defaultMessage)).not.toBeInTheDocument();
   });
