@@ -39,6 +39,8 @@ export interface Program {
   discount?: string | null;
   /** ISO 4217 code of price and discount. */
   currency?: string;
+  /** Set from the Rwaq admin panel. When true, pricing is read-only here and the backend refuses changes. */
+  pricingManagedByAdmin?: boolean;
 }
 
 export interface OrgOption {

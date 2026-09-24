@@ -53,6 +53,7 @@ const toProgram = (d: any): Program => ({
   price: d.price ?? null,
   discount: d.discount ?? null,
   currency: d.currency ?? 'SAR',
+  pricingManagedByAdmin: d.pricing_managed_by_admin ?? false,
 });
 
 // ── Config — GET /rwaq/api/programs/config/ ───────────────────────────────────

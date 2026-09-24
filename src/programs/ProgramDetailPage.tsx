@@ -71,6 +71,7 @@ const messages = defineMessages({
   fieldPriceHint: { id: 'programs.detail.field.price.hint', defaultMessage: 'Regular price shown on the marketing site.' },
   fieldDiscount: { id: 'programs.detail.field.discount', defaultMessage: 'Discounted price ({currency})' },
   fieldDiscountHint: { id: 'programs.detail.field.discount.hint', defaultMessage: 'Optional. Leave empty when the program is not on sale.' },
+  pricingManagedByAdmin: { id: 'programs.detail.field.pricing.managed-by-admin', defaultMessage: 'Pricing for this program is managed by the Rwaq admin team and cannot be changed here.' },
   pricingCoursesNote: { id: 'programs.detail.field.pricing.courses-note', defaultMessage: 'Courses inside a paid program are not priced separately — the program is the sellable unit.' },
   summaryOrg: { id: 'programs.detail.summary.org', defaultMessage: 'Organization' },
   summaryType: { id: 'programs.detail.summary.type', defaultMessage: 'Program Type' },
@@ -138,6 +139,7 @@ const ProgramDetailPage: React.FC = () => {
   const { mutateAsync: updateProgram, isPending: isSaving } = useUpdateProgram();
 
   const program = data?.program;
+  const pricingLocked = !!program?.pricingManagedByAdmin;
 
   const formik = useFormik({
     initialValues: {
@@ -159,8 +161,14 @@ const ProgramDetailPage: React.FC = () => {
       displayName: Yup.string().trim().required(intl.formatMessage(messages.fieldTitleRequired)),
     }),
     onSubmit: async (values) => {
+      // Admin-managed pricing is read-only here, so it is left out of the save.
+      const payload = program?.pricingManagedByAdmin
+        ? {
+          ...values, pricingCategory: undefined, price: undefined, discount: undefined,
+        }
+        : values;
       try {
-        await updateProgram({ programId: programId ?? '', data: values, imageFile });
+        await updateProgram({ programId: programId ?? '', data: payload, imageFile });
         setImageFile(null);
         showToast(intl.formatMessage(messages.savedSuccess));
       } catch {
@@ -464,6 +472,11 @@ const ProgramDetailPage: React.FC = () => {
                       </Form.Group>
 
                       {/* Pricing */}
+                      {pricingLocked && (
+                        <Alert variant="info" className="mt-4 mb-0">
+                          {intl.formatMessage(messages.pricingManagedByAdmin)}
+                        </Alert>
+                      )}
                       <Form.Group className="mt-4">
                         <Form.Label className="font-weight-bold">
                           {intl.formatMessage(messages.fieldPricingCategory)}
@@ -472,6 +485,7 @@ const ProgramDetailPage: React.FC = () => {
                           as="select"
                           name="pricingCategory"
                           value={formik.values.pricingCategory ?? ''}
+                          disabled={pricingLocked}
                           onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                             const { value } = e.target;
                             formik.setFieldValue('pricingCategory', value);
@@ -498,6 +512,7 @@ const ProgramDetailPage: React.FC = () => {
                               step="0.01"
                               name="price"
                               value={formik.values.price ?? ''}
+                              disabled={pricingLocked}
                               onChange={formik.handleChange}
                             />
                             <Form.Text muted>{intl.formatMessage(messages.fieldPriceHint)}</Form.Text>
@@ -513,6 +528,7 @@ const ProgramDetailPage: React.FC = () => {
                               step="0.01"
                               name="discount"
                               value={formik.values.discount ?? ''}
+                              disabled={pricingLocked}
                               onChange={formik.handleChange}
                             />
                             <Form.Text muted>{intl.formatMessage(messages.fieldDiscountHint)}</Form.Text>
