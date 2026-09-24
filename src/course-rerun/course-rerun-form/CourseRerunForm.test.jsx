@@ -4,6 +4,7 @@ import { render } from '@testing-library/react';
 import { initializeMockApp } from '@edx/frontend-platform';
 import { IntlProvider } from '@edx/frontend-platform/i18n';
 import { AppProvider } from '@edx/frontend-platform/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import studioHomeMock from '@src/studio-home/__mocks__/studioHomeMock';
 import initializeStore from '../../store';
@@ -18,10 +19,15 @@ let store;
 
 const onClickCancelMock = jest.fn();
 
+// CreateOrRerunCourseForm reads the programs config through react-query.
+const queryClient = new QueryClient();
+
 const RootWrapper = (props) => (
   <IntlProvider locale="en">
     <AppProvider store={store}>
-      <CourseRerunForm {...props} />
+      <QueryClientProvider client={queryClient}>
+        <CourseRerunForm {...props} />
+      </QueryClientProvider>
     </AppProvider>
   </IntlProvider>
 );

@@ -1,5 +1,5 @@
 import {
-  render, waitFor, within,
+  render, waitFor,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
@@ -66,25 +66,20 @@ describe('CertificateCreateForm', () => {
     const { getByPlaceholderText } = renderComponent();
 
     expect(getByPlaceholderText(detailsMessages.detailsCourseTitleOverride.defaultMessage).value).toBe('');
-    expect(getByPlaceholderText(signatoryMessages.namePlaceholder.defaultMessage).value).toBe('');
-    expect(getByPlaceholderText(signatoryMessages.titlePlaceholder.defaultMessage).value).toBe('');
-    expect(getByPlaceholderText(signatoryMessages.organizationPlaceholder.defaultMessage).value).toBe('');
-    expect(getByPlaceholderText(signatoryMessages.imagePlaceholder.defaultMessage).value).toBe('');
+  });
+
+  it('does not render signatories, which Rwaq hides in the certificate design', () => {
+    const { queryByPlaceholderText, queryByText } = renderComponent();
+
+    expect(queryByPlaceholderText(signatoryMessages.namePlaceholder.defaultMessage)).not.toBeInTheDocument();
+    expect(queryByText(signatoryMessages.addSignatoryButton.defaultMessage)).not.toBeInTheDocument();
   });
 
   it('creates a new certificate', async () => {
     const courseTitleOverrideValue = 'Create Course Title';
-    const signatoryNameValue = 'Create signatory name';
     const newCertificateData = {
       ...certificatesDataMock,
       courseTitle: courseTitleOverrideValue,
-      certificates: [{
-        ...certificatesDataMock.certificates[0],
-        signatories: [{
-          ...certificatesDataMock.certificates[0].signatories[0],
-          name: signatoryNameValue,
-        }],
-      }],
     };
 
     const user = userEvent.setup();
@@ -95,10 +90,6 @@ describe('CertificateCreateForm', () => {
       getByPlaceholderText(detailsMessages.detailsCourseTitleOverride.defaultMessage),
       courseTitleOverrideValue,
     );
-    await user.type(
-      getByPlaceholderText(signatoryMessages.namePlaceholder.defaultMessage),
-      signatoryNameValue,
-    );
     await user.click(getByRole('button', { name: messages.cardCreate.defaultMessage }));
 
     axiosMock.onPost(
@@ -108,7 +99,6 @@ describe('CertificateCreateForm', () => {
 
     await waitFor(() => {
       expect(getByDisplayValue(courseTitleOverrideValue)).toBeInTheDocument();
-      expect(getByDisplayValue(signatoryNameValue)).toBeInTheDocument();
     });
   });
 
@@ -128,35 +118,6 @@ describe('CertificateCreateForm', () => {
 
     await waitFor(() => {
       expect(deleteIcons.length).toBe(0);
-    });
-  });
-
-  it('add and delete signatory', async () => {
-    const user = userEvent.setup();
-    const {
-      getAllByRole, queryAllByRole, getByText, getByRole,
-    } = renderComponent();
-
-    const addSignatoryBtn = getByText(signatoryMessages.addSignatoryButton.defaultMessage);
-
-    await user.click(addSignatoryBtn);
-
-    const deleteIcons = getAllByRole('button', { name: messages.deleteTooltip.defaultMessage });
-
-    await waitFor(() => {
-      expect(deleteIcons.length).toBe(2);
-    });
-
-    await user.click(deleteIcons[0]);
-
-    const confirModal = getByRole('dialog');
-    const deleteModalButton = within(confirModal).getByRole('button', { name: messages.deleteTooltip.defaultMessage });
-
-    await user.click(deleteIcons[0]);
-    await user.click(deleteModalButton);
-
-    await waitFor(() => {
-      expect(queryAllByRole('button', { name: messages.deleteTooltip.defaultMessage }).length).toBe(0);
     });
   });
 });
