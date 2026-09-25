@@ -131,6 +131,8 @@ describe('<PricingSection />', () => {
     fireEvent.change(screen.getByLabelText('Price (SAR)'), { target: { value: '100' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save course type' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(detail);
+    expect(screen.getByRole('radio', { name: 'Free' })).toBeChecked();
+    expect(screen.queryByLabelText('Price (SAR)')).not.toBeInTheDocument();
   });
 
   it('renders read-only when the course team cannot edit', async () => {

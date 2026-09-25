@@ -28,6 +28,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
   const [isLoading, setIsLoading] = useState(true);
   // '' means the course has no type yet, so no radio is selected.
   const [category, setCategory] = useState<PricingCategory | ''>('');
+  const [savedCategory, setSavedCategory] = useState<PricingCategory | ''>('');
   const [price, setPrice] = useState('');
   const [discount, setDiscount] = useState('');
   const [currency, setCurrency] = useState('SAR');
@@ -42,6 +43,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
 
   const applyPricing = (pricing: CoursePricing) => {
     setCategory(pricing.pricingCategory ?? '');
+    setSavedCategory(pricing.pricingCategory ?? '');
     setPrice(pricing.price ?? '');
     setDiscount(pricing.discount ?? '');
     setCurrency(pricing.currency ?? 'SAR');
@@ -117,6 +119,8 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
         setFieldErrors({ [body.field]: body.detail });
       } else {
         setError(body?.detail ?? intl.formatMessage(messages.errorSaveFailed));
+        // A refusal with no field is a refused type change, so show the type that is still saved.
+        if (body) { setCategory(savedCategory); }
       }
     } finally {
       setIsSaving(false);
