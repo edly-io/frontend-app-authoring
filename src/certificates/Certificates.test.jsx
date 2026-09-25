@@ -94,7 +94,8 @@ describe('Certificates', () => {
     await waitFor(() => {
       expect(getByTestId('certificates-list')).toBeInTheDocument();
       expect(getByText(certificatesDataMock.courseTitle)).toBeInTheDocument();
-      expect(getByText(certificatesDataMock.certificates[0].signatories[0].name)).toBeInTheDocument();
+      // Rwaq hides signatories in the certificate design.
+      expect(queryByText(certificatesDataMock.certificates[0].signatories[0].name)).not.toBeInTheDocument();
       expect(queryByText(messages.noCertificatesText.defaultMessage)).not.toBeInTheDocument();
       expect(queryByText(messages.withoutModesText.defaultMessage)).not.toBeInTheDocument();
     });
@@ -122,7 +123,7 @@ describe('Certificates', () => {
 
     expect(getByTestId('certificates-create-form')).toBeInTheDocument();
     expect(getByTestId('certificate-details-form')).toBeInTheDocument();
-    expect(getByTestId('signatory-form')).toBeInTheDocument();
+    expect(queryByTestId('signatory-form')).not.toBeInTheDocument();
     expect(queryByTestId('certificate-details')).not.toBeInTheDocument();
     expect(queryByTestId('signatory')).not.toBeInTheDocument();
   });
@@ -144,7 +145,7 @@ describe('Certificates', () => {
 
     expect(getByTestId('certificates-edit-form')).toBeInTheDocument();
     expect(getByTestId('certificate-details-form')).toBeInTheDocument();
-    expect(getByTestId('signatory-form')).toBeInTheDocument();
+    expect(queryByTestId('signatory-form')).not.toBeInTheDocument();
     expect(queryByTestId('certificate-details')).not.toBeInTheDocument();
     expect(queryByTestId('signatory')).not.toBeInTheDocument();
   });
