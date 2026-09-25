@@ -134,10 +134,17 @@ describe('<PricingSection />', () => {
   });
 
   it('renders read-only when the course team cannot edit', async () => {
-    await renderSection({ pricing_category: 'is_paid', price: '100.00', can_edit: false });
+    await renderSection({ pricing_category: 'is_paid', price: '100.00', can_edit: false, pricing_managed_by_admin: true });
     expect(screen.getByText(/managed by the Rwaq admin/)).toBeInTheDocument();
     screen.getAllByRole('radio').forEach((radio) => expect(radio).toBeDisabled());
     expect(screen.getByLabelText('Price (SAR)')).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Save course type' })).not.toBeInTheDocument();
+  });
+
+  it('hides the admin alert when course team cannot edit but admin is not managing pricing', async () => {
+    await renderSection({ can_edit: false, pricing_managed_by_admin: false });
+    expect(screen.queryByText(/managed by the Rwaq admin/)).not.toBeInTheDocument();
+    screen.getAllByRole('radio').forEach((radio) => expect(radio).toBeDisabled());
     expect(screen.queryByRole('button', { name: 'Save course type' })).not.toBeInTheDocument();
   });
 
@@ -148,5 +155,7 @@ describe('<PricingSection />', () => {
       part_of_program_name: 'Masters in Tax',
     });
     expect(screen.getByText(/This course is in the program Masters in Tax/)).toBeInTheDocument();
+    screen.getAllByRole('radio').forEach((radio) => expect(radio).toBeDisabled());
+    expect(screen.queryByRole('button', { name: 'Save course type' })).not.toBeInTheDocument();
   });
 });

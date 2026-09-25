@@ -74,7 +74,7 @@ describe('<CoursesTab />', () => {
   });
 
   it('shows the backend detail when remove is rejected', async () => {
-    const detail = 'Learners of this program have already enrolled in this course. Only a Rwaq admin can remove it from the program.';
+    const detail = 'Learners of this program have already enrolled in this course. It can no longer be removed from the program.';
     mockRemoveMutate.mockRejectedValue({ response: { status: 409, data: { detail } } });
     const program = mockProgram({ courses: [mockCourse()] });
     render(<CoursesTab program={program} programId={programId} />);

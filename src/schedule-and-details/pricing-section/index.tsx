@@ -32,6 +32,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
   const [discount, setDiscount] = useState('');
   const [currency, setCurrency] = useState('SAR');
   const [canEdit, setCanEdit] = useState(false);
+  const [managedByAdmin, setManagedByAdmin] = useState(false);
   const [programName, setProgramName] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
@@ -45,6 +46,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
     setDiscount(pricing.discount ?? '');
     setCurrency(pricing.currency ?? 'SAR');
     setCanEdit(pricing.canEdit);
+    setManagedByAdmin(pricing.pricingManagedByAdmin);
     setProgramName(pricing.partOfProgram ? (pricing.partOfProgramName ?? pricing.partOfProgram) : null);
   };
 
@@ -66,6 +68,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
 
   const showPriceFields = category === 'is_paid';
   const isReadOnly = !canEdit;
+  const isTypeLocked = isReadOnly || !!programName;
 
   const priceError = (value: string) => (
     isPriceValid(value) ? undefined : intl.formatMessage(messages.errorPriceNotPositive)
@@ -150,7 +153,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
         description={intl.formatMessage(messages.description)}
       />
 
-      {isReadOnly && (
+      {isReadOnly && managedByAdmin && (
         <Alert variant="info" className="mb-3">{intl.formatMessage(messages.managedByAdmin)}</Alert>
       )}
       {programName && (
@@ -160,7 +163,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
       )}
       {error && <Alert variant="danger" className="mb-3">{error}</Alert>}
       {saved && !error && <Alert variant="success" className="mb-3">{intl.formatMessage(messages.savedMsg)}</Alert>}
-      {!category && !isReadOnly && (
+      {!category && !isTypeLocked && (
         <p className="small text-muted">{intl.formatMessage(messages.noTypeHint)}</p>
       )}
 
@@ -174,21 +177,21 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
           <Form.Radio
             value="is_free"
             description={intl.formatMessage(messages.categoryFreeDescription)}
-            disabled={isSaving || isReadOnly}
+            disabled={isSaving || isTypeLocked}
           >
             {intl.formatMessage(messages.categoryFree)}
           </Form.Radio>
           <Form.Radio
             value="is_paid"
             description={intl.formatMessage(messages.categoryPaidDescription)}
-            disabled={isSaving || isReadOnly}
+            disabled={isSaving || isTypeLocked}
           >
             {intl.formatMessage(messages.categoryPaid)}
           </Form.Radio>
           <Form.Radio
             value="is_program_only"
             description={intl.formatMessage(messages.categoryProgramOnlyDescription)}
-            disabled={isSaving || isReadOnly}
+            disabled={isSaving || isTypeLocked}
           >
             {intl.formatMessage(messages.categoryProgramOnly)}
           </Form.Radio>
@@ -238,7 +241,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
         </>
       )}
 
-      {!isReadOnly && (
+      {!isTypeLocked && (
         <Button variant="outline-primary" size="sm" onClick={handleSave} disabled={isSaving || !category}>
           {intl.formatMessage(isSaving ? messages.savingBtn : messages.saveBtn)}
         </Button>

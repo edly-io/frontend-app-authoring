@@ -94,6 +94,7 @@ export const useAddCourseToProgram = () => {
     ),
     onSuccess: (_, { programId }) => {
       queryClient.invalidateQueries({ queryKey: ['program', programId] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
     },
   });
 };
@@ -138,6 +139,7 @@ export const useRemoveCourseFromProgram = () => {
     ),
     onSuccess: (_, { programId }) => {
       queryClient.invalidateQueries({ queryKey: ['program', programId] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
     },
   });
 };
