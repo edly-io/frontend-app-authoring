@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -11,12 +11,15 @@ import {
   Container,
   Form,
   Layout,
+  ModalDialog,
+  ActionRow,
   Row,
   Col,
   Stack,
   StatefulButton,
   Tab,
   Tabs,
+  useToggle,
 } from '@openedx/paragon';
 import { useIntl, defineMessages } from '@edx/frontend-platform/i18n';
 import { StudioFooterSlot } from '@edx/frontend-component-footer';
@@ -28,6 +31,7 @@ import CoursesTab from './courses-tab/CoursesTab';
 import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
 import RichTextEditor from '../generic/RichTextEditor';
+import { isPriceValid, isSalePriceValid } from '../schedule-and-details/pricing-section/validation';
 import './index.scss';
 
 const messages = defineMessages({
@@ -69,10 +73,15 @@ const messages = defineMessages({
   pricingPaid: { id: 'programs.detail.field.pricing.paid', defaultMessage: 'Paid' },
   fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price ({currency})' },
   fieldPriceHint: { id: 'programs.detail.field.price.hint', defaultMessage: 'Regular price shown on the marketing site.' },
-  fieldDiscount: { id: 'programs.detail.field.discount', defaultMessage: 'Discounted price ({currency})' },
+  fieldDiscount: { id: 'programs.detail.field.discount', defaultMessage: 'Sale price ({currency})' },
   fieldDiscountHint: { id: 'programs.detail.field.discount.hint', defaultMessage: 'Optional. Leave empty when the program is not on sale.' },
-  pricingManagedByAdmin: { id: 'programs.detail.field.pricing.managed-by-admin', defaultMessage: 'Pricing for this program is managed by the Rwaq admin team and cannot be changed here.' },
-  pricingCoursesNote: { id: 'programs.detail.field.pricing.courses-note', defaultMessage: 'Courses inside a paid program are not priced separately — the program is the sellable unit.' },
+  pricingCoursesNote: { id: 'programs.detail.field.pricing.courses-note', defaultMessage: 'Courses inside a paid program are not priced separately. The program is the sellable unit.' },
+  errorPriceNotPositive: { id: 'programs.detail.field.price.error-not-positive', defaultMessage: 'Price must be greater than 0.' },
+  errorSalePriceTooHigh: { id: 'programs.detail.field.discount.error-too-high', defaultMessage: 'Sale price must be lower than the price.' },
+  activateFreeTitle: { id: 'programs.detail.activate-free.title', defaultMessage: 'Activate a free program?' },
+  activateFreeBody: { id: 'programs.detail.activate-free.body', defaultMessage: 'Once active, this program goes live in the catalog. It is free, so learners can enroll at no cost. To sell it, make it paid and set a price before you activate it.' },
+  activateFreeMakePaid: { id: 'programs.detail.activate-free.make-paid', defaultMessage: 'Make it paid' },
+  activateFreeContinue: { id: 'programs.detail.activate-free.continue', defaultMessage: 'Continue as free' },
   summaryOrg: { id: 'programs.detail.summary.org', defaultMessage: 'Organization' },
   summaryType: { id: 'programs.detail.summary.type', defaultMessage: 'Program Type' },
   summaryRun: { id: 'programs.detail.summary.run', defaultMessage: 'Program Run' },
@@ -134,12 +143,15 @@ const ProgramDetailPage: React.FC = () => {
   const [imageFile, setImageFile] = React.useState<File | null>(null);
   const [editorKey, setEditorKey] = React.useState(0);
   const { showToast } = useContext(ToastContext);
+  const [isActivateFreeOpen, openActivateFree, closeActivateFree] = useToggle(false);
+  // Set by "Continue as free" so the next submit skips the free-program prompt.
+  const activateAsFreeConfirmed = useRef(false);
+  const pricingCategoryRef = useRef<HTMLSelectElement>(null);
 
   const { data, isLoading, isError } = useProgramDetail(programId ?? '');
   const { mutateAsync: updateProgram, isPending: isSaving } = useUpdateProgram();
 
   const program = data?.program;
-  const pricingLocked = !!program?.pricingManagedByAdmin;
 
   const formik = useFormik({
     initialValues: {
@@ -159,23 +171,63 @@ const ProgramDetailPage: React.FC = () => {
     enableReinitialize: true,
     validationSchema: Yup.object({
       displayName: Yup.string().trim().required(intl.formatMessage(messages.fieldTitleRequired)),
+      // Price checks apply only to a paid program.
+      price: Yup.string().nullable().test(
+        'price-positive',
+        intl.formatMessage(messages.errorPriceNotPositive),
+        (value, { parent }) => parent.pricingCategory !== 'is_paid' || isPriceValid(value ?? ''),
+      ),
+      discount: Yup.string().nullable().test(
+        'sale-price-below-price',
+        intl.formatMessage(messages.errorSalePriceTooHigh),
+        (value, { parent }) => parent.pricingCategory !== 'is_paid' || isSalePriceValid(parent.price ?? '', value ?? ''),
+      ),
     }),
-    onSubmit: async (values) => {
-      // Admin-managed pricing is read-only here, so it is left out of the save.
-      const payload = program?.pricingManagedByAdmin
-        ? {
-          ...values, pricingCategory: undefined, price: undefined, discount: undefined,
-        }
-        : values;
+    onSubmit: async (values, { setFieldError }) => {
+      // Activating a free program puts it live in the catalog at no cost, so
+      // confirm that first. "Continue as free" resubmits with the flag set.
+      const isActivating = values.status === 'active' && program?.status !== 'active';
+      if (isActivating && !values.pricingCategory && !activateAsFreeConfirmed.current) {
+        openActivateFree();
+        return;
+      }
+      activateAsFreeConfirmed.current = false;
       try {
-        await updateProgram({ programId: programId ?? '', data: payload, imageFile });
+        await updateProgram({ programId: programId ?? '', data: values, imageFile });
         setImageFile(null);
         showToast(intl.formatMessage(messages.savedSuccess));
-      } catch {
+      } catch (err) {
         showToast(intl.formatMessage(messages.savedError));
+        // DRF field errors: { pricing_category: [msg], price: [msg], discount: [msg] }.
+        const body = (err as { response?: { data?: Record<string, unknown> } })?.response?.data ?? {};
+        const pricingFields = { pricing_category: 'pricingCategory', price: 'price', discount: 'discount' };
+        let hasPricingError = false;
+        Object.entries(pricingFields).forEach(([apiField, formField]) => {
+          const fieldError = body[apiField];
+          const message = Array.isArray(fieldError) ? fieldError[0] : fieldError;
+          if (typeof message === 'string') {
+            setFieldError(formField, message);
+            hasPricingError = true;
+          }
+        });
+        // The pricing fields live on the details tab, so bring it up to show the error.
+        if (hasPricingError) { setActiveTab('details'); }
       }
     },
   });
+
+  const handleActivateAsFree = () => {
+    closeActivateFree();
+    activateAsFreeConfirmed.current = true;
+    formik.submitForm();
+  };
+
+  const handleMakePaid = () => {
+    closeActivateFree();
+    setActiveTab('details');
+    // Wait for the modal to close and the details tab to render before focusing.
+    setTimeout(() => pricingCategoryRef.current?.focus(), 0);
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -472,20 +524,18 @@ const ProgramDetailPage: React.FC = () => {
                       </Form.Group>
 
                       {/* Pricing */}
-                      {pricingLocked && (
-                        <Alert variant="info" className="mt-4 mb-0">
-                          {intl.formatMessage(messages.pricingManagedByAdmin)}
-                        </Alert>
-                      )}
-                      <Form.Group className="mt-4">
+                      <Form.Group
+                        className="mt-4"
+                        isInvalid={formik.touched.pricingCategory && !!formik.errors.pricingCategory}
+                      >
                         <Form.Label className="font-weight-bold">
                           {intl.formatMessage(messages.fieldPricingCategory)}
                         </Form.Label>
                         <Form.Control
                           as="select"
                           name="pricingCategory"
+                          ref={pricingCategoryRef}
                           value={formik.values.pricingCategory ?? ''}
-                          disabled={pricingLocked}
                           onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                             const { value } = e.target;
                             formik.setFieldValue('pricingCategory', value);
@@ -500,11 +550,16 @@ const ProgramDetailPage: React.FC = () => {
                           <option value="">{intl.formatMessage(messages.pricingFree)}</option>
                           <option value="is_paid">{intl.formatMessage(messages.pricingPaid)}</option>
                         </Form.Control>
+                        {formik.touched.pricingCategory && formik.errors.pricingCategory && (
+                          <Form.Control.Feedback type="invalid">
+                            {formik.errors.pricingCategory}
+                          </Form.Control.Feedback>
+                        )}
                       </Form.Group>
 
                       {formik.values.pricingCategory === 'is_paid' && (
                         <>
-                          <Form.Group>
+                          <Form.Group isInvalid={formik.touched.price && !!formik.errors.price}>
                             <Form.Label>{intl.formatMessage(messages.fieldPrice, { currency: program?.currency ?? 'SAR' })}</Form.Label>
                             <Form.Control
                               type="number"
@@ -512,13 +567,17 @@ const ProgramDetailPage: React.FC = () => {
                               step="0.01"
                               name="price"
                               value={formik.values.price ?? ''}
-                              disabled={pricingLocked}
                               onChange={formik.handleChange}
+                              onBlur={formik.handleBlur}
                             />
-                            <Form.Text muted>{intl.formatMessage(messages.fieldPriceHint)}</Form.Text>
+                            {formik.touched.price && formik.errors.price ? (
+                              <Form.Control.Feedback type="invalid">{formik.errors.price}</Form.Control.Feedback>
+                            ) : (
+                              <Form.Text muted>{intl.formatMessage(messages.fieldPriceHint)}</Form.Text>
+                            )}
                           </Form.Group>
 
-                          <Form.Group>
+                          <Form.Group isInvalid={formik.touched.discount && !!formik.errors.discount}>
                             <Form.Label>
                               {intl.formatMessage(messages.fieldDiscount, { currency: program?.currency ?? 'SAR' })}
                             </Form.Label>
@@ -528,10 +587,14 @@ const ProgramDetailPage: React.FC = () => {
                               step="0.01"
                               name="discount"
                               value={formik.values.discount ?? ''}
-                              disabled={pricingLocked}
                               onChange={formik.handleChange}
+                              onBlur={formik.handleBlur}
                             />
-                            <Form.Text muted>{intl.formatMessage(messages.fieldDiscountHint)}</Form.Text>
+                            {formik.touched.discount && formik.errors.discount ? (
+                              <Form.Control.Feedback type="invalid">{formik.errors.discount}</Form.Control.Feedback>
+                            ) : (
+                              <Form.Text muted>{intl.formatMessage(messages.fieldDiscountHint)}</Form.Text>
+                            )}
                           </Form.Group>
 
                           <p className="small text-muted">
@@ -656,6 +719,32 @@ const ProgramDetailPage: React.FC = () => {
             <EnrollmentTab programId={programId ?? ''} />
           </Tab>
         </Tabs>
+
+        <ModalDialog
+          title={intl.formatMessage(messages.activateFreeTitle)}
+          isOpen={isActivateFreeOpen}
+          onClose={closeActivateFree}
+          size="sm"
+          hasCloseButton
+          isOverflowVisible={false}
+        >
+          <ModalDialog.Header>
+            <ModalDialog.Title>{intl.formatMessage(messages.activateFreeTitle)}</ModalDialog.Title>
+          </ModalDialog.Header>
+          <ModalDialog.Body>
+            <p className="mb-0">{intl.formatMessage(messages.activateFreeBody)}</p>
+          </ModalDialog.Body>
+          <ModalDialog.Footer>
+            <ActionRow>
+              <Button variant="tertiary" onClick={handleMakePaid}>
+                {intl.formatMessage(messages.activateFreeMakePaid)}
+              </Button>
+              <Button variant="primary" onClick={handleActivateAsFree}>
+                {intl.formatMessage(messages.activateFreeContinue)}
+              </Button>
+            </ActionRow>
+          </ModalDialog.Footer>
+        </ModalDialog>
 
       </Container>
       <StudioFooterSlot />

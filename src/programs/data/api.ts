@@ -53,7 +53,6 @@ const toProgram = (d: any): Program => ({
   price: d.price ?? null,
   discount: d.discount ?? null,
   currency: d.currency ?? 'SAR',
-  pricingManagedByAdmin: d.pricing_managed_by_admin ?? false,
 });
 
 // ── Config — GET /rwaq/api/programs/config/ ───────────────────────────────────
@@ -316,4 +315,11 @@ export const removeCourseFromProgram = async (programId: string, courseId: strin
     `${getProgramsBaseUrl()}/${programId}/courses/`,
     { params: { course_id: courseId } },
   );
+};
+
+// ── Error body: { detail: "..." } from a rejected request ─────────────────────
+/** The backend's `detail` message of a failed request, or null when there is none. */
+export const getApiErrorDetail = (err: unknown): string | null => {
+  const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+  return typeof detail === 'string' && detail ? detail : null;
 };

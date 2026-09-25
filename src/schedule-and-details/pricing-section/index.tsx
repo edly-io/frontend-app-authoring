@@ -6,44 +6,57 @@ import { useIntl } from '@edx/frontend-platform/i18n';
 import { logError } from '@edx/frontend-platform/logging';
 import SectionSubHeader from '../../generic/section-sub-header';
 import {
-  clearCoursePricing, getCoursePricing, setCoursePricing, PricingCategory,
+  getCoursePricing, setCoursePricing, CoursePricing, CoursePricingError, PricingCategory,
 } from './api';
+import { isPriceValid, isSalePriceValid } from './validation';
 import messages from './messages';
 
 interface PricingSectionProps {
   courseId: string;
 }
 
-/** 'free' is a UI-only value: the backend represents free as no pricing row. */
-type UiCategory = 'free' | PricingCategory;
+type FieldErrors = Partial<Record<'price' | 'discount' | 'pricing_category', string>>;
+
+/** The backend error body of a rejected PUT, or null when the response carries no `detail`. */
+const getErrorBody = (err: unknown): CoursePricingError | null => {
+  const data = (err as { response?: { data?: Partial<CoursePricingError> } })?.response?.data;
+  return data && typeof data.detail === 'string' ? (data as CoursePricingError) : null;
+};
 
 const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
   const intl = useIntl();
   const [isLoading, setIsLoading] = useState(true);
-  const [category, setCategory] = useState<UiCategory>('free');
+  // '' means the course has no type yet, so no radio is selected.
+  const [category, setCategory] = useState<PricingCategory | ''>('');
   const [price, setPrice] = useState('');
   const [discount, setDiscount] = useState('');
   const [currency, setCurrency] = useState('SAR');
+  const [canEdit, setCanEdit] = useState(false);
+  const [programName, setProgramName] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [saved, setSaved] = useState(false);
-  const [isManagedByAdmin, setIsManagedByAdmin] = useState(false);
-  const [paidProgramName, setPaidProgramName] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  const applyPricing = (pricing: CoursePricing) => {
+    setCategory(pricing.pricingCategory ?? '');
+    setPrice(pricing.price ?? '');
+    setDiscount(pricing.discount ?? '');
+    setCurrency(pricing.currency ?? 'SAR');
+    setCanEdit(pricing.canEdit);
+    setProgramName(pricing.partOfProgram ? (pricing.partOfProgramName ?? pricing.partOfProgram) : null);
+  };
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const pricing = await getCoursePricing(courseId);
-        if (cancelled) { return; }
-        setCategory(pricing.pricingCategory ?? 'free');
-        setPrice(pricing.price ?? '');
-        setDiscount(pricing.discount ?? '');
-        setCurrency(pricing.currency ?? 'SAR');
-        setIsManagedByAdmin(pricing.pricingManagedByAdmin);
-        setPaidProgramName(pricing.partOfProgram ? (pricing.partOfProgramName ?? pricing.partOfProgram) : null);
+        if (!cancelled) { applyPricing(pricing); }
       } catch (err) {
         logError(err);
+        if (!cancelled) { setLoadFailed(true); }
       } finally {
         if (!cancelled) { setIsLoading(false); }
       }
@@ -51,69 +64,81 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
     return () => { cancelled = true; };
   }, [courseId]);
 
-  // A price only applies to a standalone paid course: a free course has no
-  // pricing row, and a course inside a paid program is sold via the program.
   const showPriceFields = category === 'is_paid';
+  const isReadOnly = !canEdit;
 
-  const validate = (): string => {
-    if (!showPriceFields) { return ''; }
-    if (price.trim() === '') { return intl.formatMessage(messages.errorPriceRequired); }
-    const p = Number(price);
-    const d = discount.trim() === '' ? null : Number(discount);
-    if (p < 0 || (d !== null && d < 0)) { return intl.formatMessage(messages.errorNegative); }
-    if (d !== null && d > p) { return intl.formatMessage(messages.errorDiscountTooHigh); }
-    return '';
+  const priceError = (value: string) => (
+    isPriceValid(value) ? undefined : intl.formatMessage(messages.errorPriceNotPositive)
+  );
+  const discountError = (priceValue: string, discountValue: string) => (
+    isSalePriceValid(priceValue, discountValue) ? undefined : intl.formatMessage(messages.errorSalePriceTooHigh)
+  );
+
+  const onPriceBlur = () => {
+    setFieldErrors((prev) => ({
+      ...prev,
+      price: priceError(price),
+      discount: discountError(price, discount),
+    }));
+  };
+
+  const onDiscountBlur = () => {
+    setFieldErrors((prev) => ({ ...prev, discount: discountError(price, discount) }));
   };
 
   const handleSave = async () => {
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
-      setSaved(false);
-      return;
-    }
+    if (!category) { return; }
     setError('');
+    setSaved(false);
+    if (showPriceFields) {
+      const errors = { price: priceError(price), discount: discountError(price, discount) };
+      setFieldErrors(errors);
+      if (errors.price || errors.discount) { return; }
+    } else {
+      setFieldErrors({});
+    }
     setIsSaving(true);
     try {
-      if (category === 'free') {
-        await clearCoursePricing(courseId);
-        setPrice('');
-        setDiscount('');
-      } else {
-        await setCoursePricing(courseId, {
-          pricingCategory: category,
-          // An is_within_program course never carries its own price.
-          price: showPriceFields ? price.trim() : null,
-          discount: showPriceFields && discount.trim() !== '' ? discount.trim() : null,
-        });
-      }
+      const pricing = await setCoursePricing(courseId, {
+        pricingCategory: category,
+        // Only a Paid course carries a price. Free and Program-only clear it.
+        price: showPriceFields ? price.trim() : null,
+        discount: showPriceFields && discount.trim() !== '' ? discount.trim() : null,
+      });
+      applyPricing(pricing);
       setSaved(true);
     } catch (err) {
       logError(err);
-      setError(intl.formatMessage(messages.errorSaveFailed));
-      setSaved(false);
+      const body = getErrorBody(err);
+      if (body?.field) {
+        setFieldErrors({ [body.field]: body.detail });
+      } else {
+        setError(body?.detail ?? intl.formatMessage(messages.errorSaveFailed));
+      }
     } finally {
       setIsSaving(false);
     }
   };
 
-  const onCategoryChange = (value: UiCategory) => {
+  const onCategoryChange = (value: PricingCategory) => {
     setCategory(value);
     setSaved(false);
     setError('');
+    setFieldErrors({});
   };
 
-  // Admin-managed pricing and a paid program both make this section read-only.
-  const isReadOnly = isManagedByAdmin || !!paidProgramName;
-
-  if (isLoading) {
+  if (isLoading || loadFailed) {
     return (
       <section className="section-container pricing-section">
         <SectionSubHeader
           title={intl.formatMessage(messages.title)}
           description={intl.formatMessage(messages.description)}
         />
-        <Spinner animation="border" size="sm" screenReaderText="loading" />
+        {isLoading ? (
+          <Spinner animation="border" size="sm" screenReaderText="loading" />
+        ) : (
+          <Alert variant="danger">{intl.formatMessage(messages.errorLoadFailed)}</Alert>
+        )}
       </section>
     );
   }
@@ -125,38 +150,57 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
         description={intl.formatMessage(messages.description)}
       />
 
-      {paidProgramName && (
-        <Alert variant="info" className="mb-3">
-          {intl.formatMessage(messages.partOfProgram, { program: paidProgramName })}
-        </Alert>
-      )}
-      {isManagedByAdmin && !paidProgramName && (
+      {isReadOnly && (
         <Alert variant="info" className="mb-3">{intl.formatMessage(messages.managedByAdmin)}</Alert>
+      )}
+      {programName && (
+        <Alert variant="info" className="mb-3">
+          {intl.formatMessage(messages.partOfProgram, { program: programName })}
+        </Alert>
       )}
       {error && <Alert variant="danger" className="mb-3">{error}</Alert>}
       {saved && !error && <Alert variant="success" className="mb-3">{intl.formatMessage(messages.savedMsg)}</Alert>}
-
-      <Form.Group>
-        <Form.Label>{intl.formatMessage(messages.categoryLabel)}</Form.Label>
-        <Form.Control
-          as="select"
-          value={category}
-          disabled={isSaving || isReadOnly}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onCategoryChange(e.target.value as UiCategory)}
-        >
-          <option value="free">{intl.formatMessage(messages.categoryFree)}</option>
-          <option value="is_paid">{intl.formatMessage(messages.categoryPaid)}</option>
-          <option value="is_within_program">{intl.formatMessage(messages.categoryWithinProgram)}</option>
-        </Form.Control>
-      </Form.Group>
-
-      {category === 'is_within_program' && !paidProgramName && (
-        <p className="small text-muted">{intl.formatMessage(messages.withinProgramHint)}</p>
+      {!category && !isReadOnly && (
+        <p className="small text-muted">{intl.formatMessage(messages.noTypeHint)}</p>
       )}
+
+      <Form.Group isInvalid={!!fieldErrors.pricing_category}>
+        <Form.Label className="sr-only">{intl.formatMessage(messages.title)}</Form.Label>
+        <Form.RadioSet
+          name="pricingCategory"
+          value={category}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onCategoryChange(e.target.value as PricingCategory)}
+        >
+          <Form.Radio
+            value="is_free"
+            description={intl.formatMessage(messages.categoryFreeDescription)}
+            disabled={isSaving || isReadOnly}
+          >
+            {intl.formatMessage(messages.categoryFree)}
+          </Form.Radio>
+          <Form.Radio
+            value="is_paid"
+            description={intl.formatMessage(messages.categoryPaidDescription)}
+            disabled={isSaving || isReadOnly}
+          >
+            {intl.formatMessage(messages.categoryPaid)}
+          </Form.Radio>
+          <Form.Radio
+            value="is_program_only"
+            description={intl.formatMessage(messages.categoryProgramOnlyDescription)}
+            disabled={isSaving || isReadOnly}
+          >
+            {intl.formatMessage(messages.categoryProgramOnly)}
+          </Form.Radio>
+        </Form.RadioSet>
+        {fieldErrors.pricing_category && (
+          <Form.Control.Feedback type="invalid">{fieldErrors.pricing_category}</Form.Control.Feedback>
+        )}
+      </Form.Group>
 
       {showPriceFields && (
         <>
-          <Form.Group>
+          <Form.Group isInvalid={!!fieldErrors.price}>
             <Form.Label>{intl.formatMessage(messages.priceLabel, { currency })}</Form.Label>
             <Form.Control
               type="number"
@@ -165,11 +209,16 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
               value={price}
               disabled={isSaving || isReadOnly}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setPrice(e.target.value); setSaved(false); }}
+              onBlur={onPriceBlur}
             />
-            <Form.Text muted>{intl.formatMessage(messages.priceHint)}</Form.Text>
+            {fieldErrors.price ? (
+              <Form.Control.Feedback type="invalid">{fieldErrors.price}</Form.Control.Feedback>
+            ) : (
+              <Form.Text muted>{intl.formatMessage(messages.priceHint)}</Form.Text>
+            )}
           </Form.Group>
 
-          <Form.Group>
+          <Form.Group isInvalid={!!fieldErrors.discount}>
             <Form.Label>{intl.formatMessage(messages.discountLabel, { currency })}</Form.Label>
             <Form.Control
               type="number"
@@ -178,14 +227,19 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
               value={discount}
               disabled={isSaving || isReadOnly}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setDiscount(e.target.value); setSaved(false); }}
+              onBlur={onDiscountBlur}
             />
-            <Form.Text muted>{intl.formatMessage(messages.discountHint)}</Form.Text>
+            {fieldErrors.discount ? (
+              <Form.Control.Feedback type="invalid">{fieldErrors.discount}</Form.Control.Feedback>
+            ) : (
+              <Form.Text muted>{intl.formatMessage(messages.discountHint)}</Form.Text>
+            )}
           </Form.Group>
         </>
       )}
 
       {!isReadOnly && (
-        <Button variant="outline-primary" size="sm" onClick={handleSave} disabled={isSaving}>
+        <Button variant="outline-primary" size="sm" onClick={handleSave} disabled={isSaving || !category}>
           {intl.formatMessage(isSaving ? messages.savingBtn : messages.saveBtn)}
         </Button>
       )}

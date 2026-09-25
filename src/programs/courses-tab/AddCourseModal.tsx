@@ -14,10 +14,12 @@ import {
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import type { Course } from '../data/types';
 import { useCourses, useAddCourseToProgram } from '../data/apiHooks';
+import { getApiErrorDetail } from '../data/api';
 
 const messages = defineMessages({
   title: { id: 'programs.courses.modal.title', defaultMessage: 'Add Course to Program' },
   subtitle: { id: 'programs.courses.modal.subtitle', defaultMessage: 'Select a course to add to your program' },
+  listHint: { id: 'programs.courses.modal.list-hint', defaultMessage: 'Only Program-only courses that are not in another program are listed.' },
   searchPlaceholder: { id: 'programs.courses.modal.search', defaultMessage: 'Search courses...' },
   addBtn: { id: 'programs.courses.modal.add', defaultMessage: 'Add' },
   addingBtn: { id: 'programs.courses.modal.adding', defaultMessage: 'Adding...' },
@@ -80,7 +82,8 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [addingId, setAddingId] = useState<string | null>(null);
-  const [addError, setAddError] = useState(false);
+  // The backend's message when it has one, else the generic one.
+  const [addError, setAddError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const { data, isLoading, isFetching } = useCourses({ page: currentPage, search: searchQuery, org: programOrg });
   const { mutateAsync: addCourse } = useAddCourseToProgram();
@@ -96,11 +99,11 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
 
   const handleAdd = async (courseId: string) => {
     setAddingId(courseId);
-    setAddError(false);
+    setAddError(null);
     try {
       await addCourse({ programId, courseId });
-    } catch {
-      setAddError(true);
+    } catch (err) {
+      setAddError(getApiErrorDetail(err) ?? intl.formatMessage(messages.addError));
     } finally {
       setAddingId(null);
     }
@@ -109,7 +112,7 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
   const handleClose = () => {
     setSearchQuery('');
     setCurrentPage(1);
-    setAddError(false);
+    setAddError(null);
     onClose();
   };
 
@@ -125,7 +128,8 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
     >
       <ModalDialog.Header style={{ zIndex: 9 }}>
         <ModalDialog.Title>{intl.formatMessage(messages.title)}</ModalDialog.Title>
-        <p className="small text-muted mt-1 mb-3">{intl.formatMessage(messages.subtitle)}</p>
+        <p className="small text-muted mt-1 mb-1">{intl.formatMessage(messages.subtitle)}</p>
+        <p className="small text-muted mb-3">{intl.formatMessage(messages.listHint)}</p>
         <SearchField
           onSubmit={handleSearch}
           onChange={handleSearch}
@@ -138,7 +142,7 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
       <ModalDialog.Body>
         {addError && (
           <Alert variant="danger" className="mb-3">
-            {intl.formatMessage(messages.addError)}
+            {addError}
           </Alert>
         )}
         {isLoading && (

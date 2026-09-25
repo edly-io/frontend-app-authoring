@@ -73,6 +73,17 @@ describe('<CoursesTab />', () => {
     }));
   });
 
+  it('shows the backend detail when remove is rejected', async () => {
+    const detail = 'Learners of this program have already enrolled in this course. Only a Rwaq admin can remove it from the program.';
+    mockRemoveMutate.mockRejectedValue({ response: { status: 409, data: { detail } } });
+    const program = mockProgram({ courses: [mockCourse()] });
+    render(<CoursesTab program={program} programId={programId} />);
+    fireEvent.click(screen.getByRole('button', { name: /Remove/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Remove Course/i }));
+    expect(await screen.findByText(detail)).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText('Remove Course from Program?')).not.toBeInTheDocument());
+  });
+
   it('closes dialog when Cancel is clicked', async () => {
     const course = mockCourse();
     const program = mockProgram({ courses: [course] });

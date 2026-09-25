@@ -3,31 +3,39 @@ import { defineMessages } from '@edx/frontend-platform/i18n';
 const messages = defineMessages({
   title: {
     id: 'course-authoring.schedule-section.pricing.title',
-    defaultMessage: 'Pricing',
+    defaultMessage: 'Type of course',
   },
   description: {
     id: 'course-authoring.schedule-section.pricing.description',
-    defaultMessage: 'Set how this course is sold. Prices are published to the marketing site.',
-  },
-  categoryLabel: {
-    id: 'course-authoring.schedule-section.pricing.category-label',
-    defaultMessage: 'Pricing type',
+    defaultMessage: 'Set how learners get this course. Prices are published to the marketing site.',
   },
   categoryFree: {
     id: 'course-authoring.schedule-section.pricing.category-free',
     defaultMessage: 'Free',
   },
+  categoryFreeDescription: {
+    id: 'course-authoring.schedule-section.pricing.category-free.description',
+    defaultMessage: 'Learners enroll at no cost.',
+  },
   categoryPaid: {
     id: 'course-authoring.schedule-section.pricing.category-paid',
-    defaultMessage: 'Paid, sold on its own',
+    defaultMessage: 'Paid',
   },
-  categoryWithinProgram: {
-    id: 'course-authoring.schedule-section.pricing.category-within-program',
-    defaultMessage: 'Part of a paid program',
+  categoryPaidDescription: {
+    id: 'course-authoring.schedule-section.pricing.category-paid.description',
+    defaultMessage: 'Sold on its own at the price set below.',
   },
-  withinProgramHint: {
-    id: 'course-authoring.schedule-section.pricing.within-program-hint',
-    defaultMessage: 'The program is the sellable unit, so this course carries no price of its own.',
+  categoryProgramOnly: {
+    id: 'course-authoring.schedule-section.pricing.category-program-only',
+    defaultMessage: 'Program-only course',
+  },
+  categoryProgramOnlyDescription: {
+    id: 'course-authoring.schedule-section.pricing.category-program-only.description',
+    defaultMessage: 'Offered only through the one program it is added to.',
+  },
+  noTypeHint: {
+    id: 'course-authoring.schedule-section.pricing.no-type-hint',
+    defaultMessage: 'This course has no type yet. Choose one and save.',
   },
   priceLabel: {
     id: 'course-authoring.schedule-section.pricing.price-label',
@@ -39,7 +47,7 @@ const messages = defineMessages({
   },
   discountLabel: {
     id: 'course-authoring.schedule-section.pricing.discount-label',
-    defaultMessage: 'Discounted price ({currency})',
+    defaultMessage: 'Sale price ({currency})',
   },
   discountHint: {
     id: 'course-authoring.schedule-section.pricing.discount-hint',
@@ -47,7 +55,7 @@ const messages = defineMessages({
   },
   saveBtn: {
     id: 'course-authoring.schedule-section.pricing.save-btn',
-    defaultMessage: 'Save pricing',
+    defaultMessage: 'Save course type',
   },
   savingBtn: {
     id: 'course-authoring.schedule-section.pricing.saving-btn',
@@ -55,31 +63,31 @@ const messages = defineMessages({
   },
   savedMsg: {
     id: 'course-authoring.schedule-section.pricing.saved-msg',
-    defaultMessage: 'Pricing saved.',
+    defaultMessage: 'Course type saved.',
   },
-  errorPriceRequired: {
-    id: 'course-authoring.schedule-section.pricing.error-price-required',
-    defaultMessage: 'Enter a price for a paid course.',
+  errorPriceNotPositive: {
+    id: 'course-authoring.schedule-section.pricing.error-price-not-positive',
+    defaultMessage: 'Price must be greater than 0.',
   },
-  errorDiscountTooHigh: {
-    id: 'course-authoring.schedule-section.pricing.error-discount-too-high',
-    defaultMessage: 'The discounted price must be lower than the regular price.',
-  },
-  errorNegative: {
-    id: 'course-authoring.schedule-section.pricing.error-negative',
-    defaultMessage: 'Prices cannot be negative.',
+  errorSalePriceTooHigh: {
+    id: 'course-authoring.schedule-section.pricing.error-sale-price-too-high',
+    defaultMessage: 'Sale price must be lower than the price.',
   },
   errorSaveFailed: {
     id: 'course-authoring.schedule-section.pricing.error-save-failed',
-    defaultMessage: 'Could not save pricing. Please try again.',
+    defaultMessage: 'Could not save the course type. Please try again.',
+  },
+  errorLoadFailed: {
+    id: 'course-authoring.schedule-section.pricing.error-load-failed',
+    defaultMessage: 'Could not load the course type. Refresh the page to try again.',
   },
   partOfProgram: {
     id: 'course-authoring.schedule-section.pricing.part-of-program',
-    defaultMessage: 'This course is part of the paid program {program}. Learners buy the program, so the course has no price of its own. Remove it from the program to price it here.',
+    defaultMessage: 'This course is in the program {program}. Its type cannot change while it is in the program.',
   },
   managedByAdmin: {
     id: 'course-authoring.schedule-section.pricing.managed-by-admin',
-    defaultMessage: 'Pricing for this course is managed by the Rwaq admin team and cannot be changed here.',
+    defaultMessage: 'The type and price of this course are managed by the Rwaq admin and cannot be changed here.',
   },
 });
 

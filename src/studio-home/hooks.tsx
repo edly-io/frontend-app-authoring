@@ -53,7 +53,7 @@ const useStudioHome = () => {
   // UI filters won't match it, and when you change the filters it doesn't update the search query.
   // We should either use the search query as the only state / source of truth or ignore it entirely.
   const courseListQuery = new URLSearchParams();
-  for (const key of ['org', 'search', 'order', 'active_only', 'archived_only', 'page']) {
+  for (const key of ['org', 'search', 'order', 'active_only', 'archived_only', 'course_type', 'page']) {
     // istanbul ignore if: this functionality is only partially implemented - see above
     if (searchParams.has(key)) {
       courseListQuery.set(key, searchParams.get(key)!);
