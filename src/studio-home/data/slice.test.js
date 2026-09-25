@@ -21,6 +21,7 @@ describe('updateStudioHomeCoursesCustomParams action', () => {
       order: 'display_name',
       archivedOnly: undefined,
       activeOnly: undefined,
+      courseType: undefined,
       isFiltered: false,
       cleanFilters: false,
     },

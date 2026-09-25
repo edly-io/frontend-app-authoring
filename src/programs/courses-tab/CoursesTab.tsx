@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   Badge,
   Button,
   Stack,
@@ -9,6 +10,7 @@ import { Add } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import type { Course, Program } from '../data/types';
 import { useRemoveCourseFromProgram } from '../data/apiHooks';
+import { getApiErrorDetail } from '../data/api';
 import DeleteModal from '../../generic/delete-modal/DeleteModal';
 import AddCourseModal from './AddCourseModal';
 
@@ -21,6 +23,7 @@ const messages = defineMessages({
   confirmRemoveTitle: { id: 'programs.courses.confirm-remove.title', defaultMessage: 'Remove Course from Program?' },
   confirmRemoveDesc: { id: 'programs.courses.confirm-remove.desc', defaultMessage: 'Removing this course will also unenroll all program learners from it. This cannot be undone.' },
   confirmRemoveBtn: { id: 'programs.courses.confirm-remove.btn', defaultMessage: 'Remove Course' },
+  removeError: { id: 'programs.courses.remove-error', defaultMessage: 'Failed to remove course. Please try again.' },
 });
 
 interface CoursesTabProps {
@@ -32,6 +35,7 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ program, programId }) => {
   const intl = useIntl();
   const [isModalOpen, openModal, closeModal] = useToggle(false);
   const [confirmCourseId, setConfirmCourseId] = useState<string | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
   const removeCourse = useRemoveCourseFromProgram();
 
   // program.courses is Course[] — full objects from the detail API response
@@ -56,6 +60,12 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ program, programId }) => {
           {intl.formatMessage(messages.addCourseBtn)}
         </Button>
       </div>
+
+      {removeError && (
+        <Alert variant="danger" dismissible onClose={() => setRemoveError(null)} className="mb-3">
+          {removeError}
+        </Alert>
+      )}
 
       {/* Course list */}
       {courses.length === 0 ? (
@@ -129,7 +139,12 @@ const CoursesTab: React.FC<CoursesTabProps> = ({ program, programId }) => {
         )}
         btnLabel={intl.formatMessage(messages.confirmRemoveBtn)}
         onDeleteSubmit={async () => {
-          await removeCourse.mutateAsync({ programId, courseId: confirmCourseId! });
+          setRemoveError(null);
+          try {
+            await removeCourse.mutateAsync({ programId, courseId: confirmCourseId! });
+          } catch (err) {
+            setRemoveError(getApiErrorDetail(err) ?? intl.formatMessage(messages.removeError));
+          }
           setConfirmCourseId(null);
         }}
       />
