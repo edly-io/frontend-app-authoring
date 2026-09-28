@@ -683,6 +683,21 @@ export const getProgramEnrollments = async (
   };
 };
 
+// ── Enrolled learner usernames — used to badge the Enroll Learner modal ──────
+// Reads the same authoritative Enrollment table the tab list renders from, so
+// the modal's "Enrolled" badge and the tab list can never disagree. Uses
+// no_page so a program with more than one page of learners is still fully
+// covered.
+export const getEnrolledLearnerUsernames = async (programId: string): Promise<string[]> => {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getProgramsBaseUrl()}/${programId}/learners/`,
+    { params: { no_page: '' } },
+  );
+  const rows = Array.isArray(data) ? data : (data.results ?? []);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return rows.map((u: any) => u.username).filter(Boolean);
+};
+
 // ── Enroll learner in program — POST /fbr/api/programs/<key>/learners/ ────────
 export const enrollLearnerInProgram = async (programId: string, username: string): Promise<void> => {
   await getAuthenticatedHttpClient().post(
