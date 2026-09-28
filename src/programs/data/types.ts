@@ -39,6 +39,8 @@ export interface Program {
   discount?: string | null;
   /** ISO 4217 code of price and discount. */
   currency?: string;
+  /** False when the program is paid and the user is not a superadmin: only they enroll learners into it. */
+  canEnrollLearners?: boolean;
 }
 
 export interface OrgOption {

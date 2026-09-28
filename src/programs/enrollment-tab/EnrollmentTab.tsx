@@ -22,13 +22,19 @@ const messages = defineMessages({
   emptyEnrollment: { id: 'programs.enrollment.empty', defaultMessage: 'No learners enrolled yet. Click \'+ Enroll Learner\' to begin.' },
   noResults: { id: 'programs.enrollment.no-results', defaultMessage: 'No enrolled learners match your search.' },
   paginationLabel: { id: 'programs.enrollment.pagination', defaultMessage: 'Enrolled learner list pagination' },
+  paidEnrollAdminOnly: {
+    id: 'programs.enrollment.paid-admin-only',
+    defaultMessage: 'This is a paid program. Only Rwaq admins can enroll learners into it.',
+  },
 });
 
 interface EnrollmentTabProps {
   programId: string;
+  /** False for a paid program when the user is not a superadmin. */
+  canEnroll?: boolean;
 }
 
-const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId }) => {
+const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canEnroll = true }) => {
   const intl = useIntl();
   const [isModalOpen, openModal, closeModal] = useToggle(false);
   const [enrolledSearch, setEnrolledSearch] = useState('');
@@ -53,14 +59,18 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId }) => {
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
         </div>
-        <Button
-          variant="outline-primary"
-          iconBefore={Add}
-          size="sm"
-          onClick={openModal}
-        >
-          {intl.formatMessage(messages.enrollLearnerBtn)}
-        </Button>
+        {canEnroll ? (
+          <Button
+            variant="outline-primary"
+            iconBefore={Add}
+            size="sm"
+            onClick={openModal}
+          >
+            {intl.formatMessage(messages.enrollLearnerBtn)}
+          </Button>
+        ) : (
+          <p className="text-muted small mb-0">{intl.formatMessage(messages.paidEnrollAdminOnly)}</p>
+        )}
       </div>
 
       <div className="mb-3">

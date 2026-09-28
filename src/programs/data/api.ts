@@ -53,6 +53,7 @@ const toProgram = (d: any): Program => ({
   price: d.price ?? null,
   discount: d.discount ?? null,
   currency: d.currency ?? 'SAR',
+  canEnrollLearners: d.can_enroll_learners ?? true,
 });
 
 // ── Config — GET /rwaq/api/programs/config/ ───────────────────────────────────
@@ -297,10 +298,11 @@ export const getProgramEnrollments = async (
 };
 
 // ── Enroll learner in program — POST /rwaq/api/programs/<key>/learners/ ────────
-export const enrollLearnerInProgram = async (programId: string, username: string): Promise<void> => {
+// reason is kept on the 0-price order recorded when a superadmin enrolls a learner into a paid program.
+export const enrollLearnerInProgram = async (programId: string, username: string, reason = ''): Promise<void> => {
   await getAuthenticatedHttpClient().post(
     `${getProgramsBaseUrl()}/${programId}/learners/`,
-    { username },
+    { username, reason },
   );
 };
 

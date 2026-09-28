@@ -61,6 +61,12 @@ describe('<EnrollmentTab />', () => {
     expect(screen.queryByRole('button', { name: /Unenroll/i })).not.toBeInTheDocument();
   });
 
+  it('hides "Enroll Learner" when the user may not enroll into this paid program', () => {
+    render(<EnrollmentTab programId={programId} canEnroll={false} />);
+    expect(screen.queryByRole('button', { name: /Enroll Learner/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/Only Rwaq admins can enroll learners/i)).toBeInTheDocument();
+  });
+
   it('opens AddLearnerModal when "Enroll Learner" is clicked', () => {
     render(<EnrollmentTab programId={programId} />);
     fireEvent.click(screen.getByRole('button', { name: /Enroll Learner/i }));

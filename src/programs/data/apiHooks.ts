@@ -109,8 +109,8 @@ export const useLearners = (params: GetLearnersParams = {}, enabled = true) => u
 export const useEnrollLearner = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ programId, username }: { programId: string; username: string }) => (
-      enrollLearnerInProgram(programId, username)
+    mutationFn: ({ programId, username, reason }: { programId: string; username: string; reason?: string }) => (
+      enrollLearnerInProgram(programId, username, reason)
     ),
     onSuccess: (_, { programId }) => {
       queryClient.invalidateQueries({ queryKey: ['programEnrollments', programId] });

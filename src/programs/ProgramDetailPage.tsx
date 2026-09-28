@@ -716,7 +716,7 @@ const ProgramDetailPage: React.FC = () => {
           </Tab>
 
           <Tab eventKey="enrollment" title={intl.formatMessage(messages.tabEnrollment)}>
-            <EnrollmentTab programId={programId ?? ''} />
+            <EnrollmentTab programId={programId ?? ''} canEnroll={program?.canEnrollLearners ?? true} />
           </Tab>
         </Tabs>
 
