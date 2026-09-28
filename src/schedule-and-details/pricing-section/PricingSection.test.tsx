@@ -136,7 +136,9 @@ describe('<PricingSection />', () => {
   });
 
   it('renders read-only when the course team cannot edit', async () => {
-    await renderSection({ pricing_category: 'is_paid', price: '100.00', can_edit: false, pricing_managed_by_admin: true });
+    await renderSection({
+      pricing_category: 'is_paid', price: '100.00', can_edit: false, pricing_managed_by_admin: true,
+    });
     expect(screen.getByText(/managed by the Rwaq admin/)).toBeInTheDocument();
     screen.getAllByRole('radio').forEach((radio) => expect(radio).toBeDisabled());
     expect(screen.getByLabelText('Price (SAR)')).toBeDisabled();
