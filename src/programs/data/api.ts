@@ -179,6 +179,8 @@ export interface GetCoursesParams {
   page?: number;
   search?: string;
   org?: string;
+  /** Only courses that can be added to a program: Program-only and in no program yet. */
+  linkable?: boolean;
 }
 
 export const getCourses = async (params: GetCoursesParams = {}): Promise<PaginatedCourses> => {
@@ -191,6 +193,7 @@ export const getCourses = async (params: GetCoursesParams = {}): Promise<Paginat
         page_size: pageSize,
         ...(params.search ? { search: params.search } : {}),
         ...(params.org ? { org: params.org } : {}),
+        ...(params.linkable ? { linkable: 'true' } : {}),
       },
     },
   );

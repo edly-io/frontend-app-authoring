@@ -85,7 +85,9 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
   // The backend's message when it has one, else the generic one.
   const [addError, setAddError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const { data, isLoading, isFetching } = useCourses({ page: currentPage, search: searchQuery, org: programOrg });
+  const { data, isLoading, isFetching } = useCourses({
+    page: currentPage, search: searchQuery, org: programOrg, linkable: true,
+  });
   const { mutateAsync: addCourse } = useAddCourseToProgram();
 
   useEffect(() => {

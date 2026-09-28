@@ -38,6 +38,11 @@ describe('<AddCourseModal />', () => {
     expect(screen.getByText('Introduction to CS')).toBeInTheDocument();
   });
 
+  it('asks only for courses that can be added to a program', () => {
+    render(<AddCourseModal {...defaultProps} />);
+    expect(mockUseCourses).toHaveBeenCalledWith(expect.objectContaining({ org: 'TestOrg', linkable: true }));
+  });
+
   it('shows "Added" badge for already-added course', () => {
     const course = mockCourse({ id: 'already-added' });
     mockUseCourses.mockReturnValue({
