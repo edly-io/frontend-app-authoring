@@ -25,7 +25,11 @@ const programId = 'program-v1:ArbOrg+MASTERS+PAID1';
 
 const renderPage = (overrides: Partial<Program> = {}) => {
   mockUseProgramDetail.mockReturnValue({
-    data: { program: mockProgram({ id: programId, status: 'draft', ...overrides }) },
+    data: {
+      program: mockProgram({
+        id: programId, status: 'draft', pricingCategory: 'is_free', ...overrides,
+      }),
+    },
     isLoading: false,
     isError: false,
   });
@@ -87,7 +91,7 @@ describe('<ProgramDetailPage /> pricing', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'Continue as free' }));
       await waitFor(() => expect(mockUpdateProgram).toHaveBeenCalledTimes(1));
-      expect(mockUpdateProgram.mock.calls[0][0].data).toMatchObject({ status: 'active', pricingCategory: '' });
+      expect(mockUpdateProgram.mock.calls[0][0].data).toMatchObject({ status: 'active', pricingCategory: 'is_free' });
     });
 
     it('focuses the pricing type on "Make it paid" and does not save', async () => {

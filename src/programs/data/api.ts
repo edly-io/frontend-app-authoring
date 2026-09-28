@@ -49,7 +49,7 @@ const toProgram = (d: any): Program => ({
   endDate: d.end_date ?? '',
   image: d.card_image ?? '',
   courses: d.courses?.map(toCourse) ?? [],
-  pricingCategory: d.pricing_category ?? '',
+  pricingCategory: d.pricing_category || 'is_free',
   price: d.price ?? null,
   discount: d.discount ?? null,
   currency: d.currency ?? 'SAR',

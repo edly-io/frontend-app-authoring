@@ -164,7 +164,7 @@ const ProgramDetailPage: React.FC = () => {
       startDate: program?.startDate ?? '',
       endDate: program?.endDate ?? '',
       image: program?.image ?? '',
-      pricingCategory: program?.pricingCategory ?? '',
+      pricingCategory: program?.pricingCategory || 'is_free',
       price: program?.price ?? '',
       discount: program?.discount ?? '',
     },
@@ -187,7 +187,7 @@ const ProgramDetailPage: React.FC = () => {
       // Activating a free program puts it live in the catalog at no cost, so
       // confirm that first. "Continue as free" resubmits with the flag set.
       const isActivating = values.status === 'active' && program?.status !== 'active';
-      if (isActivating && !values.pricingCategory && !activateAsFreeConfirmed.current) {
+      if (isActivating && values.pricingCategory !== 'is_paid' && !activateAsFreeConfirmed.current) {
         openActivateFree();
         return;
       }
@@ -535,19 +535,19 @@ const ProgramDetailPage: React.FC = () => {
                           as="select"
                           name="pricingCategory"
                           ref={pricingCategoryRef}
-                          value={formik.values.pricingCategory ?? ''}
+                          value={formik.values.pricingCategory || 'is_free'}
                           onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                             const { value } = e.target;
                             formik.setFieldValue('pricingCategory', value);
                             // Switching back to free clears the money fields so
                             // the form matches what the backend will store.
-                            if (!value) {
+                            if (value !== 'is_paid') {
                               formik.setFieldValue('price', '');
                               formik.setFieldValue('discount', '');
                             }
                           }}
                         >
-                          <option value="">{intl.formatMessage(messages.pricingFree)}</option>
+                          <option value="is_free">{intl.formatMessage(messages.pricingFree)}</option>
                           <option value="is_paid">{intl.formatMessage(messages.pricingPaid)}</option>
                         </Form.Control>
                         {formik.touched.pricingCategory && formik.errors.pricingCategory && (
