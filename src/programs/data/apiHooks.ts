@@ -81,7 +81,7 @@ export const useUpdateProgram = () => {
 };
 
 export const useCourses = (params: GetCoursesParams = {}) => useQuery({
-  queryKey: ['courses', params.page ?? 1, params.search ?? '', params.org ?? ''],
+  queryKey: ['courses', params.page ?? 1, params.search ?? '', params.org ?? '', !!params.linkable],
   queryFn: () => getCourses(params),
   placeholderData: keepPreviousData,
 });
@@ -94,6 +94,7 @@ export const useAddCourseToProgram = () => {
     ),
     onSuccess: (_, { programId }) => {
       queryClient.invalidateQueries({ queryKey: ['program', programId] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
     },
   });
 };
@@ -138,6 +139,7 @@ export const useRemoveCourseFromProgram = () => {
     ),
     onSuccess: (_, { programId }) => {
       queryClient.invalidateQueries({ queryKey: ['program', programId] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
     },
   });
 };

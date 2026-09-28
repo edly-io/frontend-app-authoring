@@ -32,6 +32,13 @@ export interface Program {
   endDate?: string;
   image?: string;
   courses?: Course[];
+  /** 'is_free' or 'is_paid'. */
+  pricingCategory?: string;
+  /** Decimal strings, not numbers — avoids float rounding on money. */
+  price?: string | null;
+  discount?: string | null;
+  /** ISO 4217 code of price and discount. */
+  currency?: string;
 }
 
 export interface OrgOption {

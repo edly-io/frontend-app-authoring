@@ -38,6 +38,11 @@ describe('<AddCourseModal />', () => {
     expect(screen.getByText('Introduction to CS')).toBeInTheDocument();
   });
 
+  it('asks only for courses that can be added to a program', () => {
+    render(<AddCourseModal {...defaultProps} />);
+    expect(mockUseCourses).toHaveBeenCalledWith(expect.objectContaining({ org: 'TestOrg', linkable: true }));
+  });
+
   it('shows "Added" badge for already-added course', () => {
     const course = mockCourse({ id: 'already-added' });
     mockUseCourses.mockReturnValue({
@@ -76,6 +81,20 @@ describe('<AddCourseModal />', () => {
     render(<AddCourseModal {...defaultProps} />);
     fireEvent.click(screen.getByRole('button', { name: /^Add$/i }));
     expect(await screen.findByText(/Failed to add course/i)).toBeInTheDocument();
+  });
+
+  it('explains which courses are listed', () => {
+    render(<AddCourseModal {...defaultProps} />);
+    expect(screen.getByText('Only Program-only courses that are not in another program are listed.')).toBeInTheDocument();
+  });
+
+  it('shows the backend detail when add is rejected', async () => {
+    const detail = 'This course is already in another program.';
+    mockAddMutate.mockRejectedValue({ response: { status: 409, data: { detail } } });
+    render(<AddCourseModal {...defaultProps} />);
+    fireEvent.click(screen.getByRole('button', { name: /^Add$/i }));
+    expect(await screen.findByText(detail)).toBeInTheDocument();
+    expect(screen.queryByText(/Failed to add course/i)).not.toBeInTheDocument();
   });
 
   it('renders pagination when numPages > 1', () => {

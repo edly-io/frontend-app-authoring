@@ -49,6 +49,10 @@ const toProgram = (d: any): Program => ({
   endDate: d.end_date ?? '',
   image: d.card_image ?? '',
   courses: d.courses?.map(toCourse) ?? [],
+  pricingCategory: d.pricing_category || 'is_free',
+  price: d.price ?? null,
+  discount: d.discount ?? null,
+  currency: d.currency ?? 'SAR',
 });
 
 // ── Config — GET /rwaq/api/programs/config/ ───────────────────────────────────
@@ -152,6 +156,11 @@ export const updateProgram = async (
   if (data.isFeatured !== undefined) { formData.append('is_featured', String(data.isFeatured)); }
   if (data.startDate !== undefined) { formData.append('start_date', data.startDate ?? ''); }
   if (data.endDate !== undefined) { formData.append('end_date', data.endDate ?? ''); }
+  if (data.pricingCategory !== undefined) { formData.append('pricing_category', data.pricingCategory ?? ''); }
+  // Multipart cannot carry a real null, so a cleared money field is sent as ''.
+  // DRF reads '' as null for these nullable fields, which clears the value.
+  if (data.price !== undefined) { formData.append('price', data.price ?? ''); }
+  if (data.discount !== undefined) { formData.append('discount', data.discount ?? ''); }
 
   if (imageFile) { formData.append('card_image', imageFile); }
 
@@ -170,6 +179,8 @@ export interface GetCoursesParams {
   page?: number;
   search?: string;
   org?: string;
+  /** Only courses that can be added to a program: Program-only and in no program yet. */
+  linkable?: boolean;
 }
 
 export const getCourses = async (params: GetCoursesParams = {}): Promise<PaginatedCourses> => {
@@ -182,6 +193,7 @@ export const getCourses = async (params: GetCoursesParams = {}): Promise<Paginat
         page_size: pageSize,
         ...(params.search ? { search: params.search } : {}),
         ...(params.org ? { org: params.org } : {}),
+        ...(params.linkable ? { linkable: 'true' } : {}),
       },
     },
   );
@@ -306,4 +318,11 @@ export const removeCourseFromProgram = async (programId: string, courseId: strin
     `${getProgramsBaseUrl()}/${programId}/courses/`,
     { params: { course_id: courseId } },
   );
+};
+
+// ── Error body: { detail: "..." } from a rejected request ─────────────────────
+/** The backend's `detail` message of a failed request, or null when there is none. */
+export const getApiErrorDetail = (err: unknown): string | null => {
+  const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+  return typeof detail === 'string' && detail ? detail : null;
 };

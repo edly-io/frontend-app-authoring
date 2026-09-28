@@ -78,6 +78,7 @@ const CoursesTab: React.FC<Props> = ({
       order,
       archivedOnly,
       activeOnly,
+      courseType,
     } = studioHomeCoursesParams;
 
     const customParams = {
@@ -85,6 +86,7 @@ const CoursesTab: React.FC<Props> = ({
       order,
       archivedOnly,
       activeOnly,
+      courseType,
     };
 
     dispatch(fetchStudioHomeData(locationValue, false, { page, ...customParams }));

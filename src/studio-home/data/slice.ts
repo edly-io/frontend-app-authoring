@@ -10,6 +10,8 @@ export interface Params {
   order?: string;
   archivedOnly?: boolean;
   activeOnly?: boolean;
+  /** Course type filter, sent as ?course_type=: 'free' | 'paid' | 'program_only' | 'none'. */
+  courseType?: string;
   isFiltered?: boolean;
   cleanFilters?: boolean;
 }
@@ -20,6 +22,7 @@ export const studioHomeCoursesRequestParamsDefault: Params = {
   order: 'display_name',
   archivedOnly: undefined,
   activeOnly: undefined,
+  courseType: undefined,
   isFiltered: false,
   cleanFilters: false,
 };
