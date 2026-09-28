@@ -22,6 +22,7 @@ import {
   removeCourseFromProgram,
   getCourseTeam,
   getProgramEnrollments,
+  getEnrolledLearnerUsernames,
   getBatches,
   getBatchUsers,
   getFeedbackForms,
@@ -260,10 +261,12 @@ export const useLearners = (params: GetLearnersParams = {}, enabled = true) => u
 
 export const useEnrolledLearnerIds = (programId: string, enabled = true) => useQuery({
   queryKey: ['enrolledLearnerIds', programId],
-  queryFn: async () => {
-    const { results } = await getPlatformUsers({ role: 'learner', programKey: programId, noPage: true });
-    return new Set(results.map((l) => l.id));
-  },
+  // Source of truth for "who is enrolled" is the Enrollment table
+  // (ProgramLearnersView). PlatformUserListView was the previous source but
+  // requires the callee to have the FBR TRAINEE profile role in addition to
+  // an active enrollment — an enrolled learner without that role would slip
+  // through and show as un-enrolled in the modal.
+  queryFn: async () => new Set(await getEnrolledLearnerUsernames(programId)),
   enabled: !!programId && enabled,
   staleTime: 0,
 });
