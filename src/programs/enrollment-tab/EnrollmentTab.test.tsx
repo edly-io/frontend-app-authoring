@@ -1,15 +1,13 @@
 import {
-  fireEvent, initializeMocks, render, screen, waitFor,
+  fireEvent, initializeMocks, render, screen,
 } from '@src/testUtils';
 import EnrollmentTab from './EnrollmentTab';
 import { mockLearner, mockPaginatedLearners } from '../data/api.mock';
 
-const mockUnenrollMutate = jest.fn();
 const mockUseProgramEnrollments = jest.fn();
 
 jest.mock('@src/programs/data/apiHooks', () => ({
   useProgramEnrollments: (...args: any[]) => mockUseProgramEnrollments(...args),
-  useUnenrollLearner: () => ({ mutateAsync: mockUnenrollMutate, isPending: false }),
   // hooks used by child modals — supply minimal stubs
   useLearners: () => ({ data: { results: [], count: 0, numPages: 1 }, isLoading: false, isFetching: false }),
   useEnrollLearner: () => ({ mutateAsync: jest.fn(), isPending: false }),
@@ -20,7 +18,6 @@ const programId = 'prog-key-1';
 describe('<EnrollmentTab />', () => {
   beforeEach(() => {
     initializeMocks();
-    mockUnenrollMutate.mockResolvedValue(undefined);
     mockUseProgramEnrollments.mockReturnValue({
       data: mockPaginatedLearners([mockLearner()]),
       isLoading: false,
@@ -59,46 +56,9 @@ describe('<EnrollmentTab />', () => {
     );
   });
 
-  it('opens confirmation dialog when Unenroll is clicked', () => {
+  it('offers no way to unenroll a learner', () => {
     render(<EnrollmentTab programId={programId} />);
-    fireEvent.click(screen.getByRole('button', { name: /Unenroll/i }));
-    expect(screen.getByText('Unenroll Learner?')).toBeInTheDocument();
-  });
-
-  it('shows learner name in confirmation dialog', () => {
-    const learner = mockLearner({ name: 'Bob Jones', username: 'bob.jones' });
-    mockUseProgramEnrollments.mockReturnValue({
-      data: mockPaginatedLearners([learner]),
-      isLoading: false,
-      isFetching: false,
-    });
-    render(<EnrollmentTab programId={programId} />);
-    fireEvent.click(screen.getByRole('button', { name: /Unenroll/i }));
-    // Name appears in dialog heading — findAllByText handles > 1 match (row + dialog)
-    expect(screen.getAllByText('Bob Jones').length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('shows bold warning text in confirmation dialog', () => {
-    render(<EnrollmentTab programId={programId} />);
-    fireEvent.click(screen.getByRole('button', { name: /Unenroll/i }));
-    const warning = screen.getByText(/All enrollment data will be lost/i);
-    expect(warning.tagName).toBe('STRONG');
-  });
-
-  it('calls unenrollMutate with programId and username when confirm is clicked', async () => {
-    const learner = mockLearner({ username: 'student.alice' });
-    mockUseProgramEnrollments.mockReturnValue({
-      data: mockPaginatedLearners([learner]),
-      isLoading: false,
-      isFetching: false,
-    });
-    render(<EnrollmentTab programId={programId} />);
-    fireEvent.click(screen.getByRole('button', { name: /Unenroll/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^Unenroll$/i }));
-    await waitFor(() => expect(mockUnenrollMutate).toHaveBeenCalledWith({
-      programId,
-      username: 'student.alice',
-    }));
+    expect(screen.queryByRole('button', { name: /Unenroll/i })).not.toBeInTheDocument();
   });
 
   it('opens AddLearnerModal when "Enroll Learner" is clicked', () => {

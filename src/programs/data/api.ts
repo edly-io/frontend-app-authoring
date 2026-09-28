@@ -304,14 +304,6 @@ export const enrollLearnerInProgram = async (programId: string, username: string
   );
 };
 
-// ── Unenroll learner — DELETE /rwaq/api/programs/<key>/learners/?username=... ──
-export const unenrollLearnerFromProgram = async (programId: string, username: string): Promise<void> => {
-  await getAuthenticatedHttpClient().delete(
-    `${getProgramsBaseUrl()}/${programId}/learners/`,
-    { params: { username } },
-  );
-};
-
 // ── Remove course from program — DELETE /rwaq/api/programs/<key>/courses/ ──────
 export const removeCourseFromProgram = async (programId: string, courseId: string): Promise<void> => {
   await getAuthenticatedHttpClient().delete(

@@ -10,8 +10,7 @@ import {
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
-import { useProgramEnrollments, useUnenrollLearner } from '../data/apiHooks';
-import DeleteModal from '../../generic/delete-modal/DeleteModal';
+import { useProgramEnrollments } from '../data/apiHooks';
 import AddLearnerModal from './AddLearnerModal';
 
 const messages = defineMessages({
@@ -23,17 +22,6 @@ const messages = defineMessages({
   emptyEnrollment: { id: 'programs.enrollment.empty', defaultMessage: 'No learners enrolled yet. Click \'+ Enroll Learner\' to begin.' },
   noResults: { id: 'programs.enrollment.no-results', defaultMessage: 'No enrolled learners match your search.' },
   paginationLabel: { id: 'programs.enrollment.pagination', defaultMessage: 'Enrolled learner list pagination' },
-  unenrollBtn: { id: 'programs.enrollment.unenroll-btn', defaultMessage: 'Unenroll' },
-  confirmUnenrollTitle: { id: 'programs.enrollment.confirm-unenroll.title', defaultMessage: 'Unenroll Learner?' },
-  confirmUnenrollDesc: {
-    id: 'programs.enrollment.confirm-unenroll.desc',
-    defaultMessage: 'This learner will be unenrolled from the program and all its courses. This action cannot be reverted.',
-  },
-  confirmUnenrollWarning: {
-    id: 'programs.enrollment.confirm-unenroll.warning',
-    defaultMessage: 'All enrollment data will be lost.',
-  },
-  confirmUnenrollBtn: { id: 'programs.enrollment.confirm-unenroll.btn', defaultMessage: 'Unenroll' },
 });
 
 interface EnrollmentTabProps {
@@ -45,16 +33,13 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId }) => {
   const [isModalOpen, openModal, closeModal] = useToggle(false);
   const [enrolledSearch, setEnrolledSearch] = useState('');
   const [enrolledPage, setEnrolledPage] = useState(1);
-  const [confirmUnenrollUsername, setConfirmUnenrollUsername] = useState<string | null>(null);
 
   const { data, isLoading, isFetching } = useProgramEnrollments(
     programId,
     { page: enrolledPage, search: enrolledSearch },
   );
-  const unenrollLearner = useUnenrollLearner();
 
   const enrolledIds = data?.results.map((l) => l.id) ?? [];
-  const confirmLearner = data?.results.find((l) => l.username === confirmUnenrollUsername);
 
   const handleSearch = useCallback((q: string) => {
     setEnrolledSearch(q);
@@ -131,14 +116,6 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId }) => {
                 <Badge variant="light">{learner.email}</Badge>
               </Stack>
             </div>
-            <Button
-              variant="outline-danger"
-              size="sm"
-              onClick={() => setConfirmUnenrollUsername(learner.username)}
-              disabled={confirmUnenrollUsername !== null}
-            >
-              {intl.formatMessage(messages.unenrollBtn)}
-            </Button>
           </div>
         ))}
       </div>
@@ -164,26 +141,6 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId }) => {
         onClose={closeModal}
         programId={programId}
         alreadyEnrolledIds={enrolledIds}
-      />
-
-      <DeleteModal
-        isOpen={!!confirmUnenrollUsername}
-        close={() => setConfirmUnenrollUsername(null)}
-        title={intl.formatMessage(messages.confirmUnenrollTitle)}
-        description={(
-          <>
-            <strong>{confirmLearner?.name ?? confirmUnenrollUsername}</strong>
-            <br />
-            {intl.formatMessage(messages.confirmUnenrollDesc)}
-            {' '}
-            <strong>{intl.formatMessage(messages.confirmUnenrollWarning)}</strong>
-          </>
-        )}
-        btnLabel={intl.formatMessage(messages.confirmUnenrollBtn)}
-        onDeleteSubmit={async () => {
-          await unenrollLearner.mutateAsync({ programId, username: confirmUnenrollUsername! });
-          setConfirmUnenrollUsername(null);
-        }}
       />
     </div>
   );
