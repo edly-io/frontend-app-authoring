@@ -10,7 +10,8 @@ import {
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
-import { useProgramEnrollments } from '../data/apiHooks';
+import { useProgramEnrollments, useUnenrollLearner } from '../data/apiHooks';
+import DeleteModal from '../../generic/delete-modal/DeleteModal';
 import AddLearnerModal from './AddLearnerModal';
 
 const messages = defineMessages({
@@ -26,26 +27,40 @@ const messages = defineMessages({
     id: 'programs.enrollment.paid-admin-only',
     defaultMessage: 'This is a paid program. Only Rwaq admins can enroll learners into it.',
   },
+  unenrollBtn: { id: 'programs.enrollment.unenroll-btn', defaultMessage: 'Unenroll' },
+  confirmUnenrollTitle: { id: 'programs.enrollment.confirm-unenroll.title', defaultMessage: 'Unenroll Learner?' },
+  confirmUnenrollDesc: {
+    id: 'programs.enrollment.confirm-unenroll.desc',
+    defaultMessage: 'This learner will be unenrolled from the program and all its courses. Their grades and '
+      + 'any certificate stay on record.',
+  },
+  confirmUnenrollBtn: { id: 'programs.enrollment.confirm-unenroll.btn', defaultMessage: 'Unenroll' },
 });
 
 interface EnrollmentTabProps {
   programId: string;
   /** False for a paid program when the user is not a superadmin. */
   canEnroll?: boolean;
+  /** True only for a superadmin. */
+  canUnenroll?: boolean;
 }
 
-const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canEnroll = true }) => {
+const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canEnroll = true, canUnenroll = false }) => {
   const intl = useIntl();
   const [isModalOpen, openModal, closeModal] = useToggle(false);
   const [enrolledSearch, setEnrolledSearch] = useState('');
   const [enrolledPage, setEnrolledPage] = useState(1);
+  const [confirmUnenrollUsername, setConfirmUnenrollUsername] = useState<string | null>(null);
 
   const { data, isLoading, isFetching } = useProgramEnrollments(
     programId,
     { page: enrolledPage, search: enrolledSearch },
   );
 
+  const unenrollLearner = useUnenrollLearner();
+
   const enrolledIds = data?.results.map((l) => l.id) ?? [];
+  const confirmLearner = data?.results.find((l) => l.username === confirmUnenrollUsername);
 
   const handleSearch = useCallback((q: string) => {
     setEnrolledSearch(q);
@@ -126,6 +141,16 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canEnroll = tr
                 <Badge variant="light">{learner.email}</Badge>
               </Stack>
             </div>
+            {canUnenroll && (
+              <Button
+                variant="outline-danger"
+                size="sm"
+                onClick={() => setConfirmUnenrollUsername(learner.username)}
+                disabled={confirmUnenrollUsername !== null}
+              >
+                {intl.formatMessage(messages.unenrollBtn)}
+              </Button>
+            )}
           </div>
         ))}
       </div>
@@ -151,6 +176,24 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canEnroll = tr
         onClose={closeModal}
         programId={programId}
         alreadyEnrolledIds={enrolledIds}
+      />
+
+      <DeleteModal
+        isOpen={!!confirmUnenrollUsername}
+        close={() => setConfirmUnenrollUsername(null)}
+        title={intl.formatMessage(messages.confirmUnenrollTitle)}
+        description={(
+          <>
+            <strong>{confirmLearner?.name ?? confirmUnenrollUsername}</strong>
+            <br />
+            {intl.formatMessage(messages.confirmUnenrollDesc)}
+          </>
+        )}
+        btnLabel={intl.formatMessage(messages.confirmUnenrollBtn)}
+        onDeleteSubmit={async () => {
+          await unenrollLearner.mutateAsync({ programId, username: confirmUnenrollUsername! });
+          setConfirmUnenrollUsername(null);
+        }}
       />
     </div>
   );

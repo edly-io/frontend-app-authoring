@@ -41,6 +41,8 @@ export interface Program {
   currency?: string;
   /** False when the program is paid and the user is not a superadmin: only they enroll learners into it. */
   canEnrollLearners?: boolean;
+  /** Only a superadmin unenrolls learners from a program. */
+  canUnenrollLearners?: boolean;
 }
 
 export interface OrgOption {

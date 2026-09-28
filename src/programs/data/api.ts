@@ -54,6 +54,7 @@ const toProgram = (d: any): Program => ({
   discount: d.discount ?? null,
   currency: d.currency ?? 'SAR',
   canEnrollLearners: d.can_enroll_learners ?? true,
+  canUnenrollLearners: d.can_unenroll_learners ?? false,
 });
 
 // ── Config — GET /rwaq/api/programs/config/ ───────────────────────────────────
@@ -303,6 +304,15 @@ export const enrollLearnerInProgram = async (programId: string, username: string
   await getAuthenticatedHttpClient().post(
     `${getProgramsBaseUrl()}/${programId}/learners/`,
     { username, reason },
+  );
+};
+
+// ── Unenroll learner — DELETE /rwaq/api/programs/<key>/learners/?username=... ──
+// Superadmin only.
+export const unenrollLearnerFromProgram = async (programId: string, username: string): Promise<void> => {
+  await getAuthenticatedHttpClient().delete(
+    `${getProgramsBaseUrl()}/${programId}/learners/`,
+    { params: { username } },
   );
 };
 
