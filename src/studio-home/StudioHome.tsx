@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Button,
   Container,
@@ -12,6 +12,7 @@ import { useIntl } from '@edx/frontend-platform/i18n';
 import { StudioFooterSlot } from '@edx/frontend-component-footer';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import courseNotFoundMessages from '../generic/course-not-found/messages';
 import Loading from '../generic/Loading';
 import InternetConnectionAlert from '../generic/internet-connection-alert';
 import Header from '../header';
@@ -25,10 +26,29 @@ import messages from './messages';
 import { useStudioHome } from './hooks';
 import AlertMessage from '../generic/alert-message';
 
+interface CourseNotFoundLocationState {
+  courseNotFoundRedirect?: boolean;
+}
+
 const StudioHome = () => {
   const intl = useIntl();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const [showCourseNotFoundAlert, setShowCourseNotFoundAlert] = useState(
+    Boolean((location.state as CourseNotFoundLocationState | null)?.courseNotFoundRedirect),
+  );
+
+  useEffect(() => {
+    // If we got here via the course-authoring shell's "course not found" redirect,
+    // scrub the flag from history right away so a refresh or back/forward
+    // navigation doesn't re-show the alert or re-trigger it in a loop.
+    if ((location.state as CourseNotFoundLocationState | null)?.courseNotFoundRedirect) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+    // Only run once on mount -- we're intentionally reading the initial location.state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const {
     isLoadingPage,
@@ -166,6 +186,14 @@ const StudioHome = () => {
       <Header isHiddenMainMenu />
       <Container size="xl" className="p-4 mt-3">
         <section className="mb-4">
+          <AlertMessage
+            dismissible
+            show={showCourseNotFoundAlert}
+            onClose={() => setShowCourseNotFoundAlert(false)}
+            variant="danger"
+            icon={Error}
+            description={intl.formatMessage(courseNotFoundMessages.courseNotFoundAlertMessage)}
+          />
           <article className="studio-home-sub-header">
             <section>
               <SubHeader

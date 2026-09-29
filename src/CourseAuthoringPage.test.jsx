@@ -6,15 +6,19 @@ import { executeThunk } from './utils';
 import { fetchCourseApps } from './pages-and-resources/data/thunks';
 import { fetchCourseDetail } from './data/thunks';
 import { getApiWaffleFlagsUrl } from './data/api';
-import { initializeMocks, render } from './testUtils';
+import { getApiBaseUrl } from './studio-home/data/api';
+import { generateGetStudioHomeDataApiResponse } from './studio-home/factories/mockApiResponses';
+import { initializeMocks, render, waitFor } from './testUtils';
 
 const courseId = 'course-v1:edX+TestX+Test_Course';
 let mockPathname = '/evilguy/';
+const mockNavigate = jest.fn();
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useLocation: () => ({
     pathname: mockPathname,
   }),
+  useNavigate: () => mockNavigate,
 }));
 let axiosMock;
 let store;
@@ -26,6 +30,7 @@ beforeEach(async () => {
   axiosMock
     .onGet(getApiWaffleFlagsUrl(courseId))
     .reply(200, {});
+  mockNavigate.mockClear();
 });
 
 describe('Editor Pages Load no header', () => {
@@ -80,10 +85,37 @@ describe('Course authoring page', () => {
     });
     await executeThunk(fetchCourseDetail(courseId), store.dispatch);
   };
-  test('renders not found page on non-existent course key', async () => {
+  test('redirects to Studio Home when the course truly does not exist (no rerun in progress)', async () => {
     await mockStoreNotFound();
+    axiosMock.onGet(`${getApiBaseUrl()}/api/contentstore/v1/home/courses`).reply(200, {
+      ...generateGetStudioHomeDataApiResponse(),
+      inProcessCourseActions: [],
+    });
+    render(<CourseAuthoringPage courseId={courseId} />);
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/home', { state: { courseNotFoundRedirect: true } });
+    });
+  });
+
+  test('shows a loading state (not a bare "Not found") while a course rerun is still in progress', async () => {
+    await mockStoreNotFound();
+    axiosMock.onGet(`${getApiBaseUrl()}/api/contentstore/v1/home/courses`).reply(200, {
+      ...generateGetStudioHomeDataApiResponse(),
+      inProcessCourseActions: [{
+        courseKey: courseId,
+        displayName: 'Test Course',
+        org: 'edX',
+        number: 'TestX',
+        run: 'Test_Course',
+        isFailed: false,
+        isInProgress: true,
+        dismissLink: '',
+      }],
+    });
     const wrapper = render(<CourseAuthoringPage courseId={courseId} />);
-    expect(await wrapper.findByTestId('notFoundAlert')).toBeInTheDocument();
+    expect(await wrapper.findByTestId('courseRerunLoading')).toBeInTheDocument();
+    expect(wrapper.queryByTestId('notFoundAlert')).not.toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
   test('does not render not found page on other kinds of error', async () => {
     await mockStoreError();

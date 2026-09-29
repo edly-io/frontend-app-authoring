@@ -229,5 +229,34 @@ describe('<StudioHome />', () => {
       expect(screen.getByText('Looking for help with Studio?')).toBeInTheDocument();
       expect(screen.getByText('LMS')).toHaveAttribute('href', process.env.LMS_BASE_URL);
     });
+
+    describe('course-not-found redirect alert', () => {
+      const notFoundMessage = 'The course you tried to open could not be found. It may have been deleted, or the link may be incorrect.';
+
+      it('shows a dismissible alert when redirected here after a course was not found', async () => {
+        render(<StudioHome />, {
+          path: '/home',
+          routerProps: { initialEntries: [{ pathname: '/home', state: { courseNotFoundRedirect: true } }] },
+        });
+
+        expect(screen.getByText(notFoundMessage)).toBeInTheDocument();
+
+        // Scrubs the redirect flag from history right away, so a refresh/back-forward
+        // navigation can't re-show (or loop) the alert.
+        expect(mockNavigate).toHaveBeenCalledWith('/home', { replace: true, state: null });
+
+        const dismissButton = screen.getByRole('button', { name: 'Dismiss' });
+        fireEvent.click(dismissButton);
+        await waitFor(() => {
+          expect(screen.queryByText(notFoundMessage)).not.toBeInTheDocument();
+        });
+      });
+
+      it('does not show the alert on a normal visit to Studio Home', () => {
+        render(<StudioHome />, { path: '/home' });
+        expect(screen.queryByText(notFoundMessage)).not.toBeInTheDocument();
+        expect(mockNavigate).not.toHaveBeenCalled();
+      });
+    });
   });
 });
