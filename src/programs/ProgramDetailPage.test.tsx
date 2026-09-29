@@ -39,8 +39,10 @@ const renderPage = (overrides: Partial<Program> = {}) => {
 const saveProgram = () => fireEvent.click(screen.getByRole('button', { name: 'Save Program' }));
 
 describe('<ProgramDetailPage /> pricing', () => {
+  let mockShowToast: jest.Mock;
+
   beforeEach(() => {
-    initializeMocks();
+    mockShowToast = initializeMocks().mockShowToast as jest.Mock;
     mockUpdateProgram.mockResolvedValue(undefined);
   });
 
@@ -75,6 +77,7 @@ describe('<ProgramDetailPage /> pricing', () => {
     fireEvent.change(screen.getByLabelText('Price (SAR)'), { target: { value: '100' } });
     saveProgram();
     expect(await screen.findByText(detail)).toBeInTheDocument();
+    expect(mockShowToast).not.toHaveBeenCalledWith('Failed to save program. Please try again.');
   });
 
   describe('activating a free program', () => {

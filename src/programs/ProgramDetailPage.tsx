@@ -183,7 +183,7 @@ const ProgramDetailPage: React.FC = () => {
         (value, { parent }) => parent.pricingCategory !== 'is_paid' || isSalePriceValid(parent.price ?? '', value ?? ''),
       ),
     }),
-    onSubmit: async (values, { setFieldError }) => {
+    onSubmit: async (values, { setFieldError, setFieldTouched }) => {
       // Activating a free program puts it live in the catalog at no cost, so
       // confirm that first. "Continue as free" resubmits with the flag set.
       const isActivating = values.status === 'active' && program?.status !== 'active';
@@ -197,7 +197,6 @@ const ProgramDetailPage: React.FC = () => {
         setImageFile(null);
         showToast(intl.formatMessage(messages.savedSuccess));
       } catch (err) {
-        showToast(intl.formatMessage(messages.savedError));
         // DRF field errors: { pricing_category: [msg], price: [msg], discount: [msg] }.
         const body = (err as { response?: { data?: Record<string, unknown> } })?.response?.data ?? {};
         const pricingFields = { pricing_category: 'pricingCategory', price: 'price', discount: 'discount' };
@@ -207,11 +206,16 @@ const ProgramDetailPage: React.FC = () => {
           const message = Array.isArray(fieldError) ? fieldError[0] : fieldError;
           if (typeof message === 'string') {
             setFieldError(formField, message);
+            setFieldTouched(formField, true, false);
             hasPricingError = true;
           }
         });
         // The pricing fields live on the details tab, so bring it up to show the error.
-        if (hasPricingError) { setActiveTab('details'); }
+        if (hasPricingError) {
+          setActiveTab('details');
+        } else {
+          showToast(intl.formatMessage(messages.savedError));
+        }
       }
     },
   });
