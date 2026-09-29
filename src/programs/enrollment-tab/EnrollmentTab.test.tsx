@@ -19,6 +19,8 @@ jest.mock('@src/programs/data/apiHooks', () => ({
   useEnrollLearner: () => ({ mutateAsync: jest.fn(), isPending: false }),
   useBatches: () => ({ data: [], isLoading: false }),
   useBatchUsers: () => ({ data: [], isLoading: false }),
+  useEnrolledLearnerIds: () => ({ data: new Set<string>() }),
+  useProgramDetail: () => ({ data: { program: { id: 'prog-key-1', city: '' }, availableCities: [], availableAudiences: [] } }),
 }));
 
 const programId = 'prog-key-1';

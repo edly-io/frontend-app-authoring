@@ -323,9 +323,9 @@ export const useProgramEnrollments = (programId: string, params: GetLearnersPara
   staleTime: 0,
 });
 
-export const useBatches = (enabled = true) => useQuery({
-  queryKey: ['batches'],
-  queryFn: getBatches,
+export const useBatches = (enabled = true, cityId?: string) => useQuery({
+  queryKey: ['batches', cityId ?? ''],
+  queryFn: () => getBatches(cityId),
   staleTime: Infinity,
   enabled,
 });
