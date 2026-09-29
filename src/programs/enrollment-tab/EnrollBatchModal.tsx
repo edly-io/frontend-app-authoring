@@ -11,7 +11,9 @@ import {
   Spinner,
 } from '@openedx/paragon';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
-import { useBatches, useBatchUsers, useEnrollLearner, useEnrolledLearnerIds } from '../data/apiHooks';
+import {
+  useBatches, useBatchUsers, useEnrollLearner, useEnrolledLearnerIds, useProgramDetail,
+} from '../data/apiHooks';
 
 const messages = defineMessages({
   title: { id: 'programs.enrollment.batch.title', defaultMessage: 'Enroll Batch' },
@@ -45,7 +47,15 @@ const EnrollBatchModal: React.FC<EnrollBatchModalProps> = ({
   const [enrollSuccess, setEnrollSuccess] = useState(false);
   const [enrollError, setEnrollError] = useState(false);
 
-  const { data: batches, isLoading: isBatchesLoading } = useBatches(isOpen);
+  // Batches are city-scoped on the backend: only batches whose city matches
+  // this program's city are shown, so an admin can't accidentally enrol
+  // trainees from another city.
+  const { data: programDetail } = useProgramDetail(programId, isOpen);
+  const programCityId = programDetail?.program?.city || '';
+  const { data: batches, isLoading: isBatchesLoading } = useBatches(
+    isOpen && !!programCityId,
+    programCityId,
+  );
   const { data: batchUsers, isLoading: isUsersLoading } = useBatchUsers(selectedBatchId, !!selectedBatchId);
   const { data: enrolledIdSet } = useEnrolledLearnerIds(programId, isOpen);
   const { mutateAsync: enrollLearner } = useEnrollLearner();

@@ -42,8 +42,9 @@ export { getCurrentFbrProfile, getCurrentFbrProfileUrl } from '@src/fbr-access/a
 
 const getProgramsBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/programs`;
 const getFeedbackBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/cms/feedback`;
+const getBiodataUsersUrl = () => `${getConfig().LMS_BASE_URL}/fbr/api/biodata/v1/users`;
 const getEncodedProgramId = (programId: string) => encodeURIComponent(programId);
-export const getFbrCitiesUrl = () => `${getConfig().LMS_BASE_URL}/fbr/api/biodata/v1/users/cities/`;
+export const getFbrCitiesUrl = () => `${getBiodataUsersUrl()}/cities/`;
 
 export const getFbrCities = async (): Promise<CityOption[]> => {
   const { data } = await getAuthenticatedHttpClient().get(getFbrCitiesUrl());
@@ -722,95 +723,29 @@ export const removeCourseFromProgram = async (programId: string, courseId: strin
   );
 };
 
-// ── MOCK: Batches — GET /fbr/api/programs/batches/ ───────────────────────────
-// MOCK — replace with real endpoint when backend ships
-
-const MOCK_BATCHES: Batch[] = [
-  { id: '55', name: 'Batch 55' },
-  { id: '54', name: 'Batch 54' },
-  { id: '53', name: 'Batch 53' },
-  { id: '52', name: 'Batch 52' },
-  { id: '51', name: 'Batch 51' },
-];
-
-const MOCK_BATCH_USERS: Record<string, Learner[]> = {
-  55: [
-    {
-      id: 'ahmed.riaz', username: 'ahmed.riaz', email: 'ahmed.riaz@batch55.pk', name: 'Ahmed Riaz',
-    },
-    {
-      id: 'sara.noor', username: 'sara.noor', email: 'sara.noor@batch55.pk', name: 'Sara Noor',
-    },
-    {
-      id: 'hassan.ali', username: 'hassan.ali', email: 'hassan.ali@batch55.pk', name: 'Hassan Ali',
-    },
-    {
-      id: 'fatima.malik', username: 'fatima.malik', email: 'fatima.malik@batch55.pk', name: 'Fatima Malik',
-    },
-  ],
-  54: [
-    {
-      id: 'usman.butt', username: 'usman.butt', email: 'usman.butt@batch54.pk', name: 'Usman Butt',
-    },
-    {
-      id: 'zainab.khan', username: 'zainab.khan', email: 'zainab.khan@batch54.pk', name: 'Zainab Khan',
-    },
-    {
-      id: 'tariq.nadeem', username: 'tariq.nadeem', email: 'tariq.nadeem@batch54.pk', name: 'Tariq Nadeem',
-    },
-  ],
-  53: [
-    {
-      id: 'bilal.siddiqui', username: 'bilal.siddiqui', email: 'bilal.s@batch53.pk', name: 'Bilal Siddiqui',
-    },
-    {
-      id: 'amna.qureshi', username: 'amna.qureshi', email: 'amna.q@batch53.pk', name: 'Amna Qureshi',
-    },
-    {
-      id: 'noman.haider', username: 'noman.haider', email: 'noman.h@batch53.pk', name: 'Noman Haider',
-    },
-    {
-      id: 'hina.baig', username: 'hina.baig', email: 'hina.baig@batch53.pk', name: 'Hina Baig',
-    },
-    {
-      id: 'shahzad.raza', username: 'shahzad.raza', email: 'shahzad.r@batch53.pk', name: 'Shahzad Raza',
-    },
-  ],
-  52: [
-    {
-      id: 'rabia.iqbal', username: 'rabia.iqbal', email: 'rabia.iqbal@batch52.pk', name: 'Rabia Iqbal',
-    },
-    {
-      id: 'kashif.rehman', username: 'kashif.rehman', email: 'kashif.r@batch52.pk', name: 'Kashif Rehman',
-    },
-    {
-      id: 'sadia.anwar', username: 'sadia.anwar', email: 'sadia.a@batch52.pk', name: 'Sadia Anwar',
-    },
-  ],
-  51: [
-    {
-      id: 'asim.chaudhry', username: 'asim.chaudhry', email: 'asim.c@batch51.pk', name: 'Asim Chaudhry',
-    },
-    {
-      id: 'maryam.hussain', username: 'maryam.hussain', email: 'maryam.h@batch51.pk', name: 'Maryam Hussain',
-    },
-    {
-      id: 'imtiaz.ali', username: 'imtiaz.ali', email: 'imtiaz.ali@batch51.pk', name: 'Imtiaz Ali',
-    },
-    {
-      id: 'shazia.sohail', username: 'shazia.sohail', email: 'shazia.s@batch51.pk', name: 'Shazia Sohail',
-    },
-  ],
+// ── Batches — GET /fbr/api/biodata/v1/users/batches/ ─────────────────────────
+// Owned by the biodata app on LMS (same endpoint the Add User modal reads).
+// Backend PK is integer; frontend `Batch.id` is typed as string, so we
+// stringify at the boundary — keeps the rest of the app uniform (select
+// values, useBatchUsers queryKey). Pass ``cityId`` to narrow to batches
+// tied to that city (used by the Enroll Batch modal).
+export const getBatches = async (cityId?: string): Promise<Batch[]> => {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getBiodataUsersUrl()}/batches/`,
+    cityId ? { params: { city: cityId } } : undefined,
+  );
+  return (data ?? []).map((b: { id: number | string; name: string }) => ({
+    id: String(b.id),
+    name: b.name,
+  }));
 };
 
-export const getBatches = async (): Promise<Batch[]> => {
-  await new Promise<void>((res) => { setTimeout(res, 300); });
-  return MOCK_BATCHES;
-};
-
+// ── Batch users — GET /fbr/api/biodata/v1/users/batches/<id>/users/ ──────────
 export const getBatchUsers = async (batchId: string): Promise<Learner[]> => {
-  await new Promise<void>((res) => { setTimeout(res, 400); });
-  return MOCK_BATCH_USERS[batchId] ?? [];
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getBiodataUsersUrl()}/batches/${encodeURIComponent(batchId)}/users/`,
+  );
+  return (data ?? []).map(toUser);
 };
 
 // ── Feedback forms — GET /fbr/api/cms/feedback/programs/<key>/forms/ ────────
