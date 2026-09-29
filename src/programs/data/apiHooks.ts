@@ -12,7 +12,6 @@ import {
   addCourseToProgram,
   getPlatformUsers,
   enrollLearnerInProgram,
-  unenrollLearnerFromProgram,
   removeCourseFromProgram,
   getCourseTeam,
   getProgramEnrollments,
@@ -110,20 +109,8 @@ export const useLearners = (params: GetLearnersParams = {}, enabled = true) => u
 export const useEnrollLearner = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ programId, username }: { programId: string; username: string }) => (
-      enrollLearnerInProgram(programId, username)
-    ),
-    onSuccess: (_, { programId }) => {
-      queryClient.invalidateQueries({ queryKey: ['programEnrollments', programId] });
-    },
-  });
-};
-
-export const useUnenrollLearner = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ programId, username }: { programId: string; username: string }) => (
-      unenrollLearnerFromProgram(programId, username)
+    mutationFn: ({ programId, username, reason }: { programId: string; username: string; reason?: string }) => (
+      enrollLearnerInProgram(programId, username, reason)
     ),
     onSuccess: (_, { programId }) => {
       queryClient.invalidateQueries({ queryKey: ['programEnrollments', programId] });
