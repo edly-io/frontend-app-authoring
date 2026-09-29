@@ -40,7 +40,7 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
       : Yup.string().notRequired(),
   });
 
-  const handleSubmit = async (values, { setStatus }) => {
+  const handleSubmit = async (values, { setStatus, setErrors, setTouched }) => {
     try {
       const created = await createProgram({
         displayName: values.displayName,
@@ -51,6 +51,32 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
       });
       navigate(`/programs/${created.id}`);
     } catch (e) {
+      const raw = e?.customAttributes?.httpErrorResponseData ?? e?.response?.data;
+      let data = raw;
+      if (typeof raw === 'string') {
+        try { data = JSON.parse(raw); } catch { data = raw; }
+      }
+      if (data && typeof data === 'object') {
+        const first = (v) => (Array.isArray(v) ? v[0] : v);
+        const fieldErrors = {};
+        if (data.organization) { fieldErrors.org = first(data.organization); }
+        if (data.program_type) { fieldErrors.programType = first(data.program_type); }
+        if (data.batch) { fieldErrors.run = first(data.batch); }
+        if (data.city) { fieldErrors.cityId = first(data.city); }
+        if (data.name) { fieldErrors.displayName = first(data.name); }
+        if (Object.keys(fieldErrors).length) {
+          setErrors(fieldErrors);
+          // Formik only paints invalid state after a field is touched; mark
+          // every erroring field touched so the highlights show immediately.
+          setTouched(Object.keys(fieldErrors).reduce((acc, k) => {
+            acc[k] = true;
+            return acc;
+          }, {}), false);
+        }
+        const banner = first(data.non_field_errors) || data.detail;
+        setStatus({ error: banner || e.message || 'Failed to create program.' });
+        return;
+      }
       setStatus({ error: e.message || 'Failed to create program.' });
     }
   };

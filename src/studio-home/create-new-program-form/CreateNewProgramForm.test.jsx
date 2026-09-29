@@ -95,6 +95,37 @@ describe('<CreateNewProgramForm />', () => {
     expect(mockCreateProgram).not.toHaveBeenCalled();
   });
 
+  it('surfaces per-field errors and banner from a 400 unique-combo response', async () => {
+    mockUseProgramAccess.mockReturnValue({
+      profile: { roles: ['middle_admin'] },
+    });
+    mockCreateProgram.mockRejectedValueOnce({
+      message: 'Request failed with status code 400',
+      customAttributes: {
+        httpErrorResponseData: JSON.stringify({
+          organization: ['Already used with this Program Type and Program Run.'],
+          program_type: ['Already used with this Organization and Program Run.'],
+          batch: ['Already used with this Organization and Program Type.'],
+          non_field_errors: [
+            "A program named 'Existing Program' already exists for "
+            + "Organization 'FBR Academy', Program Type 'STP', Program Run '2026'. "
+            + 'Change any one of Organization, Program Type or Program Run to create a new program.',
+          ],
+        }),
+      },
+    });
+
+    render(<CreateNewProgramForm handleOnClickCancel={jest.fn()} />);
+    fillRequiredFields();
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
+
+    expect(await screen.findByText(/A program named 'Existing Program' already exists/)).toBeInTheDocument();
+    expect(screen.getByText('Already used with this Program Type and Program Run.')).toBeInTheDocument();
+    expect(screen.getByText('Already used with this Organization and Program Run.')).toBeInTheDocument();
+    expect(screen.getByText('Already used with this Organization and Program Type.')).toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
   it('does not show or submit city for Middle Admins', async () => {
     mockUseProgramAccess.mockReturnValue({
       profile: { roles: ['middle_admin'] },
