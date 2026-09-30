@@ -4,7 +4,9 @@ import {
   Button,
   ButtonGroup,
   Form,
+  OverlayTrigger,
   Spinner,
+  Tooltip,
   useToggle,
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
@@ -32,6 +34,8 @@ const messages = defineMessages({
   confirmRemoveTitle: { id: 'programs.instructors.confirm-remove.title', defaultMessage: 'Remove Instructor?' },
   confirmRemoveDesc: { id: 'programs.instructors.confirm-remove.desc', defaultMessage: 'This instructor will be removed from the course team. They will lose access to the course.' },
   confirmRemoveBtn: { id: 'programs.instructors.confirm-remove.btn', defaultMessage: 'Remove Instructor' },
+  removeBlockedProgramStarted: { id: 'programs.instructors.remove-blocked.program-started', defaultMessage: 'Cannot remove instructors after the program has started. Use Session Corrections to reassign individual sessions.' },
+  removeBlockedHasSessions: { id: 'programs.instructors.remove-blocked.has-sessions', defaultMessage: 'This instructor has scheduled sessions for this course. Remove them from those sessions before removing from the course team.' },
 });
 
 interface InstructorsTabProps {
@@ -54,7 +58,9 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
   const { data: team, isLoading: isTeamLoading } = useCourseTeam(selectedCourseId, !!selectedCourseId);
   const removeInstructor = useRemoveInstructorFromCourse();
 
-  const teamUsernames = team?.map((i) => i.username) ?? [];
+  const members = team?.members ?? [];
+  const programStarted = team?.programStarted ?? false;
+  const teamUsernames = members.map((i) => i.username);
   const selectedCourse = courses.find((c) => c.id === selectedCourseId);
 
   const handleCourseChange = useCallback((courseId: string) => {
@@ -139,48 +145,72 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
             </div>
           )}
 
-          {!isTeamLoading && team?.length === 0 && (
+          {!isTeamLoading && members.length === 0 && (
             <p className="text-muted">{intl.formatMessage(messages.emptyTeam)}</p>
           )}
 
-          {!isTeamLoading && team && team.length > 0 && (
+          {!isTeamLoading && members.length > 0 && (
             <div>
-              {team.map((instructor, index) => (
-                <div
-                  key={instructor.id}
-                  className="instructor-row d-flex align-items-center py-3"
-                >
-                  <span
-                    className="instructor-row__number mr-3 font-weight-bold text-muted"
+              {members.map((instructor, index) => {
+                let blockedReason: string | null = null;
+                if (programStarted) {
+                  blockedReason = intl.formatMessage(messages.removeBlockedProgramStarted);
+                } else if (instructor.hasScheduledSessions) {
+                  blockedReason = intl.formatMessage(messages.removeBlockedHasSessions);
+                }
+                const removeDisabled = confirmInstructor !== null || blockedReason !== null;
+                const removeButton = (
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={() => {
+                      setRemoveError(null);
+                      setConfirmInstructor({ email: instructor.email, username: instructor.username });
+                    }}
+                    disabled={removeDisabled}
                   >
-                    {index + 1}
-                  </span>
-                  <div className="instructor-row__main flex-grow-1 d-flex flex-wrap align-items-center">
-                    <div className="instructor-row__identity">
-                      <UserIdentity
-                        name={instructor.name}
-                        badges={toRoleBadges(instructor.role)}
-                        size="compact"
-                        avatarValue={instructor.avatar || getInitials(instructor.name)}
-                      />
-                    </div>
-                    <span className="instructor-row__email text-muted">{instructor.email}</span>
-                  </div>
-                  {canManage && (
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      onClick={() => {
-                        setRemoveError(null);
-                        setConfirmInstructor({ email: instructor.email, username: instructor.username });
-                      }}
-                      disabled={confirmInstructor !== null}
+                    {intl.formatMessage(messages.removeBtn)}
+                  </Button>
+                );
+                return (
+                  <div
+                    key={instructor.id}
+                    className="instructor-row d-flex align-items-center py-3"
+                  >
+                    <span
+                      className="instructor-row__number mr-3 font-weight-bold text-muted"
                     >
-                      {intl.formatMessage(messages.removeBtn)}
-                    </Button>
-                  )}
-                </div>
-              ))}
+                      {index + 1}
+                    </span>
+                    <div className="instructor-row__main flex-grow-1 d-flex flex-wrap align-items-center">
+                      <div className="instructor-row__identity">
+                        <UserIdentity
+                          name={instructor.name}
+                          badges={toRoleBadges(instructor.role)}
+                          size="compact"
+                          avatarValue={instructor.avatar || getInitials(instructor.name)}
+                        />
+                      </div>
+                      <span className="instructor-row__email text-muted">{instructor.email}</span>
+                    </div>
+                    {canManage && (
+                      blockedReason ? (
+                        <OverlayTrigger
+                          placement="left"
+                          overlay={(
+                            <Tooltip id={`remove-blocked-${instructor.username}`}>
+                              {blockedReason}
+                            </Tooltip>
+                          )}
+                        >
+                          {/* span wrapper — Overlay needs a non-disabled child for hover events */}
+                          <span className="d-inline-block">{removeButton}</span>
+                        </OverlayTrigger>
+                      ) : removeButton
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </>

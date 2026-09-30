@@ -1,5 +1,5 @@
 import type {
-  Batch, Course, Instructor, Learner, PaginatedCourses, PaginatedLearners, Program,
+  Batch, Course, CourseTeam, Instructor, Learner, PaginatedCourses, PaginatedLearners, Program,
 } from './types';
 
 export const mockCourse = (overrides: Partial<Course> = {}): Course => ({
@@ -20,6 +20,13 @@ export const mockInstructor = (overrides: Partial<Instructor> = {}): Instructor 
   email: 'john@example.com',
   name: 'John Doe',
   role: 'staff',
+  hasScheduledSessions: false,
+  ...overrides,
+});
+
+export const mockCourseTeam = (overrides: Partial<CourseTeam> = {}): CourseTeam => ({
+  programStarted: false,
+  members: [],
   ...overrides,
 });
 
