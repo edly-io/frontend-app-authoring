@@ -96,6 +96,12 @@ export interface Instructor {
   name: string;
   role?: string;
   avatar?: string | null;
+  hasScheduledSessions?: boolean;
+}
+
+export interface CourseTeam {
+  programStarted: boolean;
+  members: Instructor[];
 }
 
 export interface PaginatedInstructors {

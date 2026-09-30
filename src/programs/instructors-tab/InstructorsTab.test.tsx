@@ -2,7 +2,9 @@ import {
   fireEvent, initializeMocks, render, screen, waitFor,
 } from '@src/testUtils';
 import InstructorsTab from './InstructorsTab';
-import { mockCourse, mockInstructor, mockProgram } from '../data/api.mock';
+import {
+  mockCourse, mockCourseTeam, mockInstructor, mockProgram,
+} from '../data/api.mock';
 
 const mockRemoveMutate = jest.fn();
 const mockUseCourseTeam = jest.fn();
@@ -19,7 +21,7 @@ describe('<InstructorsTab />', () => {
   beforeEach(() => {
     initializeMocks();
     mockRemoveMutate.mockResolvedValue(undefined);
-    mockUseCourseTeam.mockReturnValue({ data: [], isLoading: false });
+    mockUseCourseTeam.mockReturnValue({ data: mockCourseTeam(), isLoading: false });
   });
 
   it('shows "no courses" alert when program has no courses', () => {
@@ -44,7 +46,7 @@ describe('<InstructorsTab />', () => {
   it('shows instructor list after selecting a course', async () => {
     const course = mockCourse({ id: 'course-v1:Org+X+2025', displayName: 'CS 101' });
     const instructor = mockInstructor({ name: 'Prof. Smith', email: 'smith@example.com' });
-    mockUseCourseTeam.mockReturnValue({ data: [instructor], isLoading: false });
+    mockUseCourseTeam.mockReturnValue({ data: mockCourseTeam({ members: [instructor] }), isLoading: false });
     const program = mockProgram({ courses: [course] });
     render(<InstructorsTab program={program} />);
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'course-v1:Org+X+2025' } });
@@ -54,7 +56,7 @@ describe('<InstructorsTab />', () => {
 
   it('hides instructor management actions in read-only mode', async () => {
     const course = mockCourse({ id: 'course-v1:Org+X+2025' });
-    mockUseCourseTeam.mockReturnValue({ data: [mockInstructor()], isLoading: false });
+    mockUseCourseTeam.mockReturnValue({ data: mockCourseTeam({ members: [mockInstructor()] }), isLoading: false });
     const program = mockProgram({ courses: [course] });
 
     render(<InstructorsTab program={program} canManage={false} />);
@@ -67,17 +69,17 @@ describe('<InstructorsTab />', () => {
   it('shows role badge for instructor', async () => {
     const course = mockCourse({ id: 'course-v1:Org+X+2025', displayName: 'CS 101' });
     const instructor = mockInstructor({ role: 'staff' });
-    mockUseCourseTeam.mockReturnValue({ data: [instructor], isLoading: false });
+    mockUseCourseTeam.mockReturnValue({ data: mockCourseTeam({ members: [instructor] }), isLoading: false });
     const program = mockProgram({ courses: [course] });
     render(<InstructorsTab program={program} />);
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'course-v1:Org+X+2025' } });
-    expect(await screen.findByText('staff')).toBeInTheDocument();
+    expect(await screen.findByText(/staff/i)).toBeInTheDocument();
   });
 
   it('opens confirmation dialog when Remove is clicked', async () => {
     const course = mockCourse({ id: 'course-v1:Org+X+2025', displayName: 'CS 101' });
     const instructor = mockInstructor({ email: 'smith@example.com' });
-    mockUseCourseTeam.mockReturnValue({ data: [instructor], isLoading: false });
+    mockUseCourseTeam.mockReturnValue({ data: mockCourseTeam({ members: [instructor] }), isLoading: false });
     const program = mockProgram({ courses: [course] });
     render(<InstructorsTab program={program} />);
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'course-v1:Org+X+2025' } });
@@ -87,18 +89,67 @@ describe('<InstructorsTab />', () => {
     expect(screen.getAllByText('smith@example.com').length).toBeGreaterThanOrEqual(2);
   });
 
-  it('calls removeInstructor with courseId and email when confirm is clicked', async () => {
+  it('calls removeInstructor with courseId and username when confirm is clicked', async () => {
     const course = mockCourse({ id: 'course-v1:Org+X+2025', displayName: 'CS 101' });
-    const instructor = mockInstructor({ email: 'smith@example.com' });
-    mockUseCourseTeam.mockReturnValue({ data: [instructor], isLoading: false });
+    const instructor = mockInstructor({ username: 'prof.smith', email: 'smith@example.com' });
+    mockUseCourseTeam.mockReturnValue({ data: mockCourseTeam({ members: [instructor] }), isLoading: false });
     const program = mockProgram({ courses: [course] });
     render(<InstructorsTab program={program} />);
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'course-v1:Org+X+2025' } });
-    fireEvent.click(await screen.findByRole('button', { name: /Remove/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Remove$/ }));
     fireEvent.click(screen.getByRole('button', { name: /Remove Instructor/i }));
     await waitFor(() => expect(mockRemoveMutate).toHaveBeenCalledWith({
       courseId: 'course-v1:Org+X+2025',
-      email: 'smith@example.com',
+      username: 'prof.smith',
     }));
+  });
+
+  it('disables Remove and shows a tooltip when the instructor has scheduled sessions', async () => {
+    const course = mockCourse({ id: 'course-v1:Org+X+2025', displayName: 'CS 101' });
+    const instructor = mockInstructor({ hasScheduledSessions: true });
+    mockUseCourseTeam.mockReturnValue({
+      data: mockCourseTeam({ members: [instructor] }),
+      isLoading: false,
+    });
+    const program = mockProgram({ courses: [course] });
+    render(<InstructorsTab program={program} />);
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'course-v1:Org+X+2025' } });
+
+    const btn = await screen.findByRole('button', { name: /^Remove$/ });
+    expect(btn).toBeDisabled();
+    fireEvent.mouseOver(btn.parentElement!);
+    expect(await screen.findByText(/scheduled sessions for this course/i)).toBeInTheDocument();
+  });
+
+  it('disables Remove and shows a tooltip when the program has started', async () => {
+    const course = mockCourse({ id: 'course-v1:Org+X+2025', displayName: 'CS 101' });
+    const instructor = mockInstructor({ hasScheduledSessions: false });
+    mockUseCourseTeam.mockReturnValue({
+      data: mockCourseTeam({ programStarted: true, members: [instructor] }),
+      isLoading: false,
+    });
+    const program = mockProgram({ courses: [course] });
+    render(<InstructorsTab program={program} />);
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'course-v1:Org+X+2025' } });
+
+    const btn = await screen.findByRole('button', { name: /^Remove$/ });
+    expect(btn).toBeDisabled();
+    fireEvent.mouseOver(btn.parentElement!);
+    expect(await screen.findByText(/program has started/i)).toBeInTheDocument();
+  });
+
+  it('keeps Remove enabled when there are no scheduled sessions and the program has not started', async () => {
+    const course = mockCourse({ id: 'course-v1:Org+X+2025', displayName: 'CS 101' });
+    const instructor = mockInstructor({ hasScheduledSessions: false });
+    mockUseCourseTeam.mockReturnValue({
+      data: mockCourseTeam({ programStarted: false, members: [instructor] }),
+      isLoading: false,
+    });
+    const program = mockProgram({ courses: [course] });
+    render(<InstructorsTab program={program} />);
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'course-v1:Org+X+2025' } });
+
+    const btn = await screen.findByRole('button', { name: /^Remove$/ });
+    expect(btn).not.toBeDisabled();
   });
 });

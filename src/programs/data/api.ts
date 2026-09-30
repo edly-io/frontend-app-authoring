@@ -8,8 +8,8 @@ import type {
   Batch,
   CityOption,
   Course,
+  CourseTeam,
   CreateProgramInput,
-  Instructor,
   Learner,
   PaginatedCourses,
   PaginatedLearners,
@@ -628,19 +628,24 @@ export const getPlatformUsers = async (
 };
 
 // ── Course team — GET /fbr/api/programs/courses/<course_key>/team/ ─────────
-export const getCourseTeam = async (courseId: string): Promise<Instructor[]> => {
+export const getCourseTeam = async (courseId: string): Promise<CourseTeam> => {
   const { data } = await getAuthenticatedHttpClient().get(
     `${getProgramsBaseUrl()}/courses/${encodeURIComponent(courseId)}/team/`,
   );
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (Array.isArray(data) ? data : (data.results ?? [])).map((u: any) => ({
+  const members = (data.members ?? []).map((u: any) => ({
     id: u.username,
     username: u.username,
     email: u.email,
     role: u.role,
     avatar: u.avatar ?? u.profile_image_url ?? null,
     name: u.full_name || [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username,
+    hasScheduledSessions: Boolean(u.has_scheduled_sessions),
   }));
+  return {
+    programStarted: Boolean(data.program_started),
+    members,
+  };
 };
 
 // ── Add instructor to course — POST /fbr/api/programs/courses/<course_key>/team/
