@@ -47,22 +47,43 @@ describe('<ProgramDetailPage /> pricing', () => {
   });
 
   it('keeps pricing editable', () => {
-    renderPage({ pricingCategory: 'is_paid', price: '100.00' });
+    renderPage({ pricingCategory: 'is_paid', regularPrice: '100.00' });
     expect(screen.getByLabelText('Pricing type')).toBeEnabled();
     expect(screen.getByLabelText('Price (SAR)')).toBeEnabled();
-    expect(screen.getByLabelText('Sale price (SAR)')).toBeEnabled();
+    expect(screen.getByLabelText('Discounted Price / Sale Price (SAR)')).toBeEnabled();
     expect(screen.queryByText(/managed by the Rwaq admin/)).not.toBeInTheDocument();
   });
 
+  it('computes the discount percentage live from the inputs', () => {
+    renderPage({ pricingCategory: 'is_paid', regularPrice: '100.00' });
+    const price = screen.getByLabelText('Price (SAR)');
+    const sale = screen.getByLabelText('Discounted Price / Sale Price (SAR)');
+    expect(screen.queryByText(/% off/)).not.toBeInTheDocument();
+    fireEvent.change(price, { target: { value: '200' } });
+    fireEvent.change(sale, { target: { value: '150' } });
+    expect(screen.getByText('25% off')).toBeInTheDocument();
+    expect(mockUpdateProgram).not.toHaveBeenCalled();
+    fireEvent.change(price, { target: { value: '300' } });
+    expect(screen.getByText('50% off')).toBeInTheDocument();
+    fireEvent.change(sale, { target: { value: '300' } });
+    expect(screen.queryByText(/% off/)).not.toBeInTheDocument();
+    fireEvent.change(sale, { target: { value: '350' } });
+    expect(screen.queryByText(/% off/)).not.toBeInTheDocument();
+    fireEvent.change(sale, { target: { value: '150' } });
+    expect(screen.getByText('50% off')).toBeInTheDocument();
+    fireEvent.change(sale, { target: { value: '' } });
+    expect(screen.queryByText(/% off/)).not.toBeInTheDocument();
+  });
+
   it('validates the price and sale price on blur', async () => {
-    renderPage({ pricingCategory: 'is_paid', price: '100.00' });
+    renderPage({ pricingCategory: 'is_paid', regularPrice: '100.00' });
     const price = screen.getByLabelText('Price (SAR)');
     fireEvent.change(price, { target: { value: '0' } });
     fireEvent.blur(price);
     expect(await screen.findByText('Price must be greater than 0.')).toBeInTheDocument();
 
     fireEvent.change(price, { target: { value: '100' } });
-    const salePrice = screen.getByLabelText('Sale price (SAR)');
+    const salePrice = screen.getByLabelText('Discounted Price / Sale Price (SAR)');
     fireEvent.change(salePrice, { target: { value: '120' } });
     fireEvent.blur(salePrice);
     expect(await screen.findByText('Sale price must be lower than the price.')).toBeInTheDocument();
@@ -107,7 +128,7 @@ describe('<ProgramDetailPage /> pricing', () => {
     });
 
     it('does not ask for a paid program', async () => {
-      renderPage({ pricingCategory: 'is_paid', price: '100.00' });
+      renderPage({ pricingCategory: 'is_paid', regularPrice: '100.00' });
       activate();
       await waitFor(() => expect(mockUpdateProgram).toHaveBeenCalledTimes(1));
       expect(screen.queryByText('Activate a free program?')).not.toBeInTheDocument();

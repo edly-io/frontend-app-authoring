@@ -47,11 +47,15 @@ const messages = defineMessages({
   },
   discountLabel: {
     id: 'course-authoring.schedule-section.pricing.discount-label',
-    defaultMessage: 'Sale price ({currency})',
+    defaultMessage: 'Discounted Price / Sale Price ({currency})',
   },
   discountHint: {
     id: 'course-authoring.schedule-section.pricing.discount-hint',
     defaultMessage: 'Optional. Leave empty when the course is not on sale.',
+  },
+  discountPercentage: {
+    id: 'course-authoring.schedule-section.pricing.discount-percentage',
+    defaultMessage: '{percentage}% off',
   },
   saveBtn: {
     id: 'course-authoring.schedule-section.pricing.save-btn',

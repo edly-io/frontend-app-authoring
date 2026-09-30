@@ -50,8 +50,9 @@ const toProgram = (d: any): Program => ({
   image: d.card_image ?? '',
   courses: d.courses?.map(toCourse) ?? [],
   pricingCategory: d.pricing_category || 'is_free',
-  price: d.price ?? null,
-  discount: d.discount ?? null,
+  regularPrice: d.regular_price ?? null,
+  salePrice: d.sale_price ?? null,
+  discountPercentage: d.discount_percentage ?? null,
   currency: d.currency ?? 'SAR',
   canEnrollLearners: d.can_enroll_learners ?? true,
 });
@@ -160,8 +161,8 @@ export const updateProgram = async (
   if (data.pricingCategory !== undefined) { formData.append('pricing_category', data.pricingCategory ?? ''); }
   // Multipart cannot carry a real null, so a cleared money field is sent as ''.
   // DRF reads '' as null for these nullable fields, which clears the value.
-  if (data.price !== undefined) { formData.append('price', data.price ?? ''); }
-  if (data.discount !== undefined) { formData.append('discount', data.discount ?? ''); }
+  if (data.regularPrice !== undefined) { formData.append('regular_price', data.regularPrice ?? ''); }
+  if (data.salePrice !== undefined) { formData.append('sale_price', data.salePrice ?? ''); }
 
   if (imageFile) { formData.append('card_image', imageFile); }
 
