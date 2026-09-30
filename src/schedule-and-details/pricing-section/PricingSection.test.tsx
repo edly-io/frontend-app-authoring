@@ -11,8 +11,9 @@ const pricingUrl = () => `${getConfig().STUDIO_BASE_URL}/rwaq/api/pricing/course
 
 const pricingResponse = (overrides = {}) => ({
   pricing_category: 'is_free',
-  price: null,
-  discount: null,
+  regular_price: null,
+  sale_price: null,
+  discount_percentage: null,
   currency: 'SAR',
   pricing_managed_by_admin: false,
   part_of_program: null,
@@ -47,7 +48,7 @@ describe('<PricingSection />', () => {
     expect(screen.queryByLabelText('Price (SAR)')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('radio', { name: 'Paid' }));
     expect(screen.getByLabelText('Price (SAR)')).toBeInTheDocument();
-    expect(screen.getByLabelText('Sale price (SAR)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Discounted Price / Sale Price (SAR)')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('radio', { name: 'Program-only course' }));
     expect(screen.queryByLabelText('Price (SAR)')).not.toBeInTheDocument();
   });
@@ -59,9 +60,9 @@ describe('<PricingSection />', () => {
   });
 
   it('validates the price and sale price on blur', async () => {
-    await renderSection({ pricing_category: 'is_paid', price: '100.00' });
+    await renderSection({ pricing_category: 'is_paid', regular_price: '100.00' });
     const price = screen.getByLabelText('Price (SAR)');
-    const salePrice = screen.getByLabelText('Sale price (SAR)');
+    const salePrice = screen.getByLabelText('Discounted Price / Sale Price (SAR)');
 
     fireEvent.change(price, { target: { value: '0' } });
     fireEvent.blur(price);
@@ -89,35 +90,56 @@ describe('<PricingSection />', () => {
   });
 
   it('saves Free with a PUT and no price', async () => {
-    await renderSection({ pricing_category: 'is_paid', price: '100.00' });
+    await renderSection({ pricing_category: 'is_paid', regular_price: '100.00' });
     axiosMock.onPut(pricingUrl()).reply(200, pricingResponse());
     fireEvent.click(screen.getByRole('radio', { name: 'Free' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save course type' }));
     expect(await screen.findByText('Course type saved.')).toBeInTheDocument();
     expect(axiosMock.history.delete).toHaveLength(0);
     expect(JSON.parse(axiosMock.history.put[0].data)).toEqual({
-      pricing_category: 'is_free', price: null, discount: null,
+      pricing_category: 'is_free', regular_price: null, sale_price: null,
     });
   });
 
   it('saves Paid with the price and sale price', async () => {
     await renderSection();
     axiosMock.onPut(pricingUrl()).reply(200, pricingResponse({
-      pricing_category: 'is_paid', price: '100.00', discount: '80.00',
+      pricing_category: 'is_paid', regular_price: '100.00', sale_price: '80.00',
     }));
     fireEvent.click(screen.getByRole('radio', { name: 'Paid' }));
     fireEvent.change(screen.getByLabelText('Price (SAR)'), { target: { value: '100' } });
-    fireEvent.change(screen.getByLabelText('Sale price (SAR)'), { target: { value: '80' } });
+    fireEvent.change(screen.getByLabelText('Discounted Price / Sale Price (SAR)'), { target: { value: '80' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save course type' }));
     await waitFor(() => expect(axiosMock.history.put).toHaveLength(1));
     expect(JSON.parse(axiosMock.history.put[0].data)).toEqual({
-      pricing_category: 'is_paid', price: '100', discount: '80',
+      pricing_category: 'is_paid', regular_price: '100', sale_price: '80',
     });
   });
 
+  it('computes the discount percentage live from the inputs', async () => {
+    await renderSection({ pricing_category: 'is_paid', regular_price: '100.00' });
+    const price = screen.getByLabelText('Price (SAR)');
+    const sale = screen.getByLabelText('Discounted Price / Sale Price (SAR)');
+    expect(screen.queryByText(/% off/)).not.toBeInTheDocument();
+    fireEvent.change(price, { target: { value: '200' } });
+    fireEvent.change(sale, { target: { value: '150' } });
+    expect(screen.getByText('25% off')).toBeInTheDocument();
+    expect(axiosMock.history.put).toHaveLength(0);
+    fireEvent.change(price, { target: { value: '300' } });
+    expect(screen.getByText('50% off')).toBeInTheDocument();
+    fireEvent.change(sale, { target: { value: '300' } });
+    expect(screen.queryByText(/% off/)).not.toBeInTheDocument();
+    fireEvent.change(sale, { target: { value: '350' } });
+    expect(screen.queryByText(/% off/)).not.toBeInTheDocument();
+    fireEvent.change(sale, { target: { value: '150' } });
+    expect(screen.getByText('50% off')).toBeInTheDocument();
+    fireEvent.change(sale, { target: { value: '' } });
+    expect(screen.queryByText(/% off/)).not.toBeInTheDocument();
+  });
+
   it('attaches a backend error with a field to that field', async () => {
-    await renderSection({ pricing_category: 'is_paid', price: '100.00' });
-    axiosMock.onPut(pricingUrl()).reply(400, { detail: 'Price is too high.', field: 'price' });
+    await renderSection({ pricing_category: 'is_paid', regular_price: '100.00' });
+    axiosMock.onPut(pricingUrl()).reply(400, { detail: 'Price is too high.', field: 'regular_price' });
     fireEvent.click(screen.getByRole('button', { name: 'Save course type' }));
     expect(await screen.findByText('Price is too high.')).toBeInTheDocument();
     expect(screen.queryByText('Regular price shown on the marketing site.')).not.toBeInTheDocument();
@@ -137,7 +159,7 @@ describe('<PricingSection />', () => {
 
   it('renders read-only when the course team cannot edit', async () => {
     await renderSection({
-      pricing_category: 'is_paid', price: '100.00', can_edit: false, pricing_managed_by_admin: true,
+      pricing_category: 'is_paid', regular_price: '100.00', can_edit: false, pricing_managed_by_admin: true,
     });
     expect(screen.getByText(/managed by the Rwaq admin/)).toBeInTheDocument();
     screen.getAllByRole('radio').forEach((radio) => expect(radio).toBeDisabled());

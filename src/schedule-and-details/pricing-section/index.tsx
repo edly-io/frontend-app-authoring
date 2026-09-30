@@ -8,14 +8,14 @@ import SectionSubHeader from '../../generic/section-sub-header';
 import {
   getCoursePricing, setCoursePricing, CoursePricing, CoursePricingError, PricingCategory,
 } from './api';
-import { isPriceValid, isSalePriceValid } from './validation';
+import { getDiscountPercent, isPriceValid, isSalePriceValid } from './validation';
 import messages from './messages';
 
 interface PricingSectionProps {
   courseId: string;
 }
 
-type FieldErrors = Partial<Record<'price' | 'discount' | 'pricing_category', string>>;
+type FieldErrors = Partial<Record<'regular_price' | 'sale_price' | 'pricing_category', string>>;
 
 /** The backend error body of a rejected PUT, or null when the response carries no `detail`. */
 const getErrorBody = (err: unknown): CoursePricingError | null => {
@@ -29,8 +29,8 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
   // '' means the course has no type yet, so no radio is selected.
   const [category, setCategory] = useState<PricingCategory | ''>('');
   const [savedCategory, setSavedCategory] = useState<PricingCategory | ''>('');
-  const [price, setPrice] = useState('');
-  const [discount, setDiscount] = useState('');
+  const [regularPrice, setRegularPrice] = useState('');
+  const [salePrice, setSalePrice] = useState('');
   const [currency, setCurrency] = useState('SAR');
   const [canEdit, setCanEdit] = useState(false);
   const [managedByAdmin, setManagedByAdmin] = useState(false);
@@ -44,8 +44,8 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
   const applyPricing = (pricing: CoursePricing) => {
     setCategory(pricing.pricingCategory ?? '');
     setSavedCategory(pricing.pricingCategory ?? '');
-    setPrice(pricing.price ?? '');
-    setDiscount(pricing.discount ?? '');
+    setRegularPrice(pricing.regularPrice ?? '');
+    setSalePrice(pricing.salePrice ?? '');
     setCurrency(pricing.currency ?? 'SAR');
     setCanEdit(pricing.canEdit);
     setManagedByAdmin(pricing.pricingManagedByAdmin);
@@ -69,26 +69,27 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
   }, [courseId]);
 
   const showPriceFields = category === 'is_paid';
+  const discountPercent = getDiscountPercent(regularPrice, salePrice);
   const isReadOnly = !canEdit;
   const isTypeLocked = isReadOnly || !!programName;
 
   const priceError = (value: string) => (
     isPriceValid(value) ? undefined : intl.formatMessage(messages.errorPriceNotPositive)
   );
-  const discountError = (priceValue: string, discountValue: string) => (
-    isSalePriceValid(priceValue, discountValue) ? undefined : intl.formatMessage(messages.errorSalePriceTooHigh)
+  const salePriceError = (priceValue: string, saleValue: string) => (
+    isSalePriceValid(priceValue, saleValue) ? undefined : intl.formatMessage(messages.errorSalePriceTooHigh)
   );
 
   const onPriceBlur = () => {
     setFieldErrors((prev) => ({
       ...prev,
-      price: priceError(price),
-      discount: discountError(price, discount),
+      regular_price: priceError(regularPrice),
+      sale_price: salePriceError(regularPrice, salePrice),
     }));
   };
 
-  const onDiscountBlur = () => {
-    setFieldErrors((prev) => ({ ...prev, discount: discountError(price, discount) }));
+  const onSalePriceBlur = () => {
+    setFieldErrors((prev) => ({ ...prev, sale_price: salePriceError(regularPrice, salePrice) }));
   };
 
   const handleSave = async () => {
@@ -96,9 +97,9 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
     setError('');
     setSaved(false);
     if (showPriceFields) {
-      const errors = { price: priceError(price), discount: discountError(price, discount) };
+      const errors = { regular_price: priceError(regularPrice), sale_price: salePriceError(regularPrice, salePrice) };
       setFieldErrors(errors);
-      if (errors.price || errors.discount) { return; }
+      if (errors.regular_price || errors.sale_price) { return; }
     } else {
       setFieldErrors({});
     }
@@ -107,8 +108,8 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
       const pricing = await setCoursePricing(courseId, {
         pricingCategory: category,
         // Only a Paid course carries a price. Free and Program-only clear it.
-        price: showPriceFields ? price.trim() : null,
-        discount: showPriceFields && discount.trim() !== '' ? discount.trim() : null,
+        regularPrice: showPriceFields ? regularPrice.trim() : null,
+        salePrice: showPriceFields && salePrice.trim() !== '' ? salePrice.trim() : null,
       });
       applyPricing(pricing);
       setSaved(true);
@@ -207,39 +208,47 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
 
       {showPriceFields && (
         <>
-          <Form.Group isInvalid={!!fieldErrors.price}>
+          <Form.Group isInvalid={!!fieldErrors.regular_price}>
             <Form.Label>{intl.formatMessage(messages.priceLabel, { currency })}</Form.Label>
             <Form.Control
               type="number"
               min="0"
               step="0.01"
-              value={price}
+              value={regularPrice}
               disabled={isSaving || isReadOnly}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setPrice(e.target.value); setSaved(false); }}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setRegularPrice(e.target.value);
+                setSaved(false);
+              }}
               onBlur={onPriceBlur}
             />
-            {fieldErrors.price ? (
-              <Form.Control.Feedback type="invalid">{fieldErrors.price}</Form.Control.Feedback>
+            {fieldErrors.regular_price ? (
+              <Form.Control.Feedback type="invalid">{fieldErrors.regular_price}</Form.Control.Feedback>
             ) : (
               <Form.Text muted>{intl.formatMessage(messages.priceHint)}</Form.Text>
             )}
           </Form.Group>
 
-          <Form.Group isInvalid={!!fieldErrors.discount}>
+          <Form.Group isInvalid={!!fieldErrors.sale_price}>
             <Form.Label>{intl.formatMessage(messages.discountLabel, { currency })}</Form.Label>
             <Form.Control
               type="number"
               min="0"
               step="0.01"
-              value={discount}
+              value={salePrice}
               disabled={isSaving || isReadOnly}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setDiscount(e.target.value); setSaved(false); }}
-              onBlur={onDiscountBlur}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setSalePrice(e.target.value); setSaved(false); }}
+              onBlur={onSalePriceBlur}
             />
-            {fieldErrors.discount ? (
-              <Form.Control.Feedback type="invalid">{fieldErrors.discount}</Form.Control.Feedback>
+            {fieldErrors.sale_price ? (
+              <Form.Control.Feedback type="invalid">{fieldErrors.sale_price}</Form.Control.Feedback>
             ) : (
               <Form.Text muted>{intl.formatMessage(messages.discountHint)}</Form.Text>
+            )}
+            {discountPercent !== null && (
+              <Form.Text muted>
+                {intl.formatMessage(messages.discountPercentage, { percentage: discountPercent })}
+              </Form.Text>
             )}
           </Form.Group>
         </>

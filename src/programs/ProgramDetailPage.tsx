@@ -31,7 +31,7 @@ import CoursesTab from './courses-tab/CoursesTab';
 import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
 import RichTextEditor from '../generic/RichTextEditor';
-import { isPriceValid, isSalePriceValid } from '../schedule-and-details/pricing-section/validation';
+import { getDiscountPercent, isPriceValid, isSalePriceValid } from '../schedule-and-details/pricing-section/validation';
 import './index.scss';
 
 const messages = defineMessages({
@@ -73,11 +73,12 @@ const messages = defineMessages({
   pricingPaid: { id: 'programs.detail.field.pricing.paid', defaultMessage: 'Paid' },
   fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price ({currency})' },
   fieldPriceHint: { id: 'programs.detail.field.price.hint', defaultMessage: 'Regular price shown on the marketing site.' },
-  fieldDiscount: { id: 'programs.detail.field.discount', defaultMessage: 'Sale price ({currency})' },
-  fieldDiscountHint: { id: 'programs.detail.field.discount.hint', defaultMessage: 'Optional. Leave empty when the program is not on sale.' },
+  fieldSalePrice: { id: 'programs.detail.field.sale-price', defaultMessage: 'Discounted Price / Sale Price ({currency})' },
+  fieldDiscountPercentage: { id: 'programs.detail.field.discount-percentage', defaultMessage: '{percentage}% off' },
+  fieldSalePriceHint: { id: 'programs.detail.field.sale-price.hint', defaultMessage: 'Optional. Leave empty when the program is not on sale.' },
   pricingCoursesNote: { id: 'programs.detail.field.pricing.courses-note', defaultMessage: 'Courses inside a paid program are not priced separately. The program is the sellable unit.' },
   errorPriceNotPositive: { id: 'programs.detail.field.price.error-not-positive', defaultMessage: 'Price must be greater than 0.' },
-  errorSalePriceTooHigh: { id: 'programs.detail.field.discount.error-too-high', defaultMessage: 'Sale price must be lower than the price.' },
+  errorSalePriceTooHigh: { id: 'programs.detail.field.sale-price.error-too-high', defaultMessage: 'Sale price must be lower than the price.' },
   activateFreeTitle: { id: 'programs.detail.activate-free.title', defaultMessage: 'Activate a free program?' },
   activateFreeBody: { id: 'programs.detail.activate-free.body', defaultMessage: 'Once active, this program goes live in the catalog. It is free, so learners can enroll at no cost. To sell it, make it paid and set a price before you activate it.' },
   activateFreeMakePaid: { id: 'programs.detail.activate-free.make-paid', defaultMessage: 'Make it paid' },
@@ -165,22 +166,22 @@ const ProgramDetailPage: React.FC = () => {
       endDate: program?.endDate ?? '',
       image: program?.image ?? '',
       pricingCategory: program?.pricingCategory || 'is_free',
-      price: program?.price ?? '',
-      discount: program?.discount ?? '',
+      regularPrice: program?.regularPrice ?? '',
+      salePrice: program?.salePrice ?? '',
     },
     enableReinitialize: true,
     validationSchema: Yup.object({
       displayName: Yup.string().trim().required(intl.formatMessage(messages.fieldTitleRequired)),
       // Price checks apply only to a paid program.
-      price: Yup.string().nullable().test(
+      regularPrice: Yup.string().nullable().test(
         'price-positive',
         intl.formatMessage(messages.errorPriceNotPositive),
         (value, { parent }) => parent.pricingCategory !== 'is_paid' || isPriceValid(value ?? ''),
       ),
-      discount: Yup.string().nullable().test(
+      salePrice: Yup.string().nullable().test(
         'sale-price-below-price',
         intl.formatMessage(messages.errorSalePriceTooHigh),
-        (value, { parent }) => parent.pricingCategory !== 'is_paid' || isSalePriceValid(parent.price ?? '', value ?? ''),
+        (value, { parent }) => parent.pricingCategory !== 'is_paid' || isSalePriceValid(parent.regularPrice ?? '', value ?? ''),
       ),
     }),
     onSubmit: async (values, { setFieldError, setFieldTouched }) => {
@@ -197,9 +198,9 @@ const ProgramDetailPage: React.FC = () => {
         setImageFile(null);
         showToast(intl.formatMessage(messages.savedSuccess));
       } catch (err) {
-        // DRF field errors: { pricing_category: [msg], price: [msg], discount: [msg] }.
+        // DRF field errors: { pricing_category: [msg], regular_price: [msg], sale_price: [msg] }.
         const body = (err as { response?: { data?: Record<string, unknown> } })?.response?.data ?? {};
-        const pricingFields = { pricing_category: 'pricingCategory', price: 'price', discount: 'discount' };
+        const pricingFields = { pricing_category: 'pricingCategory', regular_price: 'regularPrice', sale_price: 'salePrice' };
         let hasPricingError = false;
         Object.entries(pricingFields).forEach(([apiField, formField]) => {
           const fieldError = body[apiField];
@@ -242,6 +243,7 @@ const ProgramDetailPage: React.FC = () => {
     }
   };
 
+  const discountPercent = getDiscountPercent(formik.values.regularPrice, formik.values.salePrice);
   const statusBadgeVariant = STATUS_BADGE_VARIANT[formik.values.status ?? 'draft'] ?? 'secondary';
   const statusLabel = STATUS_OPTIONS.find((o) => o.value === formik.values.status)?.label ?? 'Draft';
 
@@ -546,8 +548,8 @@ const ProgramDetailPage: React.FC = () => {
                             // Switching back to free clears the money fields so
                             // the form matches what the backend will store.
                             if (value !== 'is_paid') {
-                              formik.setFieldValue('price', '');
-                              formik.setFieldValue('discount', '');
+                              formik.setFieldValue('regularPrice', '');
+                              formik.setFieldValue('salePrice', '');
                             }
                           }}
                         >
@@ -563,41 +565,46 @@ const ProgramDetailPage: React.FC = () => {
 
                       {formik.values.pricingCategory === 'is_paid' && (
                         <>
-                          <Form.Group isInvalid={formik.touched.price && !!formik.errors.price}>
+                          <Form.Group isInvalid={formik.touched.regularPrice && !!formik.errors.regularPrice}>
                             <Form.Label>{intl.formatMessage(messages.fieldPrice, { currency: program?.currency ?? 'SAR' })}</Form.Label>
                             <Form.Control
                               type="number"
                               min="0"
                               step="0.01"
-                              name="price"
-                              value={formik.values.price ?? ''}
+                              name="regularPrice"
+                              value={formik.values.regularPrice ?? ''}
                               onChange={formik.handleChange}
                               onBlur={formik.handleBlur}
                             />
-                            {formik.touched.price && formik.errors.price ? (
-                              <Form.Control.Feedback type="invalid">{formik.errors.price}</Form.Control.Feedback>
+                            {formik.touched.regularPrice && formik.errors.regularPrice ? (
+                              <Form.Control.Feedback type="invalid">{formik.errors.regularPrice}</Form.Control.Feedback>
                             ) : (
                               <Form.Text muted>{intl.formatMessage(messages.fieldPriceHint)}</Form.Text>
                             )}
                           </Form.Group>
 
-                          <Form.Group isInvalid={formik.touched.discount && !!formik.errors.discount}>
+                          <Form.Group isInvalid={formik.touched.salePrice && !!formik.errors.salePrice}>
                             <Form.Label>
-                              {intl.formatMessage(messages.fieldDiscount, { currency: program?.currency ?? 'SAR' })}
+                              {intl.formatMessage(messages.fieldSalePrice, { currency: program?.currency ?? 'SAR' })}
                             </Form.Label>
                             <Form.Control
                               type="number"
                               min="0"
                               step="0.01"
-                              name="discount"
-                              value={formik.values.discount ?? ''}
+                              name="salePrice"
+                              value={formik.values.salePrice ?? ''}
                               onChange={formik.handleChange}
                               onBlur={formik.handleBlur}
                             />
-                            {formik.touched.discount && formik.errors.discount ? (
-                              <Form.Control.Feedback type="invalid">{formik.errors.discount}</Form.Control.Feedback>
+                            {formik.touched.salePrice && formik.errors.salePrice ? (
+                              <Form.Control.Feedback type="invalid">{formik.errors.salePrice}</Form.Control.Feedback>
                             ) : (
-                              <Form.Text muted>{intl.formatMessage(messages.fieldDiscountHint)}</Form.Text>
+                              <Form.Text muted>{intl.formatMessage(messages.fieldSalePriceHint)}</Form.Text>
+                            )}
+                            {discountPercent !== null && (
+                              <Form.Text muted>
+                                {intl.formatMessage(messages.fieldDiscountPercentage, { percentage: discountPercent })}
+                              </Form.Text>
                             )}
                           </Form.Group>
 
