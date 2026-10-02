@@ -33,6 +33,11 @@ const CoursesPricingFilterMenu = ({ onItemMenuSelected }) => {
         value: 'programOnlyCourses',
       },
       {
+        id: 'subscription-courses',
+        name: intl.formatMessage(messages.coursesPricingFilterMenuSubscription),
+        value: 'subscriptionCourses',
+      },
+      {
         id: 'no-type-courses',
         name: intl.formatMessage(messages.coursesPricingFilterMenuNoType),
         value: 'noTypeCourses',
