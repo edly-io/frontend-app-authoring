@@ -238,12 +238,19 @@
     }
   }
 
+  // A frozen first column only helps when there is room for the rest of the
+  // table beside it; on a narrow screen it eats most of the width and the
+  // scrollable columns are left with a sliver. It pins from the large
+  // breakpoint up, matching the bulk trainee results grid.
   .feedback-dashboard-subject-header,
   .feedback-dashboard-subject-cell {
-    left: 0;
-    position: sticky;
     text-align: left !important;
     z-index: 2;
+
+    @media (--pgn-size-breakpoint-min-width-lg) {
+      left: 0;
+      position: sticky;
+    }
   }
 
   .feedback-dashboard-subject-header {
