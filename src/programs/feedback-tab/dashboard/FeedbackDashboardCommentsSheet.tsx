@@ -11,7 +11,7 @@ import {
   Close,
   StarFilled,
 } from '@openedx/paragon/icons';
-import UserIdentity from '../../../components/UserIdentity';
+import { UserIdentity } from '@edly-io/frontend-component-fbr';
 import { useFeedbackDashboardComments } from '../../data/apiHooks';
 import type {
   FeedbackDashboardComment,
