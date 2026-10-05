@@ -8,7 +8,7 @@ import {
   ChevronRight,
   Comment,
 } from '@openedx/paragon/icons';
-import UserIdentity from '../../../components/UserIdentity';
+import { UserIdentity } from '@edly-io/frontend-component-fbr';
 import type {
   FeedbackDashboardReport,
   FeedbackDashboardSubject,

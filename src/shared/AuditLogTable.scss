@@ -28,47 +28,70 @@
   }
 
   &__filters {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
     gap: .75rem;
     margin-bottom: 1rem;
+  }
+
+  &__search {
+    width: 100%;
 
     @media (--pgn-size-breakpoint-min-width-sm) {
-      flex-flow: row wrap;
-      align-items: center;
+      flex: 1 1 260px;
+      width: auto;
+      min-width: 220px;
+      max-width: 560px;
     }
   }
 
-  &__search,
   &__action {
+    width: 100%;
+
     @media (--pgn-size-breakpoint-min-width-sm) {
-      flex: 1 1 12rem;
-      min-width: 0;
+      flex: 0 0 auto;
+      width: 10.5rem;
     }
   }
 
   &__date-range {
-    display: flex;
-    flex-direction: column;
     gap: .375rem;
 
     @media (--pgn-size-breakpoint-min-width-sm) {
-      flex-direction: row;
-      align-items: center;
       flex-shrink: 0;
     }
   }
 
   &__date-field {
-    display: flex;
-    align-items: center;
     gap: .375rem;
     min-width: 0;
+
+    // react-datepicker wraps its <input> in .react-datepicker-wrapper >
+    // .react-datepicker__input-container, both inline-block by default, so the
+    // input's width: 100% would resolve against a shrink-to-fit box instead of
+    // the field. The flex sizing belongs on .position-relative (the real flex
+    // child, and the icon's positioning context) with the pair below made block.
+    .react-datepicker-wrapper,
+    .react-datepicker__input-container {
+      display: block;
+      width: 100%;
+    }
+
+    > .position-relative {
+      flex: 1 1 auto;
+      min-width: 0;
+
+      @media (--pgn-size-breakpoint-min-width-sm) {
+        flex: 0 0 auto;
+        width: 11rem;
+      }
+
+      @media (--pgn-size-breakpoint-min-width-lg) {
+        width: 12rem;
+      }
+    }
   }
 
   &__date-label {
-    flex: 0 0 2.5rem;
+    flex: 0 0 2.25rem;
     font-size: .8rem;
     color: #6C757D;
     white-space: nowrap;
@@ -79,9 +102,83 @@
     }
   }
 
-  &__date-input {
-    flex: 1 1 auto;
+  .datepicker-custom-control {
+    padding-right: 2.75rem;
+  }
+
+  .datepicker-custom-control-icon {
+    position: absolute;
+    z-index: 2;
+    right: .75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--pgn-color-black);
+    pointer-events: none;
+  }
+
+  @media (--pgn-size-breakpoint-max-width-xs) {
+    .datepicker-custom-control {
+      padding-right: 2rem;
+      padding-left: .5rem;
+    }
+
+    .datepicker-custom-control-icon {
+      width: 1rem;
+      height: 1rem;
+      right: .625rem;
+    }
+  }
+
+  &__date-input.form-control {
+    width: 100%;
     min-width: 0;
+  }
+
+  &__record-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: .375rem;
+  }
+
+  &__changes {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .25rem;
+  }
+
+  &__changes-fields {
+    font-size: .75rem;
+    color: var(--pgn-color-gray-500);
+  }
+
+  &__changes-btn,
+  &__history-btn {
+    white-space: nowrap;
+    min-height: 1.5rem;
+    padding: .125rem .5rem;
+    font-size: .75rem;
+    line-height: 1.5;
+
+    .pgn__icon {
+      width: .875rem;
+      height: .875rem;
+    }
+  }
+
+  &__table-scroll {
+    max-width: 100%;
+    overflow-x: auto;
+
+    .pgn__data-table {
+      min-width: 62rem;
+    }
+
+    &--narrow .pgn__data-table {
+      min-width: 36rem;
+    }
   }
 
   &__count {
@@ -126,11 +223,6 @@
     font-size: .75rem;
     color: #6C757D;
     margin-top: 2px;
-  }
-
-  &__history-btn {
-    padding: 0;
-    margin-top: 4px;
   }
 
   &__changes-list {
@@ -183,43 +275,6 @@
 }
 
 .audit-modal {
-  &__overlay {
-    position: fixed;
-    inset: 0;
-    background: rgb(0 0 0 / .5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-  }
-
-  &__panel {
-    background: #FFFFFF;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 680px;
-    max-height: 85vh;
-    overflow: auto;
-    padding: 1.5rem;
-
-    &--wide {
-      max-width: 860px;
-      width: 95%;
-    }
-  }
-
-  &__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-  }
-
-  &__title {
-    margin: 0;
-    font-size: 1.1rem;
-  }
-
   &__subtitle {
     color: #6C757D;
     display: block;
@@ -227,37 +282,9 @@
     font-size: .85rem;
   }
 
-  &__close-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: .25rem;
-    font-size: 1rem;
-    line-height: 1;
-    color: #6C757D;
-
-    &:hover {
-      color: #000000;
-    }
-  }
-
   &__empty {
     color: #6C757D;
     margin: 0;
-  }
-
-  &__table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: .875rem;
-  }
-
-  &__th {
-    text-align: left;
-    padding: .5rem .75rem;
-    border-bottom: 2px solid #DEE2E6;
-    font-weight: 600;
-    white-space: nowrap;
   }
 
   &__td {
@@ -284,21 +311,4 @@
     }
   }
 
-  &__tr--even {
-    background: #F8F9FA;
-  }
-
-  &__tr--odd {
-    background: #FFFFFF;
-  }
-
-  &__fields-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    color: var(--pgn-color-primary-base, #0D6EFD);
-    text-decoration: underline;
-    font-size: .875rem;
-  }
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import UserIdentity from '../../../components/UserIdentity';
+import { UserIdentity } from '@edly-io/frontend-component-fbr';
 import type {
   DashboardAggregationMode,
   FeedbackDashboardCriterion,

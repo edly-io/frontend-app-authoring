@@ -82,4 +82,86 @@
 
 .react-datepicker-popper {
   z-index: 3;
+  max-width: calc(100vw - 1rem);
+}
+
+// Keep the calendar above a modal's sticky header and close button.
+.pgn__modal .react-datepicker-popper {
+  z-index: 11;
+}
+
+// react-datepicker's own stylesheet hard-codes a light popup, so the dark
+// theme repaints it from the brand's tokens. Every selector here carries the
+// theme attribute, which outranks the vendor rules on specificity alone.
+[data-paragon-theme-variant="dark"] {
+  .react-datepicker {
+    background-color: var(--pgn-color-body-bg);
+    border-color: var(--pgn-color-primary-border);
+    color: var(--pgn-color-text-base);
+  }
+
+  .react-datepicker__header {
+    background-color: var(--pgn-color-bg-light-overlay);
+    border-bottom-color: var(--pgn-color-primary-border);
+  }
+
+  .react-datepicker__current-month,
+  .react-datepicker-time__header,
+  .react-datepicker__day-name,
+  .react-datepicker__day,
+  .react-datepicker__month-text,
+  .react-datepicker__year-text,
+  .react-datepicker__time-name {
+    color: var(--pgn-color-text-base);
+  }
+
+  .react-datepicker__day:hover,
+  .react-datepicker__month-text:hover,
+  .react-datepicker__year-text:hover,
+  .react-datepicker__day--keyboard-selected {
+    background-color: var(--pgn-color-bg-hover);
+    color: var(--pgn-color-text-base);
+  }
+
+  .react-datepicker__day--selected,
+  .react-datepicker__day--in-range,
+  .react-datepicker__day--in-selecting-range,
+  .react-datepicker__day--selected:hover,
+  .react-datepicker__day--in-range:hover {
+    background-color: var(--pgn-color-primary-base);
+    color: var(--pgn-color-text-button);
+  }
+
+  .react-datepicker__day--outside-month,
+  .react-datepicker__day--disabled,
+  .react-datepicker__day--disabled:hover {
+    background-color: transparent;
+    color: var(--pgn-color-text-base);
+    opacity: .45;
+  }
+
+  .react-datepicker__navigation-icon::before {
+    border-color: var(--pgn-color-text-base);
+  }
+
+  .react-datepicker__navigation:hover *::before {
+    border-color: var(--pgn-color-primary-base);
+  }
+
+  .react-datepicker__time-container {
+    border-left-color: var(--pgn-color-primary-border);
+
+    .react-datepicker__time {
+      background-color: var(--pgn-color-body-bg);
+    }
+
+    .react-datepicker__time-list-item:hover {
+      background-color: var(--pgn-color-bg-hover);
+    }
+
+    .react-datepicker__time-list-item--selected {
+      background-color: var(--pgn-color-primary-base);
+      color: var(--pgn-color-text-button);
+    }
+  }
 }
