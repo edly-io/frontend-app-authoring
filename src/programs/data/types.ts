@@ -32,7 +32,7 @@ export interface Program {
   endDate?: string;
   image?: string;
   courses?: Course[];
-  /** 'is_free' or 'is_paid'. */
+  /** 'is_free', 'is_paid' or 'is_part_of_subscription'. */
   pricingCategory?: string;
   /** Decimal strings, not numbers — avoids float rounding on money. */
   regularPrice?: string | null;

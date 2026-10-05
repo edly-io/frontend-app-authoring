@@ -6,7 +6,7 @@ import messages from './messages';
 
 import CoursesFilterMenu from '../courses-filter-menu';
 
-/** Filters the course list by course type (Free, Paid, Program-only, or no type yet). */
+/** Filters the course list by course type (Free, Paid, Program-only, Is part of Subscription, or no type yet). */
 const CoursesPricingFilterMenu = ({ onItemMenuSelected }) => {
   const intl = useIntl();
 
