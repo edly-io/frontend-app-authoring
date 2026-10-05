@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import classNames from 'classnames';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import CreatableSelectBase from 'react-select/creatable';
@@ -65,12 +66,15 @@ const messages = defineMessages({
   fieldDetailedDesc: { id: 'programs.detail.field.long-desc', defaultMessage: 'Detailed Description' },
   fieldDetailedDescHint: { id: 'programs.detail.field.long-desc.hint', defaultMessage: 'Appears on the program detail page. Provide comprehensive information.' },
   fieldCity: { id: 'programs.detail.field.city', defaultMessage: 'City' },
+  fieldCityRequired: { id: 'programs.detail.field.city.required', defaultMessage: 'City is required.' },
   fieldAudience: { id: 'programs.detail.field.audience', defaultMessage: 'Target Audience' },
+  fieldAudienceRequired: { id: 'programs.detail.field.audience.required', defaultMessage: 'Target audience is required.' },
   fieldAudienceHint: { id: 'programs.detail.field.audience.hint', defaultMessage: 'Choose an existing type or type a new one to create it.' },
   fieldAudiencePlaceholder: { id: 'programs.detail.field.audience.placeholder', defaultMessage: 'Select or add audience type...' },
   fieldAudienceAdd: { id: 'programs.detail.field.audience.add', defaultMessage: 'Add "{value}"' },
   fieldStartDate: { id: 'programs.detail.field.start-date', defaultMessage: 'Start Date' },
   fieldEndDate: { id: 'programs.detail.field.end-date', defaultMessage: 'End Date' },
+  fieldEndDateBeforeStart: { id: 'programs.detail.field.end-date.before-start', defaultMessage: 'End date must be on or after the start date.' },
   fieldStatus: { id: 'programs.detail.field.status', defaultMessage: 'Program Status' },
   fieldFeatured: { id: 'programs.detail.field.featured', defaultMessage: 'Feature this program' },
   fieldFeaturedHint: { id: 'programs.detail.field.featured.hint', defaultMessage: 'Featured programs are highlighted in the program catalog.' },
@@ -125,6 +129,10 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
   ),
 );
 
+const RequiredMark: React.FC = () => (
+  <span className="text-danger ml-1" aria-hidden="true">*</span>
+);
+
 // Label/value pair used in the read-only Program Summary card
 const SummaryField: React.FC<{ label: string; value: string; mono?: boolean }> = ({
   label, value, mono = false,
@@ -151,8 +159,10 @@ const ProgramDetailPage: React.FC = () => {
   const { showToast } = useContext(ToastContext);
   const {
     capabilities,
+    profile,
     isLoading: isAccessLoading,
   } = useProgramAccess();
+  const isSuperAdmin = profile?.roles?.includes('super_admin') ?? false;
 
   const { data, isLoading, isError } = useProgramDetail(
     programId ?? '',
@@ -184,6 +194,15 @@ const ProgramDetailPage: React.FC = () => {
     enableReinitialize: true,
     validationSchema: Yup.object({
       displayName: Yup.string().trim().required(intl.formatMessage(messages.fieldTitleRequired)),
+      targetAudience: Yup.string().trim().required(intl.formatMessage(messages.fieldAudienceRequired)),
+      city: isSuperAdmin
+        ? Yup.string().required(intl.formatMessage(messages.fieldCityRequired))
+        : Yup.string().notRequired(),
+      endDate: Yup.string().test(
+        'end-after-start',
+        intl.formatMessage(messages.fieldEndDateBeforeStart),
+        (end, ctx) => !end || !ctx.parent.startDate || end >= ctx.parent.startDate,
+      ),
     }),
     onSubmit: async (values) => {
       if (!capabilities.canEditProgram) {
@@ -362,7 +381,7 @@ const ProgramDetailPage: React.FC = () => {
                         isInvalid={formik.touched.displayName && !!formik.errors.displayName}
                         className="mb-4"
                       >
-                        <Form.Label>{intl.formatMessage(messages.fieldTitle)}</Form.Label>
+                        <Form.Label>{intl.formatMessage(messages.fieldTitle)}<RequiredMark /></Form.Label>
                         <Form.Control
                           name="displayName"
                           placeholder="e.g. Advanced Tax Assessment Program"
@@ -411,15 +430,22 @@ const ProgramDetailPage: React.FC = () => {
                       </Form.Group>
 
                       {/* Target Audience — creatable, case-insensitive */}
-                      <Form.Group className="mb-4">
-                        <Form.Label>{intl.formatMessage(messages.fieldAudience)}</Form.Label>
+                      <Form.Group
+                        isInvalid={formik.touched.targetAudience && !!formik.errors.targetAudience}
+                        className="mb-4"
+                      >
+                        <Form.Label>{intl.formatMessage(messages.fieldAudience)}<RequiredMark /></Form.Label>
                         <CreatableSelect
                           isClearable
                           isDisabled={!capabilities.canEditProgram}
                           options={audienceOptions}
                           value={selectedAudience}
-                          onChange={(option) => formik.setFieldValue('targetAudience', option?.value ?? '')}
+                          onChange={(option) => {
+                            formik.setFieldValue('targetAudience', option?.value ?? '');
+                            formik.setFieldTouched('targetAudience', true, false);
+                          }}
                           onCreateOption={(inputValue) => formik.setFieldValue('targetAudience', inputValue)}
+                          onBlur={() => formik.setFieldTouched('targetAudience', true)}
                           isValidNewOption={(inputValue) => {
                             if (!inputValue.trim()) { return false; }
                             const normalized = inputValue.toLowerCase();
@@ -427,34 +453,43 @@ const ProgramDetailPage: React.FC = () => {
                           }}
                           formatCreateLabel={formatAudienceCreateLabel}
                           placeholder={intl.formatMessage(messages.fieldAudiencePlaceholder)}
-                          styles={{
-                            control: (base, state) => ({
-                              ...base,
-                              minHeight: '38px',
-                              borderColor: state.isFocused ? '#0d6efd' : '#adb5bd',
-                              boxShadow: state.isFocused ? '0 0 0 1px #0d6efd' : 'none',
-                              '&:hover': { borderColor: '#0d6efd' },
-                            }),
-                            menu: (base) => ({ ...base, zIndex: 9999 }),
-                          }}
+                          className={classNames('program-audience-select', {
+                            'is-invalid': formik.touched.targetAudience && !!formik.errors.targetAudience,
+                          })}
+                          classNamePrefix="program-audience-select"
                         />
-                        <Form.Text muted>{intl.formatMessage(messages.fieldAudienceHint)}</Form.Text>
+                        {formik.touched.targetAudience && formik.errors.targetAudience ? (
+                          <Form.Control.Feedback type="invalid">
+                            {formik.errors.targetAudience}
+                          </Form.Control.Feedback>
+                        ) : (
+                          <Form.Text muted>{intl.formatMessage(messages.fieldAudienceHint)}</Form.Text>
+                        )}
                       </Form.Group>
 
                       {/* City */}
-                      <Form.Group className="mb-4">
-                        <Form.Label>{intl.formatMessage(messages.fieldCity)}</Form.Label>
+                      <Form.Group
+                        isInvalid={formik.touched.city && !!formik.errors.city}
+                        className="mb-4"
+                      >
+                        <Form.Label>{intl.formatMessage(messages.fieldCity)}{isSuperAdmin && <RequiredMark />}</Form.Label>
                         <Form.Control
                           as="select"
                           name="city"
                           value={formik.values.city ?? ''}
                           onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
                         >
                           <option value="">— Select city —</option>
                           {cities.map((c) => (
                             <option key={c.id} value={String(c.id)}>{c.name}</option>
                           ))}
                         </Form.Control>
+                        {formik.touched.city && formik.errors.city && (
+                          <Form.Control.Feedback type="invalid">
+                            {formik.errors.city}
+                          </Form.Control.Feedback>
+                        )}
                       </Form.Group>
 
                       {/* Start / End Dates */}
@@ -464,7 +499,10 @@ const ProgramDetailPage: React.FC = () => {
                             <Form.Label>{intl.formatMessage(messages.fieldStartDate)}</Form.Label>
                             <DatePicker
                               selected={formik.values.startDate ? new Date(formik.values.startDate) : null}
-                              onChange={(date) => formik.setFieldValue('startDate', date ? date.toISOString().split('T')[0] : '')}
+                              onChange={(date) => {
+                                formik.setFieldValue('startDate', date ? date.toISOString().split('T')[0] : '');
+                                formik.setFieldTouched('endDate', true, false);
+                              }}
                               customInput={<DateInput placeholder="Select start date" />}
                               disabled={!capabilities.canEditProgram}
                               dateFormat="MMMM d, yyyy"
@@ -477,11 +515,14 @@ const ProgramDetailPage: React.FC = () => {
                           </Form.Group>
                         </Col>
                         <Col xs={12} md={6}>
-                          <Form.Group>
+                          <Form.Group isInvalid={formik.touched.endDate && !!formik.errors.endDate}>
                             <Form.Label>{intl.formatMessage(messages.fieldEndDate)}</Form.Label>
                             <DatePicker
                               selected={formik.values.endDate ? new Date(formik.values.endDate) : null}
-                              onChange={(date) => formik.setFieldValue('endDate', date ? date.toISOString().split('T')[0] : '')}
+                              onChange={(date) => {
+                                formik.setFieldValue('endDate', date ? date.toISOString().split('T')[0] : '');
+                                formik.setFieldTouched('endDate', true, false);
+                              }}
                               customInput={<DateInput placeholder="Select end date" />}
                               disabled={!capabilities.canEditProgram}
                               dateFormat="MMMM d, yyyy"
@@ -492,6 +533,11 @@ const ProgramDetailPage: React.FC = () => {
                               dropdownMode="select"
                               wrapperClassName="d-block mt-1"
                             />
+                            {formik.touched.endDate && formik.errors.endDate && (
+                              <Form.Control.Feedback type="invalid">
+                                {formik.errors.endDate}
+                              </Form.Control.Feedback>
+                            )}
                           </Form.Group>
                         </Col>
                       </Row>
