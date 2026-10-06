@@ -32,9 +32,13 @@ interface EnrollmentTabProps {
   programId: string;
   /** False for a paid program when the user is not a superadmin. */
   canEnroll?: boolean;
+  /** True when the program's pricing category is is_part_of_subscription. */
+  isSubscriptionProgram?: boolean;
 }
 
-const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canEnroll = true }) => {
+const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
+  programId, canEnroll = true, isSubscriptionProgram = false,
+}) => {
   const intl = useIntl();
   const [isModalOpen, openModal, closeModal] = useToggle(false);
   const [enrolledSearch, setEnrolledSearch] = useState('');
@@ -151,6 +155,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canEnroll = tr
         onClose={closeModal}
         programId={programId}
         alreadyEnrolledIds={enrolledIds}
+        isSubscriptionProgram={isSubscriptionProgram}
       />
     </div>
   );

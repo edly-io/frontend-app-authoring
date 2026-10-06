@@ -731,7 +731,11 @@ const ProgramDetailPage: React.FC = () => {
           </Tab>
 
           <Tab eventKey="enrollment" title={intl.formatMessage(messages.tabEnrollment)}>
-            <EnrollmentTab programId={programId ?? ''} canEnroll={program?.canEnrollLearners ?? true} />
+            <EnrollmentTab
+              programId={programId ?? ''}
+              canEnroll={program?.canEnrollLearners ?? true}
+              isSubscriptionProgram={program?.pricingCategory === 'is_part_of_subscription'}
+            />
           </Tab>
         </Tabs>
 

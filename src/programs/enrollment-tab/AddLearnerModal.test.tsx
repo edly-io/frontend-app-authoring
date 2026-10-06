@@ -113,4 +113,67 @@ describe('<AddLearnerModal />', () => {
       false,
     );
   });
+
+  describe('subscription program', () => {
+    const subscriptionProps = { ...defaultProps, isSubscriptionProgram: true };
+    const planSelect = () => screen.getByRole('combobox', { name: /Subscription plan/i });
+
+    it('shows no plan select for a non-subscription program', () => {
+      render(<AddLearnerModal {...defaultProps} />);
+      expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    });
+
+    it('offers only Monthly and Yearly, with a placeholder that is not a valid choice', () => {
+      render(<AddLearnerModal {...subscriptionProps} />);
+      const options = Array.from(planSelect().querySelectorAll('option'));
+      expect(options.map((o) => o.textContent)).toEqual(['Select a plan', 'Monthly', 'Yearly']);
+      expect(options[0]).toBeDisabled();
+      expect(options.slice(1).map((o) => o.getAttribute('value'))).toEqual(['monthly', 'yearly']);
+    });
+
+    it('keeps Enroll disabled until a plan is picked', () => {
+      render(<AddLearnerModal {...subscriptionProps} />);
+      expect(screen.getByRole('button', { name: /^Enroll$/i })).toBeDisabled();
+      fireEvent.change(planSelect(), { target: { value: 'yearly' } });
+      expect(screen.getByRole('button', { name: /^Enroll$/i })).toBeEnabled();
+    });
+
+    it('sends the picked plan with the enrollment', async () => {
+      render(<AddLearnerModal {...subscriptionProps} />);
+      fireEvent.change(planSelect(), { target: { value: 'monthly' } });
+      fireEvent.click(screen.getByRole('button', { name: /^Enroll$/i }));
+      await waitFor(() => expect(mockEnrollMutate).toHaveBeenCalledWith({
+        programId: 'prog-key-1',
+        username: 'student.alice',
+        reason: '',
+        subscriptionPlan: 'monthly',
+      }));
+    });
+
+    it('disables the plan select for a subscribed learner, shows the end date and sends no plan', async () => {
+      mockUseLearners.mockReturnValue({
+        data: mockPaginatedLearners([mockLearner({ subscriptionEndsAt: '2026-12-15T10:00:00Z' })]),
+        isLoading: false,
+        isFetching: false,
+      });
+      render(<AddLearnerModal {...subscriptionProps} />);
+      expect(planSelect()).toBeDisabled();
+      expect(screen.getByText(/Already has a subscription, ends .*2026/)).toBeInTheDocument();
+      const enroll = screen.getByRole('button', { name: /^Enroll$/i });
+      expect(enroll).toBeEnabled();
+      fireEvent.click(enroll);
+      await waitFor(() => expect(mockEnrollMutate).toHaveBeenCalled());
+      expect(mockEnrollMutate.mock.calls[0][0].subscriptionPlan).toBeUndefined();
+    });
+
+    it('does not show subscription state in a non-subscription program', () => {
+      mockUseLearners.mockReturnValue({
+        data: mockPaginatedLearners([mockLearner({ subscriptionEndsAt: '2026-12-15T10:00:00Z' })]),
+        isLoading: false,
+        isFetching: false,
+      });
+      render(<AddLearnerModal {...defaultProps} />);
+      expect(screen.queryByText(/Already has a subscription/)).not.toBeInTheDocument();
+    });
+  });
 });

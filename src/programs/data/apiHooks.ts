@@ -18,7 +18,7 @@ import {
   type GetCoursesParams,
   type GetLearnersParams,
 } from './api';
-import type { Program } from './types';
+import type { Program, SubscriptionPlan } from './types';
 
 export const useProgramsConfig = () => useQuery({
   queryKey: ['programsConfig'],
@@ -109,8 +109,12 @@ export const useLearners = (params: GetLearnersParams = {}, enabled = true) => u
 export const useEnrollLearner = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ programId, username, reason }: { programId: string; username: string; reason?: string }) => (
-      enrollLearnerInProgram(programId, username, reason)
+    mutationFn: ({
+      programId, username, reason, subscriptionPlan,
+    }: {
+      programId: string; username: string; reason?: string; subscriptionPlan?: SubscriptionPlan;
+    }) => (
+      enrollLearnerInProgram(programId, username, reason, subscriptionPlan)
     ),
     onSuccess: (_, { programId }) => {
       queryClient.invalidateQueries({ queryKey: ['programEnrollments', programId] });

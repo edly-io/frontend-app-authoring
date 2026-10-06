@@ -15,6 +15,7 @@ import {
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import { useLearners, useEnrollLearner } from '../data/apiHooks';
 import { getApiErrorDetail } from '../data/api';
+import type { SubscriptionPlan } from '../data/types';
 
 const messages = defineMessages({
   title: { id: 'programs.enrollment.modal.title', defaultMessage: 'Enroll Learner in Program' },
@@ -33,6 +34,14 @@ const messages = defineMessages({
     id: 'programs.enrollment.modal.reason-help',
     defaultMessage: 'For a paid program, kept with the learner\'s enrollment record.',
   },
+  planLabel: { id: 'programs.enrollment.modal.plan-label', defaultMessage: 'Subscription plan' },
+  planPlaceholder: { id: 'programs.enrollment.modal.plan-placeholder', defaultMessage: 'Select a plan' },
+  planMonthly: { id: 'programs.enrollment.modal.plan-monthly', defaultMessage: 'Monthly' },
+  planYearly: { id: 'programs.enrollment.modal.plan-yearly', defaultMessage: 'Yearly' },
+  planHasSubscription: {
+    id: 'programs.enrollment.modal.plan-has-subscription',
+    defaultMessage: 'Already has a subscription, ends {endDate}',
+  },
 });
 
 interface AddLearnerModalProps {
@@ -40,10 +49,12 @@ interface AddLearnerModalProps {
   onClose: () => void;
   programId: string;
   alreadyEnrolledIds: string[];
+  /** True when the program's pricing category is is_part_of_subscription. */
+  isSubscriptionProgram?: boolean;
 }
 
 const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
-  isOpen, onClose, programId, alreadyEnrolledIds,
+  isOpen, onClose, programId, alreadyEnrolledIds, isSubscriptionProgram = false,
 }) => {
   const intl = useIntl();
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,6 +62,7 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
   const [enrollError, setEnrollError] = useState<string | null>(null);
   const [reason, setReason] = useState('');
+  const [plans, setPlans] = useState<Record<string, SubscriptionPlan | ''>>({});
   const listRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isFetching } = useLearners({ page: currentPage, search: searchQuery }, isOpen);
@@ -63,13 +75,16 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
   const handleSearch = useCallback((q: string) => {
     setSearchQuery(q);
     setCurrentPage(1);
+    setPlans({});
   }, []);
 
-  const handleEnroll = async (username: string) => {
+  const handleEnroll = async (username: string, subscriptionPlan?: SubscriptionPlan) => {
     setEnrollingId(username);
     setEnrollError(null);
     try {
-      await enrollLearner({ programId, username, reason: reason.trim() });
+      await enrollLearner({
+        programId, username, reason: reason.trim(), subscriptionPlan,
+      });
     } catch (err) {
       setEnrollError(getApiErrorDetail(err) ?? intl.formatMessage(messages.enrollError));
     } finally {
@@ -82,6 +97,7 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
     setCurrentPage(1);
     setEnrollError(null);
     setReason('');
+    setPlans({});
     onClose();
   };
 
@@ -134,6 +150,9 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
           {!isLoading && data?.results.map((learner) => {
             const isEnrolled = alreadyEnrolledIds.includes(learner.id);
             const isEnrolling = enrollingId === learner.id;
+            const hasSubscription = isSubscriptionProgram && !!learner.subscriptionEndsAt;
+            const needsPlan = isSubscriptionProgram && !learner.subscriptionEndsAt;
+            const plan = plans[learner.id] ?? '';
             return (
               <div
                 key={learner.id}
@@ -147,14 +166,44 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
                 {isEnrolled ? (
                   <Badge variant="success">{intl.formatMessage(messages.enrolledBadge)}</Badge>
                 ) : (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleEnroll(learner.username)}
-                    disabled={isEnrolling || !!enrollingId}
-                  >
-                    {isEnrolling ? intl.formatMessage(messages.enrollingBtn) : intl.formatMessage(messages.enrollBtn)}
-                  </Button>
+                  <div className="d-flex align-items-center">
+                    {isSubscriptionProgram && (
+                      <div className="mr-3 text-right">
+                        <Form.Control
+                          as="select"
+                          size="sm"
+                          aria-label={`${intl.formatMessage(messages.planLabel)} ${learner.name}`}
+                          value={hasSubscription ? '' : plan}
+                          disabled={hasSubscription || !!enrollingId}
+                          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setPlans((prev) => ({
+                            ...prev,
+                            [learner.id]: e.target.value as SubscriptionPlan | '',
+                          }))}
+                        >
+                          <option value="" disabled>{intl.formatMessage(messages.planPlaceholder)}</option>
+                          <option value="monthly">{intl.formatMessage(messages.planMonthly)}</option>
+                          <option value="yearly">{intl.formatMessage(messages.planYearly)}</option>
+                        </Form.Control>
+                        {hasSubscription && (
+                          <p className="small text-muted mb-0 mt-1">
+                            {intl.formatMessage(messages.planHasSubscription, {
+                              endDate: intl.formatDate(learner.subscriptionEndsAt as string, {
+                                year: 'numeric', month: 'short', day: 'numeric',
+                              }),
+                            })}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleEnroll(learner.username, needsPlan ? (plan as SubscriptionPlan) : undefined)}
+                      disabled={isEnrolling || !!enrollingId || (needsPlan && !plan)}
+                    >
+                      {isEnrolling ? intl.formatMessage(messages.enrollingBtn) : intl.formatMessage(messages.enrollBtn)}
+                    </Button>
+                  </div>
                 )}
               </div>
             );
