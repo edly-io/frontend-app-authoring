@@ -56,9 +56,13 @@ const CurriculumForm = ({
   const { showToast } = useToastContext();
   const createCurriculum = useCreateCurriculum();
   const updateCurriculum = useUpdateCurriculum();
-  // The layout already loads the badges, so this reads the cache. Course badges can't fill a slot (spec R11).
+  // The layout already loads the badges, so this reads the cache. Course badges can't fill a slot (spec R11),
+  // and a badge another curriculum already uses can't fill one here (one curriculum per badge).
   const { data: allBadges = [] } = useBadges();
-  const curriculumBadges = allBadges.filter((badge) => badge.kind === 'curriculum');
+  const curriculumBadges = allBadges.filter((badge) =>
+    badge.kind === 'curriculum'
+    && badge.linkedCurriculums.every((linked) => linked.uuid === curriculum?.uuid)
+  );
   const [formError, setFormError] = useState<string | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
   // Focus hand-offs: after "Change" the new search input; after picking, the "Change" button.

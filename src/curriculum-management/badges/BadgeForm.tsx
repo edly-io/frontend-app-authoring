@@ -139,7 +139,7 @@ const BadgeForm = ({
     <ModalDialog
       title={heading}
       // The modal is portalled outside the layout's .curriculum-management, so scope its styles here.
-      className="curriculum-management"
+      className="curriculum-management curriculum-management-badge-modal"
       isOpen
       onClose={onCancel}
       size="md"
@@ -288,9 +288,9 @@ const BadgeForm = ({
                         excludedCourseIds={[]}
                         addedCourseIds={values.courses.map((course) => course.id)}
                         error={errorFor('courses')}
+                        // A course badge has one course: picking another replaces it.
                         onSelect={(course) =>
                           setFieldValue('courses', [
-                            ...values.courses,
                             { id: course.courseId, displayName: course.displayName, exists: true },
                           ])}
                       />

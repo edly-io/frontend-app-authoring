@@ -171,6 +171,18 @@ describe('<BadgeForm />', () => {
     expect(body.getAll('course_ids')).toEqual(['course-v1:Uber+DRV101+2026_Q4']);
   });
 
+  it('picking a second course replaces the first: a course badge has one course', async () => {
+    const { axiosMock, user } = setup();
+    axiosMock.onGet(apiUrls.courses('DRV')).reply(200, page(rawCourses));
+    await user.click(screen.getByRole('radio', { name: 'Course badge' }));
+    await user.type(screen.getByLabelText('Add a course'), 'DRV');
+    await user.click(await screen.findByRole('button', { name: 'Add Getting started' }));
+    await user.type(screen.getByLabelText('Add a course'), 'DRV');
+    await user.click(await screen.findByRole('button', { name: 'Add Earnings and payouts' }));
+    expect(screen.getByRole('button', { name: 'Remove Earnings and payouts' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Remove Getting started' })).not.toBeInTheDocument();
+  });
+
   it('edits a course badge: kind is read-only; removing every course sends one empty course_ids', async () => {
     const { axiosMock, onClose, user } = setup(courseBadge);
     axiosMock.onPatch(apiUrls.badge(courseBadge.uuid)).reply(200, rawCourseBadge);
