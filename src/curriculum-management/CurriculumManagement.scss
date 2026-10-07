@@ -1,4 +1,9 @@
 .curriculum-management {
+  // Paragon has no modal size between md and lg; the badge form sits halfway.
+  &.curriculum-management-badge-modal {
+    max-width: calc((var(--pgn-size-modal-md) + var(--pgn-size-modal-lg)) / 2);
+  }
+
   .curriculum-management-badge-image,
   .curriculum-management-badge-placeholder {
     width: 3.5rem;

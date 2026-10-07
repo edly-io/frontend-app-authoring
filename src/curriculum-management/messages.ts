@@ -105,7 +105,7 @@ const messages = defineMessages({
   kindCurriculumHelp: { id: `${p}.kind.curriculum.help`, defaultMessage: 'Fills a Complete or Retained slot in one or more curriculums.', description: 'Explains the curriculum badge type on the badge form.' },
   kindCourseHelp: { id: `${p}.kind.course.help`, defaultMessage: 'Awarded for completing a course. Each course can award only one badge.', description: 'Explains the course badge type on the badge form.' },
   badgeCoursesHeading: { id: `${p}.badges.courses-heading`, defaultMessage: 'Awarded for completing', description: 'Heading above the courses that award a course badge.' },
-  badgeCoursesHelp: { id: `${p}.form.badge-courses.help`, defaultMessage: 'Completing any of these graded courses awards the badge. A course can award only one badge.', description: 'Help text of the courses section of the badge form.' },
+  badgeCoursesHelp: { id: `${p}.form.badge-courses.help`, defaultMessage: 'Completing this graded course awards the badge. A badge has one course, and a course can award only one badge.', description: 'Help text of the courses section of the badge form.' },
   badgeCoursesEmpty: { id: `${p}.badges.courses-empty`, defaultMessage: 'No courses yet', description: 'Shown for a course badge with no courses.' },
   deleteBadgeCoursesWarning: { id: `${p}.badges.delete-courses-warning`, defaultMessage: '{count, plural, one {This badge will be removed from # course:} other {This badge will be removed from # courses:}}', description: 'Delete-badge dialog: introduces the list of courses that award the badge.' },
   notLinked: { id: `${p}.badges.not-linked`, defaultMessage: 'Not linked to a curriculum', description: 'Shown for a badge with no links.' },
