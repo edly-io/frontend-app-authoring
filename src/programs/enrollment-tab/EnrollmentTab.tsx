@@ -2,10 +2,12 @@ import React, { useState, useCallback } from 'react';
 import {
   Badge,
   Button,
+  OverlayTrigger,
   Pagination,
   SearchField,
   Spinner,
   Stack,
+  Tooltip,
   useToggle,
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
@@ -67,7 +69,30 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
         </div>
-        {canEnroll && !isSubscriptionProgram ? (
+        {isSubscriptionProgram && (
+          // Disabled but kept, so it can say why: a disabled button takes no hover or focus,
+          // so it is only marked disabled and ignores clicks.
+          <OverlayTrigger
+            placement="top"
+            overlay={(
+              <Tooltip id="subscription-enroll-tooltip">
+                {intl.formatMessage(messages.subscriptionEnrollNote)}
+              </Tooltip>
+            )}
+          >
+            <Button
+              variant="outline-primary"
+              iconBefore={Add}
+              size="sm"
+              className="disabled"
+              aria-disabled="true"
+              onClick={(event: React.MouseEvent) => event.preventDefault()}
+            >
+              {intl.formatMessage(messages.enrollLearnerBtn)}
+            </Button>
+          </OverlayTrigger>
+        )}
+        {!isSubscriptionProgram && (canEnroll ? (
           <Button
             variant="outline-primary"
             iconBefore={Add}
@@ -77,10 +102,8 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
             {intl.formatMessage(messages.enrollLearnerBtn)}
           </Button>
         ) : (
-          <p className="text-muted small mb-0">
-            {intl.formatMessage(isSubscriptionProgram ? messages.subscriptionEnrollNote : messages.paidEnrollAdminOnly)}
-          </p>
-        )}
+          <p className="text-muted small mb-0">{intl.formatMessage(messages.paidEnrollAdminOnly)}</p>
+        ))}
       </div>
 
       <div className="mb-3">
