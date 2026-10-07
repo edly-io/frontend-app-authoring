@@ -24,7 +24,6 @@ export const mockLearner = (overrides: Partial<Learner> = {}): Learner => ({
   username: 'student.alice',
   email: 'alice@example.com',
   name: 'Alice Smith',
-  subscriptionEndsAt: null,
   ...overrides,
 });
 

@@ -13,7 +13,6 @@ import type {
   Program,
   ProgramConfig,
   ProgramDetailResponse,
-  SubscriptionPlan,
 } from './types';
 
 const getProgramsBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/rwaq/api/programs`;
@@ -231,7 +230,6 @@ const toUser = (d: any): Learner => ({
   username: d.username,
   email: d.email,
   name: [d.first_name, d.last_name].filter(Boolean).join(' ') || d.username,
-  subscriptionEndsAt: d.subscription_ends_at ?? null,
 });
 
 // ── Platform users — GET /rwaq/api/programs/users/?role=instructor|learner ─────
@@ -302,16 +300,10 @@ export const getProgramEnrollments = async (
 
 // ── Enroll learner in program — POST /rwaq/api/programs/<key>/learners/ ────────
 // reason is kept on the 0-price order recorded when a superadmin enrolls a learner into a paid program.
-// subscription_plan is sent only for a subscription program when the learner has no live subscription.
-export const enrollLearnerInProgram = async (
-  programId: string,
-  username: string,
-  reason = '',
-  subscriptionPlan?: SubscriptionPlan,
-): Promise<void> => {
+export const enrollLearnerInProgram = async (programId: string, username: string, reason = ''): Promise<void> => {
   await getAuthenticatedHttpClient().post(
     `${getProgramsBaseUrl()}/${programId}/learners/`,
-    { username, reason, ...(subscriptionPlan ? { subscription_plan: subscriptionPlan } : {}) },
+    { username, reason },
   );
 };
 

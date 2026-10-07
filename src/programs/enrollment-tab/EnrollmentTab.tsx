@@ -26,13 +26,17 @@ const messages = defineMessages({
     id: 'programs.enrollment.paid-admin-only',
     defaultMessage: 'This is a paid program. Only Rwaq admins can enroll learners into it.',
   },
+  subscriptionEnrollNote: {
+    id: 'programs.enrollment.subscription-note',
+    defaultMessage: 'Learners join this program through their Rwaq subscription.',
+  },
 });
 
 interface EnrollmentTabProps {
   programId: string;
   /** False for a paid program when the user is not a superadmin. */
   canEnroll?: boolean;
-  /** True when the program's pricing category is is_part_of_subscription. */
+  /** True when the program's pricing category is is_part_of_subscription. Nobody enrolls learners into it here. */
   isSubscriptionProgram?: boolean;
 }
 
@@ -63,7 +67,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
         </div>
-        {canEnroll ? (
+        {canEnroll && !isSubscriptionProgram ? (
           <Button
             variant="outline-primary"
             iconBefore={Add}
@@ -73,7 +77,9 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
             {intl.formatMessage(messages.enrollLearnerBtn)}
           </Button>
         ) : (
-          <p className="text-muted small mb-0">{intl.formatMessage(messages.paidEnrollAdminOnly)}</p>
+          <p className="text-muted small mb-0">
+            {intl.formatMessage(isSubscriptionProgram ? messages.subscriptionEnrollNote : messages.paidEnrollAdminOnly)}
+          </p>
         )}
       </div>
 
@@ -155,7 +161,6 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
         onClose={closeModal}
         programId={programId}
         alreadyEnrolledIds={enrolledIds}
-        isSubscriptionProgram={isSubscriptionProgram}
       />
     </div>
   );

@@ -86,11 +86,7 @@ export interface Learner {
   username: string;
   email: string;
   name: string;
-  /** ISO 8601 UTC end of the learner's live subscription, or null when there is none. */
-  subscriptionEndsAt: string | null;
 }
-
-export type SubscriptionPlan = 'monthly' | 'yearly';
 
 export interface PaginatedLearners {
   results: Learner[];
