@@ -151,14 +151,14 @@ const BadgeCard = ({ badge, defaultExpanded, onEdit }: BadgeCardProps) => {
           <CopyIdButton value={badge.uuid} />
           <IconButtonWithTooltip
             tooltipContent={intl.formatMessage(messages.edit)}
-            alt={intl.formatMessage(messages.edit)}
+            alt={intl.formatMessage(messages.editAria, { title: badge.title })}
             src={EditOutline}
             iconAs={Icon}
             onClick={onEdit}
           />
           <IconButtonWithTooltip
             tooltipContent={intl.formatMessage(messages.delete)}
-            alt={intl.formatMessage(messages.delete)}
+            alt={intl.formatMessage(messages.deleteAria, { title: badge.title })}
             src={DeleteOutline}
             iconAs={Icon}
             onClick={openDelete}

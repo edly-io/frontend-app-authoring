@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@src/testUtils';
 import { page, rawCourses } from '../__mocks__/fixtures';
 import { apiUrls } from '../data/api';
@@ -105,6 +106,38 @@ describe('<CoursePicker />', () => {
     act(() => {
       jest.advanceTimersByTime(400);
     });
-    expect(await screen.findByText('No matching courses')).toBeInTheDocument();
+    const list = await screen.findByRole('list', { name: 'Matching courses' });
+    expect(await within(list).findByText('No matching courses')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('No matching courses');
+  });
+
+  it('announces the number of matching courses to screen readers', async () => {
+    const { user } = setup({ excludedCourseIds: ['course-v1:Uber+DRVKC1+2026_Q4'] });
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    await user.type(screen.getByLabelText('Add a course'), 'DRV');
+    act(() => {
+      jest.advanceTimersByTime(400);
+    });
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('2 matching courses'));
+  });
+
+  it.each([403, 500])('shows an error, not "No matching courses", when the search fails with %s', async (code) => {
+    const { axiosMock, user } = setup();
+    axiosMock.onGet(apiUrls.courses('zzz')).reply(code);
+    await user.type(screen.getByLabelText('Add a course'), 'zzz');
+    act(() => {
+      jest.advanceTimersByTime(400);
+    });
+    await waitFor(() => expect(axiosMock.history.get.filter((r) => r.url?.includes('zzz'))).toHaveLength(1));
+    // A 500 is retried with backoff (1 s, 2 s, 4 s) before the query errors; a 403 is not retried.
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(10000);
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toHaveTextContent('Couldn\'t search courses. Please try again.');
+    });
+    expect(screen.getAllByText('Couldn\'t search courses. Please try again.')).toHaveLength(2); // visible + status
+    expect(screen.queryByText('No matching courses')).not.toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'Matching courses' })).not.toBeInTheDocument();
   });
 });

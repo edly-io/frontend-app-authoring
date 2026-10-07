@@ -92,6 +92,41 @@ describe('<BadgeForm />', () => {
     expect(await screen.findByText('Upload a PNG or JPG image.')).toBeInTheDocument();
   });
 
+  /** A PNG of exactly `bytes` bytes, without allocating a real buffer. */
+  const pngOfSize = (bytes: number) => {
+    const file = new File(['png'], 'badge.png', { type: 'image/png' });
+    Object.defineProperty(file, 'size', { value: bytes });
+    return file;
+  };
+
+  const fillAndCreate = async (user: ReturnType<typeof userEvent.setup>) => {
+    await user.type(screen.getByLabelText('Title'), 'Holiday rush ready');
+    await user.type(screen.getByLabelText('Description'), 'Seasonal.');
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+  };
+
+  it('rejects an image over 1 MB (1,048,577 bytes) and sends no image', async () => {
+    const { axiosMock, onClose, user } = setup();
+    axiosMock.onPost(apiUrls.badges()).reply(201, rawBadges[3]);
+    drop(pngOfSize(1048577));
+    expect(await screen.findByText('The image must be 1 MB or smaller.')).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: 'Holiday rush ready' })).not.toBeInTheDocument();
+    await fillAndCreate(user);
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect((axiosMock.history.post[0].data as FormData).has('image')).toBe(false);
+  });
+
+  it('accepts an image of exactly 1 MB (1,048,576 bytes)', async () => {
+    const { axiosMock, onClose, user } = setup();
+    axiosMock.onPost(apiUrls.badges()).reply(201, rawBadges[3]);
+    const png = pngOfSize(1048576);
+    drop(png);
+    await fillAndCreate(user);
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(screen.queryByText('The image must be 1 MB or smaller.')).not.toBeInTheDocument();
+    expect((axiosMock.history.post[0].data as FormData).get('image')).toBe(png);
+  });
+
   it('requires title and description', async () => {
     const { axiosMock, user } = setup();
     await user.click(screen.getByRole('button', { name: 'Create' }));
@@ -105,9 +140,9 @@ describe('<BadgeForm />', () => {
     axiosMock.onPatch(apiUrls.badge(linkedBadge.uuid)).reply(200, rawBadges[0]);
     expect(screen.getByRole('heading', { name: 'Edit badge' })).toBeInTheDocument();
     expect(screen.getByText(linkedBadge.uuid)).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Halfway there' })).toHaveAttribute('src', linkedBadge.imageUrl);
+    expect(screen.getByRole('img', { name: 'Road ready' })).toHaveAttribute('src', linkedBadge.imageUrl);
     await user.click(screen.getByRole('button', { name: 'Remove image' }));
-    expect(screen.queryByRole('img', { name: 'Halfway there' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: 'Road ready' })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     const body = axiosMock.history.patch[0].data as FormData;

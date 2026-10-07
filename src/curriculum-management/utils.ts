@@ -14,7 +14,6 @@ import type {
 
 /** Slot key → display messages. Raw API slot values are never shown. */
 export const slotMessages: Record<SlotKey, { label: MessageDescriptor; rule: MessageDescriptor; }> = {
-  halfway: { label: messages.slotHalfway, rule: messages.slotHalfwayRule },
   complete: { label: messages.slotComplete, rule: messages.slotCompleteRule },
   retained: { label: messages.slotRetained, rule: messages.slotRetainedRule },
 };
@@ -43,7 +42,7 @@ export const toCurriculumFormValues = (curriculum?: Curriculum): CurriculumFormV
       courses: [],
       knowledgeCheck: null,
       knowledgeCheckDelayDays: '30',
-      badges: { halfway: '', complete: '', retained: '' },
+      badges: { complete: '', retained: '' },
     };
   }
   return {
@@ -61,7 +60,6 @@ export const toCurriculumFormValues = (curriculum?: Curriculum): CurriculumFormV
     },
     knowledgeCheckDelayDays: String(curriculum.knowledgeCheckDelayDays) === '15' ? '15' : '30',
     badges: {
-      halfway: curriculum.badges.halfway?.uuid ?? '',
       complete: curriculum.badges.complete?.uuid ?? '',
       retained: curriculum.badges.retained?.uuid ?? '',
     },
@@ -75,7 +73,6 @@ export const toCurriculumWriteData = (values: CurriculumFormValues): CurriculumW
   knowledgeCheckCourseId: values.knowledgeCheck?.id ?? '',
   knowledgeCheckDelayDays: Number(values.knowledgeCheckDelayDays),
   badges: {
-    halfway: values.badges.halfway || null,
     complete: values.badges.complete || null,
     retained: values.badges.retained || null,
   },

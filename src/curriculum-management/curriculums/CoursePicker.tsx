@@ -49,9 +49,17 @@ const CoursePicker = ({
     }
   }, []);
 
-  const { data: results = [], isFetching } = useCourseSearch(term);
+  const { data: results = [], isFetching, isError } = useCourseSearch(term);
   const visible = results.filter((course) => !excludedCourseIds.includes(course.courseId));
   const showResults = term.trim().length > 0;
+  // A failed search must not read as "No matching courses": the author would assume the course doesn't exist.
+  const hasSettled = showResults && !isFetching;
+  let announcement = '';
+  if (hasSettled) {
+    announcement = isError
+      ? intl.formatMessage(messages.courseSearchError)
+      : intl.formatMessage(messages.courseSearchResultCount, { count: visible.length });
+  }
 
   const handlePick = (course: CourseSearchResult) => {
     debouncedSetTerm.cancel();
@@ -77,7 +85,14 @@ const CoursePicker = ({
         }}
       />
       {error && <Form.Control.Feedback type="invalid" hasIcon={false}>{error}</Form.Control.Feedback>}
-      {showResults && (
+      {/* Always mounted, so screen readers pick up changes to its text. */}
+      <div role="status" className="sr-only">{announcement}</div>
+      {showResults && isError && !isFetching && (
+        <p className="px-3 py-2 mt-1 mb-0 small text-danger border rounded bg-white" aria-hidden="true">
+          {intl.formatMessage(messages.courseSearchError)}
+        </p>
+      )}
+      {showResults && !isError && (
         <ul
           className="list-unstyled border rounded bg-white mt-1 mb-0"
           aria-label={intl.formatMessage(messages.courseSearchResults)}

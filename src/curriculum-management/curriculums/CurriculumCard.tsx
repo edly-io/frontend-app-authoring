@@ -105,21 +105,23 @@ const CurriculumCard = ({ curriculum, defaultExpanded, onEdit }: CurriculumCardP
               </span>
             </Badge>
             <Badge className="configuration-card-header__badge">
-              <span className="small">{intl.formatMessage(messages.badgeSlotsChip, { count: filledSlots })}</span>
+              <span className="small">
+                {intl.formatMessage(messages.badgeSlotsChip, { count: filledSlots, total: SLOT_KEYS.length })}
+              </span>
             </Badge>
           </Stack>
         </Button>
         <ActionRow className="ml-auto d-flex">
           <IconButtonWithTooltip
             tooltipContent={intl.formatMessage(messages.edit)}
-            alt={intl.formatMessage(messages.edit)}
+            alt={intl.formatMessage(messages.editAria, { title: curriculum.title })}
             src={EditOutline}
             iconAs={Icon}
             onClick={onEdit}
           />
           <IconButtonWithTooltip
             tooltipContent={intl.formatMessage(messages.delete)}
-            alt={intl.formatMessage(messages.delete)}
+            alt={intl.formatMessage(messages.deleteAria, { title: curriculum.title })}
             src={DeleteOutline}
             iconAs={Icon}
             onClick={openDelete}
@@ -145,7 +147,7 @@ const CurriculumCard = ({ curriculum, defaultExpanded, onEdit }: CurriculumCardP
             </Badge>
           </p>
           <h4 className="h5">{intl.formatMessage(messages.badgesHeading)}</h4>
-          {/* Read-only: slots are filled from the default badges when the curriculum is created (spec R6). */}
+          {/* Read-only: the slots are picked on the curriculum form. */}
           <ul className="list-unstyled mb-0">
             {SLOT_KEYS.map((slot) => {
               const badge = curriculum.badges[slot];

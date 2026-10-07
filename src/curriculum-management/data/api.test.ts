@@ -55,7 +55,7 @@ describe('curriculum-management api', () => {
     const result = await api.getAllBadges();
     expect(result).toHaveLength(4);
     expect(result[0].kind).toEqual('curriculum');
-    expect(result[0].linkedCurriculums[0].slot).toEqual('halfway');
+    expect(result[0].linkedCurriculums[0].slot).toEqual('complete');
     expect(result[0].imageUrl).toEqual(rawBadges[0].image_url);
     expect(axiosMock.history.get).toHaveLength(1);
   });
@@ -80,7 +80,7 @@ describe('curriculum-management api', () => {
       courseIds: ['course-v1:A+B+C'],
       knowledgeCheckCourseId: 'course-v1:A+KC+C',
       knowledgeCheckDelayDays: 15,
-      badges: { halfway: 'b-1', complete: null, retained: null },
+      badges: { complete: 'b-1', retained: null },
     });
     expect(created.uuid).toEqual('cur-1');
     expect(JSON.parse(axiosMock.history.post[0].data)).toEqual({
@@ -89,7 +89,7 @@ describe('curriculum-management api', () => {
       course_ids: ['course-v1:A+B+C'],
       knowledge_check_course_id: 'course-v1:A+KC+C',
       knowledge_check_delay_days: 15,
-      badges: { halfway: 'b-1', complete: null, retained: null },
+      badges: { complete: 'b-1', retained: null },
     });
   });
 
@@ -101,7 +101,7 @@ describe('curriculum-management api', () => {
       courseIds: [],
       knowledgeCheckCourseId: 'k',
       knowledgeCheckDelayDays: 30,
-      badges: { halfway: null, complete: null, retained: null },
+      badges: { complete: null, retained: null },
     });
     expect(axiosMock.history.put[0].url).toEqual(apiUrls.curriculum('cur-1'));
   });

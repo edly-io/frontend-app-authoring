@@ -73,8 +73,7 @@ describe('<CurriculumForm />', () => {
     expect(screen.queryByRole('button', { name: 'Add Getting started' })).not.toBeInTheDocument();
     await user.click(await screen.findByRole('button', { name: 'Add Essentials check' }));
     await user.click(screen.getByLabelText('15 days'));
-    await screen.findAllByRole('option', { name: 'Halfway there' });
-    await user.selectOptions(screen.getByLabelText('Halfway badge'), rawBadges[0].uuid);
+    await screen.findAllByRole('option', { name: 'Road ready' });
     await user.selectOptions(screen.getByLabelText('Retained badge'), rawBadges[2].uuid);
 
     await user.click(screen.getByRole('button', { name: 'Create' }));
@@ -85,7 +84,7 @@ describe('<CurriculumForm />', () => {
       course_ids: ['course-v1:Uber+DRV101+2026_Q4', 'course-v1:Uber+DRV103+2026_Q4'],
       knowledge_check_course_id: 'course-v1:Uber+DRVKC1+2026_Q4',
       knowledge_check_delay_days: 15,
-      badges: { halfway: rawBadges[0].uuid, complete: null, retained: rawBadges[2].uuid },
+      badges: { complete: null, retained: rawBadges[2].uuid },
     });
     expect(mockShowToast).toHaveBeenCalledWith('Curriculum created');
   });
@@ -138,27 +137,26 @@ describe('<CurriculumForm />', () => {
 
   it('slot selects list curriculum badges only, offer "No badge", and disable a badge taken by another slot', async () => {
     const { user } = setup();
-    await screen.findAllByRole('option', { name: 'Halfway there' });
-    const halfway = screen.getByLabelText('Halfway badge');
-    expect(within(halfway).getByRole('option', { name: 'No badge' })).toHaveValue('');
-    expect(within(halfway).queryByRole('option', { name: 'Airport pro' })).not.toBeInTheDocument();
-    await user.selectOptions(halfway, rawBadges[0].uuid);
-    expect(within(screen.getByLabelText('Complete badge')).getByRole('option', { name: 'Halfway there' }))
+    await screen.findAllByRole('option', { name: 'Road ready' });
+    const complete = screen.getByLabelText('Complete badge');
+    expect(within(complete).getByRole('option', { name: 'No badge' })).toHaveValue('');
+    expect(within(complete).queryByRole('option', { name: 'Airport pro' })).not.toBeInTheDocument();
+    await user.selectOptions(complete, rawBadges[0].uuid);
+    expect(within(screen.getByLabelText('Retained badge')).getByRole('option', { name: 'Road ready' }))
       .toBeDisabled();
   });
 
   it('prefills the slots when editing and sends null for a slot set to "No badge"', async () => {
     const { axiosMock, onClose, user } = setup({ curriculum });
     axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(200, rawCurriculums[0]);
-    await screen.findAllByRole('option', { name: 'Halfway there' });
-    expect(screen.getByLabelText('Halfway badge')).toHaveValue(rawBadges[0].uuid);
-    await user.selectOptions(screen.getByLabelText('Complete badge'), '');
+    await screen.findAllByRole('option', { name: 'Road ready' });
+    expect(screen.getByLabelText('Complete badge')).toHaveValue(rawBadges[0].uuid);
+    await user.selectOptions(screen.getByLabelText('Retained badge'), '');
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(JSON.parse(axiosMock.history.put[0].data).badges).toEqual({
-      halfway: rawBadges[0].uuid,
-      complete: null,
-      retained: rawBadges[2].uuid,
+      complete: rawBadges[0].uuid,
+      retained: null,
     });
   });
 

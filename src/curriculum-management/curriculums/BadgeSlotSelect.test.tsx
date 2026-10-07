@@ -14,17 +14,16 @@ describe('<BadgeSlotSelect />', () => {
     const onChange = jest.fn();
     render(
       <BadgeSlotSelect
-        slot="halfway"
+        slot="complete"
         value=""
         badges={badges}
         takenBadgeUuids={[badges[1].uuid]}
         onChange={onChange}
       />,
     );
-    const select = screen.getByLabelText('Halfway badge');
+    const select = screen.getByLabelText('Complete badge');
     expect(select).toHaveValue('');
     expect(screen.getByRole('option', { name: 'No badge' })).toHaveValue('');
-    expect(screen.getByText('Half of the curriculum\'s courses passed')).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Essentials complete' })).toBeDisabled();
     await userEvent.selectOptions(select, badges[0].uuid);
     expect(onChange).toHaveBeenCalledWith(badges[0].uuid);
@@ -32,7 +31,7 @@ describe('<BadgeSlotSelect />', () => {
 
   it.each(
     [
-      ['complete', 'Every curriculum course passed'],
+      ['complete', 'Every curriculum course completed'],
       ['retained', 'Knowledge check passed after it unlocks'],
     ] as const,
   )('explains when the %s badge is earned', (slot, rule) => {

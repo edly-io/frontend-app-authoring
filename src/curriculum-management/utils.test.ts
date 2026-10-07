@@ -30,8 +30,7 @@ describe('curriculum form mapping', () => {
     ]);
     expect(values.knowledgeCheckDelayDays).toEqual('30');
     expect(values.badges).toEqual({
-      halfway: rawBadges[0].uuid,
-      complete: rawBadges[1].uuid,
+      complete: rawBadges[0].uuid,
       retained: rawBadges[2].uuid,
     });
     expect(toCurriculumWriteData({ ...values, title: '  Trimmed  ', badges: { ...values.badges, complete: '' } }))
@@ -41,7 +40,7 @@ describe('curriculum form mapping', () => {
         courseIds: ['course-v1:Uber+DRV101+2026_Q4', 'course-v1:Uber+DRV102+2026_Q4'],
         knowledgeCheckCourseId: 'course-v1:Uber+DRVKC1+2026_Q4',
         knowledgeCheckDelayDays: 30,
-        badges: { halfway: rawBadges[0].uuid, complete: null, retained: rawBadges[2].uuid },
+        badges: { complete: null, retained: rawBadges[2].uuid },
       });
   });
 
@@ -52,7 +51,7 @@ describe('curriculum form mapping', () => {
       courses: [],
       knowledgeCheck: null,
       knowledgeCheckDelayDays: '30',
-      badges: { halfway: '', complete: '', retained: '' },
+      badges: { complete: '', retained: '' },
     });
   });
 });

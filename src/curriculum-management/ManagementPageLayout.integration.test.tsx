@@ -133,7 +133,7 @@ describe('<ManagementPageLayout /> with real pages and forms', () => {
     renderApp(mocks, '/curriculum-management/badges');
     await screen.findByText('4 badges');
     const card = screen.getByRole('heading', { name: 'Holiday rush ready' }).closest('[data-testid="badge-card"]');
-    await user.click(within(card as HTMLElement).getByRole('button', { name: 'Edit' }));
+    await user.click(within(card as HTMLElement).getByRole('button', { name: 'Edit Holiday rush ready' }));
     const dialog = await screen.findByRole('dialog', { name: 'Edit badge' });
     await user.type(within(dialog).getByLabelText(/^Title/), ' edited');
 

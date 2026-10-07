@@ -28,18 +28,23 @@ const retryUnlessClientError = (failureCount: number, error: unknown) => !isClie
 
 /**
  * Whether `uber_features.curriculum_management` is on for this user (spec §6.3). Runs on Studio home
- * (to show the tab), so it is fetched once per session and never retried; any error (e.g. 404 when
- * the plugin isn't installed) counts as disabled.
+ * (to show the tab), so it is fetched once per session. Any error counts as disabled; a 4xx (e.g. 404
+ * when the plugin isn't installed) is final, while a network error or 5xx is retried and reported
+ * as `isConnectionError`, so the page can tell "unavailable" apart from "doesn't exist".
  */
 export const useCurriculumManagementStatus = () => {
-  const { data, isPending } = useQuery({
+  const { data, isPending, isError, error } = useQuery({
     queryKey: curriculumQueryKeys.status(),
     queryFn: api.getStatus,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
-    retry: false,
+    retry: retryUnlessClientError,
   });
-  return { enabled: data?.enabled ?? false, isPending };
+  return {
+    enabled: data?.enabled ?? false,
+    isPending,
+    isConnectionError: isError && !isClientError(error),
+  };
 };
 
 export const useCurriculums = () =>

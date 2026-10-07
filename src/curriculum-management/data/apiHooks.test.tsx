@@ -22,17 +22,34 @@ describe('curriculum-management apiHooks', () => {
     const { axiosMock } = initializeMocks();
     axiosMock.onGet(apiUrls.status()).reply(200, rawStatus(true));
     const { result } = renderHook(() => useCurriculumManagementStatus(), { wrapper: makeWrapper() });
-    expect(result.current).toEqual({ enabled: false, isPending: true });
-    await waitFor(() => expect(result.current).toEqual({ enabled: true, isPending: false }));
+    expect(result.current).toEqual({ enabled: false, isPending: true, isConnectionError: false });
+    await waitFor(() => expect(result.current).toEqual({ enabled: true, isPending: false, isConnectionError: false }));
   });
 
-  it.each([404, 500])('status: an HTTP %s is treated as disabled, without retrying', async (code) => {
+  it.each([403, 404])('status: an HTTP %s is treated as disabled, without retrying', async (code) => {
     const { axiosMock } = initializeMocks();
     axiosMock.onGet(apiUrls.status()).reply(code);
     const { result } = renderHook(() => useCurriculumManagementStatus(), { wrapper: makeWrapper() });
     await waitFor(() => expect(result.current.isPending).toBe(false));
-    expect(result.current).toEqual({ enabled: false, isPending: false });
+    expect(result.current).toEqual({ enabled: false, isPending: false, isConnectionError: false });
     expect(axiosMock.history.get.filter((r) => r.url === apiUrls.status())).toHaveLength(1);
+  });
+
+  it('status: a 5xx is retried, then reported as a connection error (and disabled)', async () => {
+    jest.useFakeTimers();
+    try {
+      const { axiosMock } = initializeMocks();
+      axiosMock.onGet(apiUrls.status()).reply(502);
+      const { result } = renderHook(() => useCurriculumManagementStatus(), { wrapper: makeWrapper() });
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(10000);
+      });
+      await waitFor(() => expect(result.current.isPending).toBe(false));
+      expect(result.current).toEqual({ enabled: false, isPending: false, isConnectionError: true });
+      expect(axiosMock.history.get.filter((r) => r.url === apiUrls.status())).toHaveLength(4);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('useCurriculums and useBadges load all pages', async () => {
@@ -63,7 +80,7 @@ describe('curriculum-management apiHooks', () => {
       courseIds: ['c'],
       knowledgeCheckCourseId: 'k',
       knowledgeCheckDelayDays: 30,
-      badges: { halfway: null, complete: null, retained: null },
+      badges: { complete: null, retained: null },
     });
     expect(spy).toHaveBeenCalledWith({ queryKey: curriculumQueryKeys.curriculums() });
     expect(spy).toHaveBeenCalledWith({ queryKey: curriculumQueryKeys.badges() });

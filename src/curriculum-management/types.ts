@@ -1,4 +1,4 @@
-export type SlotKey = 'halfway' | 'complete' | 'retained';
+export type SlotKey = 'complete' | 'retained';
 
 export type BadgeKind = 'curriculum' | 'course';
 
@@ -33,7 +33,7 @@ export interface Curriculum {
   courses: CurriculumCourse[];
   knowledgeCheck: CourseRef;
   knowledgeCheckDelayDays: number;
-  /** Always all three keys; null = empty slot (spec §6.4). */
+  /** Always both keys; null = empty slot (spec §6.4). */
   badges: Record<SlotKey, BadgeSummary | null>;
   created: string;
   modified: string;

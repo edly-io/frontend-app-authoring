@@ -1,6 +1,6 @@
 import type { BadgeKind, SlotKey } from './types';
 
-export const SLOT_KEYS: readonly SlotKey[] = ['halfway', 'complete', 'retained'];
+export const SLOT_KEYS: readonly SlotKey[] = ['complete', 'retained'];
 export const BADGE_KINDS: readonly BadgeKind[] = ['curriculum', 'course'];
 /** Must match the backend's list page size (spec §6.4). */
 export const PAGE_SIZE = 50;

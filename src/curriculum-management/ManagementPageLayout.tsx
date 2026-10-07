@@ -127,14 +127,21 @@ const ManagementPageLayout = () => {
     </Button>
   );
 
+  const listsFailed = curriculums.isError || badges.isError;
+  // Without the lists there is no <Outlet> to render a form into, so there is nothing to create from.
+  const canCreate = status.enabled && !listsFailed;
+
   const renderBody = () => {
     if (status.isPending) {
       return <Loading />;
     }
+    if (status.isConnectionError) {
+      return <ConnectionErrorAlert />;
+    }
     if (!status.enabled) {
       return <NotFoundAlert />;
     }
-    if (curriculums.isError || badges.isError) {
+    if (listsFailed) {
       return <ConnectionErrorAlert />;
     }
     return (
@@ -181,7 +188,7 @@ const ManagementPageLayout = () => {
       <Container size="xl" className="px-4 py-5">
         <SubHeader
           title={intl.formatMessage(messages.pageTitle)}
-          headerActions={status.enabled ? newButton : null}
+          headerActions={canCreate ? newButton : null}
           hideBorder
         />
         {renderBody()}

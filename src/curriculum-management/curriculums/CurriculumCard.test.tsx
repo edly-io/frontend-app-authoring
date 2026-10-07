@@ -17,27 +17,27 @@ describe('<CurriculumCard />', () => {
     expect(screen.getByText('ID: cur-1')).toBeInTheDocument();
     expect(screen.getByText('2 courses')).toBeInTheDocument();
     expect(screen.getByText('Knowledge check after 30 days')).toBeInTheDocument();
-    expect(screen.getByText('3 of 3 badges')).toBeInTheDocument();
+    expect(screen.getByText('2 of 2 badges')).toBeInTheDocument();
     expect(screen.queryByText('Courses, in learner order')).not.toBeInTheDocument();
 
-    const toggle = screen.getByRole('button', { name: /new driver essentials/i });
+    const toggle = screen.getByRole('button', { name: /^new driver essentials/i });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await user.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByText('Getting started')).toBeInTheDocument();
     expect(screen.getByText('Opens 30 days after Complete')).toBeInTheDocument();
-    expect(screen.getByText('Halfway: Halfway there')).toBeInTheDocument();
+    expect(screen.getByText('Complete: Road ready')).toBeInTheDocument();
   });
 
   it('shows each slot read-only, with the badge image, and "No badge" for an empty slot', () => {
     initializeMocks();
     const withEmptySlot = { ...curriculum, badges: { ...curriculum.badges, retained: null } };
     render(<CurriculumCard curriculum={withEmptySlot} defaultExpanded onEdit={jest.fn()} />);
-    expect(screen.getByText('2 of 3 badges')).toBeInTheDocument();
-    expect(screen.getByText('Halfway: Halfway there')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Halfway there' })).toHaveAttribute(
+    expect(screen.getByText('1 of 2 badges')).toBeInTheDocument();
+    expect(screen.getByText('Complete: Road ready')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Road ready' })).toHaveAttribute(
       'src',
-      curriculum.badges.halfway?.imageUrl,
+      curriculum.badges.complete?.imageUrl,
     );
     expect(screen.getByText('Retained: No badge')).toBeInTheDocument();
     expect(screen.getAllByRole('img')).toHaveLength(1); // no image for the image-less or empty slots
@@ -56,7 +56,7 @@ describe('<CurriculumCard />', () => {
     initializeMocks();
     const onEdit = jest.fn();
     render(<CurriculumCard curriculum={curriculum} defaultExpanded={false} onEdit={onEdit} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Edit New driver essentials' }));
     expect(onEdit).toHaveBeenCalled();
   });
 
@@ -65,7 +65,7 @@ describe('<CurriculumCard />', () => {
     axiosMock.onDelete(apiUrls.curriculum('cur-1')).reply(204);
     const user = userEvent.setup();
     render(<CurriculumCard curriculum={curriculum} defaultExpanded={false} onEdit={jest.fn()} />);
-    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    await user.click(screen.getByRole('button', { name: 'Delete New driver essentials' }));
     await user.click(await screen.findByRole('button', { name: 'Delete' }));
     expect(axiosMock.history.delete[0].url).toEqual(apiUrls.curriculum('cur-1'));
     expect(mockShowToast).toHaveBeenCalledWith('Curriculum deleted');
@@ -76,7 +76,7 @@ describe('<CurriculumCard />', () => {
     axiosMock.onDelete(apiUrls.curriculum('cur-1')).reply(500);
     const user = userEvent.setup();
     render(<CurriculumCard curriculum={curriculum} defaultExpanded={false} onEdit={jest.fn()} />);
-    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    await user.click(screen.getByRole('button', { name: 'Delete New driver essentials' }));
     await user.click(await screen.findByRole('button', { name: 'Delete' }));
     expect(await screen.findByText('Couldn\'t delete')).toBeInTheDocument();
   });
@@ -89,7 +89,7 @@ describe('<CurriculumCard />', () => {
     });
     const user = userEvent.setup();
     render(<CurriculumCard curriculum={curriculum} defaultExpanded={false} onEdit={jest.fn()} />);
-    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    await user.click(screen.getByRole('button', { name: 'Delete New driver essentials' }));
     await user.click(await screen.findByRole('button', { name: 'Delete' }));
     expect(await screen.findByText('This curriculum is assigned to 3 learners, so it can\'t be deleted.'))
       .toBeInTheDocument();

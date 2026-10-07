@@ -41,7 +41,7 @@ const cardFor = (title: string) =>
 
 // Rows start collapsed; the toggle's name includes the badge title.
 const expand = (user: ReturnType<typeof userEvent.setup>, title: string) =>
-  user.click(within(cardFor(title)).getByRole('button', { name: new RegExp(title, 'i') }));
+  user.click(within(cardFor(title)).getByRole('button', { name: new RegExp(`^${title}`, 'i') }));
 
 describe('<BadgesPage />', () => {
   it('lists badges as collapsed rows with their IDs; expanding shows the "Linked to" chips', async () => {
@@ -51,16 +51,16 @@ describe('<BadgesPage />', () => {
     const user = userEvent.setup();
     renderPage();
     expect(await screen.findByText('4 badges')).toBeInTheDocument();
-    const halfway = cardFor('Halfway there');
-    expect(within(halfway).getByText(`ID: ${rawBadges[0].uuid}`)).toBeInTheDocument();
-    expect(within(halfway).queryByRole('link')).not.toBeInTheDocument();
+    const roadReady = cardFor('Road ready');
+    expect(within(roadReady).getByText(`ID: ${rawBadges[0].uuid}`)).toBeInTheDocument();
+    expect(within(roadReady).queryByRole('link')).not.toBeInTheDocument();
     expect(within(cardFor('Holiday rush ready')).getByText('Not linked')).toBeInTheDocument();
-    await expand(user, 'Halfway there');
-    expect(within(halfway).getByRole('link', { name: 'New driver essentials · Halfway' })).toHaveAttribute(
+    await expand(user, 'Road ready');
+    expect(within(roadReady).getByRole('link', { name: 'New driver essentials · Complete' })).toHaveAttribute(
       'href',
       '/curriculum-management',
     );
-    expect(within(halfway).getByRole('img', { name: 'Halfway there' })).toHaveAttribute('src', rawBadges[0].image_url);
+    expect(within(roadReady).getByRole('img', { name: 'Road ready' })).toHaveAttribute('src', rawBadges[0].image_url);
     await expand(user, 'Holiday rush ready');
     expect(within(cardFor('Holiday rush ready')).getByText('Not linked to a curriculum')).toBeInTheDocument();
   });
@@ -89,7 +89,7 @@ describe('<BadgesPage />', () => {
     await screen.findByText('4 badges');
     await userEvent.type(screen.getByRole('searchbox'), 'holiday');
     expect(screen.getByText('1 badge')).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Halfway there' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Road ready' })).not.toBeInTheDocument();
     await userEvent.clear(screen.getByRole('searchbox'));
     await userEvent.type(screen.getByRole('searchbox'), '5d21c8e7');
     expect(screen.getByRole('heading', { name: 'Essentials complete' })).toBeInTheDocument();
@@ -103,7 +103,7 @@ describe('<BadgesPage />', () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByText('4 badges');
-    await user.click(within(cardFor('Holiday rush ready')).getByRole('button', { name: 'Delete' }));
+    await user.click(within(cardFor('Holiday rush ready')).getByRole('button', { name: 'Delete Holiday rush ready' }));
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete' }));
     expect(axiosMock.history.delete).toHaveLength(1);
     expect(mockShowToast).toHaveBeenCalledWith('Badge deleted');
@@ -117,12 +117,12 @@ describe('<BadgesPage />', () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByText('4 badges');
-    const deleteButton = within(cardFor('Halfway there')).getByRole('button', { name: 'Delete' });
+    const deleteButton = within(cardFor('Road ready')).getByRole('button', { name: 'Delete Road ready' });
     expect(deleteButton).toBeEnabled();
     await user.click(deleteButton);
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText('This badge will be removed from 1 curriculum:')).toBeInTheDocument();
-    expect(within(dialog).getByText('New driver essentials · Halfway')).toBeInTheDocument();
+    expect(within(dialog).getByText('New driver essentials · Complete')).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
     expect(axiosMock.history.delete).toHaveLength(1);
     expect(mockShowToast).toHaveBeenCalledWith('Badge deleted');
@@ -139,7 +139,7 @@ describe('<BadgesPage />', () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByText('4 badges');
-    await user.click(within(cardFor('Holiday rush ready')).getByRole('button', { name: 'Delete' }));
+    await user.click(within(cardFor('Holiday rush ready')).getByRole('button', { name: 'Delete Holiday rush ready' }));
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete' }));
     expect(await screen.findByText('1 learner has earned this badge, so it can\'t be deleted.')).toBeInTheDocument();
   });
@@ -150,7 +150,7 @@ describe('<BadgesPage />', () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByText('4 badges');
-    await user.click(within(cardFor('Holiday rush ready')).getByRole('button', { name: 'Delete' }));
+    await user.click(within(cardFor('Holiday rush ready')).getByRole('button', { name: 'Delete Holiday rush ready' }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).queryByText(/will be removed from/)).not.toBeInTheDocument();
   });
@@ -161,7 +161,7 @@ describe('<BadgesPage />', () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByText('5 badges');
-    expect(within(cardFor('Halfway there')).getByText('Curriculum badge')).toBeInTheDocument();
+    expect(within(cardFor('Road ready')).getByText('Curriculum badge')).toBeInTheDocument();
     const airport = cardFor('Airport pro');
     expect(within(airport).getByText('Course badge')).toBeInTheDocument();
     expect(within(airport).getByText('2 courses')).toBeInTheDocument();
@@ -187,7 +187,7 @@ describe('<BadgesPage />', () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByText('5 badges');
-    await user.click(within(cardFor('Airport pro')).getByRole('button', { name: 'Delete' }));
+    await user.click(within(cardFor('Airport pro')).getByRole('button', { name: 'Delete Airport pro' }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText('This badge will be removed from 2 courses:')).toBeInTheDocument();
     expect(within(dialog).getByText('Airport pickups')).toBeInTheDocument();
@@ -203,7 +203,7 @@ describe('<BadgesPage />', () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByText('4 badges');
-    await user.click(within(cardFor('Holiday rush ready')).getByRole('button', { name: 'Delete' }));
+    await user.click(within(cardFor('Holiday rush ready')).getByRole('button', { name: 'Delete Holiday rush ready' }));
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete' }));
     expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument();
   });
@@ -216,7 +216,7 @@ describe('<BadgesPage />', () => {
     const writeText = jest.spyOn(navigator.clipboard, 'writeText');
     renderPage();
     await screen.findByText('4 badges');
-    await user.click(within(cardFor('Halfway there')).getByRole('button', { name: 'Copy badge ID' }));
+    await user.click(within(cardFor('Road ready')).getByRole('button', { name: 'Copy badge ID' }));
     expect(writeText).toHaveBeenCalledWith(rawBadges[0].uuid);
     expect(mockShowToast).toHaveBeenCalledWith('Badge ID copied');
   });
@@ -228,7 +228,7 @@ describe('<BadgesPage />', () => {
     jest.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(new Error('denied'));
     renderPage();
     await screen.findByText('4 badges');
-    await user.click(within(cardFor('Halfway there')).getByRole('button', { name: 'Copy badge ID' }));
+    await user.click(within(cardFor('Road ready')).getByRole('button', { name: 'Copy badge ID' }));
     await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith('Could not copy the badge ID'));
     expect(mockShowToast).not.toHaveBeenCalledWith('Badge ID copied');
   });
@@ -248,7 +248,9 @@ describe('<BadgesPage />', () => {
     renderPage();
     await screen.findByText('4 badges');
     expect(screen.getByTestId('harness-form-dirty')).toHaveTextContent('false');
-    await userEvent.click(within(cardFor('Holiday rush ready')).getByRole('button', { name: 'Edit' }));
+    await userEvent.click(
+      within(cardFor('Holiday rush ready')).getByRole('button', { name: 'Edit Holiday rush ready' }),
+    );
     await userEvent.click(screen.getByRole('button', { name: 'report dirty' }));
     expect(screen.getByTestId('harness-form-dirty')).toHaveTextContent('true');
   });
@@ -258,7 +260,9 @@ describe('<BadgesPage />', () => {
     axiosMock.onGet(apiUrls.badgesPage(1)).reply(200, page(rawBadges));
     renderPage();
     await screen.findByText('4 badges');
-    await userEvent.click(within(cardFor('Holiday rush ready')).getByRole('button', { name: 'Edit' }));
+    await userEvent.click(
+      within(cardFor('Holiday rush ready')).getByRole('button', { name: 'Edit Holiday rush ready' }),
+    );
     expect(screen.getByTestId('badge-form')).toHaveTextContent(`edit:${rawBadges[3].uuid}`);
     expect(cardFor('Holiday rush ready')).toBeInTheDocument();
   });
@@ -269,7 +273,9 @@ describe('<BadgesPage />', () => {
     renderPage();
     await screen.findByText('4 badges');
     await userEvent.type(screen.getByRole('searchbox'), 'holiday');
-    await userEvent.click(within(cardFor('Holiday rush ready')).getByRole('button', { name: 'Edit' }));
+    await userEvent.click(
+      within(cardFor('Holiday rush ready')).getByRole('button', { name: 'Edit Holiday rush ready' }),
+    );
     await userEvent.clear(screen.getByRole('searchbox'));
     await userEvent.type(screen.getByRole('searchbox'), 'zzz-no-match');
     expect(screen.getByTestId('badge-form')).toHaveTextContent(`edit:${rawBadges[3].uuid}`);

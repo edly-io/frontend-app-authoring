@@ -45,7 +45,7 @@ describe('<CurriculumsPage />', () => {
     axiosMock.onGet(apiUrls.curriculumsPage(1)).reply(200, page(rawCurriculums));
     renderPage();
     expect(await screen.findByText('Courses, in learner order')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Edit New driver essentials' }));
     expect(screen.getByTestId('curriculum-form')).toHaveTextContent('edit:cur-1');
     // The form is a modal: the card stays in the list underneath.
     expect(screen.getByTestId('curriculum-card')).toBeInTheDocument();
@@ -57,7 +57,7 @@ describe('<CurriculumsPage />', () => {
     const { axiosMock } = initializeMocks();
     axiosMock.onGet(apiUrls.curriculumsPage(1)).reply(200, page(rawCurriculums));
     renderPage();
-    await userEvent.click(await screen.findByRole('button', { name: 'Edit' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit New driver essentials' }));
     await userEvent.click(screen.getByRole('button', { name: 'cancel form' }));
     expect(screen.queryByTestId('curriculum-form')).not.toBeInTheDocument();
   });

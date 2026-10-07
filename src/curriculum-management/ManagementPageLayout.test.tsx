@@ -5,6 +5,7 @@ import {
   useOutletContext,
 } from 'react-router-dom';
 import {
+  act,
   initializeMocks,
   render,
   screen,
@@ -123,11 +124,28 @@ describe('<ManagementPageLayout />', () => {
     expect(screen.queryByText('About curriculums')).not.toBeInTheDocument();
   });
 
-  it('shows ConnectionErrorAlert when either list fails', async () => {
+  it('shows ConnectionErrorAlert, and no New button, when either list fails', async () => {
     axiosMock.onGet(apiUrls.status()).reply(200, rawStatus());
     axiosMock.onGet(apiUrls.badgesPage(1)).reply(400);
     renderLayout();
     expect(await screen.findByTestId('connectionErrorAlert')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^new /i })).not.toBeInTheDocument();
+  });
+
+  it('shows ConnectionErrorAlert, not NotFoundAlert, when the status call keeps failing with a 5xx', async () => {
+    jest.useFakeTimers();
+    try {
+      axiosMock.onGet(apiUrls.status()).reply(502);
+      renderLayout();
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(10000);
+      });
+      expect(await screen.findByTestId('connectionErrorAlert')).toBeInTheDocument();
+      expect(screen.queryByTestId('notFoundAlert')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /^new /i })).not.toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('asks before switching to another form while the open one is dirty', async () => {
