@@ -1,0 +1,62 @@
+.curriculum-management {
+  .curriculum-management-badge-image,
+  .curriculum-management-badge-placeholder {
+    width: 3.5rem;
+    height: 3.5rem;
+    flex-shrink: 0;
+    border-radius: var(--pgn-size-border-radius-base);
+    object-fit: contain;
+  }
+
+  // Badge image beside a slot on a curriculum card.
+  .curriculum-management-slot-image {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  // Smaller thumbnail for a badge's collapsible row header.
+  .curriculum-management-badge-thumb {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  // configuration-card-header__button gives every .pgn__icon its expand-arrow margins (at 0,4,0
+  // specificity); outrank that so the placeholder's icon stays centred.
+  .configuration-card-header__button .curriculum-management-badge-placeholder.curriculum-management-badge-thumb .pgn__icon {
+    margin: 0;
+  }
+
+  .curriculum-management-image-preview {
+    width: 7.5rem;
+    height: 7.5rem;
+    flex-shrink: 0;
+    border-radius: var(--pgn-size-border-radius-base);
+    object-fit: contain;
+  }
+
+  .curriculum-management-badge-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--pgn-color-light-300);
+    color: var(--pgn-color-gray-500);
+  }
+
+  // group-configurations indents only the first header chip (at 0,4,0 specificity), so when the
+  // chips wrap the first row sits further right than the next. The Stack's gap already spaces them.
+  .configuration-card .configuration-card-header .configuration-card-header__badge:first-child {
+    margin-left: 0;
+  }
+
+  // On a card header's title and pill row: lines the pills up with the title's first line instead of
+  // the top of the (taller) heading. The expand arrow and badge thumbnail stay top-aligned.
+  .curriculum-management-header-baseline {
+    align-self: baseline;
+  }
+
+  // Neither Paragon nor Bootstrap 4 ships `min-w-0`. Without it a flex child can't shrink below its
+  // content, so a long unbroken name overflows its card instead of wrapping.
+  .curriculum-management-min-width-0 {
+    min-width: 0;
+  }
+}

@@ -13,6 +13,7 @@ import {
   screen,
   act,
   within,
+  waitFor,
 } from '@src/testUtils';
 import messages from '../messages';
 import tabMessages from './messages';
@@ -24,6 +25,9 @@ import {
   generateGetStudioHomeLibrariesApiResponse,
 } from '../factories/mockApiResponses';
 import { getApiBaseUrl, getStudioHomeApiUrl } from '../data/api';
+import { apiUrls as curriculumApiUrls } from '@src/curriculum-management/data/api';
+import curriculumMessages from '@src/curriculum-management/messages';
+import { rawStatus } from '@src/curriculum-management/__mocks__/fixtures';
 import { fetchStudioHomeData } from '../data/thunks';
 
 const { studioShortName } = studioHomeMock;
@@ -261,6 +265,36 @@ describe('<TabsSection />', () => {
 
       const locationDisplay = await screen.findByTestId('location-display');
       expect(locationDisplay).toHaveTextContent('/taxonomies');
+    });
+  });
+
+  describe('curriculum management tab', () => {
+    const curriculumTab = curriculumMessages.homeTabTitle.defaultMessage;
+
+    const renderHome = async () => {
+      render();
+      await axiosMock.onGet(getStudioHomeApiUrl()).reply(200, generateGetStudioHomeDataApiResponse());
+      await executeThunk(fetchStudioHomeData(), store.dispatch);
+      await screen.findByText(tabMessages.coursesTabTitle.defaultMessage);
+    };
+
+    it.each([true, false])('flag %s: shows the tab only when the flag is on', async (enabled) => {
+      axiosMock.onGet(curriculumApiUrls.status()).reply(200, rawStatus(enabled));
+      await renderHome();
+      await waitFor(() => expect(!!screen.queryByText(curriculumTab)).toBe(enabled));
+    });
+
+    it('hides the tab when the status call fails', async () => {
+      axiosMock.onGet(curriculumApiUrls.status()).reply(404);
+      await renderHome();
+      expect(screen.queryByText(curriculumTab)).toBeNull();
+    });
+
+    it('clicking it navigates to /curriculum-management', async () => {
+      axiosMock.onGet(curriculumApiUrls.status()).reply(200, rawStatus());
+      await renderHome();
+      fireEvent.click(await screen.findByText(curriculumTab));
+      expect(await screen.findByTestId('location-display')).toHaveTextContent('/curriculum-management');
     });
   });
 
