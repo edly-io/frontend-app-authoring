@@ -200,6 +200,13 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
           >
             {intl.formatMessage(messages.categoryProgramOnly)}
           </Form.Radio>
+          <Form.Radio
+            value="is_part_of_subscription"
+            description={intl.formatMessage(messages.categorySubscriptionDescription)}
+            disabled={isSaving || isTypeLocked}
+          >
+            {intl.formatMessage(messages.categorySubscription)}
+          </Form.Radio>
         </Form.RadioSet>
         {fieldErrors.pricing_category && (
           <Form.Control.Feedback type="invalid">{fieldErrors.pricing_category}</Form.Control.Feedback>

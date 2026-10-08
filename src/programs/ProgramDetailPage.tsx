@@ -71,6 +71,7 @@ const messages = defineMessages({
   fieldPricingCategory: { id: 'programs.detail.field.pricing-category', defaultMessage: 'Pricing type' },
   pricingFree: { id: 'programs.detail.field.pricing.free', defaultMessage: 'Free' },
   pricingPaid: { id: 'programs.detail.field.pricing.paid', defaultMessage: 'Paid' },
+  pricingSubscription: { id: 'programs.detail.field.pricing.subscription', defaultMessage: 'Part of Subscription' },
   fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price ({currency})' },
   fieldPriceHint: { id: 'programs.detail.field.price.hint', defaultMessage: 'Regular price shown on the marketing site.' },
   fieldSalePrice: { id: 'programs.detail.field.sale-price', defaultMessage: 'Discounted Price / Sale Price ({currency})' },
@@ -187,8 +188,10 @@ const ProgramDetailPage: React.FC = () => {
     onSubmit: async (values, { setFieldError, setFieldTouched }) => {
       // Activating a free program puts it live in the catalog at no cost, so
       // confirm that first. "Continue as free" resubmits with the flag set.
+      // A subscription program is not free: learners need the Rwaq subscription.
       const isActivating = values.status === 'active' && program?.status !== 'active';
-      if (isActivating && values.pricingCategory !== 'is_paid' && !activateAsFreeConfirmed.current) {
+      const isFree = (values.pricingCategory || 'is_free') === 'is_free';
+      if (isActivating && isFree && !activateAsFreeConfirmed.current) {
         openActivateFree();
         return;
       }
@@ -555,6 +558,7 @@ const ProgramDetailPage: React.FC = () => {
                         >
                           <option value="is_free">{intl.formatMessage(messages.pricingFree)}</option>
                           <option value="is_paid">{intl.formatMessage(messages.pricingPaid)}</option>
+                          <option value="is_part_of_subscription">{intl.formatMessage(messages.pricingSubscription)}</option>
                         </Form.Control>
                         {formik.touched.pricingCategory && formik.errors.pricingCategory && (
                           <Form.Control.Feedback type="invalid">
@@ -727,7 +731,11 @@ const ProgramDetailPage: React.FC = () => {
           </Tab>
 
           <Tab eventKey="enrollment" title={intl.formatMessage(messages.tabEnrollment)}>
-            <EnrollmentTab programId={programId ?? ''} canEnroll={program?.canEnrollLearners ?? true} />
+            <EnrollmentTab
+              programId={programId ?? ''}
+              canEnroll={program?.canEnrollLearners ?? true}
+              isSubscriptionProgram={program?.pricingCategory === 'is_part_of_subscription'}
+            />
           </Tab>
         </Tabs>
 

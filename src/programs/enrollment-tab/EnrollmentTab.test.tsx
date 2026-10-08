@@ -67,6 +67,18 @@ describe('<EnrollmentTab />', () => {
     expect(screen.getByText(/Only Rwaq admins can enroll learners/i)).toBeInTheDocument();
   });
 
+  it('disables "Enroll Learner" for a subscription program, even for a superadmin, and says why', async () => {
+    render(<EnrollmentTab programId={programId} canEnroll isSubscriptionProgram />);
+    const button = screen.getByRole('button', { name: /Enroll Learner/i });
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(button);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    fireEvent.mouseOver(button);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'Learners join this program through their Rwaq subscription.',
+    );
+  });
+
   it('opens AddLearnerModal when "Enroll Learner" is clicked', () => {
     render(<EnrollmentTab programId={programId} />);
     fireEvent.click(screen.getByRole('button', { name: /Enroll Learner/i }));
