@@ -19,7 +19,7 @@ const messages = defineMessages({
   },
   coursesPricingFilterMenuSubscription: {
     id: 'course-authoring.studio-home.courses.tab.pricing-filter-menu.subscription',
-    defaultMessage: 'Is part of Subscription',
+    defaultMessage: 'Part of Subscription',
   },
   coursesPricingFilterMenuNoType: {
     id: 'course-authoring.studio-home.courses.tab.pricing-filter-menu.no-type',

@@ -71,7 +71,7 @@ const messages = defineMessages({
   fieldPricingCategory: { id: 'programs.detail.field.pricing-category', defaultMessage: 'Pricing type' },
   pricingFree: { id: 'programs.detail.field.pricing.free', defaultMessage: 'Free' },
   pricingPaid: { id: 'programs.detail.field.pricing.paid', defaultMessage: 'Paid' },
-  pricingSubscription: { id: 'programs.detail.field.pricing.subscription', defaultMessage: 'Is part of Subscription' },
+  pricingSubscription: { id: 'programs.detail.field.pricing.subscription', defaultMessage: 'Part of Subscription' },
   fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price ({currency})' },
   fieldPriceHint: { id: 'programs.detail.field.price.hint', defaultMessage: 'Regular price shown on the marketing site.' },
   fieldSalePrice: { id: 'programs.detail.field.sale-price', defaultMessage: 'Discounted Price / Sale Price ({currency})' },

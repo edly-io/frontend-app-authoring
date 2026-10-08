@@ -35,7 +35,7 @@ const messages = defineMessages({
   },
   categorySubscription: {
     id: 'course-authoring.schedule-section.pricing.category-subscription',
-    defaultMessage: 'Is part of Subscription',
+    defaultMessage: 'Part of Subscription',
   },
   categorySubscriptionDescription: {
     id: 'course-authoring.schedule-section.pricing.category-subscription.description',
