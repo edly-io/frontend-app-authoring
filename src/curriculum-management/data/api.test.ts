@@ -72,7 +72,7 @@ describe('curriculum-management api', () => {
     });
   });
 
-  it('createCurriculum posts a snake_case body', async () => {
+  it('createCurriculum posts multipart form-data', async () => {
     axiosMock.onPost(apiUrls.curriculums()).reply(201, rawCurriculums[0]);
     const created = await api.createCurriculum({
       title: 'T',
@@ -81,16 +81,14 @@ describe('curriculum-management api', () => {
       knowledgeCheckCourseId: 'course-v1:A+KC+C',
       knowledgeCheckDelayDays: 15,
       badges: { complete: 'b-1', retained: null },
+      image: null,
+      removeImage: false,
     });
     expect(created.uuid).toEqual('cur-1');
-    expect(JSON.parse(axiosMock.history.post[0].data)).toEqual({
-      title: 'T',
-      description: '',
-      course_ids: ['course-v1:A+B+C'],
-      knowledge_check_course_id: 'course-v1:A+KC+C',
-      knowledge_check_delay_days: 15,
-      badges: { complete: 'b-1', retained: null },
-    });
+    const body = axiosMock.history.post[0].data as FormData;
+    expect(body.get('title')).toEqual('T');
+    expect(body.get('course_ids')).toEqual('course-v1:A+B+C');
+    expect(JSON.parse(body.get('badges') as string)).toEqual({ complete: 'b-1', retained: null });
   });
 
   it('updateCurriculum PUTs to the detail URL', async () => {
@@ -102,6 +100,8 @@ describe('curriculum-management api', () => {
       knowledgeCheckCourseId: 'k',
       knowledgeCheckDelayDays: 30,
       badges: { complete: null, retained: null },
+      image: null,
+      removeImage: false,
     });
     expect(axiosMock.history.put[0].url).toEqual(apiUrls.curriculum('cur-1'));
   });

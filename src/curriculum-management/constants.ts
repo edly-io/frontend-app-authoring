@@ -11,6 +11,9 @@ export const BADGE_DESCRIPTION_MAX = 500;
 /** Must match UBER_BADGE_IMAGE_MAX_BYTES on the backend. */
 export const BADGE_IMAGE_MAX_BYTES = 1048576;
 export const BADGE_IMAGE_ACCEPT = { 'image/png': ['.png'], 'image/jpeg': ['.jpg', '.jpeg'] };
+/** Must match UBER_BADGE_IMAGE_MAX_BYTES on the backend (same limit reused for curriculum images). */
+export const CURRICULUM_IMAGE_MAX_BYTES = 1048576;
+export const CURRICULUM_IMAGE_ACCEPT = { 'image/png': ['.png'], 'image/jpeg': ['.jpg', '.jpeg'] };
 export const DELAY_OPTIONS = ['15', '30'] as const;
 export const CURRICULUM_MANAGEMENT_PATH = '/curriculum-management';
 export const BADGES_PATH = '/curriculum-management/badges';

@@ -78,13 +78,17 @@ describe('<CurriculumForm />', () => {
 
     await user.click(screen.getByRole('button', { name: 'Create' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    expect(JSON.parse(axiosMock.history.post[0].data)).toEqual({
-      title: 'New driver essentials',
-      description: '',
-      course_ids: ['course-v1:Uber+DRV101+2026_Q4', 'course-v1:Uber+DRV103+2026_Q4'],
-      knowledge_check_course_id: 'course-v1:Uber+DRVKC1+2026_Q4',
-      knowledge_check_delay_days: 15,
-      badges: { complete: null, retained: rawBadges[1].uuid },
+    const postBody = axiosMock.history.post[0].data as FormData;
+    expect(postBody.get('title')).toEqual('New driver essentials');
+    expect(postBody.get('description')).toEqual('');
+    expect(postBody.getAll('course_ids')).toEqual([
+      'course-v1:Uber+DRV101+2026_Q4',
+      'course-v1:Uber+DRV103+2026_Q4',
+    ]);
+    expect(postBody.get('knowledge_check_course_id')).toEqual('course-v1:Uber+DRVKC1+2026_Q4');
+    expect(postBody.get('knowledge_check_delay_days')).toEqual('15');
+    expect(JSON.parse(postBody.get('badges') as string)).toEqual({
+      complete: null, retained: rawBadges[1].uuid,
     });
     expect(mockShowToast).toHaveBeenCalledWith('Curriculum created');
   });
@@ -115,7 +119,7 @@ describe('<CurriculumForm />', () => {
     expect(screen.getByText('Course not found.')).toBeInTheDocument();
     expect(screen.getByText('Something general.')).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
-    expect(JSON.parse(axiosMock.history.put[0].data).course_ids).toEqual([
+    expect((axiosMock.history.put[0].data as FormData).getAll('course_ids')).toEqual([
       'course-v1:Uber+DRV101+2026_Q4',
       'course-v1:Uber+DRV102+2026_Q4',
     ]);
@@ -161,7 +165,7 @@ describe('<CurriculumForm />', () => {
     await user.selectOptions(screen.getByLabelText('Retained badge'), '');
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    expect(JSON.parse(axiosMock.history.put[0].data).badges).toEqual({
+    expect(JSON.parse((axiosMock.history.put[0].data as FormData).get('badges') as string)).toEqual({
       complete: rawBadges[0].uuid,
       retained: null,
     });

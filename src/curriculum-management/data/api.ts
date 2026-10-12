@@ -62,22 +62,34 @@ export async function searchCourses(search: string): Promise<CourseSearchResult[
   return camelCaseObject(data.results) as CourseSearchResult[];
 }
 
-const toCurriculumPayload = (data: CurriculumWriteData) => ({
-  title: data.title,
-  description: data.description,
-  course_ids: data.courseIds,
-  knowledge_check_course_id: data.knowledgeCheckCourseId,
-  knowledge_check_delay_days: data.knowledgeCheckDelayDays,
-  badges: data.badges,
-});
+/** Curriculum writes use multipart/form-data so an image file can be included. */
+const toCurriculumFormData = (data: CurriculumWriteData): FormData => {
+  const formData = new FormData();
+  formData.append('title', data.title);
+  formData.append('description', data.description);
+  if (data.image) {
+    formData.append('image', data.image);
+  } else if (data.removeImage) {
+    formData.append('remove_image', 'true');
+  }
+  data.courseIds.forEach((id) => formData.append('course_ids', id));
+  formData.append('knowledge_check_course_id', data.knowledgeCheckCourseId);
+  formData.append('knowledge_check_delay_days', String(data.knowledgeCheckDelayDays));
+  // DRF's DictField doesn't parse multipart key-per-slot; send as a JSON string instead.
+  formData.append('badges', JSON.stringify({
+    complete: data.badges.complete ?? null,
+    retained: data.badges.retained ?? null,
+  }));
+  return formData;
+};
 
 export async function createCurriculum(data: CurriculumWriteData): Promise<Curriculum> {
-  const { data: body } = await getAuthenticatedHttpClient().post(apiUrls.curriculums(), toCurriculumPayload(data));
+  const { data: body } = await getAuthenticatedHttpClient().post(apiUrls.curriculums(), toCurriculumFormData(data));
   return camelCaseObject(body) as Curriculum;
 }
 
 export async function updateCurriculum(uuid: string, data: CurriculumWriteData): Promise<Curriculum> {
-  const { data: body } = await getAuthenticatedHttpClient().put(apiUrls.curriculum(uuid), toCurriculumPayload(data));
+  const { data: body } = await getAuthenticatedHttpClient().put(apiUrls.curriculum(uuid), toCurriculumFormData(data));
   return camelCaseObject(body) as Curriculum;
 }
 

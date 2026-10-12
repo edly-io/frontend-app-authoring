@@ -30,6 +30,7 @@ export interface Curriculum {
   uuid: string;
   title: string;
   description: string;
+  imageUrl: string | null;
   courses: CurriculumCourse[];
   knowledgeCheck: CourseRef;
   knowledgeCheckDelayDays: number;
@@ -77,6 +78,8 @@ export interface Paginated<T> {
 export interface CurriculumWriteData {
   title: string;
   description: string;
+  image: File | null;
+  removeImage: boolean;
   courseIds: string[];
   knowledgeCheckCourseId: string;
   knowledgeCheckDelayDays: number;

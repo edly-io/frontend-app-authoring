@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Formik, getIn } from 'formik';
 import * as Yup from 'yup';
@@ -6,7 +6,9 @@ import { useIntl } from '@edx/frontend-platform/i18n';
 import {
   ActionRow,
   Button,
+  Dropzone,
   Form,
+  Image,
   ModalDialog,
 } from '@openedx/paragon';
 
@@ -15,6 +17,8 @@ import AlertMessage from '../../generic/alert-message';
 import { useToastContext } from '../../generic/toast-context';
 import {
   BADGES_PATH,
+  CURRICULUM_IMAGE_ACCEPT,
+  CURRICULUM_IMAGE_MAX_BYTES,
   CURRICULUM_TITLE_MAX,
   DELAY_OPTIONS,
   SLOT_KEYS,
@@ -35,6 +39,67 @@ import CoursePicker from './CoursePicker';
 
 const KC_ERROR_ID = 'curriculum-knowledge-check-error';
 const FORM_ID = 'curriculum-form';
+
+/** Object URL for a picked file, revoked when the file changes or the component unmounts. */
+const useObjectUrl = (file: File | null) => {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!file) { setUrl(null); return undefined; }
+    const objectUrl = URL.createObjectURL(file);
+    setUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+  return url;
+};
+
+interface CurriculumImageFieldProps {
+  curriculum?: Curriculum;
+  image: File | null;
+  removeImage: boolean;
+  error?: string;
+  onPick: (file: File) => void;
+  onRemove: () => void;
+}
+
+const CurriculumImageField = ({
+  curriculum, image, removeImage, error, onPick, onRemove,
+}: CurriculumImageFieldProps) => {
+  const intl = useIntl();
+  const previewUrl = useObjectUrl(image);
+  const currentUrl = previewUrl ?? (removeImage ? null : curriculum?.imageUrl ?? null);
+  return (
+    <Form.Group isInvalid={!!error}>
+      <span className="d-block small font-weight-bold text-gray-700 mb-2" id="curriculum-image-label">
+        {intl.formatMessage(messages.curriculumImageLabel)}
+      </span>
+      {currentUrl && (
+        <Image
+          src={currentUrl}
+          alt={curriculum?.title ?? ''}
+          className="curriculum-management-image-preview d-block mb-3"
+        />
+      )}
+      <Dropzone
+        data-testid="curriculum-image-dropzone"
+        aria-labelledby="curriculum-image-label"
+        accept={CURRICULUM_IMAGE_ACCEPT}
+        maxSize={CURRICULUM_IMAGE_MAX_BYTES}
+        errorMessages={{
+          invalidType: intl.formatMessage(messages.imageInvalidType),
+          invalidSizeMore: intl.formatMessage(messages.imageTooLarge),
+        }}
+        onProcessUpload={({ fileData }: { fileData: FormData; }) => onPick(fileData.get('file') as File)}
+      />
+      <Form.Text>{intl.formatMessage(messages.curriculumImageHelp)}</Form.Text>
+      {currentUrl && (
+        <Button variant="tertiary" size="sm" className="mt-2" onClick={onRemove}>
+          {intl.formatMessage(messages.removeImage)}
+        </Button>
+      )}
+      {error && <Form.Control.Feedback type="invalid" hasIcon={false}>{error}</Form.Control.Feedback>}
+    </Form.Group>
+  );
+};
 
 export interface CurriculumFormProps {
   curriculum?: Curriculum;
@@ -192,6 +257,21 @@ const CurriculumForm = ({
                       </Form.Control.Feedback>
                     )}
                   </Form.Group>
+
+                  <CurriculumImageField
+                    curriculum={curriculum}
+                    image={values.image}
+                    removeImage={values.removeImage}
+                    error={getIn(errors, 'image') as string | undefined}
+                    onPick={(file) => {
+                      setFieldValue('image', file);
+                      setFieldValue('removeImage', false);
+                    }}
+                    onRemove={() => {
+                      setFieldValue('image', null);
+                      setFieldValue('removeImage', !!curriculum?.imageUrl);
+                    }}
+                  />
 
                   <hr />
                   <h4 className="h5 mb-1">{intl.formatMessage(messages.coursesSectionTitle)}</h4>
