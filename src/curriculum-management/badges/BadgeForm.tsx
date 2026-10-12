@@ -1,17 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Formik, getIn } from 'formik';
 import * as Yup from 'yup';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import {
   ActionRow,
   Button,
-  Dropzone,
   Form,
-  Icon,
-  Image,
   ModalDialog,
 } from '@openedx/paragon';
-import { EmojiEvents } from '@openedx/paragon/icons';
 
 import PromptIfDirty from '../../generic/prompt-if-dirty/PromptIfDirty';
 import AlertMessage from '../../generic/alert-message';
@@ -23,6 +19,7 @@ import {
   BADGE_KINDS,
   BADGE_TITLE_MAX,
 } from '../constants';
+import ImageField from '../ImageField';
 import { useCreateBadge, useUpdateBadge } from '../data/apiHooks';
 import FormDirtyReporter from '../FormDirtyReporter';
 import type { Badge, BadgeKind, BadgeWriteData } from '../types';
@@ -53,29 +50,6 @@ interface BadgeFormValues {
   /** Course badges only (spec R12). */
   courses: CourseItem[];
 }
-
-/** Object URL for a picked file, revoked when the file changes or the form unmounts. */
-const useObjectUrl = (file: File | null) => {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!file) {
-      setUrl(null);
-      return undefined;
-    }
-    const objectUrl = URL.createObjectURL(file);
-    setUrl(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [file]);
-  return url;
-};
-
-const ImagePreview = ({ src, alt }: { src: string | null; alt: string; }) => (src
-  ? <Image src={src} alt={alt} className="curriculum-management-image-preview d-block mb-3" />
-  : (
-    <div className="curriculum-management-image-preview curriculum-management-badge-placeholder mb-3" aria-hidden>
-      <Icon src={EmojiEvents} />
-    </div>
-  ));
 
 /** Create/edit form for one badge, shown in its own modal. */
 const BadgeForm = ({
@@ -304,12 +278,10 @@ const BadgeForm = ({
                     </>
                   )}
 
-                  <BadgeImageField
-                    badge={badge}
-                    title={values.title}
-                    image={values.image}
-                    removeImage={values.removeImage}
-                    error={getIn(errors, 'image') as string | undefined}
+                  <ImageField
+                    fieldId="badge-image"
+                    value={values.image}
+                    existingUrl={values.removeImage ? null : badge?.imageUrl ?? null}
                     onPick={(file) => {
                       setFieldValue('image', file);
                       setFieldValue('removeImage', false);
@@ -318,6 +290,12 @@ const BadgeForm = ({
                       setFieldValue('image', null);
                       setFieldValue('removeImage', !!badge?.imageUrl);
                     }}
+                    maxBytes={BADGE_IMAGE_MAX_BYTES}
+                    accept={BADGE_IMAGE_ACCEPT}
+                    label={intl.formatMessage(messages.imageLabel)}
+                    helpText={intl.formatMessage(messages.imageHelp)}
+                    altText={values.title || badge?.title || ''}
+                    error={getIn(errors, 'image') as string | undefined}
                   />
                 </Form>
               </ModalDialog.Body>
@@ -335,60 +313,6 @@ const BadgeForm = ({
         }}
       </Formik>
     </ModalDialog>
-  );
-};
-
-interface BadgeImageFieldProps {
-  badge?: Badge;
-  title: string;
-  image: File | null;
-  removeImage: boolean;
-  error?: string;
-  onPick: (file: File) => void;
-  onRemove: () => void;
-}
-
-const BadgeImageField = ({
-  badge,
-  title,
-  image,
-  removeImage,
-  error,
-  onPick,
-  onRemove,
-}: BadgeImageFieldProps) => {
-  const intl = useIntl();
-  const previewUrl = useObjectUrl(image);
-  const currentUrl = previewUrl ?? (removeImage ? null : badge?.imageUrl ?? null);
-  return (
-    <Form.Group isInvalid={!!error}>
-      <span className="d-block small font-weight-bold text-gray-700 mb-2" id="badge-image-label">
-        {intl.formatMessage(messages.imageLabel)}
-      </span>
-      <ImagePreview src={currentUrl} alt={title || badge?.title || ''} />
-      <Dropzone
-        data-testid="badge-image-dropzone"
-        aria-labelledby="badge-image-label"
-        accept={BADGE_IMAGE_ACCEPT}
-        maxSize={BADGE_IMAGE_MAX_BYTES}
-        errorMessages={{
-          invalidType: intl.formatMessage(messages.imageInvalidType),
-          invalidSizeMore: intl.formatMessage(messages.imageTooLarge),
-        }}
-        // Nothing is uploaded here: the File is kept in Formik and sent with the multipart save.
-        onProcessUpload={({ fileData }: { fileData: FormData; }) => {
-          const file = fileData.get('file');
-          if (file instanceof File) { onPick(file); }
-        }}
-      />
-      <Form.Text>{intl.formatMessage(messages.imageHelp)}</Form.Text>
-      {currentUrl && (
-        <Button variant="tertiary" size="sm" className="mt-2" onClick={onRemove}>
-          {intl.formatMessage(messages.removeImage)}
-        </Button>
-      )}
-      {error && <Form.Control.Feedback type="invalid" hasIcon={false}>{error}</Form.Control.Feedback>}
-    </Form.Group>
   );
 };
 
