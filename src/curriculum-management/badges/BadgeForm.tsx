@@ -376,7 +376,10 @@ const BadgeImageField = ({
           invalidSizeMore: intl.formatMessage(messages.imageTooLarge),
         }}
         // Nothing is uploaded here: the File is kept in Formik and sent with the multipart save.
-        onProcessUpload={({ fileData }: { fileData: FormData; }) => onPick(fileData.get('file') as File)}
+        onProcessUpload={({ fileData }: { fileData: FormData; }) => {
+          const file = fileData.get('file');
+          if (file instanceof File) { onPick(file); }
+        }}
       />
       <Form.Text>{intl.formatMessage(messages.imageHelp)}</Form.Text>
       {currentUrl && (

@@ -72,23 +72,44 @@ describe('curriculum-management api', () => {
     });
   });
 
+  const curriculumData = {
+    title: 'T',
+    description: '',
+    courseIds: ['course-v1:A+B+C'],
+    knowledgeCheckCourseId: 'course-v1:A+KC+C',
+    knowledgeCheckDelayDays: 15,
+    badges: { complete: 'b-1', retained: null } as { complete: string | null; retained: string | null },
+    image: null as File | null,
+    removeImage: false,
+  };
+
   it('createCurriculum posts multipart form-data', async () => {
     axiosMock.onPost(apiUrls.curriculums()).reply(201, rawCurriculums[0]);
-    const created = await api.createCurriculum({
-      title: 'T',
-      description: '',
-      courseIds: ['course-v1:A+B+C'],
-      knowledgeCheckCourseId: 'course-v1:A+KC+C',
-      knowledgeCheckDelayDays: 15,
-      badges: { complete: 'b-1', retained: null },
-      image: null,
-      removeImage: false,
-    });
+    const created = await api.createCurriculum({ ...curriculumData });
     expect(created.uuid).toEqual('cur-1');
     const body = axiosMock.history.post[0].data as FormData;
     expect(body.get('title')).toEqual('T');
     expect(body.get('course_ids')).toEqual('course-v1:A+B+C');
     expect(JSON.parse(body.get('badges') as string)).toEqual({ complete: 'b-1', retained: null });
+    expect(body.has('image')).toBe(false);
+    expect(body.has('remove_image')).toBe(false);
+  });
+
+  it('includes image file in POST body when image is provided', async () => {
+    const file = new File(['img'], 'photo.png', { type: 'image/png' });
+    axiosMock.onPost(apiUrls.curriculums()).reply(201, rawCurriculums[0]);
+    await api.createCurriculum({ ...curriculumData, image: file, removeImage: false });
+    const body = axiosMock.history.post[0].data as FormData;
+    expect(body.get('image')).toBe(file);
+    expect(body.has('remove_image')).toBe(false);
+  });
+
+  it('sends remove_image=true in POST body when removeImage is true', async () => {
+    axiosMock.onPost(apiUrls.curriculums()).reply(201, rawCurriculums[0]);
+    await api.createCurriculum({ ...curriculumData, image: null, removeImage: true });
+    const body = axiosMock.history.post[0].data as FormData;
+    expect(body.get('remove_image')).toBe('true');
+    expect(body.has('image')).toBe(false);
   });
 
   it('updateCurriculum PUTs to the detail URL', async () => {

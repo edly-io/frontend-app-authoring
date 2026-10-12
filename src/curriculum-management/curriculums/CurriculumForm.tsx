@@ -88,7 +88,10 @@ const CurriculumImageField = ({
           invalidType: intl.formatMessage(messages.imageInvalidType),
           invalidSizeMore: intl.formatMessage(messages.imageTooLarge),
         }}
-        onProcessUpload={({ fileData }: { fileData: FormData; }) => onPick(fileData.get('file') as File)}
+        onProcessUpload={({ fileData }: { fileData: FormData; }) => {
+          const file = fileData.get('file');
+          if (file instanceof File) { onPick(file); }
+        }}
       />
       <Form.Text>{intl.formatMessage(messages.curriculumImageHelp)}</Form.Text>
       {currentUrl && (

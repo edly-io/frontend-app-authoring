@@ -2,6 +2,7 @@ import { camelCaseObject } from '@edx/frontend-platform';
 import userEvent from '@testing-library/user-event';
 import {
   act,
+  fireEvent,
   initializeMocks,
   render,
   screen,
@@ -247,5 +248,60 @@ describe('<CurriculumForm />', () => {
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await screen.findByText('Course not found.');
     expect(screen.getByRole('button', { name: 'Change' })).toHaveAccessibleDescription('Course not found.');
+  });
+
+  it('shows image preview when curriculum has an imageUrl', () => {
+    setup({ curriculum });
+    expect(screen.getByRole('img', { name: curriculum.title })).toHaveAttribute('src', curriculum.imageUrl);
+  });
+
+  it('clicking "Remove image" sends remove_image=true in the PUT body', async () => {
+    const { axiosMock, onClose, user } = setup({ curriculum });
+    axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(200, rawCurriculums[0]);
+    await user.click(screen.getByRole('button', { name: 'Remove image' }));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    const body = axiosMock.history.put[0].data as FormData;
+    expect(body.get('remove_image')).toEqual('true');
+    expect(body.has('image')).toBe(false);
+  });
+
+  it('picking a new image file sends it in the PUT body', async () => {
+    global.URL.createObjectURL = jest.fn(() => 'blob:preview');
+    global.URL.revokeObjectURL = jest.fn();
+    const { axiosMock, onClose, user } = setup({ curriculum });
+    axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(200, rawCurriculums[0]);
+    const file = new File(['img'], 'photo.png', { type: 'image/png' });
+    await user.upload(
+      document.querySelector('input[type="file"]') as HTMLInputElement,
+      file,
+    );
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    const body = axiosMock.history.put[0].data as FormData;
+    expect(body.get('image')).toBe(file);
+    expect(body.has('remove_image')).toBe(false);
+  });
+
+  it('Dropzone rejects an invalid file type and shows the type error', async () => {
+    setup();
+    fireEvent.drop(screen.getByTestId('curriculum-image-dropzone'), {
+      dataTransfer: {
+        files: [new File(['<bad>'], 'evil.pdf', { type: 'application/pdf' })],
+        items: [{ kind: 'file', type: 'application/pdf', getAsFile: () => new File(['<bad>'], 'evil.pdf', { type: 'application/pdf' }) }],
+        types: ['Files'],
+      },
+    });
+    expect(await screen.findByText('Upload a PNG or JPG image.')).toBeInTheDocument();
+  });
+
+  it('does not send image or remove_image when the image field is untouched', async () => {
+    const { axiosMock, user } = setup({ curriculum });
+    axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(200, rawCurriculums[0]);
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(axiosMock.history.put).toHaveLength(1));
+    const body = axiosMock.history.put[0].data as FormData;
+    expect(body.has('image')).toBe(false);
+    expect(body.has('remove_image')).toBe(false);
   });
 });
