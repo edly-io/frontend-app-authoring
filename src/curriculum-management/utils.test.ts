@@ -41,6 +41,8 @@ describe('curriculum form mapping', () => {
         knowledgeCheckCourseId: 'course-v1:Uber+DRVKC1+2026_Q4',
         knowledgeCheckDelayDays: 30,
         badges: { complete: null, retained: rawBadges[2].uuid },
+        image: null,
+        removeImage: false,
       });
   });
 
@@ -52,7 +54,27 @@ describe('curriculum form mapping', () => {
       knowledgeCheck: null,
       knowledgeCheckDelayDays: '30',
       badges: { complete: '', retained: '' },
+      image: null,
+      removeImage: false,
     });
+  });
+
+  it('propagates a picked image file into the write data', () => {
+    const file = new File(['x'], 'cover.jpg', { type: 'image/jpeg' });
+    const values = toCurriculumFormValues();
+    const data = toCurriculumWriteData({ ...values, title: 'T', image: file, removeImage: false });
+    expect(data.image).toBe(file);
+    expect(data.removeImage).toBe(false);
+  });
+
+  it('sets removeImage:true only when image is null (not replacing with a new file)', () => {
+    const values = toCurriculumFormValues();
+    const withRemoveOnly = toCurriculumWriteData({ ...values, title: 'T', image: null, removeImage: true });
+    expect(withRemoveOnly.removeImage).toBe(true);
+    const file = new File(['x'], 'cover.jpg', { type: 'image/jpeg' });
+    const withNewFile = toCurriculumWriteData({ ...values, title: 'T', image: file, removeImage: true });
+    // When a new file is present, removeImage must be suppressed to avoid sending both.
+    expect(withNewFile.removeImage).toBe(false);
   });
 });
 

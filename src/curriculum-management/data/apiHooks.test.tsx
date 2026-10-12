@@ -81,6 +81,8 @@ describe('curriculum-management apiHooks', () => {
       knowledgeCheckCourseId: 'k',
       knowledgeCheckDelayDays: 30,
       badges: { complete: null, retained: null },
+      image: null,
+      removeImage: false,
     });
     expect(spy).toHaveBeenCalledWith({ queryKey: curriculumQueryKeys.curriculums() });
     expect(spy).toHaveBeenCalledWith({ queryKey: curriculumQueryKeys.badges() });

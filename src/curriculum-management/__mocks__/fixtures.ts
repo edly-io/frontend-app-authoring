@@ -68,6 +68,7 @@ export const rawCurriculums = [
     uuid: 'cur-1',
     title: 'New driver essentials',
     description: 'Required courses for new drivers.',
+    image_url: 'https://example.com/curriculum-image.png',
     courses: [
       { course_id: 'course-v1:Uber+DRV101+2026_Q4', display_name: 'Getting started', position: 1, exists: true },
       { course_id: 'course-v1:Uber+DRV102+2026_Q4', display_name: null, position: 2, exists: false },
@@ -82,6 +83,13 @@ export const rawCurriculums = [
     modified: '2026-10-02T10:00:00Z',
   },
 ];
+
+/** Identical to rawCurriculums[0] but with image_url: null, for testing the no-image case. */
+export const rawCurriculumNoImage = {
+  ...rawCurriculums[0],
+  uuid: 'cur-2',
+  image_url: null,
+};
 
 export const rawCourses = [
   {

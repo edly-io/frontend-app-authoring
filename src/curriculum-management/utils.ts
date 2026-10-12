@@ -27,6 +27,8 @@ export const kindMessages: Record<BadgeKind, { label: MessageDescriptor; help: M
 export interface CurriculumFormValues {
   title: string;
   description: string;
+  image: File | null;
+  removeImage: boolean;
   courses: CourseItem[];
   knowledgeCheck: CourseItem | null;
   knowledgeCheckDelayDays: '15' | '30';
@@ -39,6 +41,8 @@ export const toCurriculumFormValues = (curriculum?: Curriculum): CurriculumFormV
     return {
       title: '',
       description: '',
+      image: null,
+      removeImage: false,
       courses: [],
       knowledgeCheck: null,
       knowledgeCheckDelayDays: '30',
@@ -48,6 +52,8 @@ export const toCurriculumFormValues = (curriculum?: Curriculum): CurriculumFormV
   return {
     title: curriculum.title,
     description: curriculum.description,
+    image: null,
+    removeImage: false,
     courses: curriculum.courses.map((course) => ({
       id: course.courseId,
       displayName: course.displayName,
@@ -69,6 +75,8 @@ export const toCurriculumFormValues = (curriculum?: Curriculum): CurriculumFormV
 export const toCurriculumWriteData = (values: CurriculumFormValues): CurriculumWriteData => ({
   title: values.title.trim(),
   description: values.description.trim(),
+  image: values.image,
+  removeImage: values.removeImage && !values.image,
   courseIds: values.courses.map((course) => course.id),
   knowledgeCheckCourseId: values.knowledgeCheck?.id ?? '',
   knowledgeCheckDelayDays: Number(values.knowledgeCheckDelayDays),
@@ -132,6 +140,7 @@ export const mapCurriculumErrors = (error: unknown, courseIds: string[]): Mapped
 
   setField('title', body.title);
   setField('description', body.description);
+  setField('image', body.image);
   setField('knowledgeCheck', body.knowledge_check_course_id);
   setField('knowledgeCheckDelayDays', body.knowledge_check_delay_days);
 

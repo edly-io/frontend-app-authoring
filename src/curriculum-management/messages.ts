@@ -127,6 +127,8 @@ const messages = defineMessages({
   badgeIdLabel: { id: `${p}.form.badge-id`, defaultMessage: 'Badge ID', description: 'Label of the read-only badge UUID.' },
   badgeCreated: { id: `${p}.badges.created`, defaultMessage: 'Badge created', description: 'Toast after creating a badge.' },
   badgeSaved: { id: `${p}.badges.saved`, defaultMessage: 'Badge saved', description: 'Toast after editing a badge.' },
+  curriculumImageLabel: { id: `${p}.form.curriculum-image`, defaultMessage: 'Image (optional)', description: 'Label of the curriculum image upload.' },
+  curriculumImageHelp: { id: `${p}.form.curriculum-image.help`, defaultMessage: 'PNG or JPG, square, up to 1 MB. Shown on the learner app learning path card.', description: 'Help text for the curriculum image upload.' },
 });
 
 export default messages;

@@ -15,10 +15,13 @@ import AlertMessage from '../../generic/alert-message';
 import { useToastContext } from '../../generic/toast-context';
 import {
   BADGES_PATH,
+  CURRICULUM_IMAGE_ACCEPT,
+  CURRICULUM_IMAGE_MAX_BYTES,
   CURRICULUM_TITLE_MAX,
   DELAY_OPTIONS,
   SLOT_KEYS,
 } from '../constants';
+import ImageField from '../ImageField';
 import { useBadges, useCreateCurriculum, useUpdateCurriculum } from '../data/apiHooks';
 import FormDirtyReporter from '../FormDirtyReporter';
 import type { Curriculum } from '../types';
@@ -192,6 +195,26 @@ const CurriculumForm = ({
                       </Form.Control.Feedback>
                     )}
                   </Form.Group>
+
+                  <ImageField
+                    fieldId="curriculum-image"
+                    value={values.image}
+                    existingUrl={values.removeImage ? null : curriculum?.imageUrl ?? null}
+                    onPick={(file) => {
+                      setFieldValue('image', file);
+                      setFieldValue('removeImage', false);
+                    }}
+                    onRemove={() => {
+                      setFieldValue('image', null);
+                      setFieldValue('removeImage', !!curriculum?.imageUrl);
+                    }}
+                    maxBytes={CURRICULUM_IMAGE_MAX_BYTES}
+                    accept={CURRICULUM_IMAGE_ACCEPT}
+                    label={intl.formatMessage(messages.curriculumImageLabel)}
+                    helpText={intl.formatMessage(messages.curriculumImageHelp)}
+                    altText={curriculum?.title ?? ''}
+                    error={getIn(errors, 'image') as string | undefined}
+                  />
 
                   <hr />
                   <h4 className="h5 mb-1">{intl.formatMessage(messages.coursesSectionTitle)}</h4>
