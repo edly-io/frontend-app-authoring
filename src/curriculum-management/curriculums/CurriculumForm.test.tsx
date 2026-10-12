@@ -88,9 +88,8 @@ describe('<CurriculumForm />', () => {
     ]);
     expect(postBody.get('knowledge_check_course_id')).toEqual('course-v1:Uber+DRVKC1+2026_Q4');
     expect(postBody.get('knowledge_check_delay_days')).toEqual('15');
-    expect(JSON.parse(postBody.get('badges') as string)).toEqual({
-      complete: null, retained: rawBadges[1].uuid,
-    });
+    expect(postBody.has('badges.complete')).toBe(false);
+    expect(postBody.get('badges.retained')).toEqual(rawBadges[1].uuid);
     expect(mockShowToast).toHaveBeenCalledWith('Curriculum created');
   });
 
@@ -166,10 +165,9 @@ describe('<CurriculumForm />', () => {
     await user.selectOptions(screen.getByLabelText('Retained badge'), '');
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
-    expect(JSON.parse((axiosMock.history.put[0].data as FormData).get('badges') as string)).toEqual({
-      complete: rawBadges[0].uuid,
-      retained: null,
-    });
+    const putBody = axiosMock.history.put[0].data as FormData;
+    expect(putBody.get('badges.complete')).toEqual(rawBadges[0].uuid);
+    expect(putBody.has('badges.retained')).toBe(false);
   });
 
   it('links to the Badges tab to create a badge', () => {
@@ -288,7 +286,11 @@ describe('<CurriculumForm />', () => {
     fireEvent.drop(screen.getByTestId('curriculum-image-dropzone'), {
       dataTransfer: {
         files: [new File(['<bad>'], 'evil.pdf', { type: 'application/pdf' })],
-        items: [{ kind: 'file', type: 'application/pdf', getAsFile: () => new File(['<bad>'], 'evil.pdf', { type: 'application/pdf' }) }],
+        items: [{
+          kind: 'file',
+          type: 'application/pdf',
+          getAsFile: () => new File(['<bad>'], 'evil.pdf', { type: 'application/pdf' }),
+        }],
         types: ['Files'],
       },
     });

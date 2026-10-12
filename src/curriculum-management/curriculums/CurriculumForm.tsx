@@ -44,7 +44,10 @@ const FORM_ID = 'curriculum-form';
 const useObjectUrl = (file: File | null) => {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
-    if (!file) { setUrl(null); return undefined; }
+    if (!file) {
+      setUrl(null);
+      return undefined;
+    }
     const objectUrl = URL.createObjectURL(file);
     setUrl(objectUrl);
     return () => URL.revokeObjectURL(objectUrl);
@@ -62,7 +65,12 @@ interface CurriculumImageFieldProps {
 }
 
 const CurriculumImageField = ({
-  curriculum, image, removeImage, error, onPick, onRemove,
+  curriculum,
+  image,
+  removeImage,
+  error,
+  onPick,
+  onRemove,
 }: CurriculumImageFieldProps) => {
   const intl = useIntl();
   const previewUrl = useObjectUrl(image);

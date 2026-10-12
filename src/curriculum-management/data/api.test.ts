@@ -90,7 +90,8 @@ describe('curriculum-management api', () => {
     const body = axiosMock.history.post[0].data as FormData;
     expect(body.get('title')).toEqual('T');
     expect(body.get('course_ids')).toEqual('course-v1:A+B+C');
-    expect(JSON.parse(body.get('badges') as string)).toEqual({ complete: 'b-1', retained: null });
+    expect(body.get('badges.complete')).toEqual('b-1');
+    expect(body.has('badges.retained')).toBe(false);
     expect(body.has('image')).toBe(false);
     expect(body.has('remove_image')).toBe(false);
   });

@@ -75,11 +75,12 @@ const toCurriculumFormData = (data: CurriculumWriteData): FormData => {
   data.courseIds.forEach((id) => formData.append('course_ids', id));
   formData.append('knowledge_check_course_id', data.knowledgeCheckCourseId);
   formData.append('knowledge_check_delay_days', String(data.knowledgeCheckDelayDays));
-  // DRF's DictField doesn't parse multipart key-per-slot; send as a JSON string instead.
-  formData.append('badges', JSON.stringify({
-    complete: data.badges.complete ?? null,
-    retained: data.badges.retained ?? null,
-  }));
+  // DRF's DictField reads multipart as badges.<slot>; send one key per slot (only when a value is set).
+  const BADGE_SLOTS = ['complete', 'retained'] as const;
+  BADGE_SLOTS.forEach((slot) => {
+    const id = (data.badges as Record<string, string | null | undefined>)?.[slot];
+    if (id) { formData.append(`badges.${slot}`, id); }
+  });
   return formData;
 };
 
