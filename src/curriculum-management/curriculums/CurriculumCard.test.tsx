@@ -1,6 +1,6 @@
 import { camelCaseObject } from '@edx/frontend-platform';
 import userEvent from '@testing-library/user-event';
-import { initializeMocks, render, screen } from '@src/testUtils';
+import { initializeMocks, render, screen, waitFor } from '@src/testUtils';
 import { rawCurriculums } from '../__mocks__/fixtures';
 import { apiUrls } from '../data/api';
 import type { Curriculum } from '../types';
@@ -93,5 +93,40 @@ describe('<CurriculumCard />', () => {
     await user.click(await screen.findByRole('button', { name: 'Delete' }));
     expect(await screen.findByText('This curriculum is assigned to 3 learners, so it can\'t be deleted.'))
       .toBeInTheDocument();
+  });
+  it('copies the curriculum UUID and confirms with a toast', async () => {
+    const { mockShowToast } = initializeMocks();
+    // userEvent.setup() installs a stub clipboard, so spy on it.
+    const user = userEvent.setup();
+    const writeText = jest.spyOn(navigator.clipboard, 'writeText');
+    render(<CurriculumCard curriculum={curriculum} onEdit={jest.fn()} />);
+    await user.click(screen.getByRole('button', { name: 'Copy curriculum ID' }));
+    expect(writeText).toHaveBeenCalledWith('cur-1');
+    expect(mockShowToast).toHaveBeenCalledWith('Curriculum ID copied');
+  });
+
+  it.each([
+    [true, 'Curriculum ID copied'],
+    [false, 'Could not copy the curriculum ID'],
+  ])('falls back to execCommand without the Clipboard API (plain-http Studio): copy=%s', async (ok, toast) => {
+    const { mockShowToast } = initializeMocks();
+    const user = userEvent.setup();
+    const clipboard = jest.spyOn(navigator, 'clipboard', 'get').mockReturnValue(undefined as unknown as Clipboard);
+    const { execCommand } = document;
+    // Browsers focus the textarea on select(); jsdom doesn't, so do it here.
+    document.execCommand = jest.fn(() => {
+      document.querySelector('textarea')?.focus();
+      return ok;
+    });
+    render(<CurriculumCard curriculum={curriculum} onEdit={jest.fn()} />);
+    const button = screen.getByRole('button', { name: 'Copy curriculum ID' });
+    await user.click(button);
+    await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith(toast));
+    expect(document.execCommand).toHaveBeenCalledWith('copy');
+    // The temporary textarea is gone and keyboard focus is back on the button.
+    expect(document.querySelector('textarea')).toBeNull();
+    expect(button).toHaveFocus();
+    document.execCommand = execCommand;
+    clipboard.mockRestore();
   });
 });

@@ -26,6 +26,7 @@ import { HelpSidebar } from '../generic/help-sidebar';
 import { BADGES_PATH, CURRICULUM_MANAGEMENT_PATH } from './constants';
 import { useBadges, useCurriculums, useCurriculumManagementStatus } from './data/apiHooks';
 import ConfirmNavigationModal from './ConfirmNavigationModal';
+import StudioHomeNav from './StudioHomeNav';
 import type { CurriculumManagementOutletContext, FormTarget, ManagementSection } from './types';
 import messages from './messages';
 import './CurriculumManagement.scss';
@@ -183,7 +184,7 @@ const ManagementPageLayout = () => {
   };
 
   return (
-    <div className="bg-light-400 curriculum-management">
+    <div className="curriculum-management">
       <Header isHiddenMainMenu />
       <Container size="xl" className="px-4 py-5">
         <SubHeader
@@ -191,6 +192,7 @@ const ManagementPageLayout = () => {
           headerActions={canCreate ? newButton : null}
           hideBorder
         />
+        {status.enabled && <StudioHomeNav />}
         {renderBody()}
       </Container>
       <StudioFooterSlot />

@@ -40,11 +40,15 @@ describe('<CurriculumsPage />', () => {
     expect(screen.getByTestId('curriculum-form')).toHaveTextContent('new');
   });
 
-  it('expands the only curriculum and opens the edit form over the list', async () => {
+  it('keeps even the only curriculum collapsed, and opens the edit form over the list', async () => {
     const { axiosMock } = initializeMocks();
     axiosMock.onGet(apiUrls.curriculumsPage(1)).reply(200, page(rawCurriculums));
     renderPage();
-    expect(await screen.findByText('Courses, in learner order')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /^new driver essentials/i })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    expect(screen.queryByText('Courses, in learner order')).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Edit New driver essentials' }));
     expect(screen.getByTestId('curriculum-form')).toHaveTextContent('edit:cur-1');
     // The form is a modal: the card stays in the list underneath.

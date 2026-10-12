@@ -10,9 +10,11 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@src/testUtils';
 import userEvent from '@testing-library/user-event';
 import { page, rawStatus } from './__mocks__/fixtures';
+import { getStudioHomeApiUrl } from '@src/studio-home/data/api';
 import { apiUrls } from './data/api';
 import ManagementPageLayout from './ManagementPageLayout';
 import type { CurriculumManagementOutletContext } from './types';
@@ -176,5 +178,21 @@ describe('<ManagementPageLayout />', () => {
     expect(await screen.findByTestId('badges-page')).toBeInTheDocument();
     expect(rendered['badges-page']).toEqual(expect.arrayContaining(['null']));
     expect(rendered['badges-page']).not.toContain('new');
+  });
+  it('shows the Studio home tabs, with Curriculum Management active on both sub-tabs', async () => {
+    axiosMock.onGet(apiUrls.status()).reply(200, rawStatus());
+    axiosMock.onGet(getStudioHomeApiUrl()).reply(200, { libraries_v1_enabled: true, libraries_v2_enabled: true });
+    renderLayout(BADGES);
+    const homeNav = await screen.findByRole('navigation', { name: 'Studio home sections' });
+    expect(await within(homeNav).findByRole('link', { name: 'Legacy Libraries' })).toHaveAttribute(
+      'href',
+      '/libraries-v1',
+    );
+    expect(within(homeNav).getByRole('link', { name: 'Courses' })).toHaveAttribute('href', '/home');
+    expect(within(homeNav).getByRole('link', { name: 'Libraries' })).toHaveAttribute('href', '/libraries');
+    expect(within(homeNav).getByRole('link', { name: 'Curriculum Management' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
   });
 });

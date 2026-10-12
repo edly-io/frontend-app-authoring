@@ -43,7 +43,6 @@ const CurriculumsPage = () => {
         <CurriculumCard
           key={curriculum.uuid}
           curriculum={curriculum}
-          defaultExpanded={list.length === 1}
           onEdit={() => setFormTarget(curriculum.uuid)}
         />
       ))}

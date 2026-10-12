@@ -26,10 +26,11 @@ import { useDeleteCurriculum } from '../data/apiHooks';
 import type { CourseRef, Curriculum } from '../types';
 import { slotMessages } from '../utils';
 import messages from '../messages';
+import CopyIdButton from '../CopyIdButton';
 
 interface CurriculumCardProps {
   curriculum: Curriculum;
-  defaultExpanded: boolean;
+  defaultExpanded?: boolean;
   onEdit: () => void;
 }
 
@@ -44,7 +45,7 @@ const CourseLine = ({ course }: { course: CourseRef; }) => {
   );
 };
 
-const CurriculumCard = ({ curriculum, defaultExpanded, onEdit }: CurriculumCardProps) => {
+const CurriculumCard = ({ curriculum, defaultExpanded = false, onEdit }: CurriculumCardProps) => {
   const intl = useIntl();
   const { showToast } = useToastContext();
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
@@ -112,6 +113,8 @@ const CurriculumCard = ({ curriculum, defaultExpanded, onEdit }: CurriculumCardP
           </Stack>
         </Button>
         <ActionRow className="ml-auto d-flex">
+          {/* Outside the toggle: a button can't nest inside another button. */}
+          <CopyIdButton value={curriculum.uuid} entity="curriculum" />
           <IconButtonWithTooltip
             tooltipContent={intl.formatMessage(messages.edit)}
             alt={intl.formatMessage(messages.editAria, { title: curriculum.title })}

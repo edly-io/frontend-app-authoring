@@ -28,7 +28,7 @@ import { useDeleteBadge } from '../data/apiHooks';
 import type { Badge, CourseRef, SlotKey } from '../types';
 import { kindMessages, slotMessages } from '../utils';
 import messages from '../messages';
-import CopyIdButton from './CopyIdButton';
+import CopyIdButton from '../CopyIdButton';
 
 interface BadgeCardProps {
   badge: Badge;
@@ -148,7 +148,7 @@ const BadgeCard = ({ badge, defaultExpanded, onEdit }: BadgeCardProps) => {
         </Button>
         <ActionRow className="ml-auto d-flex">
           {/* Outside the toggle: a button can't nest inside another button. */}
-          <CopyIdButton value={badge.uuid} />
+          <CopyIdButton value={badge.uuid} entity="badge" />
           <IconButtonWithTooltip
             tooltipContent={intl.formatMessage(messages.edit)}
             alt={intl.formatMessage(messages.editAria, { title: badge.title })}

@@ -28,7 +28,7 @@ import messages from '../messages';
 import CoursePicker from '../curriculums/CoursePicker';
 import type { CourseItem } from '../curriculums/CourseOrderList';
 import BadgeCourseList from './BadgeCourseList';
-import CopyIdButton from './CopyIdButton';
+import CopyIdButton from '../CopyIdButton';
 
 const FORM_ID = 'badge-form';
 
@@ -176,7 +176,7 @@ const BadgeForm = ({
                       </span>
                       <span className="d-inline-flex align-items-center x-small text-gray-500 text-break">
                         {badge.uuid}
-                        <CopyIdButton value={badge.uuid} />
+                        <CopyIdButton value={badge.uuid} entity="badge" />
                       </span>
                     </div>
                   )}
