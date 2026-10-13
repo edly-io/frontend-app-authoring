@@ -26,6 +26,12 @@ const messages = defineMessages({
   schemeTotalLabel: { id: 'programs.scheme.scheme-total.label', defaultMessage: 'Scheme total' },
   balancedCaption: { id: 'programs.scheme.balanced-caption', defaultMessage: 'Balanced' },
   unbalancedCaption: { id: 'programs.scheme.unbalanced-caption', defaultMessage: 'Unbalanced' },
+  scoringLockTitle: { id: 'programs.scheme.scoring-lock.title', defaultMessage: 'Scoring locks the scheme.' },
+  scoringLockBody: {
+    id: 'programs.scheme.scoring-lock.body',
+    defaultMessage: 'Once any trainee is scored, the scheme can no longer be unpublished or edited. '
+      + 'Check sections and max marks before scoring starts.',
+  },
 });
 
 interface SchemeSummaryPanelProps {
@@ -34,6 +40,8 @@ interface SchemeSummaryPanelProps {
   targetTotal: number;
   grandTotal: number;
   isBalanced: boolean;
+  /** Warns that scoring freezes the scheme: the backend refuses to unpublish once any score exists. */
+  showScoringLockNotice?: boolean;
 }
 
 interface StatusContent {
@@ -45,7 +53,7 @@ interface StatusContent {
 }
 
 const SchemeSummaryPanel: React.FC<SchemeSummaryPanelProps> = ({
-  sections, sectionTotals, targetTotal, grandTotal, isBalanced,
+  sections, sectionTotals, targetTotal, grandTotal, isBalanced, showScoringLockNotice = false,
 }) => {
   const intl = useIntl();
   const balanceDifference = targetTotal - grandTotal;
@@ -147,6 +155,24 @@ const SchemeSummaryPanel: React.FC<SchemeSummaryPanelProps> = ({
           )}
         </Card.Body>
       </Card>
+
+      {showScoringLockNotice && (
+        <Alert variant="warning" className="mb-0">
+          <div className="d-flex align-items-center">
+            <span
+              aria-hidden="true"
+              className="grade-scheme-alert-icon rounded-circle bg-warning-200 text-warning-800 d-flex align-items-center justify-content-center flex-shrink-0 mr-3"
+            >
+              <Icon src={Warning} />
+            </span>
+            <div className="line-height-20">
+              <strong>{intl.formatMessage(messages.scoringLockTitle)}</strong>
+              {' '}
+              {intl.formatMessage(messages.scoringLockBody)}
+            </div>
+          </div>
+        </Alert>
+      )}
     </Stack>
   );
 };

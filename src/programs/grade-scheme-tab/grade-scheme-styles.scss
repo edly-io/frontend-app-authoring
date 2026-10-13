@@ -15,8 +15,13 @@
   .grade-scheme-footer  {
     position: sticky;
     bottom: 0;
-    z-index: 9999;
+    z-index: 1030;
   }
+}
+
+.grade-scheme-alert-icon {
+  width: 2.5rem;
+  height: 2.5rem;
 }
 
 .grade-scheme-module_popup_list {
