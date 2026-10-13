@@ -63,7 +63,7 @@ const messages = defineMessages({
   },
   modalEmpty: {
     id: 'course-authoring.schedule-section.instructor-access.modal.empty',
-    defaultMessage: 'No instructor profiles exist yet. Create one from the Instructors screen on Studio Home first.',
+    defaultMessage: 'No instructor profiles to show. Search by name to find profiles that are not linked to any course, or create one from the Instructors screen on Studio Home.',
   },
 });
 
