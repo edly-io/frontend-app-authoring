@@ -472,7 +472,10 @@ const ProgramDetailPage: React.FC = () => {
                         isInvalid={formik.touched.city && !!formik.errors.city}
                         className="mb-4"
                       >
-                        <Form.Label>{intl.formatMessage(messages.fieldCity)}{isSuperAdmin && <RequiredMark />}</Form.Label>
+                        <Form.Label>
+                          {intl.formatMessage(messages.fieldCity)}
+                          {isSuperAdmin && <RequiredMark />}
+                        </Form.Label>
                         <Form.Control
                           as="select"
                           name="city"

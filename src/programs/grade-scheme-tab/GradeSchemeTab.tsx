@@ -341,6 +341,7 @@ const GradeSchemeTab: React.FC<GradeSchemeTabProps> = ({ program, programId = ''
             targetTotal={draft.targetTotal}
             grandTotal={grandTotal}
             isBalanced={isBalanced}
+            showScoringLockNotice={canManage}
           />
         </Col>
       </Row>
