@@ -125,6 +125,9 @@ export const useLinkInstructorToCourse = () => {
     ),
     onSuccess: (_, { courseId }) => {
       queryClient.invalidateQueries({ queryKey: ['courseInstructors', courseId] });
+      // Linking or unlinking changes which org an instructor belongs to, and
+      // so whether the list returns it by default, not only when searching.
+      queryClient.invalidateQueries({ queryKey: ['instructors'] });
     },
   });
 };
@@ -137,6 +140,9 @@ export const useUnlinkInstructorFromCourse = () => {
     ),
     onSuccess: (_, { courseId }) => {
       queryClient.invalidateQueries({ queryKey: ['courseInstructors', courseId] });
+      // Linking or unlinking changes which org an instructor belongs to, and
+      // so whether the list returns it by default, not only when searching.
+      queryClient.invalidateQueries({ queryKey: ['instructors'] });
     },
   });
 };
