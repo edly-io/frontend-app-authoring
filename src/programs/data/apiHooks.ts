@@ -41,6 +41,7 @@ import {
   getCertificateRoster,
   awardCertificates,
   revokeCertificate,
+  type CertificatePreviewInput,
   type GetCoursesParams,
   type GetInstructorsParams,
   type GetLearnersParams,
@@ -465,7 +466,7 @@ export const useUploadCertificateSignature = (programId: string) => useMutation(
  */
 export const useCertificatePreview = (
   programId: string,
-  input: { config: CertificateConfig; traineeName: string; issuedAt?: string },
+  input: CertificatePreviewInput,
   enabled = true,
 ) => useQuery({
   queryKey: ['certificatePreview', programId, input],

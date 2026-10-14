@@ -25,11 +25,16 @@ jest.mock('@src/programs/data/apiHooks', () => ({
 
 const programId = 'prog-key-1';
 
-const renderPanel = () => render(
-  <CertificateConfigPanel programId={programId} />,
+const renderPanel = (issuedCount = 0) => render(
+  <CertificateConfigPanel programId={programId} issuedCount={issuedCount} />,
 );
 
 const pngFile = (name = 'sig.png', sizeBytes = 1024) => new File([new Uint8Array(sizeBytes)], name, { type: 'image/png' });
+
+const changeIssuer = (value: string) => fireEvent.change(
+  screen.getByLabelText(/Issued by/i),
+  { target: { value } },
+);
 
 const getSignatureInputs = () => document.querySelectorAll<HTMLInputElement>('.certificate-signatory-signature__input');
 
@@ -118,10 +123,18 @@ describe('<CertificateConfigPanel />', () => {
 
   it('saves the issuing authority and signatories', () => {
     renderPanel();
+    changeIssuer('Directorate of Training (Direct Taxes), FBR');
     fireEvent.click(screen.getByRole('button', { name: /^Save settings$/i }));
     expect(mockUpdateConfigMutate).toHaveBeenCalledWith(
-      { issuedBy: 'Directorate of Training', signatories: [{ name: 'A. Director', title: 'DG' }] },
+      { issuedBy: 'Directorate of Training (Direct Taxes), FBR', signatories: [{ name: 'A. Director', title: 'DG' }] },
     );
+  });
+
+  it('keeps Save disabled until a setting changes', () => {
+    renderPanel(3);
+    expect(screen.getByRole('button', { name: /^Save settings$/i })).toBeDisabled();
+    changeIssuer('New Authority');
+    expect(screen.getByRole('button', { name: /^Save settings$/i })).not.toBeDisabled();
   });
 
   it('shows a spinner and disables the button while saving', () => {
@@ -148,5 +161,44 @@ describe('<CertificateConfigPanel />', () => {
     });
     renderPanel();
     expect(screen.getByText('Could not save certificate settings. Please try again.')).toBeInTheDocument();
+  });
+
+  describe('when certificates are already issued', () => {
+    const saveButton = () => screen.getByRole('button', { name: /Save settings/i });
+
+    it('asks for confirmation before saving, since every certificate follows the settings', () => {
+      renderPanel(3);
+      changeIssuer('New Authority');
+      fireEvent.click(saveButton());
+
+      const dialog = screen.getByRole('dialog');
+      expect(dialog).toHaveTextContent(/Apply changes to issued certificates\?/i);
+      expect(dialog).toHaveTextContent(/3 issued certificates/i);
+      expect(mockUpdateConfigMutate).not.toHaveBeenCalled();
+
+      fireEvent.click(screen.getByRole('button', { name: /^Save and apply$/i }));
+      expect(mockUpdateConfigMutate).toHaveBeenCalledWith({
+        issuedBy: 'New Authority',
+        signatories: [{ name: 'A. Director', title: 'DG' }],
+      });
+    });
+
+    it('does not save when the admin cancels', () => {
+      renderPanel(3);
+      changeIssuer('New Authority');
+      fireEvent.click(saveButton());
+      fireEvent.click(screen.getByRole('button', { name: /^Cancel$/i }));
+
+      expect(mockUpdateConfigMutate).not.toHaveBeenCalled();
+    });
+
+    it('saves straight away when no certificate has been issued', () => {
+      renderPanel(0);
+      changeIssuer('New Authority');
+      fireEvent.click(saveButton());
+
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(mockUpdateConfigMutate).toHaveBeenCalled();
+    });
   });
 });
