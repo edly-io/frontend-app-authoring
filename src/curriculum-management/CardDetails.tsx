@@ -5,14 +5,14 @@ import { Badge } from '@openedx/paragon';
 import type { CourseRef } from './types';
 import messages from './messages';
 
-/**
- * Expanded body of a curriculum or badge card: optional muted description, then the label/value
- * rows. Labels sit in their own column on wide screens and stack above the value on narrow ones.
- */
 /** A description that only repeats the title adds nothing, so it isn't shown. */
 const isUseful = (description?: string, title?: string) =>
   !!description?.trim() && description.trim().toLowerCase() !== (title ?? '').trim().toLowerCase();
 
+/**
+ * Expanded body of a curriculum or badge card: optional muted description, then the label/value
+ * rows. Labels sit in their own column on wide screens and stack above the value on narrow ones.
+ */
 export const CardDetails = (
   { description, title, children }: { description?: string; title?: string; children: ReactNode; },
 ) => (

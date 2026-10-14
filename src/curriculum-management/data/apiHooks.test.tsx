@@ -1,3 +1,4 @@
+import { focusManager } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { initializeMocks, makeWrapper } from '@src/testUtils';
 import {
@@ -87,16 +88,35 @@ describe('curriculum-management apiHooks', () => {
     expect(spy).toHaveBeenCalledWith({ queryKey: curriculumQueryKeys.curriculums() });
     expect(spy).toHaveBeenCalledWith({ queryKey: curriculumQueryKeys.badges() });
     expect(spy).not.toHaveBeenCalledWith({ queryKey: curriculumQueryKeys.status() });
+    expect(spy).not.toHaveBeenCalledWith({ queryKey: [...curriculumQueryKeys.all, 'courseSearch'] });
   });
 
-  it('a badge mutation invalidates both lists too', async () => {
+  it('a badge mutation invalidates both lists and cached course searches (they embed course.badge)', async () => {
     const { axiosMock, queryClient } = initializeMocks();
     const spy = jest.spyOn(queryClient, 'invalidateQueries');
+    queryClient.setQueryData(curriculumQueryKeys.courseSearch('road'), []);
     axiosMock.onDelete(apiUrls.badge('b1')).reply(204);
     const { result } = renderHook(() => useDeleteBadge(), { wrapper: makeWrapper() });
     await result.current.mutateAsync('b1');
     expect(spy).toHaveBeenCalledWith({ queryKey: curriculumQueryKeys.curriculums() });
     expect(spy).toHaveBeenCalledWith({ queryKey: curriculumQueryKeys.badges() });
+    expect(queryClient.getQueryState(curriculumQueryKeys.courseSearch('road'))?.isInvalidated).toBe(true);
+  });
+
+  it('useBadges refetches on window focus even while its data is fresh (app staleTime is 1h)', async () => {
+    const { axiosMock, queryClient } = initializeMocks();
+    queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, staleTime: 60 * 60_000 } });
+    axiosMock.onGet(apiUrls.badgesPage(1)).reply(200, page(rawBadges));
+    const { result } = renderHook(() => useBadges(), { wrapper: makeWrapper() });
+    await waitFor(() => expect(result.current.data).toHaveLength(4));
+    const fetches = () => axiosMock.history.get.filter((r) => r.url === apiUrls.badgesPage(1)).length;
+    expect(fetches()).toBe(1);
+    act(() => {
+      focusManager.setFocused(false);
+      focusManager.setFocused(true);
+    });
+    await waitFor(() => expect(fetches()).toBe(2));
+    focusManager.setFocused(undefined);
   });
 
   it('a failed badge delete does not refetch the lists', async () => {

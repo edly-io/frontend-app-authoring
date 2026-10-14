@@ -60,7 +60,8 @@ export const useBadges = () =>
     queryFn: api.getAllBadges,
     retry: retryUnlessClientError,
     // Badges are often created in another tab while a curriculum form is open; pick them up on return.
-    refetchOnWindowFocus: true,
+    // 'always', not true: the app's QueryClient keeps data fresh for an hour, and true skips fresh data.
+    refetchOnWindowFocus: 'always',
   });
 
 /** Typeahead: first page only; no request for a blank term. */
@@ -77,16 +78,20 @@ export const useCourseSearch = (term: string) => {
 
 /**
  * Curriculums embed badge summaries and badges embed linked_curriculums, so every
- * mutation refreshes both lists. `status` is deliberately left alone.
+ * mutation refreshes both lists. Course search results embed each course's badge, so badge
+ * mutations (`withCourseSearch`) also refresh every cached search. `status` is deliberately left alone.
  * Returns the refetch promise so `mutateAsync` resolves only once the lists are fresh: callers
  * close their form straight after it, and must not flash a stale card or the empty state.
  */
-const useInvalidateLists = () => {
+const useInvalidateLists = ({ withCourseSearch = false } = {}) => {
   const queryClient = useQueryClient();
   return () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: curriculumQueryKeys.curriculums() }),
       queryClient.invalidateQueries({ queryKey: curriculumQueryKeys.badges() }),
+      ...(withCourseSearch
+        ? [queryClient.invalidateQueries({ queryKey: [...curriculumQueryKeys.all, 'courseSearch'] })]
+        : []),
     ]);
 };
 
@@ -115,7 +120,7 @@ export const useDeleteCurriculum = () => {
 };
 
 export const useCreateBadge = () => {
-  const invalidate = useInvalidateLists();
+  const invalidate = useInvalidateLists({ withCourseSearch: true });
   return useMutation({
     mutationFn: (data: BadgeWriteData) => api.createBadge(data),
     onSuccess: invalidate,
@@ -123,7 +128,7 @@ export const useCreateBadge = () => {
 };
 
 export const useUpdateBadge = () => {
-  const invalidate = useInvalidateLists();
+  const invalidate = useInvalidateLists({ withCourseSearch: true });
   return useMutation({
     mutationFn: ({ uuid, data }: { uuid: string; data: BadgeWriteData; }) => api.updateBadge(uuid, data),
     onSuccess: invalidate,
@@ -131,7 +136,7 @@ export const useUpdateBadge = () => {
 };
 
 export const useDeleteBadge = () => {
-  const invalidate = useInvalidateLists();
+  const invalidate = useInvalidateLists({ withCourseSearch: true });
   return useMutation({
     mutationFn: (uuid: string) => api.deleteBadge(uuid),
     onSuccess: invalidate,

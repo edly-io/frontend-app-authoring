@@ -23,6 +23,8 @@ describe('<BadgeSlotSelect />', () => {
     );
     const toggle = screen.getByLabelText(/Complete badge/);
     expect(toggle).toHaveAccessibleName('Complete badge No badge');
+    // The visible label points at the toggle (no orphan <label>).
+    expect(screen.getByText('Complete badge', { selector: 'label' })).toHaveAttribute('for', toggle.id);
     await userEvent.click(toggle);
     const items = screen.getAllByRole('button').filter((el) => el.classList.contains('dropdown-item'));
     expect(items[0]).toHaveTextContent('No badge');

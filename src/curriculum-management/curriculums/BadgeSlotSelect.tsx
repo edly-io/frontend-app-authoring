@@ -37,6 +37,7 @@ const BadgeSlotSelect = ({
   const slotLabel = intl.formatMessage(slotMessages[slot].label);
   const baseId = `curriculum-badge-slot-${slot}`;
   const labelId = `${baseId}-label`;
+  const valueId = `${baseId}-value`;
   const ruleId = `${baseId}-rule`;
   const lockedId = `${baseId}-locked`;
   const errorId = `${baseId}-error`;
@@ -66,7 +67,7 @@ const BadgeSlotSelect = ({
   };
 
   return (
-    <Form.Group isInvalid={!!error}>
+    <Form.Group controlId={baseId} isInvalid={!!error}>
       <Form.Label id={labelId}>{intl.formatMessage(messages.slotSelectLabel, { slot: slotLabel })}</Form.Label>
       <Dropdown
         className="curriculum-management-slot-dropdown"
@@ -76,8 +77,9 @@ const BadgeSlotSelect = ({
           id={baseId}
           as="button"
           type="button"
-          // Label first, then the toggle's own text, so screen readers announce "Complete badge, Road ready".
-          aria-labelledby={`${labelId} ${baseId}`}
+          // Label first, then the chosen value, so screen readers announce "Complete badge, Road ready".
+          // The value span, not the toggle itself: the toggle has a <label for>, which would replace its own text.
+          aria-labelledby={`${labelId} ${valueId}`}
           aria-describedby={describedBy}
           aria-invalid={!!error || undefined}
           disabled={locked}
@@ -88,7 +90,7 @@ const BadgeSlotSelect = ({
           {selected?.imageUrl && (
             <Image src={selected.imageUrl} alt="" className="curriculum-management-slot-option-image mr-2" />
           )}
-          <span className="flex-grow-1 text-truncate curriculum-management-min-width-0">
+          <span id={valueId} className="flex-grow-1 text-truncate curriculum-management-min-width-0">
             {selected ? selected.title : noBadge}
           </span>
         </Dropdown.Toggle>
