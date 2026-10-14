@@ -49,6 +49,12 @@ const toProgram = (d: any): Program => ({
   endDate: d.end_date ?? '',
   image: d.card_image ?? '',
   courses: d.courses?.map(toCourse) ?? [],
+  pricingCategory: d.pricing_category || 'is_free',
+  regularPrice: d.regular_price ?? null,
+  salePrice: d.sale_price ?? null,
+  discountPercentage: d.discount_percentage ?? null,
+  currency: d.currency ?? 'SAR',
+  canEnrollLearners: d.can_enroll_learners ?? true,
 });
 
 // ── Config — GET /rwaq/api/programs/config/ ───────────────────────────────────
@@ -152,6 +158,11 @@ export const updateProgram = async (
   if (data.isFeatured !== undefined) { formData.append('is_featured', String(data.isFeatured)); }
   if (data.startDate !== undefined) { formData.append('start_date', data.startDate ?? ''); }
   if (data.endDate !== undefined) { formData.append('end_date', data.endDate ?? ''); }
+  if (data.pricingCategory !== undefined) { formData.append('pricing_category', data.pricingCategory ?? ''); }
+  // Multipart cannot carry a real null, so a cleared money field is sent as ''.
+  // DRF reads '' as null for these nullable fields, which clears the value.
+  if (data.regularPrice !== undefined) { formData.append('regular_price', data.regularPrice ?? ''); }
+  if (data.salePrice !== undefined) { formData.append('sale_price', data.salePrice ?? ''); }
 
   if (imageFile) { formData.append('card_image', imageFile); }
 
@@ -170,6 +181,8 @@ export interface GetCoursesParams {
   page?: number;
   search?: string;
   org?: string;
+  /** Only courses that can be added to a program: Program-only and in no program yet. */
+  linkable?: boolean;
 }
 
 export const getCourses = async (params: GetCoursesParams = {}): Promise<PaginatedCourses> => {
@@ -182,6 +195,7 @@ export const getCourses = async (params: GetCoursesParams = {}): Promise<Paginat
         page_size: pageSize,
         ...(params.search ? { search: params.search } : {}),
         ...(params.org ? { org: params.org } : {}),
+        ...(params.linkable ? { linkable: 'true' } : {}),
       },
     },
   );
@@ -285,18 +299,11 @@ export const getProgramEnrollments = async (
 };
 
 // ── Enroll learner in program — POST /rwaq/api/programs/<key>/learners/ ────────
-export const enrollLearnerInProgram = async (programId: string, username: string): Promise<void> => {
+// reason is kept on the 0-price order recorded when a superadmin enrolls a learner into a paid program.
+export const enrollLearnerInProgram = async (programId: string, username: string, reason = ''): Promise<void> => {
   await getAuthenticatedHttpClient().post(
     `${getProgramsBaseUrl()}/${programId}/learners/`,
-    { username },
-  );
-};
-
-// ── Unenroll learner — DELETE /rwaq/api/programs/<key>/learners/?username=... ──
-export const unenrollLearnerFromProgram = async (programId: string, username: string): Promise<void> => {
-  await getAuthenticatedHttpClient().delete(
-    `${getProgramsBaseUrl()}/${programId}/learners/`,
-    { params: { username } },
+    { username, reason },
   );
 };
 
@@ -306,4 +313,11 @@ export const removeCourseFromProgram = async (programId: string, courseId: strin
     `${getProgramsBaseUrl()}/${programId}/courses/`,
     { params: { course_id: courseId } },
   );
+};
+
+// ── Error body: { detail: "..." } from a rejected request ─────────────────────
+/** The backend's `detail` message of a failed request, or null when there is none. */
+export const getApiErrorDetail = (err: unknown): string | null => {
+  const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+  return typeof detail === 'string' && detail ? detail : null;
 };

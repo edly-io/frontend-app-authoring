@@ -11,6 +11,7 @@ import { fetchStudioHomeData } from '../../../data/thunks';
 import { LoadingSpinner } from '../../../../generic/Loading';
 import CoursesTypesFilterMenu from './courses-types-filter-menu';
 import CoursesOrderFilterMenu from './courses-order-filter-menu';
+import CoursesPricingFilterMenu from './courses-pricing-filter-menu';
 import './index.scss';
 import messages from './messages';
 
@@ -31,6 +32,7 @@ const CoursesFilters = ({
     search,
     activeOnly,
     archivedOnly,
+    courseType,
     cleanFilters,
   } = studioHomeCoursesParams;
   const [inputSearchValue, setInputSearchValue] = useState('');
@@ -41,6 +43,12 @@ const CoursesFilters = ({
     archivedCourses: { ...baseFilters, archivedOnly: true, activeOnly: undefined },
     activeCourses: { ...baseFilters, activeOnly: true, archivedOnly: undefined },
     allCourses: { ...baseFilters, archivedOnly: undefined, activeOnly: undefined },
+    // Sent as ?course_type=; undefined leaves the param out.
+    allPricingTypes: { ...baseFilters, courseType: undefined },
+    freeCourses: { ...baseFilters, courseType: 'free' },
+    paidCourses: { ...baseFilters, courseType: 'paid' },
+    programOnlyCourses: { ...baseFilters, courseType: 'program_only' },
+    noTypeCourses: { ...baseFilters, courseType: 'none' },
     azCourses: { ...baseFilters, order: 'display_name' },
     zaCourses: { ...baseFilters, order: '-display_name' },
     newestCourses: { ...baseFilters, order: '-created' },
@@ -55,6 +63,7 @@ const CoursesFilters = ({
       isFiltered: true,
       archivedOnly,
       activeOnly,
+      courseType,
       cleanFilters: false,
     };
 
@@ -79,6 +88,7 @@ const CoursesFilters = ({
       search: valueFormatted.length > 0 ? valueFormatted : '',
       activeOnly,
       archivedOnly,
+      courseType,
       order,
     };
     const hasOnlySpaces = regexOnlyWhiteSpaces.test(searchValueDebounced);
@@ -99,7 +109,7 @@ const CoursesFilters = ({
 
   const handleSearchCoursesDebounced = useCallback(
     debounce((value) => handleSearchCourses(value), 400),
-    [activeOnly, archivedOnly, order, inputSearchValue],
+    [activeOnly, archivedOnly, courseType, order, inputSearchValue],
   );
 
   return (
@@ -121,6 +131,7 @@ const CoursesFilters = ({
       </div>
 
       <CoursesTypesFilterMenu onItemMenuSelected={handleMenuFilterItemSelected} />
+      <CoursesPricingFilterMenu onItemMenuSelected={handleMenuFilterItemSelected} />
       <CoursesOrderFilterMenu onItemMenuSelected={handleMenuFilterItemSelected} />
     </div>
   );

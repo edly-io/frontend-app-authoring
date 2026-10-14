@@ -67,7 +67,26 @@ describe('<AddLearnerModal />', () => {
     await waitFor(() => expect(mockEnrollMutate).toHaveBeenCalledWith({
       programId: 'prog-key-1',
       username: 'student.alice',
+      reason: '',
     }));
+  });
+
+  it('sends the reason with the enrollment', async () => {
+    render(<AddLearnerModal {...defaultProps} />);
+    fireEvent.change(screen.getByLabelText(/Reason/i), { target: { value: '  Scholarship ' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Enroll$/i }));
+    await waitFor(() => expect(mockEnrollMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: 'Scholarship' }),
+    ));
+  });
+
+  it('shows the server\'s reason when the enrollment is refused', async () => {
+    mockEnrollMutate.mockRejectedValue({
+      response: { data: { detail: 'Only Rwaq admins can enroll learners into a paid program.' } },
+    });
+    render(<AddLearnerModal {...defaultProps} />);
+    fireEvent.click(screen.getByRole('button', { name: /^Enroll$/i }));
+    expect(await screen.findByText(/Only Rwaq admins can enroll/i)).toBeInTheDocument();
   });
 
   it('shows error alert when enrollment fails', async () => {

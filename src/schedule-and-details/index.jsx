@@ -40,6 +40,7 @@ import ScheduleSection from './schedule-section';
 import LearningOutcomesSection from './learning-outcomes-section';
 import InstructorsSection from './instructors-section';
 import InstructorAccessSection from './instructor-access-section';
+import PricingSection from './pricing-section';
 import RequirementsSection from './requirements-section';
 import LicenseSection from './license-section';
 import ScheduleSidebar from './schedule-sidebar';
@@ -337,6 +338,7 @@ const ScheduleAndDetails = ({ courseId }) => {
                   {getConfig().ENABLE_INSTRUCTOR_MANAGEMENT && (
                     <InstructorAccessSection courseId={courseId} />
                   )}
+                  <PricingSection courseId={courseId} />
                 </div>
               </article>
             </Layout.Element>

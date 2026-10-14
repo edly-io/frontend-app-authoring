@@ -11,8 +11,8 @@ import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import { executeThunk } from '../../utils';
 import initializeStore from '../../store';
 import { MODE_STATES } from '../data/constants';
-import { getCertificatesApiUrl, getUpdateCertificateApiUrl } from '../data/api';
-import { fetchCertificates, updateCourseCertificate } from '../data/thunks';
+import { getCertificatesApiUrl } from '../data/api';
+import { fetchCertificates } from '../data/thunks';
 import { certificatesMock, certificatesDataMock } from '../__mocks__';
 import signatoryMessages from '../certificate-signatories/messages';
 import messages from '../messages';
@@ -51,77 +51,16 @@ describe('CertificatesList Component', () => {
     await executeThunk(fetchCertificates(courseId), store.dispatch);
   });
 
-  it('renders each certificate', () => {
-    const { getByText } = renderComponent();
+  it('renders each certificate without signatories, which Rwaq hides in the certificate design', () => {
+    const { getAllByTestId, queryByText, queryByPlaceholderText } = renderComponent();
 
+    expect(getAllByTestId('certificate-details').length).toBe(certificatesMock.length);
     certificatesMock.forEach((certificate) => {
       certificate.signatories.forEach((signatory) => {
-        expect(getByText(signatory.name)).toBeInTheDocument();
-        expect(getByText(signatory.title)).toBeInTheDocument();
-        expect(getByText(signatory.organization)).toBeInTheDocument();
+        expect(queryByText(signatory.name)).not.toBeInTheDocument();
       });
     });
-  });
-
-  it('update certificate', async () => {
-    const user = userEvent.setup();
-    const {
-      getByText, queryByText, getByPlaceholderText, getByRole, getAllByLabelText,
-    } = renderComponent();
-
-    const signatoryNameValue = 'Updated signatory name';
-    const newCertificateData = {
-      ...certificatesDataMock,
-      certificates: [{
-        ...certificatesMock[0],
-        signatories: [{
-          ...certificatesMock[0].signatories[0],
-          name: signatoryNameValue,
-        }],
-      }],
-    };
-
-    const editButtons = getAllByLabelText(messages.editTooltip.defaultMessage);
-
-    await user.click(editButtons[1]);
-
-    const nameInput = getByPlaceholderText(signatoryMessages.namePlaceholder.defaultMessage);
-    await user.clear(nameInput);
-    await user.type(nameInput, signatoryNameValue);
-
-    await user.click(getByRole('button', { name: messages.saveTooltip.defaultMessage }));
-
-    axiosMock
-      .onPost(getUpdateCertificateApiUrl(courseId, certificatesMock.id))
-      .reply(200, newCertificateData);
-    await executeThunk(updateCourseCertificate(courseId, newCertificateData), store.dispatch);
-
-    await waitFor(() => {
-      expect(getByText(newCertificateData.certificates[0].signatories[0].name)).toBeInTheDocument();
-      expect(queryByText(certificatesDataMock.certificates[0].signatories[0].name)).not.toBeInTheDocument();
-    });
-  });
-
-  it('toggle edit signatory', async () => {
-    const user = userEvent.setup();
-    const {
-      getAllByLabelText, queryByPlaceholderText, getByTestId, getByPlaceholderText,
-    } = renderComponent();
-    const editButtons = getAllByLabelText(messages.editTooltip.defaultMessage);
-
-    expect(editButtons.length).toBe(3);
-
-    await user.click(editButtons[1]);
-
-    await waitFor(() => {
-      expect(getByPlaceholderText(signatoryMessages.namePlaceholder.defaultMessage)).toBeInTheDocument();
-    });
-
-    await user.click(within(getByTestId('signatory-form')).getByRole('button', { name: messages.cardCancel.defaultMessage }));
-
-    await waitFor(() => {
-      expect(queryByPlaceholderText(signatoryMessages.namePlaceholder.defaultMessage)).not.toBeInTheDocument();
-    });
+    expect(queryByPlaceholderText(signatoryMessages.namePlaceholder.defaultMessage)).not.toBeInTheDocument();
   });
 
   it('toggle certificate edit all', async () => {

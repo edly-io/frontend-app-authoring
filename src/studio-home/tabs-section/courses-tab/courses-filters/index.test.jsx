@@ -119,6 +119,36 @@ describe('CoursesFilters', () => {
     }));
   });
 
+  it.each([
+    ['free-courses', 'free'],
+    ['paid-courses', 'paid'],
+    ['program-only-courses', 'program_only'],
+    ['no-type-courses', 'none'],
+    ['all-pricing-types', undefined],
+  ])('should fetch courses with the course type of the %s item', (itemId, courseType) => {
+    renderComponent();
+    fireEvent.click(screen.getByTestId('dropdown-toggle-course-pricing-menu'));
+    fireEvent.click(screen.getByTestId(`item-menu-${itemId}`));
+    expect(dispatchMock).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      payload: expect.objectContaining({ courseType, currentPage: 1, isFiltered: true }),
+    }));
+  });
+
+  it('should keep the course type when searching', async () => {
+    useSelector.mockReturnValue({
+      currentPage: 1,
+      order: 'display_name',
+      search: '',
+      courseType: 'paid',
+      cleanFilters: false,
+    });
+    renderComponent();
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'tax' } });
+    await waitFor(() => expect(dispatchMock).toHaveBeenCalledWith(expect.objectContaining({
+      payload: expect.objectContaining({ search: 'tax', courseType: 'paid' }),
+    })));
+  });
+
   it('should handle search input submission', async () => {
     const user = userEvent.setup();
     const handleSubmit = jest.fn();

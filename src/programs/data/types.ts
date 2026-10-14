@@ -32,6 +32,17 @@ export interface Program {
   endDate?: string;
   image?: string;
   courses?: Course[];
+  /** 'is_free' or 'is_paid'. */
+  pricingCategory?: string;
+  /** Decimal strings, not numbers — avoids float rounding on money. */
+  regularPrice?: string | null;
+  salePrice?: string | null;
+  /** Read-only, computed by the backend with 2 decimals (e.g. "25.13"), or null. */
+  discountPercentage?: string | null;
+  /** ISO 4217 code of the regular and sale prices. */
+  currency?: string;
+  /** False when the program is paid and the user is not a superadmin: only they enroll learners into it. */
+  canEnrollLearners?: boolean;
 }
 
 export interface OrgOption {

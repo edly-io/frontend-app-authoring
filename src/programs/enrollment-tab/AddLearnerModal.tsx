@@ -6,6 +6,7 @@ import {
   Alert,
   Badge,
   Button,
+  Form,
   ModalDialog,
   Pagination,
   SearchField,
@@ -13,6 +14,7 @@ import {
 } from '@openedx/paragon';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import { useLearners, useEnrollLearner } from '../data/apiHooks';
+import { getApiErrorDetail } from '../data/api';
 
 const messages = defineMessages({
   title: { id: 'programs.enrollment.modal.title', defaultMessage: 'Enroll Learner in Program' },
@@ -26,6 +28,11 @@ const messages = defineMessages({
   loading: { id: 'programs.enrollment.modal.loading', defaultMessage: 'Loading learners...' },
   enrollError: { id: 'programs.enrollment.modal.enroll-error', defaultMessage: 'Failed to enroll learner. Please try again.' },
   paginationLabel: { id: 'programs.enrollment.modal.pagination', defaultMessage: 'Learner list pagination' },
+  reasonLabel: { id: 'programs.enrollment.modal.reason', defaultMessage: 'Reason (optional)' },
+  reasonHelp: {
+    id: 'programs.enrollment.modal.reason-help',
+    defaultMessage: 'For a paid program, kept with the learner\'s enrollment record.',
+  },
 });
 
 interface AddLearnerModalProps {
@@ -42,7 +49,8 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
-  const [enrollError, setEnrollError] = useState(false);
+  const [enrollError, setEnrollError] = useState<string | null>(null);
+  const [reason, setReason] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isFetching } = useLearners({ page: currentPage, search: searchQuery }, isOpen);
@@ -59,11 +67,11 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
 
   const handleEnroll = async (username: string) => {
     setEnrollingId(username);
-    setEnrollError(false);
+    setEnrollError(null);
     try {
-      await enrollLearner({ programId, username });
-    } catch {
-      setEnrollError(true);
+      await enrollLearner({ programId, username, reason: reason.trim() });
+    } catch (err) {
+      setEnrollError(getApiErrorDetail(err) ?? intl.formatMessage(messages.enrollError));
     } finally {
       setEnrollingId(null);
     }
@@ -72,7 +80,8 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
   const handleClose = () => {
     setSearchQuery('');
     setCurrentPage(1);
-    setEnrollError(false);
+    setEnrollError(null);
+    setReason('');
     onClose();
   };
 
@@ -96,12 +105,20 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
           value={searchQuery}
           placeholder={intl.formatMessage(messages.searchPlaceholder)}
         />
+        <Form.Group controlId="program-enroll-reason" className="mt-3 mb-0">
+          <Form.Label className="small">{intl.formatMessage(messages.reasonLabel)}</Form.Label>
+          <Form.Control
+            value={reason}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReason(e.target.value)}
+          />
+          <Form.Text>{intl.formatMessage(messages.reasonHelp)}</Form.Text>
+        </Form.Group>
       </ModalDialog.Header>
 
       <ModalDialog.Body>
         {enrollError && (
           <Alert variant="danger" className="mb-3">
-            {intl.formatMessage(messages.enrollError)}
+            {enrollError}
           </Alert>
         )}
         {isLoading && (
