@@ -59,6 +59,8 @@ export const useBadges = () =>
     queryKey: curriculumQueryKeys.badges(),
     queryFn: api.getAllBadges,
     retry: retryUnlessClientError,
+    // Badges are often created in another tab while a curriculum form is open; pick them up on return.
+    refetchOnWindowFocus: true,
   });
 
 /** Typeahead: first page only; no request for a blank term. */

@@ -26,6 +26,12 @@ export interface BadgeSummary {
   imageUrl: string | null;
 }
 
+/** A filled curriculum slot. */
+export interface SlotBadge extends BadgeSummary {
+  /** A learner earned this badge for this curriculum and slot, so the slot's badge can't change. */
+  earned: boolean;
+}
+
 export interface Curriculum {
   uuid: string;
   title: string;
@@ -35,7 +41,7 @@ export interface Curriculum {
   knowledgeCheck: CourseRef;
   knowledgeCheckDelayDays: number;
   /** Always both keys; null = empty slot (spec §6.4). */
-  badges: Record<SlotKey, BadgeSummary | null>;
+  badges: Record<SlotKey, SlotBadge | null>;
   created: string;
   modified: string;
 }
@@ -56,6 +62,8 @@ export interface Badge {
   /** The courses that award a course badge, in the order added; always empty for a curriculum badge. */
   courses: CourseRef[];
   linkedCurriculums: LinkedCurriculum[];
+  /** Distinct learners who earned the badge. Above 0, a course badge's course can't change. */
+  awardCount: number;
   created: string;
   modified: string;
 }
@@ -66,6 +74,8 @@ export interface CourseSearchResult {
   org: string;
   number: string;
   run: string;
+  /** The course badge this course already awards (a course awards at most one), or null. */
+  badge: { uuid: string; title: string; } | null;
 }
 
 export interface Paginated<T> {
