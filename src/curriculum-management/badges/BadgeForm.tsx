@@ -22,6 +22,7 @@ import {
 import ImageField from '../ImageField';
 import { useCreateBadge, useUpdateBadge } from '../data/apiHooks';
 import FormDirtyReporter from '../FormDirtyReporter';
+import FocusFirstError from '../FocusFirstError';
 import type { Badge, BadgeKind, BadgeWriteData } from '../types';
 import { kindMessages, mapBadgeErrors } from '../utils';
 import messages from '../messages';
@@ -29,6 +30,7 @@ import CoursePicker from '../curriculums/CoursePicker';
 import type { CourseItem } from '../curriculums/CourseOrderList';
 import BadgeCourseList from './BadgeCourseList';
 import CopyIdButton from '../CopyIdButton';
+import FormSection from '../FormSection';
 
 const FORM_ID = 'badge-form';
 
@@ -64,6 +66,8 @@ const BadgeForm = ({
   const updateBadge = useUpdateBadge();
   const [formError, setFormError] = useState<string | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
+  // Learners earned this course badge, so its course can't change (the server rejects it too).
+  const courseLocked = badge?.kind === 'course' && badge.awardCount > 0;
 
   const validationSchema = Yup.object({
     title: Yup.string().trim()
@@ -84,8 +88,8 @@ const BadgeForm = ({
       removeImage: values.removeImage && !values.image,
       // The kind is fixed once the badge exists (spec R11).
       ...(badge ? {} : { kind: values.kind }),
-      // A course badge always sends its full list, so removing every course clears it.
-      ...(values.kind === 'course' ? { courseIds: values.courses.map((course) => course.id) } : {}),
+      // A course badge sends its full list, so removing every course clears it; a locked one keeps its course.
+      ...(values.kind === 'course' && !courseLocked ? { courseIds: values.courses.map((course) => course.id) } : {}),
     };
     try {
       if (badge) {
@@ -113,16 +117,16 @@ const BadgeForm = ({
     <ModalDialog
       title={heading}
       // The modal is portalled outside the layout's .curriculum-management, so scope its styles here.
-      className="curriculum-management curriculum-management-badge-modal"
+      className="curriculum-management"
       isOpen
       onClose={onCancel}
-      size="md"
+      size="lg"
+      isFullscreenOnMobile
       hasCloseButton
       isOverflowVisible={false}
     >
       <ModalDialog.Header>
         <ModalDialog.Title>{heading}</ModalDialog.Title>
-        {!badge && <p className="x-small text-gray-500 mb-0">{intl.formatMessage(messages.idGenerated)}</p>}
       </ModalDialog.Header>
       <Formik<BadgeFormValues>
         initialValues={{
@@ -161,6 +165,7 @@ const BadgeForm = ({
               <ModalDialog.Body>
                 <Form id={FORM_ID} onSubmit={handleSubmit} noValidate data-testid="badge-form">
                   <FormDirtyReporter dirty={dirty} onDirtyChange={onDirtyChange} />
+                  <FocusFirstError formId={FORM_ID} />
                   <PromptIfDirty dirty={dirty} />
                   {formError && (
                     <AlertMessage
@@ -169,134 +174,153 @@ const BadgeForm = ({
                       description={formError}
                     />
                   )}
-                  {badge && (
-                    <div className="mb-3">
-                      <span className="d-block small font-weight-bold text-gray-700">
-                        {intl.formatMessage(messages.badgeIdLabel)}
-                      </span>
-                      <span className="d-inline-flex align-items-center x-small text-gray-500 text-break">
-                        {badge.uuid}
-                        <CopyIdButton value={badge.uuid} entity="badge" />
-                      </span>
-                    </div>
-                  )}
-
-                  {badge ?
-                    (
+                  <FormSection>
+                    {badge && (
                       <div className="mb-3">
-                        <span className="d-block small font-weight-bold text-gray-700">
-                          {intl.formatMessage(messages.kindLabel)}
+                        <span className="d-block mb-2">
+                          {intl.formatMessage(messages.badgeIdLabel)}
                         </span>
-                        <span className="small">{intl.formatMessage(kindMessages[badge.kind].label)}</span>
+                        <span className="d-inline-flex align-items-center x-small text-gray-700 text-break">
+                          {badge.uuid}
+                          <CopyIdButton value={badge.uuid} entity="badge" />
+                        </span>
                       </div>
-                    ) :
-                    (
-                      <Form.Group isInvalid={!!errorFor('kind')}>
-                        <Form.Label className="h6">{intl.formatMessage(messages.kindLabel)}</Form.Label>
-                        <Form.RadioSet name="kind" value={values.kind} onChange={handleChange}>
-                          {BADGE_KINDS.map((kind) => (
-                            <Form.Radio
-                              key={kind}
-                              value={kind}
-                              description={intl.formatMessage(kindMessages[kind].help)}
-                            >
-                              {intl.formatMessage(kindMessages[kind].label)}
-                            </Form.Radio>
-                          ))}
-                        </Form.RadioSet>
-                        {errorFor('kind') && (
-                          <Form.Control.Feedback type="invalid" hasIcon={false}>
-                            {errorFor('kind')}
-                          </Form.Control.Feedback>
-                        )}
-                      </Form.Group>
                     )}
 
-                  <Form.Group controlId="badge-title" isInvalid={!!errorFor('title')}>
-                    <Form.Label>{intl.formatMessage(messages.titleLabel)}</Form.Label>
-                    <Form.Control
-                      name="title"
-                      value={values.title}
-                      maxLength={BADGE_TITLE_MAX}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                    />
-                    <Form.Text className="text-right">
-                      {intl.formatMessage(messages.characterCount, {
-                        count: values.title.length,
-                        max: BADGE_TITLE_MAX,
-                      })}
-                    </Form.Text>
-                    {errorFor('title') && (
-                      <Form.Control.Feedback type="invalid" hasIcon={false}>{errorFor('title')}</Form.Control.Feedback>
-                    )}
-                  </Form.Group>
+                    {badge ?
+                      (
+                        <div className="mb-3">
+                          <span className="d-block mb-2">
+                            {intl.formatMessage(messages.kindLabel)}
+                          </span>
+                          <span className="small">{intl.formatMessage(kindMessages[badge.kind].label)}</span>
+                        </div>
+                      ) :
+                      (
+                        <Form.Group isInvalid={!!errorFor('kind')}>
+                          <Form.Label>{intl.formatMessage(messages.kindLabel)}</Form.Label>
+                          <Form.RadioSet name="kind" value={values.kind} onChange={handleChange}>
+                            {BADGE_KINDS.map((kind) => (
+                              <Form.Radio
+                                key={kind}
+                                value={kind}
+                                description={intl.formatMessage(kindMessages[kind].help)}
+                              >
+                                {intl.formatMessage(kindMessages[kind].label)}
+                              </Form.Radio>
+                            ))}
+                          </Form.RadioSet>
+                          {errorFor('kind') && (
+                            <Form.Control.Feedback type="invalid" hasIcon={false}>
+                              {errorFor('kind')}
+                            </Form.Control.Feedback>
+                          )}
+                        </Form.Group>
+                      )}
 
-                  <Form.Group controlId="badge-description" isInvalid={!!errorFor('description')}>
-                    <Form.Label>{intl.formatMessage(messages.badgeDescriptionLabel)}</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={3}
-                      name="description"
-                      value={values.description}
-                      maxLength={BADGE_DESCRIPTION_MAX}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                    />
-                    <Form.Text>{intl.formatMessage(messages.badgeDescriptionHelp)}</Form.Text>
-                    {errorFor('description') && (
-                      <Form.Control.Feedback type="invalid" hasIcon={false}>
-                        {errorFor('description')}
-                      </Form.Control.Feedback>
-                    )}
-                  </Form.Group>
+                    <Form.Group controlId="badge-title" isInvalid={!!errorFor('title')}>
+                      <Form.Label>{intl.formatMessage(messages.titleLabel)}</Form.Label>
+                      <Form.Control
+                        name="title"
+                        value={values.title}
+                        maxLength={BADGE_TITLE_MAX}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                      />
+                      <Form.Text className="text-right">
+                        {intl.formatMessage(messages.characterCount, {
+                          count: values.title.length,
+                          max: BADGE_TITLE_MAX,
+                        })}
+                      </Form.Text>
+                      {errorFor('title') && (
+                        <Form.Control.Feedback type="invalid" hasIcon={false}>
+                          {errorFor('title')}
+                        </Form.Control.Feedback>
+                      )}
+                    </Form.Group>
+
+                    <Form.Group controlId="badge-description" isInvalid={!!errorFor('description')}>
+                      <Form.Label>{intl.formatMessage(messages.badgeDescriptionLabel)}</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        name="description"
+                        value={values.description}
+                        maxLength={BADGE_DESCRIPTION_MAX}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                      />
+                      <Form.Text>{intl.formatMessage(messages.badgeDescriptionHelp)}</Form.Text>
+                      {errorFor('description') && (
+                        <Form.Control.Feedback type="invalid" hasIcon={false}>
+                          {errorFor('description')}
+                        </Form.Control.Feedback>
+                      )}
+                    </Form.Group>
+                  </FormSection>
 
                   {values.kind === 'course' && (
-                    <>
-                      <hr />
-                      <h4 className="h5 mb-1">{intl.formatMessage(messages.badgeCoursesHeading)}</h4>
-                      <p className="small text-gray-700">{intl.formatMessage(messages.badgeCoursesHelp)}</p>
-                      <CoursePicker
-                        id="badge-course-search"
-                        label={intl.formatMessage(messages.addCourseLabel)}
-                        excludedCourseIds={[]}
-                        addedCourseIds={values.courses.map((course) => course.id)}
-                        error={errorFor('courses')}
-                        // A course badge has one course: picking another replaces it.
-                        onSelect={(course) =>
-                          setFieldValue('courses', [
-                            { id: course.courseId, displayName: course.displayName, exists: true },
-                          ])}
-                      />
+                    <FormSection
+                      title={intl.formatMessage(messages.badgeCoursesHeading)}
+                      boxed
+                    >
+                      {courseLocked ?
+                        (
+                          <p className="small text-gray-700">
+                            {intl.formatMessage(messages.badgeCourseLocked)}
+                          </p>
+                        ) :
+                        (
+                          <CoursePicker
+                            id="badge-course-search"
+                            label={intl.formatMessage(messages.addCourseLabel)}
+                            excludedCourseIds={[]}
+                            addedCourseIds={values.courses.map((course) => course.id)}
+                            blockOtherBadgesCourses
+                            ownBadgeUuid={badge?.uuid}
+                            error={errorFor('courses')}
+                            // A course badge has one course: picking another replaces it.
+                            onSelect={(course) =>
+                              setFieldValue('courses', [
+                                { id: course.courseId, displayName: course.displayName, exists: true },
+                              ])}
+                          />
+                        )}
+                      <span className="d-block mb-2">
+                        {intl.formatMessage(messages.badgeCourseSelectedHeading)}
+                      </span>
                       <BadgeCourseList
                         courses={values.courses}
                         onChange={(courses) => setFieldValue('courses', courses)}
                         rowErrors={rowErrors}
                         emptyFocusId="badge-course-search"
+                        readOnly={courseLocked}
                       />
-                      <hr />
-                    </>
+                    </FormSection>
                   )}
 
-                  <ImageField
-                    fieldId="badge-image"
-                    value={values.image}
-                    existingUrl={values.removeImage ? null : badge?.imageUrl ?? null}
-                    onPick={(file) => {
-                      setFieldValue('image', file);
-                      setFieldValue('removeImage', false);
-                    }}
-                    onRemove={() => {
-                      setFieldValue('image', null);
-                      setFieldValue('removeImage', !!badge?.imageUrl);
-                    }}
-                    maxBytes={BADGE_IMAGE_MAX_BYTES}
-                    accept={BADGE_IMAGE_ACCEPT}
-                    label={intl.formatMessage(messages.imageLabel)}
-                    helpText={intl.formatMessage(messages.imageHelp)}
-                    altText={values.title || badge?.title || ''}
-                    error={getIn(errors, 'image') as string | undefined}
-                  />
+                  <FormSection boxed>
+                    <ImageField
+                      fieldId="badge-image"
+                      value={values.image}
+                      existingUrl={values.removeImage ? null : badge?.imageUrl ?? null}
+                      onPick={(file) => {
+                        setFieldValue('image', file);
+                        setFieldValue('removeImage', false);
+                      }}
+                      onRemove={() => {
+                        setFieldValue('image', null);
+                        setFieldValue('removeImage', !!badge?.imageUrl);
+                      }}
+                      maxBytes={BADGE_IMAGE_MAX_BYTES}
+                      accept={BADGE_IMAGE_ACCEPT}
+                      label={intl.formatMessage(messages.imageLabel)}
+                      helpText={intl.formatMessage(messages.imageHelp)}
+                      altText={values.title || badge?.title || ''}
+                      error={getIn(errors, 'image') as string | undefined}
+                    />
+                  </FormSection>
                 </Form>
               </ModalDialog.Body>
               <ModalDialog.Footer>

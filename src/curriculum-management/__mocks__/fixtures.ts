@@ -9,6 +9,7 @@ export const rawBadges = [
     image_url: 'http://localhost:18010/media/uber_features/badges/0b7e/a1.png',
     courses: [],
     linked_curriculums: [{ uuid: 'cur-1', title: 'New driver essentials', slot: 'complete' }],
+    award_count: 0,
     created: '2026-10-02T10:00:00Z',
     modified: '2026-10-02T10:00:00Z',
   },
@@ -20,6 +21,7 @@ export const rawBadges = [
     image_url: null,
     courses: [],
     linked_curriculums: [],
+    award_count: 0,
     created: '2026-10-02T10:00:00Z',
     modified: '2026-10-02T10:00:00Z',
   },
@@ -31,6 +33,7 @@ export const rawBadges = [
     image_url: null,
     courses: [],
     linked_curriculums: [{ uuid: 'cur-1', title: 'New driver essentials', slot: 'retained' }],
+    award_count: 0,
     created: '2026-10-02T10:00:00Z',
     modified: '2026-10-02T10:00:00Z',
   },
@@ -42,6 +45,7 @@ export const rawBadges = [
     image_url: null,
     courses: [],
     linked_curriculums: [],
+    award_count: 0,
     created: '2026-10-02T10:00:00Z',
     modified: '2026-10-02T10:00:00Z',
   },
@@ -59,6 +63,7 @@ export const rawCourseBadge = {
     { course_id: 'course-v1:Uber+DRV201+2026_Q4', display_name: 'Airport pickups', exists: true },
     { course_id: 'course-v1:Uber+DRV202+2026_Q4', display_name: null, exists: false },
   ],
+  award_count: 0,
   created: '2026-10-02T10:00:00Z',
   modified: '2026-10-02T10:00:00Z',
 };
@@ -76,8 +81,13 @@ export const rawCurriculums = [
     knowledge_check: { course_id: 'course-v1:Uber+DRVKC1+2026_Q4', display_name: 'Essentials check', exists: true },
     knowledge_check_delay_days: 30,
     badges: {
-      complete: { uuid: rawBadges[0].uuid, title: rawBadges[0].title, image_url: rawBadges[0].image_url },
-      retained: { uuid: rawBadges[2].uuid, title: rawBadges[2].title, image_url: null },
+      complete: {
+        uuid: rawBadges[0].uuid,
+        title: rawBadges[0].title,
+        image_url: rawBadges[0].image_url,
+        earned: false,
+      },
+      retained: { uuid: rawBadges[2].uuid, title: rawBadges[2].title, image_url: null, earned: false },
     },
     created: '2026-10-02T10:00:00Z',
     modified: '2026-10-02T10:00:00Z',
@@ -98,6 +108,7 @@ export const rawCourses = [
     org: 'Uber',
     number: 'DRV101',
     run: '2026_Q4',
+    badge: null,
   },
   {
     course_id: 'course-v1:Uber+DRV103+2026_Q4',
@@ -105,6 +116,7 @@ export const rawCourses = [
     org: 'Uber',
     number: 'DRV103',
     run: '2026_Q4',
+    badge: null,
   },
   {
     course_id: 'course-v1:Uber+DRVKC1+2026_Q4',
@@ -112,6 +124,7 @@ export const rawCourses = [
     org: 'Uber',
     number: 'DRVKC1',
     run: '2026_Q4',
+    badge: null,
   },
 ];
 

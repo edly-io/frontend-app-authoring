@@ -44,7 +44,7 @@ const expand = (user: ReturnType<typeof userEvent.setup>, title: string) =>
   user.click(within(cardFor(title)).getByRole('button', { name: new RegExp(`^${title}`, 'i') }));
 
 describe('<BadgesPage />', () => {
-  it('lists badges as collapsed rows with their IDs; expanding shows the "Linked to" chips', async () => {
+  it('lists badges as collapsed rows with their IDs; expanding shows the "Used in" chips', async () => {
     const { axiosMock } = initializeMocks();
     axiosMock.onGet(apiUrls.badgesPage(1)).reply(200, page(rawBadges));
     axiosMock.onGet(apiUrls.status()).reply(200, rawStatus());
@@ -155,7 +155,7 @@ describe('<BadgesPage />', () => {
     expect(within(dialog).queryByText(/will be removed from/)).not.toBeInTheDocument();
   });
 
-  it('shows the kind; a course badge lists its courses instead of "Linked to"', async () => {
+  it('shows the kind; a course badge lists its courses instead of "Used in"', async () => {
     const { axiosMock } = initializeMocks();
     axiosMock.onGet(apiUrls.badgesPage(1)).reply(200, page([...rawBadges, rawCourseBadge]));
     const user = userEvent.setup();
@@ -166,10 +166,11 @@ describe('<BadgesPage />', () => {
     expect(within(airport).getByText('Course badge')).toBeInTheDocument();
     expect(within(airport).getByText('2 courses')).toBeInTheDocument();
     await expand(user, 'Airport pro');
-    expect(within(airport).getByText('Awarded for completing')).toBeInTheDocument();
+    expect(within(airport).getByText('Awarded for')).toBeInTheDocument();
     expect(within(airport).getByText('Airport pickups')).toBeInTheDocument();
     expect(within(airport).getByText('Course not found')).toBeInTheDocument();
-    expect(within(airport).queryByText('Linked to')).not.toBeInTheDocument();
+    expect(within(airport).queryByText('Used in')).not.toBeInTheDocument();
+    expect(within(airport).getByText('No learners yet')).toBeInTheDocument();
   });
 
   it('a course badge with no courses says so', async () => {
@@ -206,6 +207,8 @@ describe('<BadgesPage />', () => {
     await user.click(within(cardFor('Holiday rush ready')).getByRole('button', { name: 'Delete Holiday rush ready' }));
     await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete' }));
     expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument();
+    await user.click(within(cardFor('Holiday rush ready')).getByRole('button', { name: 'Dismiss' }));
+    expect(screen.queryByText('Something went wrong. Please try again.')).not.toBeInTheDocument();
   });
 
   it('copies the UUID and confirms with a toast', async () => {

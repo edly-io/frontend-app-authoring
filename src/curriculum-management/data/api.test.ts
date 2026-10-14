@@ -69,6 +69,7 @@ describe('curriculum-management api', () => {
       org: 'Uber',
       number: 'DRV103',
       run: '2026_Q4',
+      badge: null,
     });
   });
 
@@ -78,7 +79,7 @@ describe('curriculum-management api', () => {
     courseIds: ['course-v1:A+B+C'],
     knowledgeCheckCourseId: 'course-v1:A+KC+C',
     knowledgeCheckDelayDays: 15,
-    badges: { complete: 'b-1', retained: null } as { complete: string | null; retained: string | null },
+    badges: { complete: 'b-1', retained: null } as { complete: string | null; retained: string | null; },
     image: null as File | null,
     removeImage: false,
   };

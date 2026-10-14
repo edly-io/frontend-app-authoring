@@ -20,6 +20,12 @@ interface CoursePickerProps {
   excludedCourseIds: string[];
   /** Courses already picked: shown, but as a disabled "Added" button. */
   addedCourseIds?: string[];
+  /** Course badge pickers: a course that already awards another badge can't be added (one badge per course). */
+  blockOtherBadgesCourses?: boolean;
+  /** The badge being edited; its own course is not blocked. */
+  ownBadgeUuid?: string;
+  /** Hint shown under the search input. */
+  help?: string;
   /** Validation message, tied to the search input through the Form.Group. */
   error?: string;
   /** Focus the search input when the picker mounts (e.g. after "Change"). */
@@ -32,6 +38,9 @@ const CoursePicker = ({
   label,
   excludedCourseIds,
   addedCourseIds = [],
+  blockOtherBadgesCourses = false,
+  ownBadgeUuid,
+  help,
   error,
   autoFocus = false,
   onSelect,
@@ -84,17 +93,18 @@ const CoursePicker = ({
           debouncedSetTerm(event.target.value);
         }}
       />
+      {help && <Form.Text>{help}</Form.Text>}
       {error && <Form.Control.Feedback type="invalid" hasIcon={false}>{error}</Form.Control.Feedback>}
       {/* Always mounted, so screen readers pick up changes to its text. */}
       <div role="status" className="sr-only">{announcement}</div>
       {showResults && isError && !isFetching && (
-        <p className="px-3 py-2 mt-1 mb-0 small text-danger border rounded bg-white" aria-hidden="true">
+        <p className="w-100 px-3 py-2 mt-1 mb-0 small text-danger border rounded bg-white" aria-hidden="true">
           {intl.formatMessage(messages.courseSearchError)}
         </p>
       )}
       {showResults && !isError && (
         <ul
-          className="list-unstyled border rounded bg-white mt-1 mb-0"
+          className="curriculum-management-search-results list-unstyled w-100 border rounded bg-white mt-1 mb-0"
           aria-label={intl.formatMessage(messages.courseSearchResults)}
         >
           {visible.length === 0 && !isFetching && (
@@ -102,26 +112,47 @@ const CoursePicker = ({
           )}
           {visible.map((course) => {
             const isAdded = addedCourseIds.includes(course.courseId);
+            const otherBadge = blockOtherBadgesCourses && course.badge && course.badge.uuid !== ownBadgeUuid
+              ? course.badge
+              : null;
+            let buttonLabel = intl.formatMessage(messages.addCourse);
+            let ariaLabel = intl.formatMessage(messages.addCourseAria, { course: course.displayName });
+            if (isAdded) {
+              buttonLabel = intl.formatMessage(messages.courseAdded);
+              ariaLabel = intl.formatMessage(messages.courseAddedAria, { course: course.displayName });
+            } else if (otherBadge) {
+              buttonLabel = intl.formatMessage(messages.courseHasBadge);
+              ariaLabel = intl.formatMessage(messages.courseHasBadgeAria, {
+                course: course.displayName,
+                badge: otherBadge.title,
+              });
+            }
             return (
               <li
                 key={course.courseId}
-                className="d-flex align-items-center justify-content-between px-3 py-2 border-bottom"
+                className="d-flex align-items-center px-3 py-2 border-bottom"
               >
-                <span className="mr-3 text-break">
-                  <span className="font-weight-bold mr-2">{course.displayName}</span>
-                  <span className="x-small text-gray-500">{course.courseId}</span>
+                {/* One line each, cut with an ellipsis: the action column must keep its width. */}
+                <span className="flex-grow-1 mr-3 curriculum-management-min-width-0">
+                  <span className="d-block font-weight-bold text-truncate" title={course.displayName}>
+                    {course.displayName}
+                  </span>
+                  <span className="d-block x-small text-gray-700 text-truncate" title={course.courseId}>
+                    {course.courseId}
+                  </span>
                 </span>
-                <Button
-                  size="sm"
-                  variant="tertiary"
-                  disabled={isAdded}
-                  aria-label={intl.formatMessage(isAdded ? messages.courseAddedAria : messages.addCourseAria, {
-                    course: course.displayName,
-                  })}
-                  onClick={() => handlePick(course)}
-                >
-                  {intl.formatMessage(isAdded ? messages.courseAdded : messages.addCourse)}
-                </Button>
+                {/* A disabled button gets no hover events, so the badge-title tooltip sits on a wrapper. */}
+                <span className="flex-shrink-0" title={otherBadge && !isAdded ? otherBadge.title : undefined}>
+                  <Button
+                    size="sm"
+                    variant="tertiary"
+                    disabled={isAdded || !!otherBadge}
+                    aria-label={ariaLabel}
+                    onClick={() => handlePick(course)}
+                  >
+                    {buttonLabel}
+                  </Button>
+                </span>
               </li>
             );
           })}

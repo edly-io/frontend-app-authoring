@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useHref } from 'react-router-dom';
 import { Formik, getIn } from 'formik';
 import * as Yup from 'yup';
 import { useIntl } from '@edx/frontend-platform/i18n';
@@ -24,6 +24,7 @@ import {
 import ImageField from '../ImageField';
 import { useBadges, useCreateCurriculum, useUpdateCurriculum } from '../data/apiHooks';
 import FormDirtyReporter from '../FormDirtyReporter';
+import FocusFirstError from '../FocusFirstError';
 import type { Curriculum } from '../types';
 import {
   type CurriculumFormValues,
@@ -32,6 +33,7 @@ import {
   toCurriculumWriteData,
 } from '../utils';
 import messages from '../messages';
+import FormSection from '../FormSection';
 import CourseOrderList from './CourseOrderList';
 import BadgeSlotSelect from './BadgeSlotSelect';
 import CoursePicker from './CoursePicker';
@@ -56,6 +58,7 @@ const CurriculumForm = ({
   onDirtyChange,
 }: CurriculumFormProps) => {
   const intl = useIntl();
+  const badgesHref = useHref(BADGES_PATH);
   const { showToast } = useToastContext();
   const createCurriculum = useCreateCurriculum();
   const updateCurriculum = useUpdateCurriculum();
@@ -125,16 +128,17 @@ const CurriculumForm = ({
       isOpen
       onClose={onCancel}
       size="lg"
+      isFullscreenOnMobile
       hasCloseButton
       isOverflowVisible={false}
     >
       <ModalDialog.Header>
         <ModalDialog.Title>{heading}</ModalDialog.Title>
-        <p className="x-small text-gray-500 mb-0">
-          {curriculum
-            ? intl.formatMessage(messages.itemId, { id: curriculum.uuid })
-            : intl.formatMessage(messages.idGenerated)}
-        </p>
+        {curriculum && (
+          <p className="x-small text-gray-700 mt-1 mb-0">
+            {intl.formatMessage(messages.itemId, { id: curriculum.uuid })}
+          </p>
+        )}
       </ModalDialog.Header>
       <Formik
         initialValues={toCurriculumFormValues(curriculum)}
@@ -163,6 +167,7 @@ const CurriculumForm = ({
               <ModalDialog.Body>
                 <Form id={FORM_ID} onSubmit={handleSubmit} noValidate data-testid="curriculum-form">
                   <FormDirtyReporter dirty={dirty} onDirtyChange={onDirtyChange} />
+                  <FocusFirstError formId={FORM_ID} />
                   <PromptIfDirty dirty={dirty} />
                   {formError && (
                     <AlertMessage
@@ -172,173 +177,206 @@ const CurriculumForm = ({
                     />
                   )}
 
-                  <Form.Group controlId="curriculum-title" isInvalid={!!errorFor('title')}>
-                    <Form.Label>{intl.formatMessage(messages.titleLabel)}</Form.Label>
-                    <Form.Control name="title" value={values.title} onChange={handleChange} onBlur={handleBlur} />
-                    {errorFor('title') && (
-                      <Form.Control.Feedback type="invalid" hasIcon={false}>{errorFor('title')}</Form.Control.Feedback>
-                    )}
-                  </Form.Group>
-                  <Form.Group controlId="curriculum-description" isInvalid={!!errorFor('description')}>
-                    <Form.Label>{intl.formatMessage(messages.curriculumDescriptionLabel)}</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={3}
-                      name="description"
-                      value={values.description}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                    />
-                    {errorFor('description') && (
-                      <Form.Control.Feedback type="invalid" hasIcon={false}>
-                        {errorFor('description')}
-                      </Form.Control.Feedback>
-                    )}
-                  </Form.Group>
-
-                  <ImageField
-                    fieldId="curriculum-image"
-                    value={values.image}
-                    existingUrl={values.removeImage ? null : curriculum?.imageUrl ?? null}
-                    onPick={(file) => {
-                      setFieldValue('image', file);
-                      setFieldValue('removeImage', false);
-                    }}
-                    onRemove={() => {
-                      setFieldValue('image', null);
-                      setFieldValue('removeImage', !!curriculum?.imageUrl);
-                    }}
-                    maxBytes={CURRICULUM_IMAGE_MAX_BYTES}
-                    accept={CURRICULUM_IMAGE_ACCEPT}
-                    label={intl.formatMessage(messages.curriculumImageLabel)}
-                    helpText={intl.formatMessage(messages.curriculumImageHelp)}
-                    altText={curriculum?.title ?? ''}
-                    error={getIn(errors, 'image') as string | undefined}
-                  />
-
-                  <hr />
-                  <h4 className="h5 mb-1">{intl.formatMessage(messages.coursesSectionTitle)}</h4>
-                  <p className="small text-gray-700">{intl.formatMessage(messages.coursesSectionHelp)}</p>
-                  <CoursePicker
-                    id="curriculum-course-search"
-                    label={intl.formatMessage(messages.addCourseLabel)}
-                    excludedCourseIds={values.knowledgeCheck ? [values.knowledgeCheck.id] : []}
-                    addedCourseIds={courseIds}
-                    error={errorFor('courses')}
-                    onSelect={(course) =>
-                      setFieldValue('courses', [
-                        ...values.courses,
-                        { id: course.courseId, displayName: course.displayName, exists: true },
-                      ])}
-                  />
-                  <CourseOrderList
-                    courses={values.courses}
-                    onChange={(courses) => setFieldValue('courses', courses)}
-                    rowErrors={rowErrors}
-                    emptyFocusId="curriculum-course-search"
-                  />
-                  {values.courses.length > 0 && <Form.Text>{intl.formatMessage(messages.reorderHint)}</Form.Text>}
-
-                  <hr />
-                  <h4 className="h5 mb-1">{intl.formatMessage(messages.knowledgeCheckHeading)}</h4>
-                  <p className="small text-gray-700">{intl.formatMessage(messages.knowledgeCheckHelp)}</p>
-                  {values.knowledgeCheck ?
-                    (
-                      <Form.Group
-                        controlId="curriculum-knowledge-check-selected"
-                        isInvalid={!!errorFor('knowledgeCheck')}
-                      >
-                        <div className="d-flex align-items-center border rounded px-3 py-2 bg-light-200">
-                          <span className="mr-auto text-break">
-                            <span className="d-block font-weight-bold">
-                              {values.knowledgeCheck.displayName ?? values.knowledgeCheck.id}
-                            </span>
-                            <span className="x-small text-gray-500">{values.knowledgeCheck.id}</span>
-                          </span>
-                          <Button
-                            variant="tertiary"
-                            aria-describedby={errorFor('knowledgeCheck') ? KC_ERROR_ID : undefined}
-                            ref={(button: HTMLButtonElement | null) => {
-                              // Runs when the button mounts after a pick; the search input it replaces had focus.
-                              if (button && focusKcChange.current) {
-                                focusKcChange.current = false;
-                                button.focus();
-                              }
-                            }}
-                            onClick={() => {
-                              setFocusKcSearch(true);
-                              setFieldValue('knowledgeCheck', null);
-                            }}
-                          >
-                            {intl.formatMessage(messages.knowledgeCheckChange)}
-                          </Button>
-                        </div>
-                        {errorFor('knowledgeCheck') && (
-                          <Form.Control.Feedback id={KC_ERROR_ID} type="invalid" hasIcon={false}>
-                            {errorFor('knowledgeCheck')}
-                          </Form.Control.Feedback>
-                        )}
-                      </Form.Group>
-                    ) :
-                    (
-                      <CoursePicker
-                        id="curriculum-knowledge-check-search"
-                        label={intl.formatMessage(messages.knowledgeCheckCourseLabel)}
-                        excludedCourseIds={courseIds}
-                        error={errorFor('knowledgeCheck')}
-                        autoFocus={focusKcSearch}
-                        onSelect={(course) => {
-                          focusKcChange.current = true;
-                          setFieldValue('knowledgeCheck', {
-                            id: course.courseId,
-                            displayName: course.displayName,
-                            exists: true,
-                          });
-                        }}
+                  <FormSection>
+                    <Form.Group controlId="curriculum-title" isInvalid={!!errorFor('title')}>
+                      <Form.Label>{intl.formatMessage(messages.titleLabel)}</Form.Label>
+                      <Form.Control name="title" value={values.title} onChange={handleChange} onBlur={handleBlur} />
+                      {errorFor('title') && (
+                        <Form.Control.Feedback type="invalid" hasIcon={false}>
+                          {errorFor('title')}
+                        </Form.Control.Feedback>
+                      )}
+                    </Form.Group>
+                    <Form.Group controlId="curriculum-description" isInvalid={!!errorFor('description')}>
+                      <Form.Label>{intl.formatMessage(messages.curriculumDescriptionLabel)}</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        name="description"
+                        value={values.description}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
                       />
-                    )}
-                  <Form.Text>{intl.formatMessage(messages.knowledgeCheckHint)}</Form.Text>
+                      {errorFor('description') && (
+                        <Form.Control.Feedback type="invalid" hasIcon={false}>
+                          {errorFor('description')}
+                        </Form.Control.Feedback>
+                      )}
+                    </Form.Group>
+                  </FormSection>
 
-                  <Form.Group className="mt-3" isInvalid={!!errorFor('knowledgeCheckDelayDays')}>
-                    <Form.Label className="h6">{intl.formatMessage(messages.delayLabel)}</Form.Label>
-                    <Form.RadioSet
-                      name="knowledgeCheckDelayDays"
-                      value={values.knowledgeCheckDelayDays}
-                      onChange={handleChange}
-                      isInline
-                    >
-                      {DELAY_OPTIONS.map((days) => (
-                        <Form.Radio key={days} value={days}>
-                          {intl.formatMessage(messages.delayOption, { days })}
-                        </Form.Radio>
-                      ))}
-                    </Form.RadioSet>
-                    {errorFor('knowledgeCheckDelayDays') && (
-                      <Form.Control.Feedback type="invalid" hasIcon={false}>
-                        {errorFor('knowledgeCheckDelayDays')}
-                      </Form.Control.Feedback>
-                    )}
-                  </Form.Group>
-
-                  <hr />
-                  <h4 className="h5 mb-1">{intl.formatMessage(messages.badgesHeading)}</h4>
-                  <p className="small text-gray-700">{intl.formatMessage(messages.badgesSectionHelp)}</p>
-                  {SLOT_KEYS.map((slot) => (
-                    <BadgeSlotSelect
-                      key={slot}
-                      slot={slot}
-                      value={values.badges[slot]}
-                      badges={curriculumBadges}
-                      takenBadgeUuids={SLOT_KEYS
-                        .filter((other) => other !== slot)
-                        .map((other) => values.badges[other])
-                        .filter(Boolean)}
-                      onChange={(badgeUuid) => setFieldValue(`badges.${slot}`, badgeUuid)}
-                      error={errorFor(`badges.${slot}`)}
+                  <FormSection
+                    title={intl.formatMessage(messages.coursesSectionTitle)}
+                    help={intl.formatMessage(messages.coursesSectionHelp)}
+                    boxed
+                  >
+                    <CoursePicker
+                      id="curriculum-course-search"
+                      label={intl.formatMessage(messages.addCourseLabel)}
+                      excludedCourseIds={values.knowledgeCheck ? [values.knowledgeCheck.id] : []}
+                      addedCourseIds={courseIds}
+                      error={errorFor('courses')}
+                      onSelect={(course) =>
+                        setFieldValue('courses', [
+                          ...values.courses,
+                          { id: course.courseId, displayName: course.displayName, exists: true },
+                        ])}
                     />
-                  ))}
-                  {/* Leaving with unsaved changes goes through the layout's navigation prompt. */}
-                  <Link to={BADGES_PATH} className="small">{intl.formatMessage(messages.createBadgeLink)}</Link>
+                    <CourseOrderList
+                      courses={values.courses}
+                      onChange={(courses) => setFieldValue('courses', courses)}
+                      rowErrors={rowErrors}
+                      emptyFocusId="curriculum-course-search"
+                    />
+                    {values.courses.length > 0 ?
+                      <Form.Text>{intl.formatMessage(messages.reorderHint)}</Form.Text> :
+                      (
+                        <p className="x-small text-gray-700 font-italic">
+                          {intl.formatMessage(messages.badgeCoursesEmpty)}
+                        </p>
+                      )}
+                  </FormSection>
+
+                  <FormSection title={intl.formatMessage(messages.knowledgeCheckHeading)} boxed>
+                    {values.knowledgeCheck ?
+                      (
+                        <Form.Group
+                          controlId="curriculum-knowledge-check-selected"
+                          isInvalid={!!errorFor('knowledgeCheck')}
+                        >
+                          <div className="d-flex align-items-center border rounded px-3 py-2 bg-white">
+                            <span className="flex-grow-1 mr-2 text-break curriculum-management-min-width-0">
+                              <span className="d-block font-weight-bold">
+                                {values.knowledgeCheck.displayName ?? values.knowledgeCheck.id}
+                              </span>
+                              <span className="x-small text-gray-700">{values.knowledgeCheck.id}</span>
+                            </span>
+                            <Button
+                              variant="tertiary"
+                              className="flex-shrink-0"
+                              aria-describedby={errorFor('knowledgeCheck') ? KC_ERROR_ID : undefined}
+                              ref={(button: HTMLButtonElement | null) => {
+                                // Runs when the button mounts after a pick; the search input it replaces had focus.
+                                if (button && focusKcChange.current) {
+                                  focusKcChange.current = false;
+                                  button.focus();
+                                }
+                              }}
+                              onClick={() => {
+                                setFocusKcSearch(true);
+                                setFieldValue('knowledgeCheck', null);
+                              }}
+                            >
+                              {intl.formatMessage(messages.knowledgeCheckChange)}
+                            </Button>
+                          </div>
+                          <Form.Text>{intl.formatMessage(messages.knowledgeCheckHint)}</Form.Text>
+                          {errorFor('knowledgeCheck') && (
+                            <Form.Control.Feedback id={KC_ERROR_ID} type="invalid" hasIcon={false}>
+                              {errorFor('knowledgeCheck')}
+                            </Form.Control.Feedback>
+                          )}
+                        </Form.Group>
+                      ) :
+                      (
+                        <CoursePicker
+                          id="curriculum-knowledge-check-search"
+                          label={intl.formatMessage(messages.knowledgeCheckCourseLabel)}
+                          excludedCourseIds={courseIds}
+                          help={intl.formatMessage(messages.knowledgeCheckHint)}
+                          error={errorFor('knowledgeCheck')}
+                          autoFocus={focusKcSearch}
+                          onSelect={(course) => {
+                            focusKcChange.current = true;
+                            setFieldValue('knowledgeCheck', {
+                              id: course.courseId,
+                              displayName: course.displayName,
+                              exists: true,
+                            });
+                          }}
+                        />
+                      )}
+
+                    <Form.Group isInvalid={!!errorFor('knowledgeCheckDelayDays')}>
+                      <Form.Label>{intl.formatMessage(messages.delayLabel)}</Form.Label>
+                      <Form.RadioSet
+                        name="knowledgeCheckDelayDays"
+                        value={values.knowledgeCheckDelayDays}
+                        onChange={handleChange}
+                        isInline
+                      >
+                        {DELAY_OPTIONS.map((days) => (
+                          <Form.Radio key={days} value={days}>
+                            {intl.formatMessage(messages.delayOption, { days })}
+                          </Form.Radio>
+                        ))}
+                      </Form.RadioSet>
+                      {errorFor('knowledgeCheckDelayDays') && (
+                        <Form.Control.Feedback type="invalid" hasIcon={false}>
+                          {errorFor('knowledgeCheckDelayDays')}
+                        </Form.Control.Feedback>
+                      )}
+                    </Form.Group>
+                  </FormSection>
+
+                  <FormSection
+                    title={intl.formatMessage(messages.badgesHeading)}
+                    help={intl.formatMessage(messages.badgesSectionHelp)}
+                    boxed
+                  >
+                    {SLOT_KEYS.map((slot) => (
+                      <BadgeSlotSelect
+                        key={slot}
+                        slot={slot}
+                        value={values.badges[slot]}
+                        badges={curriculumBadges}
+                        takenBadgeUuids={SLOT_KEYS
+                          .filter((other) => other !== slot)
+                          .map((other) => values.badges[other])
+                          .filter(Boolean)}
+                        onChange={(badgeUuid) => setFieldValue(`badges.${slot}`, badgeUuid)}
+                        error={errorFor(`badges.${slot}`)}
+                        locked={!!curriculum?.badges[slot]?.earned}
+                      />
+                    ))}
+                    {/* A new tab keeps this form's unsaved edits; the slot lists refetch when the author comes back. */}
+                    <p className="small mb-0">
+                      {intl.formatMessage(messages.createBadgeHint, {
+                        link: (
+                          <a
+                            href={badgesHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={intl.formatMessage(messages.createBadgeLinkLabel)}
+                          >
+                            {intl.formatMessage(messages.createBadgeLinkText)}
+                          </a>
+                        ),
+                      })}
+                    </p>
+                  </FormSection>
+
+                  <FormSection boxed>
+                    <ImageField
+                      fieldId="curriculum-image"
+                      value={values.image}
+                      existingUrl={values.removeImage ? null : curriculum?.imageUrl ?? null}
+                      onPick={(file) => {
+                        setFieldValue('image', file);
+                        setFieldValue('removeImage', false);
+                      }}
+                      onRemove={() => {
+                        setFieldValue('image', null);
+                        setFieldValue('removeImage', !!curriculum?.imageUrl);
+                      }}
+                      maxBytes={CURRICULUM_IMAGE_MAX_BYTES}
+                      accept={CURRICULUM_IMAGE_ACCEPT}
+                      label={intl.formatMessage(messages.imageLabel)}
+                      helpText={intl.formatMessage(messages.imageHelp)}
+                      altText={curriculum?.title ?? ''}
+                      error={getIn(errors, 'image') as string | undefined}
+                    />
+                  </FormSection>
                 </Form>
               </ModalDialog.Body>
               <ModalDialog.Footer>

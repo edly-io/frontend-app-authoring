@@ -51,6 +51,54 @@ describe('<CoursePicker />', () => {
     expect(screen.queryByText('Essentials check')).not.toBeInTheDocument();
   });
 
+  it('offers a course that awards a badge unless the picker blocks other badges\' courses', async () => {
+    const { axiosMock, user } = setup();
+    axiosMock.onGet(apiUrls.courses('DRV')).reply(
+      200,
+      page([
+        { ...rawCourses[0], badge: { uuid: 'b-1', title: 'Early bird' } },
+      ]),
+    );
+    await user.type(screen.getByLabelText('Add a course'), 'DRV');
+    act(() => {
+      jest.advanceTimersByTime(400);
+    });
+    expect(await screen.findByRole('button', { name: 'Add Getting started' })).toBeEnabled();
+  });
+
+  it('keeps long names on one line with the full text in a tooltip, and the list inside the input column', async () => {
+    const { axiosMock, user } = setup({ blockOtherBadgesCourses: true });
+    const longName = 'A very long course display name '.repeat(6).trim();
+    const longKey = `course-v1:Uber+${'X'.repeat(80)}+2026_Q4`;
+    axiosMock.onGet(apiUrls.courses('DRV')).reply(
+      200,
+      page([{
+        ...rawCourses[0],
+        course_id: longKey,
+        display_name: longName,
+        badge: { uuid: 'b-1', title: 'Early bird' },
+      }]),
+    );
+    await user.type(screen.getByLabelText('Add a course'), 'DRV');
+    act(() => {
+      jest.advanceTimersByTime(400);
+    });
+    const name = await screen.findByText(longName);
+    expect(name).toHaveAttribute('title', longName);
+    expect(name).toHaveClass('text-truncate');
+    expect(screen.getByText(longKey)).toHaveAttribute('title', longKey);
+    expect(screen.getByText(longKey)).toHaveClass('text-truncate');
+    expect(screen.getByRole('list', { name: 'Matching courses' })).toHaveClass('w-100');
+    const blocked = screen.getByRole('button', { name: `${longName} already awards the badge Early bird` });
+    expect(blocked).toHaveTextContent('Already has a badge');
+    expect(blocked.parentElement).toHaveClass('flex-shrink-0');
+  });
+
+  it('shows the hint under the search input', () => {
+    setup({ help: 'Pick one course.' });
+    expect(screen.getByText('Pick one course.')).toBeInTheDocument();
+  });
+
   it('calls onSelect and clears the input after a pick', async () => {
     const { onSelect, user } = setup();
     const input = screen.getByLabelText('Add a course');

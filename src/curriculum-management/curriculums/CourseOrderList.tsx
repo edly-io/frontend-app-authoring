@@ -101,16 +101,18 @@ const CourseOrderList = ({
             actions={
               <>
                 <span className="mr-auto d-flex align-items-center curriculum-management-min-width-0">
-                  <Badge variant="light" className="mr-3">{index + 1}</Badge>
-                  <span className="text-break">
+                  <Badge variant="light" className="mr-3 flex-shrink-0">{index + 1}</Badge>
+                  <span className="text-break curriculum-management-min-width-0">
                     <span className="d-block font-weight-bold" data-testid="course-order-name">{name}</span>
-                    <span className="x-small text-gray-500">{course.id}</span>
+                    <span className="x-small text-gray-700">{course.id}</span>
                     {rowErrors[course.id] && (
                       <span className="d-block x-small text-danger" role="alert">{rowErrors[course.id]}</span>
                     )}
                   </span>
                   {!course.exists && (
-                    <Badge variant="danger" className="ml-2">{intl.formatMessage(messages.courseNotFound)}</Badge>
+                    <Badge variant="danger" className="ml-2 flex-shrink-0">
+                      {intl.formatMessage(messages.courseNotFound)}
+                    </Badge>
                   )}
                 </span>
                 <IconButtonWithTooltip
