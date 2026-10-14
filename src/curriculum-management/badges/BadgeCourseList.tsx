@@ -13,6 +13,8 @@ interface BadgeCourseListProps {
   rowErrors?: Record<string, string>;
   /** Element to focus after the last row is removed (the course search). */
   emptyFocusId: string;
+  /** Hide the remove buttons (learners earned the badge, so its course can't change). */
+  readOnly?: boolean;
 }
 
 // DOM ids use the row index, never the course key (keys contain ':' and '+').
@@ -24,6 +26,7 @@ const BadgeCourseList = ({
   onChange,
   rowErrors = {},
   emptyFocusId,
+  readOnly = false,
 }: BadgeCourseListProps) => {
   const intl = useIntl();
   const removedIndex = useRef<number | null>(null);
@@ -40,7 +43,7 @@ const BadgeCourseList = ({
   }, [courses]);
 
   if (courses.length === 0) {
-    return <p className="x-small text-gray-500 font-italic">{intl.formatMessage(messages.badgeCoursesEmpty)}</p>;
+    return <p className="x-small text-gray-700 font-italic mb-0">{intl.formatMessage(messages.badgeCoursesEmpty)}</p>;
   }
   return (
     <ul className="list-unstyled mb-0" aria-label={intl.formatMessage(messages.badgeCoursesHeading)}>
@@ -48,27 +51,32 @@ const BadgeCourseList = ({
         const name = course.displayName ?? course.id;
         return (
           <li key={course.id} className="d-flex align-items-center border rounded bg-white px-3 py-2 mb-2">
-            <span className="mr-auto text-break curriculum-management-min-width-0">
+            <span className="flex-grow-1 mr-2 text-break curriculum-management-min-width-0">
               <span className="d-block font-weight-bold">{name}</span>
-              <span className="x-small text-gray-500">{course.id}</span>
+              <span className="x-small text-gray-700">{course.id}</span>
               {rowErrors[course.id] && (
                 <span className="d-block x-small text-danger" role="alert">{rowErrors[course.id]}</span>
               )}
             </span>
             {!course.exists && (
-              <Badge variant="danger" className="ml-2">{intl.formatMessage(messages.courseNotFound)}</Badge>
+              <Badge variant="danger" className="ml-2 flex-shrink-0">
+                {intl.formatMessage(messages.courseNotFound)}
+              </Badge>
             )}
-            <IconButtonWithTooltip
-              id={removeButtonId(index)}
-              src={Close}
-              iconAs={Icon}
-              alt={intl.formatMessage(messages.removeCourse, { course: name })}
-              tooltipContent={intl.formatMessage(messages.removeCourse, { course: name })}
-              onClick={() => {
-                removedIndex.current = index;
-                onChange(courses.filter((_, i) => i !== index));
-              }}
-            />
+            {!readOnly && (
+              <IconButtonWithTooltip
+                className="flex-shrink-0"
+                id={removeButtonId(index)}
+                src={Close}
+                iconAs={Icon}
+                alt={intl.formatMessage(messages.removeCourse, { course: name })}
+                tooltipContent={intl.formatMessage(messages.removeCourse, { course: name })}
+                onClick={() => {
+                  removedIndex.current = index;
+                  onChange(courses.filter((_, i) => i !== index));
+                }}
+              />
+            )}
           </li>
         );
       })}

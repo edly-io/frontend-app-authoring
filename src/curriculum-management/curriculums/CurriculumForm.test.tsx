@@ -50,6 +50,23 @@ const search = async (user: ReturnType<typeof userEvent.setup>, label: string, t
   });
 };
 
+type User = ReturnType<typeof userEvent.setup>;
+
+const slotToggle = (slot: 'Complete' | 'Retained') => screen.getByLabelText(new RegExp(`^${slot} badge`));
+
+/** Opens a slot's dropdown once the badges have loaded and returns its menu items. */
+const openSlot = async (user: User, slot: 'Complete' | 'Retained') => {
+  await user.click(slotToggle(slot));
+  const menu = slotToggle(slot).closest('.dropdown') as HTMLElement;
+  await waitFor(() => expect(menu.querySelectorAll('.dropdown-item').length).toBeGreaterThan(1));
+  return within(menu);
+};
+
+const chooseBadge = async (user: User, slot: 'Complete' | 'Retained', title: string) => {
+  const menu = await openSlot(user, slot);
+  await user.click(menu.getByTitle(title));
+};
+
 afterEach(() => jest.useRealTimers());
 
 describe('<CurriculumForm />', () => {
@@ -74,8 +91,7 @@ describe('<CurriculumForm />', () => {
     expect(screen.queryByRole('button', { name: 'Add Getting started' })).not.toBeInTheDocument();
     await user.click(await screen.findByRole('button', { name: 'Add Essentials check' }));
     await user.click(screen.getByLabelText('15 days'));
-    await screen.findAllByRole('option', { name: 'Essentials complete' });
-    await user.selectOptions(screen.getByLabelText('Retained badge'), rawBadges[1].uuid);
+    await chooseBadge(user, 'Retained', rawBadges[1].title);
 
     await user.click(screen.getByRole('button', { name: 'Create' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
@@ -101,6 +117,12 @@ describe('<CurriculumForm />', () => {
     expect(screen.getByText('Choose a knowledge check course.')).toBeInTheDocument();
     expect(screen.queryByText('Choose a badge for this slot.')).not.toBeInTheDocument();
     expect(axiosMock.history.post).toHaveLength(0);
+  });
+
+  it('moves focus to the first invalid field after a failed save', async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+    await waitFor(() => expect(screen.getByLabelText('Title')).toHaveFocus());
   });
 
   it('edits: keeps a deleted course row, PUTs, and maps a server 400 onto fields, rows and the form', async () => {
@@ -141,28 +163,27 @@ describe('<CurriculumForm />', () => {
 
   it('slot selects list curriculum badges only, offer "No badge", and disable a badge taken by another slot', async () => {
     const { user } = setup();
-    await screen.findAllByRole('option', { name: 'Essentials complete' });
-    const complete = screen.getByLabelText('Complete badge');
-    expect(within(complete).getByRole('option', { name: 'No badge' })).toHaveValue('');
-    expect(within(complete).queryByRole('option', { name: 'Airport pro' })).not.toBeInTheDocument();
-    await user.selectOptions(complete, rawBadges[1].uuid);
-    expect(within(screen.getByLabelText('Retained badge')).getByRole('option', { name: 'Essentials complete' }))
-      .toBeDisabled();
+    const complete = await openSlot(user, 'Complete');
+    expect(complete.getAllByTitle('No badge')[0]).toHaveClass('dropdown-item');
+    expect(complete.queryByTitle('Airport pro')).not.toBeInTheDocument();
+    await user.click(complete.getByTitle(rawBadges[1].title));
+    expect(slotToggle('Complete')).toHaveAccessibleName(`Complete badge ${rawBadges[1].title}`);
+    const retained = await openSlot(user, 'Retained');
+    expect(retained.getByTitle(rawBadges[1].title)).toHaveClass('disabled');
   });
 
   it('slot selects leave out badges another curriculum uses, but keep this curriculum\'s own', async () => {
-    setup();
-    await screen.findAllByRole('option', { name: 'Essentials complete' });
-    expect(within(screen.getByLabelText('Complete badge')).queryByRole('option', { name: 'Road ready' }))
-      .not.toBeInTheDocument();
+    const { user } = setup();
+    const complete = await openSlot(user, 'Complete');
+    expect(complete.getByTitle('Essentials complete')).toBeInTheDocument();
+    expect(complete.queryByTitle('Road ready')).not.toBeInTheDocument();
   });
 
   it('prefills the slots when editing and sends null for a slot set to "No badge"', async () => {
     const { axiosMock, onClose, user } = setup({ curriculum });
     axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(200, rawCurriculums[0]);
-    await screen.findAllByRole('option', { name: 'Road ready' });
-    expect(screen.getByLabelText('Complete badge')).toHaveValue(rawBadges[0].uuid);
-    await user.selectOptions(screen.getByLabelText('Retained badge'), '');
+    await waitFor(() => expect(slotToggle('Complete')).toHaveAccessibleName(`Complete badge ${rawBadges[0].title}`));
+    await chooseBadge(user, 'Retained', 'No badge');
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     const putBody = axiosMock.history.put[0].data as FormData;
@@ -170,12 +191,29 @@ describe('<CurriculumForm />', () => {
     expect(putBody.has('badges.retained')).toBe(false);
   });
 
-  it('links to the Badges tab to create a badge', () => {
+  it('makes an earned slot read-only with a note, and still sends its badge', async () => {
+    const earned = {
+      ...curriculum,
+      badges: { ...curriculum.badges, complete: { ...curriculum.badges.complete!, earned: true } },
+    };
+    const { axiosMock, onClose, user } = setup({ curriculum: earned });
+    axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(200, rawCurriculums[0]);
+    expect(slotToggle('Complete')).toBeDisabled();
+    expect(slotToggle('Retained')).toBeEnabled();
+    expect(screen.getAllByText(
+      'Learners have earned this badge in this curriculum, so this slot\'s badge can\'t change.',
+    )).toHaveLength(1);
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect((axiosMock.history.put[0].data as FormData).get('badges.complete')).toEqual(rawBadges[0].uuid);
+  });
+
+  it('links to the Badges tab in a new tab, so unsaved edits are kept', () => {
     setup();
-    expect(screen.getByRole('link', { name: 'Create a badge' })).toHaveAttribute(
-      'href',
-      '/curriculum-management/badges',
-    );
+    const link = screen.getByRole('link', { name: 'Create a badge here, on the Badges tab (opens in a new tab)' });
+    expect(link).toHaveAttribute('href', '/curriculum-management/badges');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
   it('maps a server badges.<slot> error onto that slot', async () => {

@@ -1,7 +1,22 @@
 .curriculum-management {
-  // Paragon has no modal size between md and lg; the badge form sits halfway.
-  &.curriculum-management-badge-modal {
-    max-width: calc((var(--pgn-size-modal-md) + var(--pgn-size-modal-lg)) / 2);
+  // Divider between the sections of a create/edit form, only between sections so the first one
+  // starts flush under the modal header. Paragon has no section component for forms.
+  .curriculum-management-form-section + .curriculum-management-form-section {
+    margin-top: var(--pgn-spacing-spacer-4);
+    padding-top: var(--pgn-spacing-spacer-4);
+    border-top: 1px solid var(--pgn-color-light-400);
+  }
+
+  // Paragon gives every input wrapper an end margin from the sm breakpoint (a gutter for inline
+  // forms), which leaves our stacked inputs narrower than the lists and rows under them.
+  .pgn__form-control-decorator-group {
+    margin-inline-end: 0;
+  }
+
+  // Paragon's Dropzone defaults to a 200px min-height, tall for an optional image at the end of a
+  // form; this keeps it proportionate to the inputs above while still fitting its icon and button.
+  .curriculum-management-form-section .pgn__dropzone {
+    min-height: 10rem;
   }
 
   .curriculum-management-badge-image,
@@ -47,21 +62,121 @@
     color: var(--pgn-color-gray-500);
   }
 
-  // group-configurations indents only the first header chip (at 0,4,0 specificity), so when the
-  // chips wrap the first row sits further right than the next. The Stack's gap already spaces them.
-  .configuration-card .configuration-card-header .configuration-card-header__badge:first-child {
-    margin-left: 0;
-  }
-
-  // On a card header's title and pill row: lines the pills up with the title's first line instead of
-  // the top of the (taller) heading. The expand arrow and badge thumbnail stay top-aligned.
-  .curriculum-management-header-baseline {
-    align-self: baseline;
+  // A card header's ID line: the ID followed by the info chips, wrapping onto further lines when
+  // narrow. Bootstrap 4 has no gap utility; the gap spaces items both across and between lines.
+  .curriculum-management-meta {
+    gap: var(--pgn-spacing-spacer-1) var(--pgn-spacing-spacer-2);
   }
 
   // Neither Paragon nor Bootstrap 4 ships `min-w-0`. Without it a flex child can't shrink below its
   // content, so a long unbroken name overflows its card instead of wrapping.
   .curriculum-management-min-width-0 {
     min-width: 0;
+  }
+
+  // A one-line delete error: centre the text on the Dismiss button. The app-wide
+  // `.alert .alert-message-content { align-self: baseline }` (generic/alert-message) pins it to the top.
+  .curriculum-management-delete-alert .alert-message-content {
+    align-self: center;
+  }
+
+  // Shaded box around a form section's grouped controls (FormSection `boxed`). Its own padding means
+  // the last field's or row's bottom margin would stack on it and leave a deeper gap at the bottom.
+  .curriculum-management-box {
+    padding: var(--pgn-spacing-spacer-3);
+    border: 1px solid var(--pgn-color-light-400);
+    border-radius: var(--pgn-size-border-radius-base);
+    background-color: var(--pgn-color-light-200);
+
+    > :last-child,
+    > :last-child > li:last-child,
+    > :last-child .pgn__form-group {
+      margin-bottom: 0;
+    }
+  }
+
+  // The results are a plain list under the search input: keep them inside the input's column (a long
+  // name or button label must not push the list past its right edge) and drop the last row's border,
+  // which would double the list's own.
+  .curriculum-management-search-results {
+    max-width: 100%;
+
+    > li:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  // Expanded card body: starts at the title's left edge (past the 1.5rem expand arrow and its
+  // spacer-1 margin) and sits under a divider so it reads as separate from the header.
+  .configuration-card-content.curriculum-management-card-body {
+    margin: var(--pgn-spacing-spacer-3) 0 0 calc(1.5rem + var(--pgn-spacing-spacer-1));
+    padding-top: var(--pgn-spacing-spacer-3);
+    border-top: 1px solid var(--pgn-color-light-400);
+  }
+
+  // Card details as label/value rows. Stacked by default; from the md breakpoint (Bootstrap 4's
+  // 768px, which has no CSS variable) labels get a fixed column so every value starts on one edge.
+  .curriculum-management-details-row {
+    display: grid;
+    gap: var(--pgn-spacing-spacer-1) var(--pgn-spacing-spacer-3);
+
+    + .curriculum-management-details-row {
+      margin-top: var(--pgn-spacing-spacer-3);
+      padding-top: var(--pgn-spacing-spacer-3);
+      border-top: 1px solid var(--pgn-color-light-300);
+    }
+
+    > dt {
+      // Line the small label up with the first line of the value beside it.
+      padding-top: .125rem;
+    }
+
+    @media (width >= 768px) {
+      grid-template-columns: 9rem minmax(0, 1fr);
+    }
+  }
+
+  // Fixed width so the two slot rows' badge titles line up.
+  .curriculum-management-slot-label {
+    width: 5rem;
+    font-weight: 600;
+  }
+
+  // Badge slot picker: a form-control-looking toggle whose menu matches its width and scrolls,
+  // like the course picker's results list.
+  .curriculum-management-slot-dropdown .dropdown-toggle {
+    height: auto;
+    min-height: var(--pgn-size-form-control-height-base, 2.75rem);
+
+    &::after {
+      margin-left: var(--pgn-spacing-spacer-2);
+      flex-shrink: 0;
+    }
+  }
+
+  .curriculum-management-slot-menu {
+    max-height: 20rem;
+    overflow-y: auto;
+  }
+
+  .curriculum-management-slot-option-image {
+    width: 1.75rem;
+    height: 1.75rem;
+    flex-shrink: 0;
+    border-radius: var(--pgn-size-border-radius-base);
+    object-fit: contain;
+  }
+
+  // The shared group-configurations header top-aligns its content (align-items: flex-start), which
+  // leaves the expand arrow (and badge thumbnail) at the top of a two-line title + ID block. Centre
+  // them on the block instead.
+  // `.configuration-card` in the selector out-weighs the shared rule (same weight, loaded later), and
+  // the arrow's shared bottom margin would still lift it above centre.
+  .configuration-card .configuration-card-header .configuration-card-header__button {
+    align-items: center;
+
+    > .btn-icon-before {
+      margin-bottom: 0;
+    }
   }
 }

@@ -135,6 +135,14 @@ describe('<BadgeForm />', () => {
     expect(axiosMock.history.post).toHaveLength(0);
   });
 
+  it('a failed save moves focus to the first invalid field', async () => {
+    const { user } = setup();
+    await user.type(screen.getByLabelText('Title'), 'Retained badge');
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+    await screen.findByText('Enter a description.');
+    await waitFor(() => expect(screen.getByLabelText('Description')).toHaveFocus());
+  });
+
   it('edits: shows the UUID, removes the image with remove_image=true', async () => {
     const { axiosMock, onClose, user } = setup(linkedBadge);
     axiosMock.onPatch(apiUrls.badge(linkedBadge.uuid)).reply(200, rawBadges[0]);
@@ -183,6 +191,33 @@ describe('<BadgeForm />', () => {
     expect(screen.queryByRole('button', { name: 'Remove Getting started' })).not.toBeInTheDocument();
   });
 
+  it('a course that awards another badge shows that badge and cannot be added; the own course stays Added', async () => {
+    const { axiosMock, user } = setup(courseBadge);
+    const otherBadge = { uuid: 'other-badge', title: 'Early bird' };
+    axiosMock.onGet(apiUrls.courses('DRV')).reply(
+      200,
+      page([
+        { ...rawCourses[0], badge: otherBadge },
+        { ...rawCourses[1], badge: null },
+        {
+          ...rawCourses[2],
+          course_id: 'course-v1:Uber+DRV201+2026_Q4',
+          display_name: 'Airport pickups',
+          badge: { uuid: courseBadge.uuid, title: courseBadge.title },
+        },
+      ]),
+    );
+    await user.type(screen.getByLabelText('Add a course'), 'DRV');
+    const used = await screen.findByRole('button', { name: 'Getting started already awards the badge Early bird' });
+    expect(used).toBeDisabled();
+    expect(used).toHaveTextContent('Already has a badge');
+    expect(used).not.toHaveTextContent('Early bird');
+    expect(used.parentElement).toHaveAttribute('title', 'Early bird');
+    expect(screen.getByRole('button', { name: 'Airport pickups is already added' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Add Earnings and payouts' }));
+    expect(screen.getByRole('button', { name: 'Remove Earnings and payouts' })).toBeInTheDocument();
+  });
+
   it('edits a course badge: kind is read-only; removing every course sends one empty course_ids', async () => {
     const { axiosMock, onClose, user } = setup(courseBadge);
     axiosMock.onPatch(apiUrls.badge(courseBadge.uuid)).reply(200, rawCourseBadge);
@@ -198,6 +233,33 @@ describe('<BadgeForm />', () => {
     const body = axiosMock.history.patch[0].data as FormData;
     expect(body.has('kind')).toBe(false);
     expect(body.getAll('course_ids')).toEqual(['']);
+  });
+
+  it('shows an earned course badge\'s course read-only and saves without course_ids', async () => {
+    const earned = { ...courseBadge, awardCount: 2 };
+    const { axiosMock, onClose, user } = setup(earned);
+    axiosMock.onPatch(apiUrls.badge(courseBadge.uuid)).reply(200, rawCourseBadge);
+    expect(screen.getByText('Learners have earned this badge, so its course can\'t change.')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Add a course')).not.toBeInTheDocument();
+    expect(screen.getByText('Airport pickups')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Remove Airport pickups' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect((axiosMock.history.patch[0].data as FormData).has('course_ids')).toBe(false);
+  });
+
+  it('keeps the course picker for an unearned course badge', () => {
+    setup(courseBadge);
+    expect(screen.getByLabelText('Add a course')).toBeInTheDocument();
+    expect(screen.queryByText('Learners have earned this badge, so its course can\'t change.')).not.toBeInTheDocument();
+  });
+
+  it('maps a server course lock error onto the course field', async () => {
+    const { axiosMock, user } = setup(courseBadge);
+    const lock = '1 learner has earned this badge, so its course can\'t change. Create a new badge instead.';
+    axiosMock.onPatch(apiUrls.badge(courseBadge.uuid)).reply(400, { course_ids: [lock] });
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText(lock)).toBeInTheDocument();
   });
 
   it('maps a server course_ids error onto the course row by index', async () => {
