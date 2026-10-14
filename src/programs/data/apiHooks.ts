@@ -35,10 +35,13 @@ export const usePrograms = () => useQuery({
 // params are part of the query key so each combination is cached separately and
 // paging back and forth doesn't refetch.
 export const useProgramsPage = (
-  params: { page?: number; search?: string; ordering?: string; status?: string } = {},
+  params: {
+    page?: number; search?: string; ordering?: string; status?: string; pricing?: string;
+  } = {},
 ) => useQuery({
   queryKey: [
     'programs', 'page', params.page ?? 1, params.search ?? '', params.ordering ?? '', params.status ?? '',
+    params.pricing ?? '',
   ],
   queryFn: () => getProgramsPage(params),
   // Keeps the previous page visible while the next one loads, instead of
