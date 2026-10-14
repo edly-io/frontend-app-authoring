@@ -940,9 +940,17 @@ export const uploadCertificateSignature = async (
  * (possibly unsaved) config so the preview reflects edits before save; the
  * backend fills all placeholders and returns final HTML.
  */
+/** An awarded row's ``certificateNumber`` gives the preview its real verify QR code. */
+export interface CertificatePreviewInput {
+  config: CertificateConfig;
+  traineeName: string;
+  issuedAt?: string;
+  certificateNumber?: string;
+}
+
 export const getCertificatePreview = async (
   programId: string,
-  input: { config: CertificateConfig; traineeName: string; issuedAt?: string },
+  input: CertificatePreviewInput,
 ): Promise<string> => {
   const url = `${getCertificatesBaseUrl()}/${getEncodedProgramId(programId)}/certificate/preview/`;
   const { data } = await getAuthenticatedHttpClient().post(url, {
@@ -950,6 +958,7 @@ export const getCertificatePreview = async (
     signatories: input.config.signatories.map(fromSignatory),
     trainee_name: input.traineeName,
     ...(input.issuedAt ? { issued_at: input.issuedAt } : {}),
+    ...(input.certificateNumber ? { certificate_number: input.certificateNumber } : {}),
   });
   return data.html;
 };

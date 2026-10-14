@@ -342,7 +342,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
           )}
           className="pt-3"
         >
-          <CertificateConfigPanel programId={programId} isActive={isActive} />
+          <CertificateConfigPanel programId={programId} isActive={isActive} issuedCount={stats.awarded} />
         </Tab>
       </Tabs>
 

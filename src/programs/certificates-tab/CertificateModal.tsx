@@ -43,7 +43,12 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
   // the backend defaults to today (and the query key stays stable per render).
   const { data: html } = useCertificatePreview(
     programId,
-    { config, traineeName: row?.fullName ?? '', issuedAt: award?.issuedAt },
+    {
+      config,
+      traineeName: row?.fullName ?? '',
+      issuedAt: award?.issuedAt,
+      certificateNumber: award?.certificateNumber,
+    },
     isOpen && !!row,
   );
 

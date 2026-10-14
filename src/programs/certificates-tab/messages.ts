@@ -112,6 +112,18 @@ const messages = defineMessages({
   save: { id: 'programs.certificates.config.save', defaultMessage: 'Save settings' },
   saving: { id: 'programs.certificates.config.saving', defaultMessage: 'Saving…' },
   saveComplete: { id: 'programs.certificates.config.save.complete', defaultMessage: 'Saved' },
+  saveConfirmTitle: {
+    id: 'programs.certificates.config.save.confirm.title',
+    defaultMessage: 'Apply changes to issued certificates?',
+  },
+  saveConfirmBody: {
+    id: 'programs.certificates.config.save.confirm.body',
+    defaultMessage: 'This program has {count, plural, one {# issued certificate} other {# issued certificates}}. '
+      + 'Saving will update all of them on the verification page and in future PDF downloads. '
+      + 'Copies already downloaded or printed will not change.',
+  },
+  saveConfirmCancel: { id: 'programs.certificates.config.save.confirm.cancel', defaultMessage: 'Cancel' },
+  saveConfirmAction: { id: 'programs.certificates.config.save.confirm.action', defaultMessage: 'Save and apply' },
   saveError: {
     id: 'programs.certificates.config.save.error',
     defaultMessage: 'Could not save certificate settings. Please try again.',

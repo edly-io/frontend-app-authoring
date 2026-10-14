@@ -2,7 +2,9 @@ import React, {
   useEffect, useMemo, useRef, useState,
 } from 'react';
 import {
+  ActionRow,
   Alert,
+  AlertModal,
   Button,
   Card,
   Form,
@@ -43,9 +45,14 @@ interface CertificateConfigPanelProps {
   // would fire (including a server-side preview render) before the admin ever
   // opens this tab. Defaults to active for standalone use.
   isActive?: boolean;
+  // Certificates already issued for this program. They all follow these
+  // settings, so saving asks for confirmation when there are any.
+  issuedCount?: number;
 }
 
-const CertificateConfigPanel: React.FC<CertificateConfigPanelProps> = ({ programId, isActive = true }) => {
+const CertificateConfigPanel: React.FC<CertificateConfigPanelProps> = ({
+  programId, isActive = true, issuedCount = 0,
+}) => {
   const intl = useIntl();
   const { data: savedConfig, isLoading } = useCertificateConfig(programId, isActive);
   const updateConfig = useUpdateCertificateConfig(programId);
@@ -228,7 +235,27 @@ const CertificateConfigPanel: React.FC<CertificateConfigPanelProps> = ({ program
 
   // Feedback lives on the button (pending → complete) and, on failure, in the
   // error alert below it — both driven by the mutation's own state, so no toast.
-  const handleSave = () => updateConfig.mutate({ issuedBy, signatories });
+  const hasChanges = useMemo(() => {
+    if (!savedConfig) { return false; }
+    const signatoryKey = (list: Signatory[]) => JSON.stringify(
+      list.map(({ name, title, signatureSlug }) => [name, title, signatureSlug ?? null]),
+    );
+    return issuedBy !== savedConfig.issuedBy
+      || signatoryKey(signatories) !== signatoryKey(savedConfig.signatories);
+  }, [issuedBy, signatories, savedConfig]);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const saveConfig = () => updateConfig.mutate({ issuedBy, signatories });
+  const handleSave = () => {
+    if (issuedCount > 0) {
+      setIsConfirmOpen(true);
+      return;
+    }
+    saveConfig();
+  };
+  const confirmSave = () => {
+    setIsConfirmOpen(false);
+    saveConfig();
+  };
 
   const saveState = (() => {
     if (updateConfig.isPending) { return 'pending'; }
@@ -341,6 +368,8 @@ const CertificateConfigPanel: React.FC<CertificateConfigPanelProps> = ({ program
           <StatefulButton
             onClick={handleSave}
             state={saveState}
+            // Nothing to save until a setting differs from what is stored.
+            disabled={!hasChanges}
             labels={{
               default: intl.formatMessage(messages.save),
               pending: intl.formatMessage(messages.saving),
@@ -354,6 +383,24 @@ const CertificateConfigPanel: React.FC<CertificateConfigPanelProps> = ({ program
           />
         </Card.Footer>
       </Card>
+
+      <AlertModal
+        title={intl.formatMessage(messages.saveConfirmTitle)}
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        footerNode={(
+          <ActionRow>
+            <Button variant="tertiary" onClick={() => setIsConfirmOpen(false)}>
+              {intl.formatMessage(messages.saveConfirmCancel)}
+            </Button>
+            <Button variant="primary" onClick={confirmSave}>
+              {intl.formatMessage(messages.saveConfirmAction)}
+            </Button>
+          </ActionRow>
+        )}
+      >
+        <p>{intl.formatMessage(messages.saveConfirmBody, { count: issuedCount })}</p>
+      </AlertModal>
 
       <Card>
         <Card.Header title={intl.formatMessage(messages.previewTitle)} />
