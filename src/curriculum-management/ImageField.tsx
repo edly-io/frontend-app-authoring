@@ -81,16 +81,18 @@ const ImageField = ({
   return (
     <Form.Group isInvalid={!!error}>
       {label && (
-        <span className="d-block small font-weight-bold text-gray-700 mb-2" id={labelId}>
+        <span className="d-block mb-2" id={labelId}>
           {label}
         </span>
       )}
+      {/* Remove sits beside the image it removes, before the dropzone in focus order. */}
       {currentUrl && (
-        <Image
-          src={currentUrl}
-          alt={altText}
-          className="curriculum-management-image-preview d-block mb-3"
-        />
+        <div className="d-flex align-items-end mb-3">
+          <Image src={currentUrl} alt={altText} className="curriculum-management-image-preview d-block mr-3" />
+          <Button variant="tertiary" size="sm" onClick={onRemove}>
+            {intl.formatMessage(messages.removeImage)}
+          </Button>
+        </div>
       )}
       <Dropzone
         data-testid={`${fieldId}-dropzone`}
@@ -101,17 +103,12 @@ const ImageField = ({
           invalidType: intl.formatMessage(messages.imageInvalidType),
           invalidSizeMore: intl.formatMessage(messages.imageTooLarge),
         }}
-        onProcessUpload={({ fileData }: { fileData: FormData }) => {
+        onProcessUpload={({ fileData }: { fileData: FormData; }) => {
           const file = fileData.get('file');
           if (file instanceof File) { onPick(file); }
         }}
       />
       {helpText && <Form.Text>{helpText}</Form.Text>}
-      {currentUrl && (
-        <Button variant="tertiary" size="sm" className="mt-2" onClick={onRemove}>
-          {intl.formatMessage(messages.removeImage)}
-        </Button>
-      )}
       {error && <Form.Control.Feedback type="invalid" hasIcon={false}>{error}</Form.Control.Feedback>}
     </Form.Group>
   );

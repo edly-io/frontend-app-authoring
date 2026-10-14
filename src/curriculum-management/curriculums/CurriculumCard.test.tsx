@@ -1,6 +1,6 @@
 import { camelCaseObject } from '@edx/frontend-platform';
 import userEvent from '@testing-library/user-event';
-import { initializeMocks, render, screen, waitFor } from '@src/testUtils';
+import { initializeMocks, render, screen, waitFor, within } from '@src/testUtils';
 import { rawCurriculums } from '../__mocks__/fixtures';
 import { apiUrls } from '../data/api';
 import type { Curriculum } from '../types';
@@ -18,28 +18,31 @@ describe('<CurriculumCard />', () => {
     expect(screen.getByText('2 courses')).toBeInTheDocument();
     expect(screen.getByText('Knowledge check after 30 days')).toBeInTheDocument();
     expect(screen.getByText('2 of 2 badges')).toBeInTheDocument();
-    expect(screen.queryByText('Courses, in learner order')).not.toBeInTheDocument();
+    expect(screen.queryByText('Courses')).not.toBeInTheDocument();
 
     const toggle = screen.getByRole('button', { name: /^new driver essentials/i });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await user.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByText('Getting started')).toBeInTheDocument();
+    expect(screen.getByText('Courses')).toBeInTheDocument();
     expect(screen.getByText('Opens 30 days after Complete')).toBeInTheDocument();
-    expect(screen.getByText('Complete: Road ready')).toBeInTheDocument();
+    expect(within(screen.getByTestId('slot-complete')).getByText('Road ready')).toBeInTheDocument();
   });
 
-  it('shows each slot read-only, with the badge image, and "No badge" for an empty slot', () => {
+  it('shows each slot read-only, with the badge image, and "None" for an empty slot', () => {
     initializeMocks();
     const withEmptySlot = { ...curriculum, badges: { ...curriculum.badges, retained: null } };
     render(<CurriculumCard curriculum={withEmptySlot} defaultExpanded onEdit={jest.fn()} />);
     expect(screen.getByText('1 of 2 badges')).toBeInTheDocument();
-    expect(screen.getByText('Complete: Road ready')).toBeInTheDocument();
+    expect(within(screen.getByTestId('slot-complete')).getByText('Road ready')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Road ready' })).toHaveAttribute(
       'src',
       curriculum.badges.complete?.imageUrl,
     );
-    expect(screen.getByText('Retained: No badge')).toBeInTheDocument();
+    const retained = screen.getByTestId('slot-retained');
+    expect(within(retained).getByText('Retained')).toBeInTheDocument();
+    expect(within(retained).getByText('None')).toBeInTheDocument();
     expect(screen.getAllByRole('img')).toHaveLength(1); // no image for the image-less or empty slots
     expect(screen.queryByRole('link')).not.toBeInTheDocument(); // slots never link to the Badges page
   });
@@ -78,7 +81,19 @@ describe('<CurriculumCard />', () => {
     render(<CurriculumCard curriculum={curriculum} defaultExpanded={false} onEdit={jest.fn()} />);
     await user.click(screen.getByRole('button', { name: 'Delete New driver essentials' }));
     await user.click(await screen.findByRole('button', { name: 'Delete' }));
-    expect(await screen.findByText('Couldn\'t delete')).toBeInTheDocument();
+    expect(await screen.findByText('Something went wrong. Please try again.')).toBeInTheDocument();
+  });
+
+  it('closes the delete error alert', async () => {
+    const { axiosMock } = initializeMocks();
+    axiosMock.onDelete(apiUrls.curriculum('cur-1')).reply(500);
+    const user = userEvent.setup();
+    render(<CurriculumCard curriculum={curriculum} defaultExpanded={false} onEdit={jest.fn()} />);
+    await user.click(screen.getByRole('button', { name: 'Delete New driver essentials' }));
+    await user.click(await screen.findByRole('button', { name: 'Delete' }));
+    await screen.findByText('Something went wrong. Please try again.');
+    await user.click(screen.getByRole('button', { name: 'Dismiss' }));
+    expect(screen.queryByText('Something went wrong. Please try again.')).not.toBeInTheDocument();
   });
 
   it('explains a 409 when the curriculum is assigned to learners', async () => {

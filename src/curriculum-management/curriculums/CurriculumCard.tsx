@@ -3,12 +3,12 @@ import type { AxiosError } from 'axios';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import {
   ActionRow,
+  Alert,
   Badge,
   Button,
   Icon,
   IconButtonWithTooltip,
   Image,
-  Stack,
   useToggle,
 } from '@openedx/paragon';
 import {
@@ -19,31 +19,20 @@ import {
 } from '@openedx/paragon/icons';
 
 import DeleteModal from '../../generic/delete-modal/DeleteModal';
-import AlertMessage from '../../generic/alert-message';
 import { useToastContext } from '../../generic/toast-context';
 import { SLOT_KEYS } from '../constants';
 import { useDeleteCurriculum } from '../data/apiHooks';
-import type { CourseRef, Curriculum } from '../types';
+import type { Curriculum } from '../types';
 import { slotMessages } from '../utils';
 import messages from '../messages';
 import CopyIdButton from '../CopyIdButton';
+import { CardDetails, CourseLine, DetailRow, EmptyValue } from '../CardDetails';
 
 interface CurriculumCardProps {
   curriculum: Curriculum;
   defaultExpanded?: boolean;
   onEdit: () => void;
 }
-
-const CourseLine = ({ course }: { course: CourseRef; }) => {
-  const intl = useIntl();
-  return (
-    <>
-      <span className="font-weight-bold mr-2">{course.displayName ?? course.courseId}</span>
-      <span className="x-small text-gray-500">{course.courseId}</span>
-      {!course.exists && <Badge variant="danger" className="ml-2">{intl.formatMessage(messages.courseNotFound)}</Badge>}
-    </>
-  );
-};
 
 const CurriculumCard = ({ curriculum, defaultExpanded = false, onEdit }: CurriculumCardProps) => {
   const intl = useIntl();
@@ -74,11 +63,14 @@ const CurriculumCard = ({ curriculum, defaultExpanded = false, onEdit }: Curricu
   return (
     <div className="configuration-card" data-testid="curriculum-card">
       {deleteError && (
-        <AlertMessage
+        <Alert
           variant="danger"
-          title={intl.formatMessage(messages.deleteErrorTitle)}
-          description={deleteError}
-        />
+          className="curriculum-management-delete-alert"
+          dismissible
+          onClose={() => setDeleteError(null)}
+        >
+          {deleteError}
+        </Alert>
       )}
       <div className="configuration-card-header">
         <Button
@@ -88,29 +80,30 @@ const CurriculumCard = ({ curriculum, defaultExpanded = false, onEdit }: Curricu
           aria-expanded={isExpanded}
           onClick={() => setIsExpanded((value) => !value)}
         >
-          <div className="configuration-card-header__title curriculum-management-min-width-0 curriculum-management-header-baseline">
+          <div className="configuration-card-header__title curriculum-management-min-width-0">
             <h3 className="text-break">{curriculum.title}</h3>
-            <span className="x-small text-gray-500">
-              {intl.formatMessage(messages.itemId, { id: curriculum.uuid })}
-            </span>
+            {/* The chips share the ID line so the title row keeps its full width; they wrap under it when narrow. */}
+            <div className="d-flex flex-wrap align-items-center curriculum-management-meta">
+              <span className="x-small text-gray-700 text-break">
+                {intl.formatMessage(messages.itemId, { id: curriculum.uuid })}
+              </span>
+              <Badge variant="primary">
+                <span className="small">
+                  {intl.formatMessage(messages.courseCount, { count: curriculum.courses.length })}
+                </span>
+              </Badge>
+              <Badge variant="primary">
+                <span className="small">
+                  {intl.formatMessage(messages.delayChip, { days: curriculum.knowledgeCheckDelayDays })}
+                </span>
+              </Badge>
+              <Badge variant="primary">
+                <span className="small">
+                  {intl.formatMessage(messages.badgeSlotsChip, { count: filledSlots, total: SLOT_KEYS.length })}
+                </span>
+              </Badge>
+            </div>
           </div>
-          <Stack gap={2} direction="horizontal" className="ml-3 curriculum-management-header-baseline">
-            <Badge className="configuration-card-header__badge">
-              <span className="small">
-                {intl.formatMessage(messages.courseCount, { count: curriculum.courses.length })}
-              </span>
-            </Badge>
-            <Badge className="configuration-card-header__badge">
-              <span className="small">
-                {intl.formatMessage(messages.delayChip, { days: curriculum.knowledgeCheckDelayDays })}
-              </span>
-            </Badge>
-            <Badge className="configuration-card-header__badge">
-              <span className="small">
-                {intl.formatMessage(messages.badgeSlotsChip, { count: filledSlots, total: SLOT_KEYS.length })}
-              </span>
-            </Badge>
-          </Stack>
         </Button>
         <ActionRow className="ml-auto d-flex">
           {/* Outside the toggle: a button can't nest inside another button. */}
@@ -132,48 +125,48 @@ const CurriculumCard = ({ curriculum, defaultExpanded = false, onEdit }: Curricu
         </ActionRow>
       </div>
       {isExpanded && (
-        <div className="configuration-card-content pt-3">
-          {curriculum.description && <p className="small text-gray-700">{curriculum.description}</p>}
-          <h4 className="h5">{intl.formatMessage(messages.coursesHeading)}</h4>
-          <ol className="pl-4">
-            {curriculum.courses.map((course) => (
-              <li key={course.courseId} className="mb-2">
-                <CourseLine course={course} />
-              </li>
-            ))}
-          </ol>
-          <h4 className="h5">{intl.formatMessage(messages.knowledgeCheckHeading)}</h4>
-          <p>
+        <CardDetails description={curriculum.description} title={curriculum.title}>
+          <DetailRow label={intl.formatMessage(messages.coursesHeading)}>
+            <ol className="mb-0 pl-3">
+              {curriculum.courses.map((course) => (
+                <li key={course.courseId} className="mb-2">
+                  <CourseLine course={course} />
+                </li>
+              ))}
+            </ol>
+          </DetailRow>
+          <DetailRow label={intl.formatMessage(messages.knowledgeCheckHeading)}>
             <CourseLine course={curriculum.knowledgeCheck} />
-            <Badge variant="light" className="ml-2">
+            <Badge variant="light" className="mt-1">
               {intl.formatMessage(messages.opensAfter, { days: curriculum.knowledgeCheckDelayDays })}
             </Badge>
-          </p>
-          <h4 className="h5">{intl.formatMessage(messages.badgesHeading)}</h4>
-          {/* Read-only: the slots are picked on the curriculum form. */}
-          <ul className="list-unstyled mb-0">
-            {SLOT_KEYS.map((slot) => {
-              const badge = curriculum.badges[slot];
-              return (
-                <li key={slot} className="mb-1 d-flex align-items-center">
-                  {badge?.imageUrl && (
-                    <Image
-                      src={badge.imageUrl}
-                      alt={badge.title}
-                      className="curriculum-management-badge-image curriculum-management-slot-image mr-2"
-                    />
-                  )}
-                  <span className={badge ? undefined : 'text-gray-500 font-italic'}>
-                    {intl.formatMessage(messages.slotEntry, {
-                      slot: intl.formatMessage(slotMessages[slot].label),
-                      badge: badge?.title ?? intl.formatMessage(messages.slotEmpty),
-                    })}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+          </DetailRow>
+          <DetailRow label={intl.formatMessage(messages.badgesHeading)}>
+            {/* Read-only: the slots are picked on the curriculum form. */}
+            <ul className="list-unstyled mb-0">
+              {SLOT_KEYS.map((slot) => {
+                const badge = curriculum.badges[slot];
+                return (
+                  <li key={slot} className="mb-1 d-flex align-items-center" data-testid={`slot-${slot}`}>
+                    <span className="curriculum-management-slot-label text-gray-700 flex-shrink-0 mr-2">
+                      {intl.formatMessage(slotMessages[slot].label)}
+                    </span>
+                    {badge?.imageUrl && (
+                      <Image
+                        src={badge.imageUrl}
+                        alt={badge.title}
+                        className="curriculum-management-badge-image curriculum-management-slot-image mr-2"
+                      />
+                    )}
+                    <span className="text-break curriculum-management-min-width-0">
+                      {badge ? badge.title : <EmptyValue>{intl.formatMessage(messages.slotEmpty)}</EmptyValue>}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </DetailRow>
+        </CardDetails>
       )}
       <DeleteModal
         category={intl.formatMessage(messages.deleteCurriculumCategory)}

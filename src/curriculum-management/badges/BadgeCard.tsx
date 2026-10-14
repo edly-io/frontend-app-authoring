@@ -4,12 +4,12 @@ import { Link } from 'react-router-dom';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import {
   ActionRow,
+  Alert,
   Badge as Chip,
   Button,
   Icon,
   IconButtonWithTooltip,
   Image,
-  Stack,
   useToggle,
 } from '@openedx/paragon';
 import {
@@ -21,7 +21,6 @@ import {
 } from '@openedx/paragon/icons';
 
 import DeleteModal from '../../generic/delete-modal/DeleteModal';
-import AlertMessage from '../../generic/alert-message';
 import { useToastContext } from '../../generic/toast-context';
 import { CURRICULUM_MANAGEMENT_PATH } from '../constants';
 import { useDeleteBadge } from '../data/apiHooks';
@@ -29,6 +28,7 @@ import type { Badge, CourseRef, SlotKey } from '../types';
 import { kindMessages, slotMessages } from '../utils';
 import messages from '../messages';
 import CopyIdButton from '../CopyIdButton';
+import { CardDetails, CourseLine, DetailRow, EmptyValue } from '../CardDetails';
 
 interface BadgeCardProps {
   badge: Badge;
@@ -97,11 +97,14 @@ const BadgeCard = ({ badge, defaultExpanded, onEdit }: BadgeCardProps) => {
   return (
     <div className="configuration-card" data-testid="badge-card">
       {deleteError && (
-        <AlertMessage
+        <Alert
           variant="danger"
-          title={intl.formatMessage(messages.deleteErrorTitle)}
-          description={deleteError}
-        />
+          className="curriculum-management-delete-alert"
+          dismissible
+          onClose={() => setDeleteError(null)}
+        >
+          {deleteError}
+        </Alert>
       )}
       <div className="configuration-card-header">
         <Button
@@ -127,24 +130,25 @@ const BadgeCard = ({ badge, defaultExpanded, onEdit }: BadgeCardProps) => {
                 <Icon src={EmojiEvents} />
               </div>
             )}
-          <div className="configuration-card-header__title curriculum-management-min-width-0 curriculum-management-header-baseline">
+          <div className="configuration-card-header__title curriculum-management-min-width-0">
             <h3 className="text-break">{badge.title}</h3>
-            <span className="x-small text-gray-500 text-break">
-              {intl.formatMessage(messages.itemId, { id: badge.uuid })}
-            </span>
-          </div>
-          <Stack gap={2} direction="horizontal" className="ml-3 curriculum-management-header-baseline">
-            <Chip variant="light" className="configuration-card-header__badge">
-              <span className="small">{intl.formatMessage(kindMessages[badge.kind].label)}</span>
-            </Chip>
-            <Chip className="configuration-card-header__badge">
-              <span className="small">
-                {isCourseBadge
-                  ? intl.formatMessage(messages.courseCount, { count: badge.courses.length })
-                  : intl.formatMessage(messages.linkedCountChip, { count: badge.linkedCurriculums.length })}
+            {/* The chips share the ID line so the title row keeps its full width; they wrap under it when narrow. */}
+            <div className="d-flex flex-wrap align-items-center curriculum-management-meta">
+              <span className="x-small text-gray-700 text-break">
+                {intl.formatMessage(messages.itemId, { id: badge.uuid })}
               </span>
-            </Chip>
-          </Stack>
+              <Chip variant="primary">
+                <span className="small">{intl.formatMessage(kindMessages[badge.kind].label)}</span>
+              </Chip>
+              <Chip variant="primary">
+                <span className="small">
+                  {isCourseBadge
+                    ? intl.formatMessage(messages.courseCount, { count: badge.courses.length })
+                    : intl.formatMessage(messages.linkedCountChip, { count: badge.linkedCurriculums.length })}
+                </span>
+              </Chip>
+            </div>
+          </div>
         </Button>
         <ActionRow className="ml-auto d-flex">
           {/* Outside the toggle: a button can't nest inside another button. */}
@@ -166,56 +170,52 @@ const BadgeCard = ({ badge, defaultExpanded, onEdit }: BadgeCardProps) => {
         </ActionRow>
       </div>
       {isExpanded && (
-        <div className="configuration-card-content pt-3">
-          {badge.description && <p className="small text-gray-700">{badge.description}</p>}
+        <CardDetails description={badge.description} title={badge.title}>
           {isCourseBadge ?
             (
-              <>
-                <h4 className="h5">{intl.formatMessage(messages.badgeCoursesHeading)}</h4>
+              <DetailRow label={intl.formatMessage(messages.badgeCoursesHeading)}>
                 {badge.courses.length > 0 ?
                   (
                     <ul className="list-unstyled mb-0">
                       {badge.courses.map((course) => (
-                        <li key={course.courseId} className="mb-1">
-                          <span className="font-weight-bold mr-2">{courseName(course)}</span>
-                          <span className="x-small text-gray-500">{course.courseId}</span>
-                          {!course.exists && (
-                            <Chip variant="danger" className="ml-2">{intl.formatMessage(messages.courseNotFound)}</Chip>
-                          )}
+                        <li key={course.courseId} className="mb-2">
+                          <CourseLine course={course} />
                         </li>
                       ))}
                     </ul>
                   ) :
-                  (
-                    <span className="x-small text-gray-500 font-italic">
-                      {intl.formatMessage(messages.badgeCoursesEmpty)}
-                    </span>
-                  )}
-              </>
+                  <EmptyValue>{intl.formatMessage(messages.badgeCoursesEmpty)}</EmptyValue>}
+              </DetailRow>
             ) :
             (
-              <>
-                <h4 className="h5">{intl.formatMessage(messages.linkedTo)}</h4>
+              <DetailRow label={intl.formatMessage(messages.linkedTo)}>
                 {isLinked ?
                   (
-                    <div className="d-flex flex-wrap">
+                    <div className="d-flex flex-wrap curriculum-management-meta">
                       {badge.linkedCurriculums.map((link) => (
                         <Chip
                           key={`${link.uuid}-${link.slot}`}
                           as={Link}
                           to={CURRICULUM_MANAGEMENT_PATH}
                           variant="light"
-                          className="mr-2 mb-2"
+                          // The chip label ends in an ellipsis; the full text stays in the tooltip.
+                          className="mw-100"
+                          title={linkLabel(link)}
                         >
                           {linkLabel(link)}
                         </Chip>
                       ))}
                     </div>
                   ) :
-                  <span className="x-small text-gray-500 font-italic">{intl.formatMessage(messages.notLinked)}</span>}
-              </>
+                  <EmptyValue>{intl.formatMessage(messages.notLinked)}</EmptyValue>}
+              </DetailRow>
             )}
-        </div>
+          <DetailRow label={intl.formatMessage(messages.earnedByHeading)}>
+            {badge.awardCount > 0 ?
+              intl.formatMessage(messages.earnedByCount, { count: badge.awardCount }) :
+              <EmptyValue>{intl.formatMessage(messages.earnedByNone)}</EmptyValue>}
+          </DetailRow>
+        </CardDetails>
       )}
       <DeleteModal
         category={intl.formatMessage(messages.deleteBadgeCategory)}

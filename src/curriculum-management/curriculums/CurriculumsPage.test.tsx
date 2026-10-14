@@ -48,7 +48,7 @@ describe('<CurriculumsPage />', () => {
       'aria-expanded',
       'false',
     );
-    expect(screen.queryByText('Courses, in learner order')).not.toBeInTheDocument();
+    expect(screen.queryByText('Courses')).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Edit New driver essentials' }));
     expect(screen.getByTestId('curriculum-form')).toHaveTextContent('edit:cur-1');
     // The form is a modal: the card stays in the list underneath.
