@@ -54,6 +54,22 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.programs.tab.filter.archived',
     defaultMessage: 'Archived',
   },
+  typeAll: {
+    id: 'course-authoring.studio-home.programs.tab.type.all',
+    defaultMessage: 'All types',
+  },
+  typeFree: {
+    id: 'course-authoring.studio-home.programs.tab.type.free',
+    defaultMessage: 'Free',
+  },
+  typePaid: {
+    id: 'course-authoring.studio-home.programs.tab.type.paid',
+    defaultMessage: 'Paid',
+  },
+  typeSubscription: {
+    id: 'course-authoring.studio-home.programs.tab.type.subscription',
+    defaultMessage: 'Part of Subscription',
+  },
   paginationInfo: {
     id: 'course-authoring.studio-home.programs.tab.pagination-info',
     defaultMessage: 'Showing {length} of {total}',
@@ -62,12 +78,14 @@ const messages = defineMessages({
 
 type SortOrder = 'az' | 'za';
 type StatusFilter = 'all' | 'draft' | 'active' | 'archived';
+type TypeFilter = 'all' | 'free' | 'paid' | 'subscription';
 
 const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
   const intl = useIntl();
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('az');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [currentPage, setCurrentPage] = useState(1);
 
   // Search, sort and status are applied SERVER-side: the list is paginated, so
@@ -79,6 +97,7 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
     search,
     ordering: sortOrder === 'az' ? 'name' : '-name',
     status: statusFilter,
+    pricing: typeFilter,
   });
 
   const programs = data?.results ?? [];
@@ -90,6 +109,13 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
     { value: 'draft', message: messages.filterDraft },
     { value: 'active', message: messages.filterActive },
     { value: 'archived', message: messages.filterArchived },
+  ];
+
+  const typeFilterOptions: Array<{ value: TypeFilter, message: typeof messages.typeAll }> = [
+    { value: 'all', message: messages.typeAll },
+    { value: 'free', message: messages.typeFree },
+    { value: 'paid', message: messages.typePaid },
+    { value: 'subscription', message: messages.typeSubscription },
   ];
 
   // Any change to the query has to reset to page 1 — staying on, say, page 5
@@ -132,6 +158,15 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
     });
   }, []);
 
+  const handleTypeFilter = useCallback((value: TypeFilter) => {
+    setTypeFilter((prev) => {
+      if (value !== prev) {
+        setCurrentPage(1);
+      }
+      return value;
+    });
+  }, []);
+
   if (isLoading) {
     return (
       <Row className="m-0 mt-4 justify-content-center">
@@ -145,6 +180,10 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
     : intl.formatMessage(messages.sortZA);
   const statusFilterLabel = intl.formatMessage(
     statusFilterOptions.find((option) => option.value === statusFilter)!.message,
+  );
+
+  const typeFilterLabel = intl.formatMessage(
+    typeFilterOptions.find((option) => option.value === typeFilter)!.message,
   );
 
   return (
@@ -175,6 +214,27 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
                 <div className="d-flex align-items-center justify-content-between">
                   {intl.formatMessage(option.message)}
                   {statusFilter === option.value && <Icon src={Check} size="xs" className="ml-2" />}
+                </div>
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown>
+        <Dropdown id="programs-type-filter-dropdown" className="mr-2">
+          <Dropdown.Toggle
+            id="programs-type-filter-toggle"
+            variant="outline-primary"
+          >
+            {typeFilterLabel}
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            {typeFilterOptions.map((option) => (
+              <Dropdown.Item
+                key={option.value}
+                onClick={() => handleTypeFilter(option.value)}
+              >
+                <div className="d-flex align-items-center justify-content-between">
+                  {intl.formatMessage(option.message)}
+                  {typeFilter === option.value && <Icon src={Check} size="xs" className="ml-2" />}
                 </div>
               </Dropdown.Item>
             ))}
@@ -219,7 +279,7 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
         <p className="text-muted">
           {(() => {
             if (search.trim()) { return intl.formatMessage(messages.emptySearch); }
-            if (statusFilter !== 'all') { return intl.formatMessage(messages.emptyFilter); }
+            if (statusFilter !== 'all' || typeFilter !== 'all') { return intl.formatMessage(messages.emptyFilter); }
             return intl.formatMessage(messages.emptyState);
           })()}
         </p>

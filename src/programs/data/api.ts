@@ -70,10 +70,12 @@ export const getProgramsConfig = async (): Promise<ProgramConfig> => {
 
 // ── List — GET /rwaq/api/programs/ ────────────────────────────────────────────
 // The endpoint paginates at 10 per page and supports ?search=, ?ordering= and
-// ?status=, so all three are passed through to the server. Filtering
+// ?status= and ?pricing=, so all four are passed through to the server. Filtering
 // client-side instead would only ever match within the page already fetched.
 export const getProgramsPage = async (
-  params: { page?: number; search?: string; ordering?: string; status?: string } = {},
+  params: {
+    page?: number; search?: string; ordering?: string; status?: string; pricing?: string;
+  } = {},
 ): Promise<PaginatedPrograms> => {
   const { data } = await getAuthenticatedHttpClient().get(`${getProgramsBaseUrl()}/`, {
     params: {
@@ -82,6 +84,8 @@ export const getProgramsPage = async (
       ordering: params.ordering,
       // 'all' is a UI-only value; omit it so the server returns every status.
       status: params.status && params.status !== 'all' ? params.status : undefined,
+      // 'all' is a UI-only value here too.
+      pricing: params.pricing && params.pricing !== 'all' ? params.pricing : undefined,
     },
   });
 

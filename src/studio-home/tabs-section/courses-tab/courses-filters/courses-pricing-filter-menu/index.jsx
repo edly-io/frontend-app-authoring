@@ -6,7 +6,7 @@ import messages from './messages';
 
 import CoursesFilterMenu from '../courses-filter-menu';
 
-/** Filters the course list by course type (Free, Paid, Program-only, Part of Subscription, or no type yet). */
+/** Filters the course list by course type (Free, Paid, Program-only, or Part of Subscription). */
 const CoursesPricingFilterMenu = ({ onItemMenuSelected }) => {
   const intl = useIntl();
 
@@ -36,11 +36,6 @@ const CoursesPricingFilterMenu = ({ onItemMenuSelected }) => {
         id: 'subscription-courses',
         name: intl.formatMessage(messages.coursesPricingFilterMenuSubscription),
         value: 'subscriptionCourses',
-      },
-      {
-        id: 'no-type-courses',
-        name: intl.formatMessage(messages.coursesPricingFilterMenuNoType),
-        value: 'noTypeCourses',
       },
     ],
     [intl],
