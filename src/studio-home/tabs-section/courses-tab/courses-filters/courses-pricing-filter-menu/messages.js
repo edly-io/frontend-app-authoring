@@ -17,10 +17,6 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.courses.tab.pricing-filter-menu.program-only',
     defaultMessage: 'Program-only',
   },
-  coursesPricingFilterMenuNoType: {
-    id: 'course-authoring.studio-home.courses.tab.pricing-filter-menu.no-type',
-    defaultMessage: 'No type',
-  },
 });
 
 export default messages;
