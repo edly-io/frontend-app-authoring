@@ -1,5 +1,5 @@
 import {
-  useQuery, useMutation, useQueryClient, keepPreviousData,
+  useQuery, useMutation, useQueryClient, keepPreviousData, type QueryClient,
 } from '@tanstack/react-query';
 import { useCurrentFbrProfile } from '@src/fbr-access/apiHooks';
 import {
@@ -53,6 +53,8 @@ import type {
   InitiateFeedbackPayload,
   Program,
   CertificateConfig,
+  CertificateRosterPage,
+  CertificateRosterQuery,
   CertificateRosterRow,
 } from './types';
 import { getProgramCapabilities } from './permissions';
@@ -438,11 +440,48 @@ export const useCertificateConfig = (programId: string, enabled = true) => useQu
   enabled: enabled && !!programId,
 });
 
-export const useCertificateRoster = (programId: string, enabled = true) => useQuery({
-  queryKey: ['certificateRoster', programId],
-  queryFn: () => getCertificateRoster(programId),
+const certificateRosterKey = (programId: string) => ['certificateRoster', programId] as const;
+
+/**
+ * One server-filtered roster page plus whole-roster KPIs. `keepPreviousData`
+ * avoids a flash to empty while a new page/search/filter loads.
+ */
+export const useCertificateRoster = (
+  programId: string,
+  query: CertificateRosterQuery,
+  enabled = true,
+) => useQuery({
+  queryKey: [...certificateRosterKey(programId), query],
+  queryFn: () => getCertificateRoster(programId, query),
   enabled: enabled && !!programId,
+  placeholderData: keepPreviousData,
 });
+
+/**
+ * Apply a single award/revoke to every cached roster page so the row and the
+ * KPIs change instantly, then refetch so filtered pages drop or gain the row.
+ * `awardedDelta` is +1 for an award, -1 for a revoke.
+ */
+const patchCachedRosterPages = (
+  queryClient: QueryClient,
+  programId: string,
+  patchRow: (row: CertificateRosterRow) => CertificateRosterRow,
+  awardedDelta: number,
+) => {
+  queryClient.setQueriesData<CertificateRosterPage>(
+    { queryKey: certificateRosterKey(programId) },
+    (page) => page && {
+      ...page,
+      kpis: {
+        ...page.kpis,
+        awarded: page.kpis.awarded + awardedDelta,
+        notAwarded: page.kpis.notAwarded - awardedDelta,
+      },
+      results: page.results.map(patchRow),
+    },
+  );
+  queryClient.invalidateQueries({ queryKey: certificateRosterKey(programId) });
+};
 
 export const useUpdateCertificateConfig = (programId: string) => {
   const queryClient = useQueryClient();
@@ -482,21 +521,17 @@ export const useAwardCertificates = (programId: string) => {
     mutationFn: (usernames: string[]) => awardCertificates(programId, usernames),
     onSuccess: (result, usernames) => {
       // A single-username award unambiguously matches its one result — patch
-      // the cache directly so the row updates instantly, no refetch round
-      // trip. A bulk award's `ok` list isn't paired with usernames, so it
-      // falls back to a refetch.
+      // the cache so the row updates instantly. A bulk award's `ok` list isn't
+      // paired with usernames, so it only refetches.
       if (usernames.length === 1 && result.ok.length === 1) {
         const [username] = usernames;
         const [certificateNumber] = result.ok;
-        queryClient.setQueryData<CertificateRosterRow[]>(
-          ['certificateRoster', programId],
-          (rows) => rows?.map((row) => (row.username === username
-            ? { ...row, certificate: { certificateNumber, status: 'active', issuedAt: new Date().toISOString() } }
-            : row)),
-        );
+        patchCachedRosterPages(queryClient, programId, (row) => (row.username === username
+          ? { ...row, certificate: { certificateNumber, status: 'active', issuedAt: new Date().toISOString() } }
+          : row), 1);
         return;
       }
-      queryClient.invalidateQueries({ queryKey: ['certificateRoster', programId] });
+      queryClient.invalidateQueries({ queryKey: certificateRosterKey(programId) });
     },
   });
 };
@@ -506,12 +541,9 @@ export const useRevokeCertificate = (programId: string) => {
   return useMutation({
     mutationFn: (certificateNumber: string) => revokeCertificate(certificateNumber),
     onSuccess: (_data, certificateNumber) => {
-      queryClient.setQueryData<CertificateRosterRow[]>(
-        ['certificateRoster', programId],
-        (rows) => rows?.map((row) => (row.certificate?.certificateNumber === certificateNumber
-          ? { ...row, certificate: null }
-          : row)),
-      );
+      patchCachedRosterPages(queryClient, programId, (row) => (row.certificate?.certificateNumber === certificateNumber
+        ? { ...row, certificate: null }
+        : row), -1);
     },
   });
 };

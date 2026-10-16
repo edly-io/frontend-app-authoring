@@ -1,7 +1,6 @@
 import React, {
   useContext,
   useEffect,
-  useMemo,
   useState,
 } from 'react';
 import {
@@ -18,7 +17,13 @@ import {
 import { EmojiEvents, Settings } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import { ToastContext } from '../../generic/toast-context';
-import type { AwardResult, CertificateConfig, CertificateRosterRow } from '../data/types';
+import type {
+  AwardResult,
+  CertificateConfig,
+  CertificateRosterKpis,
+  CertificateRosterRow,
+  StatusFilter,
+} from '../data/types';
 import {
   useAwardCertificates,
   useCertificateConfig,
@@ -28,9 +33,10 @@ import {
 import CertificateConfigPanel from './CertificateConfigPanel';
 import CertificateModal from './CertificateModal';
 import CertificateKpiCards from './CertificateKpiCards';
-import CertificateRosterToolbar, { type StatusFilter } from './CertificateRosterToolbar';
+import CertificateRosterToolbar from './CertificateRosterToolbar';
 import CertificateRosterTable from './CertificateRosterTable';
 import AuditLogTable from '../../shared/AuditLogTable';
+import { useDebouncedValue } from './useDebouncedValue';
 import messages from './messages';
 import './certificates-tab.scss';
 
@@ -40,6 +46,10 @@ const auditMessages = defineMessages({
 });
 
 const PAGE_SIZE = 25;
+const SEARCH_DEBOUNCE_MS = 300;
+const EMPTY_KPIS: CertificateRosterKpis = {
+  total: 0, awarded: 0, notAwarded: 0, average: null,
+};
 
 interface CertificatesTabProps {
   programId: string;
@@ -55,59 +65,44 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
   const intl = useIntl();
   const { showToast } = useContext(ToastContext);
 
-  const {
-    data: roster = [],
-    isLoading,
-    isError,
-  } = useCertificateRoster(programId, isActive);
-  const { data: config } = useCertificateConfig(programId, isActive);
-  const awardCertificates = useAwardCertificates(programId);
-  const revokeCertificate = useRevokeCertificate(programId);
-
   const [query, setQuery] = useState('');
+  const search = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [modalUsername, setModalUsername] = useState<string | null>(null);
+  const [modalSnapshot, setModalSnapshot] = useState<CertificateRosterRow | null>(null);
   const [isModalOpen, openModal, closeModal] = useToggle(false);
   const [page, setPage] = useState(1);
   const [awardingScope, setAwardingScope] = useState<AwardingScope | null>(null);
   const [awardsView, setAwardsView] = useState<'list' | 'audit-log'>('list');
 
+  // The server filters and pages the roster; KPIs always cover all of it.
+  const {
+    data: rosterPage,
+    isLoading,
+    isError,
+  } = useCertificateRoster(programId, {
+    page, pageSize: PAGE_SIZE, search, statusFilter,
+  }, isActive);
+  const { data: config } = useCertificateConfig(programId, isActive);
+  const awardCertificates = useAwardCertificates(programId);
+  const revokeCertificate = useRevokeCertificate(programId);
+
+  const pageRows = rosterPage?.results ?? [];
+  const kpis = rosterPage?.kpis ?? EMPTY_KPIS;
+  const matchCount = rosterPage?.count ?? 0;
+
   const effectiveConfig: CertificateConfig = config ?? { issuedBy: '', signatories: [] };
 
-  // Looked up live (not snapshotted) so the modal reflects award/revoke
-  // mutations made while it's open, instead of showing stale pre-mutation data.
-  const modalRow = modalUsername
-    ? roster.find((row) => row.username === modalUsername) ?? null
-    : null;
-
-  const stats = useMemo(() => {
-    const total = roster.length;
-    const awarded = roster.filter((row) => row.certificate).length;
-    // percent is null for programs with no grading scheme set up — exclude
-    // those rows from the average rather than treating them as 0.
-    const scoredRows = roster.filter((row) => row.percent !== null);
-    const average = scoredRows.length === 0
-      ? null
-      : (scoredRows.reduce((sum, row) => sum + Number(row.percent), 0) / scoredRows.length).toFixed(1);
-    return {
-      total,
-      awarded,
-      notAwarded: total - awarded,
-      average,
-    };
-  }, [roster]);
-
-  const visibleRows = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-    return roster.filter((row) => {
-      if (statusFilter === 'awarded' && !row.certificate) { return false; }
-      if (statusFilter === 'notAwarded' && row.certificate) { return false; }
-      if (!normalizedQuery) { return true; }
-      return row.fullName.toLowerCase().includes(normalizedQuery)
-        || row.username.toLowerCase().includes(normalizedQuery);
-    });
-  }, [roster, query, statusFilter]);
+  // The modal follows the live row so it reflects award/revoke mutations made
+  // while it's open. A refetch can drop that row from the filtered page (e.g.
+  // awarding under "Not awarded"), so the last live version is kept to show.
+  const liveModalRow = modalSnapshot
+    ? pageRows.find((row) => row.username === modalSnapshot.username)
+    : undefined;
+  useEffect(() => {
+    if (liveModalRow) { setModalSnapshot(liveModalRow); }
+  }, [liveModalRow]);
+  const modalRow = liveModalRow ?? modalSnapshot;
 
   // Selection is per-page: reset to the first page and clear any selection
   // whenever the filtered set changes, so the bulk bar only reflects the
@@ -115,16 +110,15 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
   useEffect(() => {
     setPage(1);
     setSelected(new Set());
-  }, [query, statusFilter]);
+  }, [search, statusFilter]);
 
   const goToPage = (nextPage: number) => {
     setPage(nextPage);
     setSelected(new Set());
   };
 
-  const pageCount = Math.max(1, Math.ceil(visibleRows.length / PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(matchCount / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
-  const pageRows = visibleRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   // Only not-yet-awarded rows on the current page are selectable.
   const selectablePageRows = pageRows.filter((row) => !row.certificate);
@@ -211,7 +205,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
     && revokeCertificate.variables === certificateNumber;
 
   const openRowModal = (row: CertificateRosterRow) => {
-    setModalUsername(row.username);
+    setModalSnapshot(row);
     openModal();
   };
 
@@ -274,7 +268,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
     return (
       <>
         {toggle}
-        <CertificateKpiCards stats={stats} />
+        <CertificateKpiCards stats={kpis} />
         <Card>
           <CertificateRosterToolbar
             query={query}
@@ -302,7 +296,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
             isRevokeDisabled={isRevokeDisabled}
             isRowAwarding={isRowAwarding}
             isRowRevoking={isRowRevoking}
-            totalCount={stats.total}
+            totalCount={matchCount}
             pageCount={pageCount}
             currentPage={currentPage}
             onPageSelect={goToPage}
@@ -342,7 +336,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
           )}
           className="pt-3"
         >
-          <CertificateConfigPanel programId={programId} isActive={isActive} issuedCount={stats.awarded} />
+          <CertificateConfigPanel programId={programId} isActive={isActive} issuedCount={kpis.awarded} />
         </Tab>
       </Tabs>
 

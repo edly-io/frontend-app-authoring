@@ -2,7 +2,7 @@ import {
   fireEvent, initializeMocks, render, screen, waitFor,
 } from '@src/testUtils';
 import CertificatesTab from './CertificatesTab';
-import type { CertificateRosterRow } from '../data/types';
+import type { CertificateRosterKpis, CertificateRosterPage, CertificateRosterRow } from '../data/types';
 
 const mockAwardMutate = jest.fn();
 const mockRevokeMutate = jest.fn();
@@ -62,6 +62,24 @@ const pendingRow: CertificateRosterRow = {
   certificate: null,
 };
 
+const twoRowKpis: CertificateRosterKpis = {
+  total: 2, awarded: 1, notAwarded: 1, average: '74.5',
+};
+
+const rosterPage = (
+  results: CertificateRosterRow[],
+  overrides: Partial<CertificateRosterPage> = {},
+): { data: CertificateRosterPage, isLoading: false, isError: false } => ({
+  data: {
+    count: results.length, kpis: twoRowKpis, results, ...overrides,
+  },
+  isLoading: false,
+  isError: false,
+});
+
+/** The query the tab last asked the roster hook for. */
+const lastRosterQuery = () => mockUseCertificateRoster.mock.calls.at(-1)[1];
+
 const renderTab = () => render(
   <CertificatesTab programId={programId} programName={programName} isActive />,
 );
@@ -81,7 +99,7 @@ describe('<CertificatesTab />', () => {
     });
     mockUseAwardCertificates.mockReturnValue({ mutate: mockAwardMutate, isPending: false, variables: undefined });
     mockUseRevokeCertificate.mockReturnValue({ mutate: mockRevokeMutate, isPending: false, variables: undefined });
-    mockUseCertificateRoster.mockReturnValue({ data: [awardedRow, pendingRow], isLoading: false, isError: false });
+    mockUseCertificateRoster.mockReturnValue(rosterPage([awardedRow, pendingRow]));
     mockUseCertificateConfig.mockReturnValue({
       data: { issuedBy: 'Directorate of Training', signatories: [{ name: 'A. Director', title: 'DG' }] },
     });
@@ -167,7 +185,7 @@ describe('<CertificatesTab />', () => {
 
   it('reflects an award made from within the modal instead of showing stale data', () => {
     let currentRoster = [awardedRow, pendingRow];
-    mockUseCertificateRoster.mockImplementation(() => ({ data: currentRoster, isLoading: false, isError: false }));
+    mockUseCertificateRoster.mockImplementation(() => rosterPage(currentRoster));
     mockAwardMutate.mockImplementation((usernames: string[], opts?: any) => {
       currentRoster = currentRoster.map((row) => (row.username === usernames[0]
         ? {
@@ -228,17 +246,84 @@ describe('<CertificatesTab />', () => {
     expect(screen.getByRole('status')).toBeInTheDocument();
   });
 
-  it('filters the roster by search query', () => {
+  it('asks the server for the first page of everyone by default', () => {
+    renderTab();
+    expect(lastRosterQuery()).toEqual({
+      page: 1, pageSize: 25, search: '', statusFilter: 'all',
+    });
+  });
+
+  it('asks the server for trainees matching the search, once typing pauses', async () => {
     renderTab();
     fireEvent.change(screen.getByPlaceholderText(/Search trainees/i), { target: { value: 'jawad' } });
-    expect(screen.queryByText('Ayesha Tariq')).not.toBeInTheDocument();
-    expect(screen.getByText('Jawad Ali')).toBeInTheDocument();
+    expect(lastRosterQuery().search).toBe('');
+    await waitFor(() => expect(lastRosterQuery()).toMatchObject({ page: 1, search: 'jawad' }));
+  });
+
+  it('asks the server for the chosen certificate status', () => {
+    renderTab();
+    fireEvent.change(screen.getByRole('combobox', { name: /Status/i }), { target: { value: 'notAwarded' } });
+    expect(lastRosterQuery()).toMatchObject({ page: 1, statusFilter: 'notAwarded' });
+  });
+
+  it('asks the server for the next page', () => {
+    mockUseCertificateRoster.mockReturnValue(rosterPage([awardedRow, pendingRow], { count: 30 }));
+    renderTab();
+    fireEvent.click(screen.getByRole('button', { name: /next/i }));
+    expect(lastRosterQuery()).toMatchObject({ page: 2 });
+  });
+
+  it('shows KPIs for the whole roster, not just the rows on this page', () => {
+    mockUseCertificateRoster.mockReturnValue(rosterPage([awardedRow, pendingRow], {
+      count: 2,
+      kpis: {
+        total: 140, awarded: 37, notAwarded: 103, average: '68.2',
+      },
+    }));
+    renderTab();
+    expect(screen.getByText('140')).toBeInTheDocument();
+    expect(screen.getByText('37')).toBeInTheDocument();
+    expect(screen.getByText('103')).toBeInTheDocument();
   });
 
   it('shows the empty state when no rows match', () => {
+    mockUseCertificateRoster.mockReturnValue(rosterPage([]));
     renderTab();
-    fireEvent.change(screen.getByPlaceholderText(/Search trainees/i), { target: { value: 'nobody' } });
     expect(screen.getByText(/No trainees match your filters/i)).toBeInTheDocument();
+  });
+
+  it('counts every issued certificate in the settings-change warning', () => {
+    mockUseCertificateRoster.mockReturnValue(rosterPage([awardedRow, pendingRow], {
+      kpis: {
+        total: 140, awarded: 37, notAwarded: 103, average: null,
+      },
+    }));
+    renderTab();
+    fireEvent.click(screen.getByRole('tab', { name: /Configuration/i }));
+    fireEvent.change(screen.getByLabelText(/Issued by/i), { target: { value: 'New Authority' } });
+    fireEvent.click(screen.getByRole('button', { name: /Save settings/i }));
+    expect(screen.getByRole('dialog')).toHaveTextContent(/37 issued certificates/i);
+  });
+
+  it('keeps showing the trainee in the modal after an award moves them off the filtered page', () => {
+    let currentRoster = [pendingRow];
+    mockUseCertificateRoster.mockImplementation(() => rosterPage(currentRoster));
+    mockAwardMutate.mockImplementation((usernames: string[], opts?: any) => {
+      // The cache patch marks the row awarded first; the refetch of the
+      // "Not awarded" page then drops it.
+      currentRoster = [{
+        ...pendingRow,
+        certificate: { certificateNumber: 'FBR-CERT-NEW', status: 'active' as const, issuedAt: '2026-07-01T00:00:00Z' },
+      }];
+      opts?.onSuccess?.({ ok: usernames, errors: [] });
+      opts?.onSettled?.();
+    });
+    const { rerender } = renderTab();
+    fireEvent.click(screen.getByRole('button', { name: /^Preview$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Award certificate$/i }));
+    currentRoster = [];
+    rerender(<CertificatesTab programId={programId} programName={programName} isActive />);
+    expect(screen.getByRole('button', { name: /^Revoke certificate$/i })).toBeInTheDocument();
   });
 
   it('renders the certificate settings panel with the issuing authority', async () => {

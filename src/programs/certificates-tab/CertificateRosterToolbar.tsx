@@ -5,9 +5,8 @@ import {
 import { Search } from '@openedx/paragon/icons';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import SpinnerButton from './SpinnerButton';
+import type { StatusFilter } from '../data/types';
 import messages from './messages';
-
-export type StatusFilter = 'all' | 'awarded' | 'notAwarded';
 
 interface CertificateRosterToolbarProps {
   query: string;

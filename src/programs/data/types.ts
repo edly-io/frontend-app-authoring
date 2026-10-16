@@ -380,6 +380,32 @@ export interface CertificateRosterRow {
   certificate: CertificateAward | null;
 }
 
+export type StatusFilter = 'all' | 'awarded' | 'notAwarded';
+
+/** Which roster page to load; the server does the filtering and paging. */
+export interface CertificateRosterQuery {
+  page: number;
+  pageSize: number;
+  search: string;
+  statusFilter: StatusFilter;
+}
+
+/** Headline numbers for the whole roster, unaffected by search/filter/page. */
+export interface CertificateRosterKpis {
+  total: number;
+  awarded: number;
+  notAwarded: number;
+  /** Mean displayed percent; null when the program has no grading scheme. */
+  average: string | null;
+}
+
+export interface CertificateRosterPage {
+  /** Trainees matching the search/filter, across all pages. */
+  count: number;
+  kpis: CertificateRosterKpis;
+  results: CertificateRosterRow[];
+}
+
 export interface AwardError {
   username: string;
   code: string;
