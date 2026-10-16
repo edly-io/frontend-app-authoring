@@ -48,7 +48,10 @@ describe('<ProgramDetailPage /> pricing', () => {
 
   it('keeps pricing editable', () => {
     renderPage({ pricingCategory: 'is_paid', regularPrice: '100.00' });
-    expect(screen.getByLabelText('Pricing type')).toBeEnabled();
+    ['Free', 'Paid', 'Part of Subscription'].forEach((name) => {
+      expect(screen.getByRole('radio', { name })).toBeEnabled();
+    });
+    expect(screen.getByRole('radio', { name: 'Paid' })).toBeChecked();
     expect(screen.getByLabelText('Price (SAR)')).toBeEnabled();
     expect(screen.getByLabelText('Discounted Price / Sale Price (SAR)')).toBeEnabled();
     expect(screen.queryByText(/managed by the Rwaq admin/)).not.toBeInTheDocument();
@@ -94,11 +97,29 @@ describe('<ProgramDetailPage /> pricing', () => {
     const detail = "It's a free program. Learners have already enrolled into this program. Create a new program to make it paid.";
     mockUpdateProgram.mockRejectedValue({ response: { status: 400, data: { pricing_category: [detail] } } });
     renderPage();
-    fireEvent.change(screen.getByLabelText('Pricing type'), { target: { value: 'is_paid' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'Paid' }));
     fireEvent.change(screen.getByLabelText('Price (SAR)'), { target: { value: '100' } });
     saveProgram();
     expect(await screen.findByText(detail)).toBeInTheDocument();
     expect(mockShowToast).not.toHaveBeenCalledWith('Failed to save program. Please try again.');
+  });
+
+  it('checks the radio of the stored type', () => {
+    renderPage({ pricingCategory: 'is_part_of_subscription' });
+    expect(screen.getByRole('radio', { name: 'Part of Subscription' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Free' })).not.toBeChecked();
+    expect(screen.queryByLabelText('Price (SAR)')).not.toBeInTheDocument();
+  });
+
+  it('clears the prices when switching from Paid to Free', async () => {
+    renderPage({ pricingCategory: 'is_paid', regularPrice: '100.00', salePrice: '80.00' });
+    fireEvent.click(screen.getByRole('radio', { name: 'Free' }));
+    expect(screen.queryByLabelText('Price (SAR)')).not.toBeInTheDocument();
+    saveProgram();
+    await waitFor(() => expect(mockUpdateProgram).toHaveBeenCalledTimes(1));
+    expect(mockUpdateProgram.mock.calls[0][0].data).toMatchObject({
+      pricingCategory: 'is_free', regularPrice: '', salePrice: '',
+    });
   });
 
   describe('activating a free program', () => {
@@ -122,7 +143,7 @@ describe('<ProgramDetailPage /> pricing', () => {
       renderPage();
       activate();
       fireEvent.click(await screen.findByRole('button', { name: 'Make it paid' }));
-      await waitFor(() => expect(screen.getByLabelText('Pricing type')).toHaveFocus());
+      await waitFor(() => expect(screen.getByRole('radio', { name: 'Paid' })).toHaveFocus());
       expect(screen.queryByText('Activate a free program?')).not.toBeInTheDocument();
       expect(mockUpdateProgram).not.toHaveBeenCalled();
     });

@@ -70,8 +70,11 @@ const messages = defineMessages({
   fieldFeaturedHint: { id: 'programs.detail.field.featured.hint', defaultMessage: 'Featured programs are highlighted in the program catalog.' },
   fieldPricingCategory: { id: 'programs.detail.field.pricing-category', defaultMessage: 'Pricing type' },
   pricingFree: { id: 'programs.detail.field.pricing.free', defaultMessage: 'Free' },
+  pricingFreeDescription: { id: 'programs.detail.field.pricing.free.description', defaultMessage: 'Learners enroll at no cost.' },
   pricingPaid: { id: 'programs.detail.field.pricing.paid', defaultMessage: 'Paid' },
+  pricingPaidDescription: { id: 'programs.detail.field.pricing.paid.description', defaultMessage: 'Sold at the price set below.' },
   pricingSubscription: { id: 'programs.detail.field.pricing.subscription', defaultMessage: 'Part of Subscription' },
+  pricingSubscriptionDescription: { id: 'programs.detail.field.pricing.subscription.description', defaultMessage: 'Learners reach this program through the Rwaq subscription. It has no price of its own.' },
   fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price ({currency})' },
   fieldPriceHint: { id: 'programs.detail.field.price.hint', defaultMessage: 'Regular price shown on the marketing site.' },
   fieldSalePrice: { id: 'programs.detail.field.sale-price', defaultMessage: 'Discounted Price / Sale Price ({currency})' },
@@ -148,7 +151,8 @@ const ProgramDetailPage: React.FC = () => {
   const [isActivateFreeOpen, openActivateFree, closeActivateFree] = useToggle(false);
   // Set by "Continue as free" so the next submit skips the free-program prompt.
   const activateAsFreeConfirmed = useRef(false);
-  const pricingCategoryRef = useRef<HTMLSelectElement>(null);
+  // On the Paid radio, so "Make it paid" lands on it.
+  const pricingCategoryRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading, isError } = useProgramDetail(programId ?? '');
   const { mutateAsync: updateProgram, isPending: isSaving } = useUpdateProgram();
@@ -540,12 +544,10 @@ const ProgramDetailPage: React.FC = () => {
                         <Form.Label className="font-weight-bold">
                           {intl.formatMessage(messages.fieldPricingCategory)}
                         </Form.Label>
-                        <Form.Control
-                          as="select"
+                        <Form.RadioSet
                           name="pricingCategory"
-                          ref={pricingCategoryRef}
                           value={formik.values.pricingCategory || 'is_free'}
-                          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             const { value } = e.target;
                             formik.setFieldValue('pricingCategory', value);
                             // Switching back to free clears the money fields so
@@ -556,10 +558,23 @@ const ProgramDetailPage: React.FC = () => {
                             }
                           }}
                         >
-                          <option value="is_free">{intl.formatMessage(messages.pricingFree)}</option>
-                          <option value="is_paid">{intl.formatMessage(messages.pricingPaid)}</option>
-                          <option value="is_part_of_subscription">{intl.formatMessage(messages.pricingSubscription)}</option>
-                        </Form.Control>
+                          <Form.Radio value="is_free" description={intl.formatMessage(messages.pricingFreeDescription)}>
+                            {intl.formatMessage(messages.pricingFree)}
+                          </Form.Radio>
+                          <Form.Radio
+                            value="is_paid"
+                            ref={pricingCategoryRef}
+                            description={intl.formatMessage(messages.pricingPaidDescription)}
+                          >
+                            {intl.formatMessage(messages.pricingPaid)}
+                          </Form.Radio>
+                          <Form.Radio
+                            value="is_part_of_subscription"
+                            description={intl.formatMessage(messages.pricingSubscriptionDescription)}
+                          >
+                            {intl.formatMessage(messages.pricingSubscription)}
+                          </Form.Radio>
+                        </Form.RadioSet>
                         {formik.touched.pricingCategory && formik.errors.pricingCategory && (
                           <Form.Control.Feedback type="invalid">
                             {formik.errors.pricingCategory}
