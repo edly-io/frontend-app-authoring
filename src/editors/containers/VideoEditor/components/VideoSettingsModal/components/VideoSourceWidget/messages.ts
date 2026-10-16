@@ -23,8 +23,7 @@ const messages = defineMessages({
   },
   videoUrlFeedback: {
     id: 'authoring.videoeditor.videoSource.videoUrl.feedback',
-    defaultMessage: `The URL for your video. This can be a YouTube URL, or a link
-    to an .mp4, .ogg, or .webm video file hosted elsewhere on the internet.`,
+    defaultMessage: 'The URL for your video: a link to an .mp4, .ogg, or .webm video file hosted elsewhere on the internet.',
     description: 'Feedback for video URL field',
   },
   videoIdChangeAlert: {
