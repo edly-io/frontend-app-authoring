@@ -32,8 +32,11 @@ import type {
   FeedbackRequest,
   InitiateFeedbackPayload,
   CertificateConfig,
+  CertificateRosterPage,
+  CertificateRosterQuery,
   CertificateRosterRow,
   CertificateAssetUploadResult,
+  StatusFilter,
   AwardResult,
   Signatory,
 } from './types';
@@ -963,11 +966,37 @@ export const getCertificatePreview = async (
   return data.html;
 };
 
-export const getCertificateRoster = async (programId: string): Promise<CertificateRosterRow[]> => {
+const ROSTER_CERTIFICATE_FILTER: Record<StatusFilter, string | null> = {
+  all: null,
+  awarded: 'awarded',
+  notAwarded: 'not_awarded',
+};
+
+export const getCertificateRoster = async (
+  programId: string,
+  query: CertificateRosterQuery,
+): Promise<CertificateRosterPage> => {
   const url = `${getCertificatesBaseUrl()}/${getEncodedProgramId(programId)}/awards/`;
-  const { data } = await getAuthenticatedHttpClient().get(url);
-  const rows = Array.isArray(data) ? data : data.results;
-  return rows.map(toRosterRow);
+  const search = query.search.trim();
+  const certificate = ROSTER_CERTIFICATE_FILTER[query.statusFilter];
+  const { data } = await getAuthenticatedHttpClient().get(url, {
+    params: {
+      page: query.page,
+      page_size: query.pageSize,
+      ...(search ? { search } : {}),
+      ...(certificate ? { certificate } : {}),
+    },
+  });
+  return {
+    count: data.count,
+    kpis: {
+      total: data.kpis.total,
+      awarded: data.kpis.awarded,
+      notAwarded: data.kpis.not_awarded,
+      average: data.kpis.average,
+    },
+    results: data.results.map(toRosterRow),
+  };
 };
 
 export const awardCertificates = async (
