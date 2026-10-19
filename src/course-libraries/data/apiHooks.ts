@@ -73,10 +73,11 @@ export const useEntityLinksSummaryByDownstreamContext = (courseId?: string) => (
 );
 
 /**
- * Ivalidates the downstream links query for a course
+ * Invalidates the downstream links query for a course.
+ * Returns a promise that resolves once the active queries have refetched.
  */
-export const invalidateLinksQuery = (queryClient: QueryClient, courseId: string) => {
+export const invalidateLinksQuery = (queryClient: QueryClient, courseId: string) => (
   queryClient.invalidateQueries({
     queryKey: courseLibrariesQueryKeys.courseLibraries(courseId),
-  });
-};
+  })
+);

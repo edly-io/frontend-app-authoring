@@ -151,8 +151,6 @@ const ItemReviewList = ({
     fetchNextPage,
   } = useSearchContext();
 
-  const downstreamInfo = hits as ContentHit[];
-
   useLoadOnScroll(
     hasNextPage,
     isFetchingNextPage,
@@ -163,6 +161,13 @@ const ItemReviewList = ({
   const outOfSyncItemsByKey = useMemo(
     () => keyBy(outOfSyncItems, 'downstreamUsageKey'),
     [outOfSyncItems],
+  );
+
+  // The links query refetches before the search index query does. Drop hits
+  // that are no longer ready to sync, so their card does not stay on screen
+  // (with an active "Update" button) until the search results catch up.
+  const downstreamInfo = (hits as ContentHit[]).filter(
+    (hit) => outOfSyncItemsByKey[hit.usageKey],
   );
   const queryClient = useQueryClient();
 
@@ -215,19 +220,25 @@ const ItemReviewList = ({
 
   const updateBlock = useCallback(async (info: ContentHit) => {
     try {
+      const { downstreamContextKey, downstreamIsModified } = outOfSyncItemsByKey[info.usageKey];
       await acceptChangesMutation.mutateAsync({
         blockId: info.usageKey,
-        overrideCustomizations: info.blockType === 'html' && outOfSyncItemsByKey[info.usageKey].downstreamIsModified,
+        overrideCustomizations: info.blockType === 'html' && downstreamIsModified,
       });
-      reloadLinks(info.usageKey);
       showToast(intl.formatMessage(
         messages.updateSingleBlockSuccess,
         { name: info.displayName },
       ));
+      // Wait for the ready-to-sync links to refetch before resolving, so the
+      // LoadingButton stays pending (and disabled) until the synced item drops
+      // out of the list. Resolving right after the sync left the old card on
+      // screen with an active "Update" button, and a second click sent a
+      // duplicate sync request.
+      await invalidateLinksQuery(queryClient, downstreamContextKey);
     } catch (e) {
       showToast(intl.formatMessage(previewChangesMessages.acceptChangesFailure));
     }
-  }, []);
+  }, [outOfSyncItemsByKey]);
 
   const ignoreBlock = useCallback(async () => {
     // istanbul ignore if: this should never happen
