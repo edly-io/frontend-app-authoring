@@ -48,7 +48,6 @@ const CoursesFilters = ({
     freeCourses: { ...baseFilters, courseType: 'free' },
     paidCourses: { ...baseFilters, courseType: 'paid' },
     programOnlyCourses: { ...baseFilters, courseType: 'program_only' },
-    noTypeCourses: { ...baseFilters, courseType: 'none' },
     azCourses: { ...baseFilters, order: 'display_name' },
     zaCourses: { ...baseFilters, order: '-display_name' },
     newestCourses: { ...baseFilters, order: '-created' },

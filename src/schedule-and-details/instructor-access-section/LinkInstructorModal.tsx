@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActionRow,
   Alert,
@@ -6,12 +6,13 @@ import {
   Badge,
   Button,
   ModalDialog,
+  Pagination,
   SearchField,
   Spinner,
 } from '@openedx/paragon';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import type { InstructorProfile } from '../../instructors/data/types';
-import { useInstructors, useLinkInstructorToCourse } from '../../instructors/data/apiHooks';
+import { useInstructorsPage, useLinkInstructorToCourse } from '../../instructors/data/apiHooks';
 import messages from './messages';
 
 interface LinkInstructorModalProps {
@@ -54,16 +55,28 @@ const LinkInstructorModal: React.FC<LinkInstructorModalProps> = ({
 }) => {
   const intl = useIntl();
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [linkingId, setLinkingId] = useState<number | null>(null);
   const [linkError, setLinkError] = useState(false);
-  const { data: instructors = [], isLoading } = useInstructors();
+  // Search is applied SERVER-side: the list is paginated, and the server only
+  // returns instructors with no linked courses once a search term is given.
+  const { data, isLoading } = useInstructorsPage({ page: currentPage, search: searchQuery });
   const { mutateAsync: linkInstructor } = useLinkInstructorToCourse();
 
-  const filtered = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) { return instructors; }
-    return instructors.filter((i: InstructorProfile) => i.name.toLowerCase().includes(q));
-  }, [instructors, searchQuery]);
+  const instructors = data?.results ?? [];
+  const numPages = data?.numPages ?? 1;
+
+  // Same pattern as the Instructors tab: a stable handler (SearchField re-fires
+  // onChange when the prop identity changes) that resets to page 1 only when
+  // the value really changed.
+  const handleSearch = useCallback((value: string) => {
+    setSearchQuery((prev) => {
+      if (value !== prev) {
+        setCurrentPage(1);
+      }
+      return value;
+    });
+  }, []);
 
   const handleLink = async (instructorId: number) => {
     setLinkingId(instructorId);
@@ -79,6 +92,7 @@ const LinkInstructorModal: React.FC<LinkInstructorModalProps> = ({
 
   const handleClose = () => {
     setSearchQuery('');
+    setCurrentPage(1);
     setLinkError(false);
     onClose();
   };
@@ -97,9 +111,9 @@ const LinkInstructorModal: React.FC<LinkInstructorModalProps> = ({
         <ModalDialog.Title>{intl.formatMessage(messages.modalTitle)}</ModalDialog.Title>
         <p className="small text-muted mt-1 mb-3">{intl.formatMessage(messages.modalSubtitle)}</p>
         <SearchField
-          onSubmit={setSearchQuery}
-          onChange={setSearchQuery}
-          onClear={() => setSearchQuery('')}
+          onSubmit={handleSearch}
+          onChange={handleSearch}
+          onClear={() => handleSearch('')}
           value={searchQuery}
           placeholder={intl.formatMessage(messages.modalSearchPlaceholder)}
         />
@@ -117,12 +131,11 @@ const LinkInstructorModal: React.FC<LinkInstructorModalProps> = ({
           </div>
         )}
         {!isLoading && instructors.length === 0 && (
-          <p className="text-muted text-center py-4">{intl.formatMessage(messages.modalEmpty)}</p>
+          <p className="text-muted text-center py-4">
+            {intl.formatMessage(searchQuery.trim() ? messages.modalNoResults : messages.modalEmpty)}
+          </p>
         )}
-        {!isLoading && instructors.length > 0 && filtered.length === 0 && (
-          <p className="text-muted text-center py-4">{intl.formatMessage(messages.modalNoResults)}</p>
-        )}
-        {!isLoading && filtered.map((instructor: InstructorProfile) => (
+        {!isLoading && instructors.map((instructor: InstructorProfile) => (
           <InstructorRow
             key={instructor.id}
             name={instructor.name}
@@ -133,6 +146,15 @@ const LinkInstructorModal: React.FC<LinkInstructorModalProps> = ({
             intl={intl}
           />
         ))}
+        {numPages > 1 && (
+          <Pagination
+            className="d-flex justify-content-center mt-3"
+            paginationLabel="instructors pagination navigation"
+            pageCount={numPages}
+            currentPage={currentPage}
+            onPageSelect={setCurrentPage}
+          />
+        )}
       </ModalDialog.Body>
 
       <ModalDialog.Footer>
