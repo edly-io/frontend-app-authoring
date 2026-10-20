@@ -1,4 +1,13 @@
-import { errorMessageFor, getErrorStatus, getFieldError, isClientError } from './utils';
+import { createIntl } from 'react-intl';
+
+import messages from './messages';
+import {
+  errorMessageFor,
+  getErrorStatus,
+  getFieldError,
+  getNameError,
+  isClientError,
+} from './utils';
 
 const httpError = (status: number, data?: unknown) => ({ response: { status, data } });
 
@@ -31,6 +40,44 @@ describe('course categories utils', () => {
     ['a non-string message', httpError(400, { name: [5] })],
   ])('has no field error for %s', (_, error) => {
     expect(getFieldError(error, 'name')).toBeUndefined();
+  });
+
+  describe('getNameError', () => {
+    const intl = createIntl({ locale: 'en', messages: {} });
+    const nameError = (data: unknown) => getNameError(httpError(400, data), intl);
+
+    it.each([
+      ['name_blank', 'Enter a category name.'],
+      ['name_too_long', 'Use at most 100 characters.'],
+      ['name_taken', 'A category with this name already exists.'],
+      ['name_not_sluggable', 'Use at least one letter or digit (A-Z, 0-9).'],
+      ['name_too_similar', 'Too many categories have a similar name. Choose a more distinct name.'],
+    ])('shows our message for %s, not the API text', (code, expected) => {
+      expect(nameError({ name: ['API text'], name_code: code })).toBe(expected);
+    });
+
+    it('shows the translation for the code', () => {
+      const spanish = createIntl({
+        locale: 'es',
+        messages: { [messages.nameTaken.id]: 'Ya existe una categoría con este nombre.' },
+      });
+      expect(getNameError(httpError(400, { name: ['API text'], name_code: 'name_taken' }), spanish))
+        .toBe('Ya existe una categoría con este nombre.');
+    });
+
+    it.each([
+      ['a missing code', { name: ['API text'] }],
+      ['an unknown code', { name: ['API text'], name_code: 'name_new_rule' }],
+      ['an inherited property name', { name: ['API text'], name_code: 'toString' }],
+      ['a non-string code', { name: ['API text'], name_code: 5 }],
+    ])('falls back to the API text for %s', (_, data) => {
+      expect(nameError(data)).toBe('API text');
+    });
+
+    it('is undefined when the 400 has no name error', () => {
+      expect(nameError({ name_code: 'name_taken' })).toBeUndefined();
+      expect(getNameError(httpError(500, { name: ['x'], name_code: 'name_taken' }), intl)).toBeUndefined();
+    });
   });
 
   it('uses the permission message only for a 403', () => {

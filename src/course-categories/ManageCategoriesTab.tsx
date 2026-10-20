@@ -13,7 +13,7 @@ import CategoryRow from './CategoryRow';
 import { useCategories, useCreateCategory } from './data/apiHooks';
 import messages from './messages';
 import type { Category } from './types';
-import { errorMessageFor, getFieldError } from './utils';
+import { errorMessageFor, getNameError } from './utils';
 
 interface AddCategoryFormProps {
   onCreated: (name: string) => void;
@@ -23,7 +23,7 @@ const AddCategoryForm = ({ onCreated }: AddCategoryFormProps) => {
   const intl = useIntl();
   const [name, setName] = useState('');
   const create = useCreateCategory();
-  const nameError = create.isError ? getFieldError(create.error, 'name') : undefined;
+  const nameError = create.isError ? getNameError(create.error, intl) : undefined;
   const otherError = create.isError && !nameError
     ? errorMessageFor(
       create.error,

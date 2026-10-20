@@ -12,7 +12,7 @@ import DeleteCategoryDialog from './DeleteCategoryDialog';
 import { useDeleteCategory, useRenameCategory } from './data/apiHooks';
 import messages from './messages';
 import type { Category } from './types';
-import { errorMessageFor, getFieldError } from './utils';
+import { errorMessageFor, getNameError } from './utils';
 
 interface CategoryRowProps {
   category: Category;
@@ -57,7 +57,7 @@ const CategoryRow = ({ category, onDeleted }: CategoryRowProps) => {
     closeDelete();
   };
 
-  const nameError = rename.isError ? getFieldError(rename.error, 'name') : undefined;
+  const nameError = rename.isError ? getNameError(rename.error, intl) : undefined;
   const renameError = rename.isError && !nameError
     ? errorMessageFor(rename.error, permissionError, saveError)
     : undefined;

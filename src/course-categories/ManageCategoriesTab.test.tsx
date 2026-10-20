@@ -78,16 +78,26 @@ describe('<ManageCategoriesTab />', () => {
       await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(4));
     });
 
-    it('shows the API name error inline and keeps the typed name', async () => {
+    it('shows the message for the API name error code inline and keeps the typed name', async () => {
       mockLoaded(axiosMock);
-      axiosMock.onPost(apiUrls.categories()).reply(400, { name: ['A category with this name already exists.'] });
+      axiosMock.onPost(apiUrls.categories()).reply(400, { name: ['English from the API'], name_code: 'name_taken' });
       render(<ManageCategoriesTab />);
       const input = await screen.findByRole('textbox', { name: 'New category' });
       await userEvent.type(input, 'road safety');
       await userEvent.click(screen.getByRole('button', { name: 'Create' }));
       expect(await screen.findByText('A category with this name already exists.')).toBeInTheDocument();
+      expect(screen.queryByText('English from the API')).not.toBeInTheDocument();
       expect(input).toHaveValue('road safety');
       expect(screen.queryByText(/^Created/)).not.toBeInTheDocument();
+    });
+
+    it('shows the API name error text when there is no code', async () => {
+      mockLoaded(axiosMock);
+      axiosMock.onPost(apiUrls.categories()).reply(400, { name: ['English from the API'] });
+      render(<ManageCategoriesTab />);
+      await userEvent.type(await screen.findByRole('textbox', { name: 'New category' }), 'road safety');
+      await userEvent.click(screen.getByRole('button', { name: 'Create' }));
+      expect(await screen.findByText('English from the API')).toBeInTheDocument();
     });
 
     it('clears the error when the name is edited', async () => {
@@ -184,14 +194,26 @@ describe('<ManageCategoriesTab />', () => {
       expect(screen.getByRole('textbox', { name: 'Name of Road Safety' })).toHaveValue('Road Safety');
     });
 
-    it('shows a 400 name error inline and stays in edit mode', async () => {
+    it('shows the message for a 400 name error code inline and stays in edit mode', async () => {
       axiosMock.onPatch(apiUrls.category(ROAD.slug)).reply(400, {
-        name: ['A category with this name already exists.'],
+        name: ['English from the API'],
+        name_code: 'name_too_long',
       });
       const input = await startRename();
       await userEvent.type(input, '{Enter}');
-      expect(await screen.findByText('A category with this name already exists.')).toBeInTheDocument();
+      expect(await screen.findByText('Use at most 100 characters.')).toBeInTheDocument();
+      expect(screen.queryByText('English from the API')).not.toBeInTheDocument();
       expect(screen.getByRole('textbox', { name: 'Name of Road Safety' })).toBeInTheDocument();
+    });
+
+    it('shows the API text of a 400 name error with an unknown code', async () => {
+      axiosMock.onPatch(apiUrls.category(ROAD.slug)).reply(400, {
+        name: ['English from the API'],
+        name_code: 'name_new_rule',
+      });
+      const input = await startRename();
+      await userEvent.type(input, '{Enter}');
+      expect(await screen.findByText('English from the API')).toBeInTheDocument();
     });
 
     it('shows the permission message on a 403', async () => {

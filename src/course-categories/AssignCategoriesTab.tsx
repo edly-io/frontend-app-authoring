@@ -1,4 +1,8 @@
-import { useRef, useState } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import {
   Alert,
@@ -26,9 +30,16 @@ interface AssignedCategoryChipsProps {
   /** Shown in the summary line; without it the line says "This course". */
   courseName?: string;
   onRemove: (slug: string) => void;
+  /** Called with each chip's list item as it mounts, and with null as it unmounts. */
+  itemRef: (slug: string, item: HTMLLIElement | null) => void;
 }
 
-const AssignedCategoryChips = ({ categories, courseName, onRemove }: AssignedCategoryChipsProps) => {
+const AssignedCategoryChips = ({
+  categories,
+  courseName,
+  onRemove,
+  itemRef,
+}: AssignedCategoryChipsProps) => {
   const intl = useIntl();
   const count = categories.length;
   const summary = courseName
@@ -41,11 +52,16 @@ const AssignedCategoryChips = ({ categories, courseName, onRemove }: AssignedCat
       {count > 0 && (
         <ul className="list-unstyled d-flex flex-wrap mb-3" aria-label={intl.formatMessage(messages.assignedLabel)}>
           {categories.map(({ name, slug }) => (
-            <li key={slug} className="course-categories-chip-item mr-2 mb-2">
+            <li
+              key={slug}
+              ref={(item) => itemRef(slug, item)}
+              className="course-categories-chip-item mr-2 mb-2"
+            >
               <Chip
                 iconAfter={Close}
                 iconAfterAlt={intl.formatMessage(messages.removeAria, { name })}
-                onIconAfterClick={() => onRemove(slug)}
+                onIconAfterClick={() =>
+                  onRemove(slug)}
               >
                 <span title={name}>{name}</span>
               </Chip>
@@ -61,12 +77,17 @@ interface CategorySearchProps {
   categories: Category[];
   assignedSlugs: Set<string>;
   onAssign: (slug: string) => void;
+  inputRef: React.RefObject<HTMLInputElement>;
 }
 
-const CategorySearch = ({ categories, assignedSlugs, onAssign }: CategorySearchProps) => {
+const CategorySearch = ({
+  categories,
+  assignedSlugs,
+  onAssign,
+  inputRef,
+}: CategorySearchProps) => {
   const intl = useIntl();
   const [query, setQuery] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
   const term = query.trim().toLowerCase();
   const matches = term ? categories.filter(({ name }) => name.toLowerCase().includes(term)) : [];
 
@@ -144,6 +165,24 @@ const AssignCategoriesTab = ({ courseId, courseName }: AssignCategoriesTabProps)
   const courseCategoriesQuery = useCourseCategories(courseId);
   const assign = useAssignCategory(courseId);
   const unassign = useUnassignCategory(courseId);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const chipItems = useRef(new Map<string, HTMLLIElement>());
+  /** The chip being removed, and the chips to focus once it is gone: the next one, else the previous one. */
+  const pendingFocus = useRef<{ removed: string; candidates: string[]; }>();
+
+  // A removed chip takes its focused button with it; move focus to a neighbouring chip, else to the search, so
+  // it doesn't fall to <body>. Done when the chip leaves the list, not when the request ends (that also waits
+  // for the categories refetch).
+  useEffect(() => {
+    const pending = pendingFocus.current;
+    const assignedNow = courseCategoriesQuery.data;
+    if (!pending || !assignedNow || assignedNow.some(({ slug }) => slug === pending.removed)) {
+      return;
+    }
+    pendingFocus.current = undefined;
+    const item = pending.candidates.map((slug) => chipItems.current.get(slug)).find(Boolean);
+    (item?.querySelector('button') ?? searchRef.current)?.focus();
+  }, [courseCategoriesQuery.data]);
 
   if (categoriesQuery.isPending || courseCategoriesQuery.isPending) {
     return <Spinner animation="border" screenReaderText={intl.formatMessage(messages.loading)} />;
@@ -167,9 +206,28 @@ const AssignCategoriesTab = ({ courseId, courseName }: AssignCategoriesTabProps)
       <AssignedCategoryChips
         categories={assigned}
         courseName={courseName}
+        itemRef={(slug, item) => {
+          if (item) {
+            chipItems.current.set(slug, item);
+          } else {
+            chipItems.current.delete(slug);
+          }
+        }}
         onRemove={(slug) => {
+          const index = assigned.findIndex((category) => category.slug === slug);
+          pendingFocus.current = {
+            removed: slug,
+            candidates: [assigned[index + 1], assigned[index - 1]].filter(Boolean).map((category) => category.slug),
+          };
           assign.reset();
-          unassign.mutate(slug);
+          unassign.mutate(slug, {
+            onError: () => {
+              // The chip stays; don't move focus later if it goes for another reason (e.g. deleted in Manage).
+              if (pendingFocus.current?.removed === slug) {
+                pendingFocus.current = undefined;
+              }
+            },
+          });
         }}
       />
       {categoriesQuery.data.length === 0 ?
@@ -178,6 +236,7 @@ const AssignCategoriesTab = ({ courseId, courseName }: AssignCategoriesTabProps)
           <CategorySearch
             categories={categoriesQuery.data}
             assignedSlugs={new Set(assigned.map(({ slug }) => slug))}
+            inputRef={searchRef}
             onAssign={(slug) => {
               unassign.reset();
               assign.mutate(slug);

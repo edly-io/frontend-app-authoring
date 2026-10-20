@@ -134,6 +134,56 @@ describe('<AssignCategoriesTab />', () => {
     expect(await screen.findByText('This course has no categories yet.')).toBeInTheDocument();
   });
 
+  describe('focus after removing a chip', () => {
+    const ALL_ASSIGNED = [DRIVING, FIRE, ROAD].map(({ name, slug }) => ({ name, slug }));
+
+    const removeWithKeyboard = async (name: string) => {
+      const button = await screen.findByRole('button', { name: `Remove ${name}` });
+      button.focus();
+      await userEvent.keyboard('{Enter}');
+      await waitFor(() => expect(screen.queryByRole('button', { name: `Remove ${name}` })).not.toBeInTheDocument());
+    };
+
+    const mockRemoval = (slug: string, status = 204) => {
+      axiosMock.onDelete(apiUrls.courseCategory(COURSE_ID, slug)).reply(status);
+    };
+
+    it('moves to the next chip', async () => {
+      mockLoaded(axiosMock, { assigned: ALL_ASSIGNED });
+      mockRemoval(FIRE.slug);
+      renderTab();
+      await removeWithKeyboard(FIRE.name);
+      expect(screen.getByRole('button', { name: `Remove ${ROAD.name}` })).toHaveFocus();
+    });
+
+    it('moves to the previous chip when the last one is removed', async () => {
+      mockLoaded(axiosMock, { assigned: ALL_ASSIGNED });
+      mockRemoval(ROAD.slug);
+      renderTab();
+      await removeWithKeyboard(ROAD.name);
+      expect(screen.getByRole('button', { name: `Remove ${FIRE.name}` })).toHaveFocus();
+    });
+
+    it('moves to the search when the only chip is removed', async () => {
+      mockLoaded(axiosMock, { assigned: [{ name: ROAD.name, slug: ROAD.slug }] });
+      mockRemoval(ROAD.slug);
+      renderTab();
+      await removeWithKeyboard(ROAD.name);
+      expect(await search()).toHaveFocus();
+    });
+
+    it('stays on the chip when removing it fails', async () => {
+      mockLoaded(axiosMock, { assigned: ALL_ASSIGNED });
+      mockRemoval(FIRE.slug, 500);
+      renderTab();
+      const button = await screen.findByRole('button', { name: `Remove ${FIRE.name}` });
+      button.focus();
+      await userEvent.keyboard('{Enter}');
+      await screen.findByText('The category could not be removed. Try again.');
+      expect(button).toHaveFocus();
+    });
+  });
+
   it('shows an alert and no chip when assigning fails', async () => {
     mockLoaded(axiosMock);
     axiosMock.onPost(apiUrls.courseCategories(COURSE_ID)).reply(500);

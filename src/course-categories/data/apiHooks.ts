@@ -4,8 +4,8 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 
-import type { CategorySummary } from '../types';
-import { isClientError } from '../utils';
+import type { CategorySummary } from '@src/course-categories/types';
+import { isClientError } from '@src/course-categories/utils';
 import * as api from './api';
 
 export const courseCategoryQueryKeys = {

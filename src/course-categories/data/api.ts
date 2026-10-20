@@ -6,7 +6,7 @@ import type {
   CategorySummary,
   CourseCategoriesStatus,
   Paginated,
-} from '../types';
+} from '@src/course-categories/types';
 
 /** The API's largest page; categories are fetched in full, in pages of this size. */
 export const CATEGORIES_PAGE_SIZE = 100;
