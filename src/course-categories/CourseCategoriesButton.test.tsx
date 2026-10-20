@@ -11,8 +11,11 @@ import CourseCategoriesButton from './CourseCategoriesButton';
 import { COURSE_ID, mockLoaded } from './testHelpers';
 
 jest.mock('@src/CourseAuthoringContext', () => ({
-  useCourseAuthoringContext: () => ({ courseId: 'course-v1:Uber+101+2026' }),
+  useCourseAuthoringContext: () => ({ courseId: 'course-v1:Uber+101+2026', courseDetails: mockCourseDetails }),
 }));
+
+// `mock` prefix lets jest.mock's hoisted factory read it.
+let mockCourseDetails: { name?: string; } | undefined;
 
 let axiosMock;
 
@@ -22,6 +25,7 @@ describe('<CourseCategoriesButton />', () => {
   beforeEach(() => {
     ({ axiosMock } = initializeMocks());
     mockLoaded(axiosMock);
+    mockCourseDetails = { name: 'Intro to Driving' };
   });
 
   it('shows the button when the flag is on and the user can assign', async () => {
@@ -83,5 +87,20 @@ describe('<CourseCategoriesButton />', () => {
     render(<CourseCategoriesButton />);
     await userEvent.click(await screen.findByRole('button', { name: 'Categories' }));
     expect(await screen.findByRole('tab', { name: 'Manage Categories' })).toBeInTheDocument();
+  });
+
+  it('passes the course name from the course details to the summary', async () => {
+    mockStatus({ enabled: true, can_assign: true, can_manage: false });
+    render(<CourseCategoriesButton />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Categories' }));
+    expect(await screen.findByText('"Intro to Driving" has no categories yet.')).toBeInTheDocument();
+  });
+
+  it.each([undefined, {}])('falls back to "This course" when the details are %p', async (details) => {
+    mockCourseDetails = details;
+    mockStatus({ enabled: true, can_assign: true, can_manage: false });
+    render(<CourseCategoriesButton />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Categories' }));
+    expect(await screen.findByText('This course has no categories yet.')).toBeInTheDocument();
   });
 });

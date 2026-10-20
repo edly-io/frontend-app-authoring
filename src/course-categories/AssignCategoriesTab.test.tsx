@@ -53,7 +53,7 @@ describe('<AssignCategoriesTab />', () => {
     mockLoaded(axiosMock, { categories: [], assigned: [] });
     renderTab();
     expect(await screen.findByText('No categories exist yet.')).toBeInTheDocument();
-    expect(screen.getByText('No categories are assigned to this course yet.')).toBeInTheDocument();
+    expect(screen.getByText('This course has no categories yet.')).toBeInTheDocument();
     expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
   });
 
@@ -131,7 +131,7 @@ describe('<AssignCategoriesTab />', () => {
     renderTab();
     await userEvent.click(await screen.findByRole('button', { name: 'Remove Road Safety' }));
     expect(requestsOf(axiosMock, 'delete')).toEqual([[apiUrls.courseCategory(COURSE_ID, ROAD.slug), undefined]]);
-    expect(await screen.findByText('No categories are assigned to this course yet.')).toBeInTheDocument();
+    expect(await screen.findByText('This course has no categories yet.')).toBeInTheDocument();
   });
 
   it('shows an alert and no chip when assigning fails', async () => {
@@ -141,7 +141,7 @@ describe('<AssignCategoriesTab />', () => {
     await userEvent.type(await search(), 'fire');
     await userEvent.click(screen.getByRole('button', { name: 'Assign Fire Safety' }));
     expect(await screen.findByText('The category could not be assigned. Try again.')).toBeInTheDocument();
-    expect(screen.getByText('No categories are assigned to this course yet.')).toBeInTheDocument();
+    expect(screen.getByText('This course has no categories yet.')).toBeInTheDocument();
   });
 
   it('shows an alert and keeps the chip when unassigning fails', async () => {

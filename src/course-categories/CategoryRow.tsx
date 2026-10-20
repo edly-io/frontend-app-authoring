@@ -78,7 +78,7 @@ const CategoryRow = ({ category, onDeleted }: CategoryRowProps) => {
               <Form.Label className="sr-only">
                 {intl.formatMessage(messages.nameLabel, { name: category.name })}
               </Form.Label>
-              <div className="d-flex align-items-center">
+              <div className="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center">
                 <Form.Control
                   autoFocus
                   value={name}
@@ -91,12 +91,14 @@ const CategoryRow = ({ category, onDeleted }: CategoryRowProps) => {
                     }
                   }}
                 />
-                <Button type="submit" size="sm" className="ml-2 flex-shrink-0" disabled={rename.isPending}>
-                  {intl.formatMessage(messages.save)}
-                </Button>
-                <Button variant="tertiary" size="sm" className="ml-1 flex-shrink-0" onClick={cancelEditing}>
-                  {intl.formatMessage(messages.cancel)}
-                </Button>
+                <div className="d-flex flex-shrink-0 mt-2 mt-sm-0 ml-sm-2">
+                  <Button type="submit" size="sm" disabled={rename.isPending}>
+                    {intl.formatMessage(messages.save)}
+                  </Button>
+                  <Button variant="tertiary" size="sm" className="ml-1" onClick={cancelEditing}>
+                    {intl.formatMessage(messages.cancel)}
+                  </Button>
+                </div>
               </div>
               {(nameError || renameError) && (
                 <Form.Control.Feedback type="invalid" hasIcon={false}>{nameError || renameError}</Form.Control.Feedback>

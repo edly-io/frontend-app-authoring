@@ -1,4 +1,5 @@
-// Scoped to the course categories dialog (src/course-categories).
+// Scoped to the course categories dialogs (src/course-categories): the main dialog and the
+// delete confirmation both carry .course-categories-modal.
 .course-categories-results {
   max-height: 16rem;
   overflow-y: auto;
@@ -7,4 +8,73 @@
 // Lets a flex child shrink below its content, so long names truncate instead of pushing the actions out.
 .course-categories-min-width-0 {
   min-width: 0;
+}
+
+.course-categories-modal {
+  // Long names without spaces (course, category) wrap instead of widening the dialog.
+  .pgn__modal-title {
+    overflow-wrap: anywhere;
+  }
+
+  // A chip never grows past its row; Paragon's label then truncates long names with an ellipsis.
+  .course-categories-chip-item {
+    max-width: 100%;
+
+    // Minus the chip's own side margins, so a capped chip doesn't spill past its row.
+    .pgn__chip {
+      max-width: calc(100% - 2 * var(--pgn-spacing-chip-margin-base));
+    }
+
+    .pgn__chip__label {
+      min-width: 0;
+    }
+
+    // The 24px remove button gets a 44px hit area without changing the chip's look.
+    .pgn__chip__icon-after.btn-icon {
+      position: relative;
+
+      &::after {
+        content: "";
+        position: absolute;
+        inset: -.625rem;
+      }
+    }
+  }
+
+  // Large screens: the add form and search stay put and only the list scrolls. The dialog is
+  // at most 80vh tall and everything above and below the list takes about 26rem, so the list
+  // gets what is left (up to 22rem) and the dialog body itself doesn't scroll as well.
+  // Short or narrow screens keep natural flow, so the dialog body scrolls as a whole; below
+  // 768px wide the dialog is fullscreen (ModalDialog isFullscreenOnMobile).
+  @media (width >= 768px) and (height >= 45rem) {
+    .course-categories-list {
+      max-height: min(22rem, calc(80vh - 26rem));
+      overflow-y: auto;
+    }
+  }
+
+  // Phones and small tablets, where the dialog is fullscreen.
+  @media (width < 768px) {
+    // Both tabs share the row and wrap their text, so Paragon never moves one into a "More" menu.
+    .course-categories-tabs > .nav-link {
+      flex: 0 1 auto;
+      max-width: 49%;
+      white-space: normal;
+      text-align: center;
+    }
+
+    // Paragon keeps an invisible "More" tab in the row; take it out of the width it measures.
+    .course-categories-tabs > .pgn__tab_invisible {
+      display: none;
+    }
+
+    // Touch targets: at least 44px tall on phones, including the small rename buttons.
+    .btn:not(.btn-icon) {
+      min-height: 2.75rem;
+    }
+
+    .pgn__action-row {
+      flex-wrap: wrap;
+    }
+  }
 }

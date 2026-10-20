@@ -19,7 +19,7 @@ import messages from './messages';
  */
 const CourseCategoriesButton = () => {
   const intl = useIntl();
-  const { courseId } = useCourseAuthoringContext();
+  const { courseId, courseDetails } = useCourseAuthoringContext();
   const { enabled, canAssign, canManage } = useCourseCategoriesStatus(courseId);
   const [isOpen, open, close] = useToggle(false);
 
@@ -41,7 +41,14 @@ const CourseCategoriesButton = () => {
         </Button>
       </OverlayTrigger>
       {/* Mounted only while open, so the category lists are fetched only when needed. */}
-      {isOpen && <CourseCategoriesModal courseId={courseId} canManage={canManage} onClose={close} />}
+      {isOpen && (
+        <CourseCategoriesModal
+          courseId={courseId}
+          courseName={courseDetails?.name}
+          canManage={canManage}
+          onClose={close}
+        />
+      )}
     </>
   );
 };

@@ -46,4 +46,21 @@ describe('<CourseCategoriesModal />', () => {
     await userEvent.click(screen.getAllByRole('button', { name: 'Close' })[1]);
     expect(onClose).toHaveBeenCalled();
   });
+
+  it('passes the course name to the assign tab summary', async () => {
+    render(<CourseCategoriesModal courseId={COURSE_ID} courseName="Intro" canManage={false} onClose={jest.fn()} />);
+    expect(await screen.findByText('"Intro" has no categories yet.')).toBeInTheDocument();
+  });
+
+  it('falls back to "This course" without a course name', async () => {
+    renderModal(false);
+    expect(await screen.findByText('This course has no categories yet.')).toBeInTheDocument();
+  });
+
+  it('carries the scoped classes the mobile styles target', async () => {
+    renderModal(true);
+    const dialog = await screen.findByRole('dialog', { name: 'Course categories' });
+    expect(dialog.closest('.course-categories-modal')).not.toBeNull();
+    expect(screen.getByRole('tablist')).toHaveClass('course-categories-tabs');
+  });
 });

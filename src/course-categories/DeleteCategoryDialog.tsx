@@ -33,6 +33,7 @@ const DeleteCategoryDialog = ({
       title={intl.formatMessage(messages.deleteTitle, { name: category.name })}
       isOpen={isOpen}
       onClose={onCancel}
+      className="course-categories-modal"
       footerNode={
         <ActionRow>
           <Button variant="tertiary" onClick={onCancel} disabled={isPending}>

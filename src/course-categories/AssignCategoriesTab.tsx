@@ -23,28 +23,37 @@ import { errorMessageFor } from './utils';
 
 interface AssignedCategoryChipsProps {
   categories: CategorySummary[];
+  /** Shown in the summary line; without it the line says "This course". */
+  courseName?: string;
   onRemove: (slug: string) => void;
 }
 
-const AssignedCategoryChips = ({ categories, onRemove }: AssignedCategoryChipsProps) => {
+const AssignedCategoryChips = ({ categories, courseName, onRemove }: AssignedCategoryChipsProps) => {
   const intl = useIntl();
-  if (categories.length === 0) {
-    return <p className="small text-gray-700">{intl.formatMessage(messages.noneAssigned)}</p>;
-  }
+  const count = categories.length;
+  const summary = courseName
+    ? intl.formatMessage(messages.assignedSummary, { course: courseName, count })
+    : intl.formatMessage(messages.assignedSummaryUnnamed, { count });
   return (
-    <ul className="list-unstyled d-flex flex-wrap mb-3" aria-label={intl.formatMessage(messages.assignedLabel)}>
-      {categories.map(({ name, slug }) => (
-        <li key={slug} className="mr-2 mb-2">
-          <Chip
-            iconAfter={Close}
-            iconAfterAlt={intl.formatMessage(messages.removeAria, { name })}
-            onIconAfterClick={() => onRemove(slug)}
-          >
-            {name}
-          </Chip>
-        </li>
-      ))}
-    </ul>
+    <>
+      {/* text-break: a long course name without spaces wraps instead of widening the dialog. */}
+      <p className={count ? 'text-break mb-2' : 'text-break'}>{summary}</p>
+      {count > 0 && (
+        <ul className="list-unstyled d-flex flex-wrap mb-3" aria-label={intl.formatMessage(messages.assignedLabel)}>
+          {categories.map(({ name, slug }) => (
+            <li key={slug} className="course-categories-chip-item mr-2 mb-2">
+              <Chip
+                iconAfter={Close}
+                iconAfterAlt={intl.formatMessage(messages.removeAria, { name })}
+                onIconAfterClick={() => onRemove(slug)}
+              >
+                <span title={name}>{name}</span>
+              </Chip>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 };
 
@@ -121,10 +130,15 @@ const CategorySearch = ({ categories, assignedSlugs, onAssign }: CategorySearchP
 
 interface AssignCategoriesTabProps {
   courseId: string;
+  /** The course's display name, for the summary line; optional because it may not have loaded. */
+  courseName?: string;
 }
 
-/** The course's categories as removable chips, above a search that assigns more. */
-const AssignCategoriesTab = ({ courseId }: AssignCategoriesTabProps) => {
+/**
+ * A line naming the course and how many categories it has, its categories as removable chips,
+ * and a search that assigns more.
+ */
+const AssignCategoriesTab = ({ courseId, courseName }: AssignCategoriesTabProps) => {
   const intl = useIntl();
   const categoriesQuery = useCategories();
   const courseCategoriesQuery = useCourseCategories(courseId);
@@ -152,6 +166,7 @@ const AssignCategoriesTab = ({ courseId }: AssignCategoriesTabProps) => {
       {error && <Alert variant="danger">{error}</Alert>}
       <AssignedCategoryChips
         categories={assigned}
+        courseName={courseName}
         onRemove={(slug) => {
           assign.reset();
           unassign.mutate(slug);
