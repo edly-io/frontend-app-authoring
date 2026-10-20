@@ -1,0 +1,10 @@
+// Scoped to the course categories dialog (src/course-categories).
+.course-categories-results {
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+// Lets a flex child shrink below its content, so long names truncate instead of pushing the actions out.
+.course-categories-min-width-0 {
+  min-width: 0;
+}

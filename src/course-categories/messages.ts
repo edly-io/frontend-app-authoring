@@ -1,0 +1,47 @@
+import { defineMessages } from '@edx/frontend-platform/i18n';
+
+const p = 'course-authoring.course-categories';
+
+const messages = defineMessages({
+  button: { id: `${p}.button`, defaultMessage: 'Categories', description: 'Course outline header button that opens the course categories dialog.' },
+  buttonTooltip: { id: `${p}.button.tooltip`, defaultMessage: 'Assign categories to this course', description: 'Tooltip of the course outline Categories button.' },
+  modalTitle: { id: `${p}.modal.title`, defaultMessage: 'Course categories', description: 'Title of the course categories dialog.' },
+  close: { id: `${p}.modal.close`, defaultMessage: 'Close', description: 'Button that closes the course categories dialog.' },
+  loading: { id: `${p}.loading`, defaultMessage: 'Loading categories', description: 'Screen reader text of the spinner shown while the categories load.' },
+  assignTab: { id: `${p}.tabs.assign`, defaultMessage: 'Course Categories', description: 'Tab of the course categories dialog for assigning categories to the course.' },
+  manageTab: { id: `${p}.tabs.manage`, defaultMessage: 'Manage Categories', description: 'Tab of the course categories dialog for adding, renaming and deleting categories (global staff only).' },
+  assignedLabel: { id: `${p}.assigned.label`, defaultMessage: 'Assigned categories', description: 'Accessible name of the list of categories assigned to the course.' },
+  noneAssigned: { id: `${p}.assigned.empty`, defaultMessage: 'No categories are assigned to this course yet.', description: 'Shown when the course has no categories.' },
+  removeAria: { id: `${p}.assigned.remove-aria`, defaultMessage: 'Remove {name}', description: 'Accessible name of the cross button on an assigned category chip, which unassigns it from the course.' },
+  searchLabel: { id: `${p}.search.label`, defaultMessage: 'Add a category', description: 'Label of the search field for finding a category to assign.' },
+  searchPlaceholder: { id: `${p}.search.placeholder`, defaultMessage: 'Search categories', description: 'Placeholder of the category search field.' },
+  searchResults: { id: `${p}.search.results`, defaultMessage: 'Matching categories', description: 'Accessible name of the list of categories matching the search.' },
+  searchResultCount: { id: `${p}.search.result-count`, defaultMessage: '{count, plural, =0 {No matching categories} one {# matching category} other {# matching categories}}', description: 'Screen reader announcement of how many categories match the search.' },
+  noMatches: { id: `${p}.search.no-matches`, defaultMessage: 'No matching categories.', description: 'Shown in the search dropdown when no category matches.' },
+  noCategories: { id: `${p}.search.no-categories`, defaultMessage: 'No categories exist yet.', description: 'Shown instead of the search when no category has been created.' },
+  assigned: { id: `${p}.search.assigned`, defaultMessage: 'Assigned', description: 'Badge on a search result that is already assigned to the course (it cannot be clicked).' },
+  assignAria: { id: `${p}.search.assign-aria`, defaultMessage: 'Assign {name}', description: 'Accessible name of a search result that assigns the category to the course.' },
+  assignedAria: { id: `${p}.search.assigned-aria`, defaultMessage: '{name} (already assigned)', description: 'Accessible name of a search result that is already assigned to the course.' },
+  loadError: { id: `${p}.load-error`, defaultMessage: 'Categories could not be loaded. Close this dialog and try again.', description: 'Error shown when the categories or the course\'s categories fail to load.' },
+  assignError: { id: `${p}.assign-error`, defaultMessage: 'The category could not be assigned. Try again.', description: 'Error shown when assigning a category fails.' },
+  unassignError: { id: `${p}.unassign-error`, defaultMessage: 'The category could not be removed. Try again.', description: 'Error shown when unassigning a category fails.' },
+  saveError: { id: `${p}.save-error`, defaultMessage: 'The change could not be saved. Try again.', description: 'Error shown when creating, renaming or deleting a category fails for a reason other than the name.' },
+  permissionError: { id: `${p}.permission-error`, defaultMessage: 'You don\'t have permission to make this change.', description: 'Error shown when the server refuses a change (403).' },
+  newCategoryLabel: { id: `${p}.manage.new.label`, defaultMessage: 'New category', description: 'Label of the field for a new category\'s name.' },
+  create: { id: `${p}.manage.create`, defaultMessage: 'Create', description: 'Button that creates a category from the name typed.' },
+  created: { id: `${p}.manage.created`, defaultMessage: 'Created "{name}".', description: 'Shown after a category is created.' },
+  deleted: { id: `${p}.manage.deleted`, defaultMessage: 'Deleted "{name}".', description: 'Shown after a category is deleted.' },
+  allCategories: { id: `${p}.manage.list.label`, defaultMessage: 'All categories', description: 'Heading and accessible name of the list of every category.' },
+  courseCount: { id: `${p}.manage.course-count`, defaultMessage: '{count, plural, one {# course} other {# courses}}', description: 'How many courses a category is assigned to.' },
+  rename: { id: `${p}.manage.rename`, defaultMessage: 'Rename', description: 'Tooltip of the icon button that edits a category\'s name.' },
+  renameAria: { id: `${p}.manage.rename-aria`, defaultMessage: 'Rename {name}', description: 'Accessible name of the rename icon button on a category.' },
+  nameLabel: { id: `${p}.manage.name-label`, defaultMessage: 'Name of {name}', description: 'Accessible name of the field for a category\'s new name, while renaming it.' },
+  save: { id: `${p}.manage.save`, defaultMessage: 'Save', description: 'Button that saves a category\'s new name.' },
+  cancel: { id: `${p}.manage.cancel`, defaultMessage: 'Cancel', description: 'Button that stops renaming or deleting a category.' },
+  delete: { id: `${p}.manage.delete`, defaultMessage: 'Delete', description: 'Tooltip of the delete icon button on a category, and the confirm button of the delete dialog.' },
+  deleteAria: { id: `${p}.manage.delete-aria`, defaultMessage: 'Delete {name}', description: 'Accessible name of the delete icon button on a category.' },
+  deleteTitle: { id: `${p}.manage.delete.title`, defaultMessage: 'Delete "{name}"?', description: 'Title of the dialog that confirms deleting a category.' },
+  deleteBody: { id: `${p}.manage.delete.body`, defaultMessage: '{count, plural, =0 {It isn\'t assigned to any course.} one {Assigned to # course; it will be unassigned.} other {Assigned to # courses; they will be unassigned.}}', description: 'Body of the dialog that confirms deleting a category: how many courses lose it.' },
+});
+
+export default messages;
