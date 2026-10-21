@@ -10,6 +10,7 @@ import {
 import { CourseOutlineProvider, OutlineSidebarProvider } from '@src/course-outline';
 import { CourseAuthoringProvider } from '@src/CourseAuthoringContext';
 import { apiUrls } from '@src/course-categories/data/api';
+import { apiUrls as publishHistoryApiUrls } from '@src/publish-history/data/api';
 import messages from './messages';
 import HeaderActions, { HeaderActionsProps } from './HeaderActions';
 
@@ -152,6 +153,37 @@ describe('<HeaderActions />', () => {
       await screen.findByRole('button', { name: messages.addButton.defaultMessage });
       await waitFor(() => expect(axiosMock.history.get.some(({ url }) => url === apiUrls.status('1'))).toBe(true));
       expect(screen.queryByRole('button', { name: categoriesButtonName })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('publish history button', () => {
+    const publishHistoryName = 'Publish History';
+
+    it('sits between Categories and Reindex', async () => {
+      const { axiosMock } = initializeMocks();
+      axiosMock.onGet(apiUrls.status('1')).reply(200, { enabled: true, can_assign: true, can_manage: false });
+      axiosMock.onGet(publishHistoryApiUrls.status('1')).reply(200, { enabled: true, can_view: true });
+      renderComponent({ isReIndexShow: true, isDisabledReindexButton: false });
+
+      const history = await screen.findByRole('button', { name: publishHistoryName });
+      const categories = await screen.findByRole('button', { name: 'Categories' });
+      const reindex = screen.getByRole('button', { name: messages.reindexButton.defaultMessage });
+      expect(categories.compareDocumentPosition(history) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(history.compareDocumentPosition(reindex) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('is not rendered when the flag is off', async () => {
+      const { axiosMock } = initializeMocks();
+      axiosMock.onGet(publishHistoryApiUrls.status('1')).reply(200, { enabled: false, can_view: true });
+      renderComponent();
+
+      await screen.findByRole('button', { name: messages.addButton.defaultMessage });
+      await waitFor(() =>
+        expect(
+          axiosMock.history.get.some(({ url }) => url === publishHistoryApiUrls.status('1')),
+        ).toBe(true)
+      );
+      expect(screen.queryByRole('button', { name: publishHistoryName })).not.toBeInTheDocument();
     });
   });
 });
