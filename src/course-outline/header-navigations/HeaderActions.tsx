@@ -11,6 +11,7 @@ import {
   InfoOutline,
 } from '@openedx/paragon/icons';
 
+import { CourseCategoriesButton } from '@src/course-categories';
 import { OutlinePageErrors, XBlockActions } from '@src/data/types';
 
 import { useOutlineSidebarContext } from '../outline-sidebar/OutlineSidebarContext';
@@ -66,6 +67,7 @@ const HeaderActions = ({
           {intl.formatMessage(messages.courseInfoButton)}
         </Button>
       </OverlayTrigger>
+      <CourseCategoriesButton />
       {isReIndexShow && (
         <OverlayTrigger
           placement="bottom"

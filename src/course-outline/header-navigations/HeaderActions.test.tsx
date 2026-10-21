@@ -4,10 +4,12 @@ import {
   initializeMocks,
   render,
   screen,
+  waitFor,
 } from '@src/testUtils';
 
 import { CourseOutlineProvider, OutlineSidebarProvider } from '@src/course-outline';
 import { CourseAuthoringProvider } from '@src/CourseAuthoringContext';
+import { apiUrls } from '@src/course-categories/data/api';
 import messages from './messages';
 import HeaderActions, { HeaderActionsProps } from './HeaderActions';
 
@@ -125,5 +127,31 @@ describe('<HeaderActions />', () => {
     });
 
     expect(screen.queryByRole('button', { name: messages.reindexButton.defaultMessage })).not.toBeInTheDocument();
+  });
+
+  describe('course categories button', () => {
+    const categoriesButtonName = 'Categories';
+
+    it('sits between Course info and Reindex', async () => {
+      const { axiosMock } = initializeMocks();
+      axiosMock.onGet(apiUrls.status('1')).reply(200, { enabled: true, can_assign: true, can_manage: false });
+      renderComponent({ isReIndexShow: true, isDisabledReindexButton: false });
+
+      const categories = await screen.findByRole('button', { name: categoriesButtonName });
+      const info = screen.getByRole('button', { name: 'Course info' });
+      const reindex = screen.getByRole('button', { name: messages.reindexButton.defaultMessage });
+      expect(info.compareDocumentPosition(categories) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(categories.compareDocumentPosition(reindex) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('is not rendered when the flag is off', async () => {
+      const { axiosMock } = initializeMocks();
+      axiosMock.onGet(apiUrls.status('1')).reply(200, { enabled: false, can_assign: true, can_manage: true });
+      renderComponent();
+
+      await screen.findByRole('button', { name: messages.addButton.defaultMessage });
+      await waitFor(() => expect(axiosMock.history.get.some(({ url }) => url === apiUrls.status('1'))).toBe(true));
+      expect(screen.queryByRole('button', { name: categoriesButtonName })).not.toBeInTheDocument();
+    });
   });
 });
