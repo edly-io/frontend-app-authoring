@@ -33,6 +33,7 @@ import EnrollmentTab from './enrollment-tab/EnrollmentTab';
 import FeedbackTab from './feedback-tab/FeedbackTab';
 import ResultsTab from './results-tab/ResultsTab';
 import CertificatesTab from './certificates-tab/CertificatesTab';
+import AttendanceTab from './attendance-tab/AttendanceTab';
 import CalendarTab from './calendar-tab/CalendarTab';
 import LocationsTab from './locations-tab/LocationsTab';
 import HolidaysTab from './holidays-tab/HolidaysTab';
@@ -780,7 +781,9 @@ const ProgramDetailPage: React.FC = () => {
             </Tab>
           )}
           {capabilities.canManageProgramOperations && (
-            <Tab eventKey="attendance" title={intl.formatMessage(messages.tabAttendance)} />
+            <Tab eventKey="attendance" title={intl.formatMessage(messages.tabAttendance)} className="pt-4">
+              {activeTab === 'attendance' && <AttendanceTab programId={programId ?? ''} />}
+            </Tab>
           )}
           {capabilities.canManageProgramOperations && (
             <Tab eventKey="locations" title={intl.formatMessage(messages.tabLocations)} className="pt-4">

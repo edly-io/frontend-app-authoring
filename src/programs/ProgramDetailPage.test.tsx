@@ -29,6 +29,9 @@ jest.mock('./certificates-tab/CertificatesTab', () => function MockCertificatesT
 jest.mock('./calendar-tab/CalendarTab', () => function MockCalendarTab() {
   return <div>Calendar content</div>;
 });
+jest.mock('./attendance-tab/AttendanceTab', () => function MockAttendanceTab() {
+  return <div>Attendance content</div>;
+});
 jest.mock('./requests-tab/RequestsTab', () => function MockRequestsTab() {
   return <div>Requests content</div>;
 });
@@ -303,6 +306,17 @@ describe('<ProgramDetailPage /> program operation tabs', () => {
     renderPage('/programs/prog-key-1/requests/substitute-requests');
     expect(screen.getByText('Requests content')).toBeInTheDocument();
     expect(screen.getByTestId('location')).toHaveTextContent('/programs/prog-key-1/requests/substitute-requests');
+  });
+
+  it('keeps an attendance roster URL', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['data_admin']),
+      isLoading: false,
+    });
+
+    renderPage('/programs/prog-key-1/attendance/sessions/5?course_id=X');
+    expect(screen.getByText('Attendance content')).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent('/programs/prog-key-1/attendance/sessions/5');
   });
 
   it('renders the Holidays tab at its URL', () => {
