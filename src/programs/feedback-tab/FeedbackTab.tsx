@@ -10,6 +10,7 @@ import {
   useToggle,
 } from '@openedx/paragon';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
+import { AuditLogTable } from '@edly-io/frontend-component-fbr';
 import { ToastContext } from '../../generic/toast-context';
 import type {
   FeedbackFiltersState,
@@ -25,7 +26,6 @@ import FeedbackDashboard from './dashboard/FeedbackDashboard';
 import InitiateFeedbackRequestModal from './InitiateFeedbackRequestModal';
 import FeedbackRequestsTable from './FeedbackRequestsTable';
 import FeedbackResponseModal from './FeedbackResponseModal';
-import AuditLogTable from '../../shared/AuditLogTable';
 import './feedback-tab.scss';
 
 const defaultFeedbackFilters: FeedbackFiltersState = {

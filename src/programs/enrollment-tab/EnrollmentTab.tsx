@@ -13,11 +13,11 @@ import {
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
+import { AuditLogTable } from '@edly-io/frontend-component-fbr';
 import { useProgramEnrollments, useUnenrollLearner } from '../data/apiHooks';
 import DeleteModal from '../../generic/delete-modal/DeleteModal';
 import AddLearnerModal from './AddLearnerModal';
 import EnrollBatchModal from './EnrollBatchModal';
-import AuditLogTable from '../../shared/AuditLogTable';
 
 const messages = defineMessages({
   listTab: { id: 'programs.enrollment.tab.list', defaultMessage: 'List' },

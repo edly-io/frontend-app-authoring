@@ -17,15 +17,14 @@ const mockUseRevokeCertificate = jest.fn();
 // here it's a leaf that only injects preview HTML, so stub it to keep these
 // tests hermetic (and independent of the sibling package's build).
 jest.mock('@edly-io/frontend-component-fbr', () => ({
-  __esModule: true,
+  ...jest.requireActual('@edly-io/frontend-component-fbr'),
   CertificateHtmlView: () => null,
   PrintCertificateButton: () => null,
   UserIdentity: ({ name }: { name?: string }) => name ?? null,
+  AuditLogTable: function MockAuditLogTable() {
+    return <div data-testid="audit-log-table">No activity recorded yet.</div>;
+  },
 }));
-
-jest.mock('../../shared/AuditLogTable', () => function MockAuditLogTable() {
-  return <div data-testid="audit-log-table">No activity recorded yet.</div>;
-});
 
 jest.mock('@src/programs/data/apiHooks', () => ({
   useCertificateRoster: (...args: any[]) => mockUseCertificateRoster(...args),

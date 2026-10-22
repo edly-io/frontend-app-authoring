@@ -16,6 +16,7 @@ import {
 } from '@openedx/paragon';
 import { EmojiEvents, Settings } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
+import { AuditLogTable } from '@edly-io/frontend-component-fbr';
 import { ToastContext } from '../../generic/toast-context';
 import type {
   AwardResult,
@@ -35,7 +36,6 @@ import CertificateModal from './CertificateModal';
 import CertificateKpiCards from './CertificateKpiCards';
 import CertificateRosterToolbar from './CertificateRosterToolbar';
 import CertificateRosterTable from './CertificateRosterTable';
-import AuditLogTable from '../../shared/AuditLogTable';
 import { useDebouncedValue } from './useDebouncedValue';
 import messages from './messages';
 import './certificates-tab.scss';
