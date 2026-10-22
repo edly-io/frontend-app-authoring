@@ -11,6 +11,7 @@ import { DeleteOutline, Edit } from '@openedx/paragon/icons';
 import DeleteCategoryDialog from './DeleteCategoryDialog';
 import { useDeleteCategory, useRenameCategory } from './data/apiHooks';
 import messages from './messages';
+import TruncatedName from './TruncatedName';
 import type { Category } from './types';
 import { errorMessageFor, getNameError } from './utils';
 
@@ -108,7 +109,11 @@ const CategoryRow = ({ category, onDeleted }: CategoryRowProps) => {
         ) :
         (
           <div className="flex-grow-1 course-categories-min-width-0">
-            <span className="d-block font-weight-bold text-truncate" title={category.name}>{category.name}</span>
+            <TruncatedName
+              name={category.name}
+              id={`course-category-row-${category.slug}`}
+              className="d-block font-weight-bold text-truncate"
+            />
             <span className="d-block small text-gray-700">
               {intl.formatMessage(messages.courseCount, { count: category.courseCount })}
             </span>

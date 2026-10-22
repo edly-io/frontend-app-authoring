@@ -22,6 +22,7 @@ import {
   useUnassignCategory,
 } from './data/apiHooks';
 import messages from './messages';
+import TruncatedName from './TruncatedName';
 import type { Category, CategorySummary } from './types';
 import { errorMessageFor } from './utils';
 
@@ -63,7 +64,7 @@ const AssignedCategoryChips = ({
                 onIconAfterClick={() =>
                   onRemove(slug)}
               >
-                <span title={name}>{name}</span>
+                <TruncatedName name={name} id={`course-category-chip-${slug}`} />
               </Chip>
             </li>
           ))}
@@ -132,7 +133,7 @@ const CategorySearch = ({
                   aria-label={intl.formatMessage(isAssigned ? messages.assignedAria : messages.assignAria, { name })}
                   onClick={() => handlePick(slug)}
                 >
-                  <span className="text-truncate" title={name}>{name}</span>
+                  <TruncatedName name={name} id={`course-category-option-${slug}`} className="text-truncate" />
                   {isAssigned && (
                     <Badge variant="light" className="d-flex align-items-center flex-shrink-0 ml-2">
                       <Icon src={Check} size="xs" className="mr-1" />
