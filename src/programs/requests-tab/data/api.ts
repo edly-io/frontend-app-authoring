@@ -11,6 +11,8 @@ const requestsUrl = (type: RequestType, suffix = '') => (
   getAttendanceApiUrl(`requests/${type === REQUEST_TYPE.LEAVE ? 'leave' : 'remote-session'}/${suffix}`)
 );
 const substituteUrl = (suffix = '') => getAttendanceApiUrl(`substitute-requests/${suffix}`);
+// Ids can come from the page URL (`?id=`), so each one stays inside its own path segment.
+const idSegment = (id: number | string) => encodeURIComponent(String(id));
 
 /** Only the params that are set, as strings, so empty filters never reach the query string. */
 const toSearchParams = (params: object) => new URLSearchParams(
@@ -32,7 +34,7 @@ export const reviewRequest = async (
   reviewerNote = '',
 ): Promise<AdminRequest> => {
   const { data } = await getAuthenticatedHttpClient().patch(
-    requestsUrl(request.request_type_label, `${request.id}/review/`),
+    requestsUrl(request.request_type_label, `${idSegment(request.id)}/review/`),
     { state, reviewer_note: reviewerNote },
   );
   return data;
@@ -59,12 +61,12 @@ export const getSubstituteRequests = async (params: SubstituteListParams): Promi
 };
 
 export const getSubstituteRequest = async (id: number | string): Promise<SubstituteRequest> => {
-  const { data } = await getAuthenticatedHttpClient().get(substituteUrl(`${id}/`));
+  const { data } = await getAuthenticatedHttpClient().get(substituteUrl(`${idSegment(id)}/`));
   return data;
 };
 
 export const closeSubstituteRequest = async (id: number): Promise<SubstituteRequest> => {
-  const { data } = await getAuthenticatedHttpClient().post(substituteUrl(`${id}/close/`));
+  const { data } = await getAuthenticatedHttpClient().post(substituteUrl(`${idSegment(id)}/close/`));
   return data;
 };
 
@@ -74,7 +76,7 @@ export const assignSubstitute = async ({
 }: AssignSubstituteVariables): Promise<SubstituteRequest> => {
   await updateSession(substituteRequest.session.id, sessionData);
   const { data } = await getAuthenticatedHttpClient().post(
-    substituteUrl(`${substituteRequest.id}/assign/`),
+    substituteUrl(`${idSegment(substituteRequest.id)}/assign/`),
     { substitute_instructor_email: substituteEmail },
   );
   return data;

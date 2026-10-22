@@ -113,3 +113,15 @@ describe('SubstituteRequestsView — after a substitute is assigned', () => {
     expect(within(substituteCell).queryByText(/instructor1@fbr.test/)).not.toBeInTheDocument();
   });
 });
+
+describe('SubstituteRequestsView — assign deep links', () => {
+  it('ignores an id that is not a substitute request id', async () => {
+    mockList([makeSubstituteRequest()]);
+    render(<SubstituteRequestsView programId={PROGRAM_KEY} />, {
+      routerProps: { initialEntries: ['/?modal=assign-substitute&id=../../users/me'] },
+    });
+    await screen.findByRole('table');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(axiosMock.history.get.some((req) => /users/.test(req.url ?? ''))).toBe(false);
+  });
+});

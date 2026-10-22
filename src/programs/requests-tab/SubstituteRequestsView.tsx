@@ -29,6 +29,8 @@ import { getCovers } from './substitutes';
 
 const PAGE_SIZE = 15;
 const ASSIGN_MODAL = 'assign-substitute';
+// Substitute request ids are integers; anything else in `?id=` is not a link this page made.
+const SUBSTITUTE_ID_PATTERN = /^\d+$/;
 
 interface RowProps {
   row: { original: SubstituteRequest };
@@ -235,7 +237,7 @@ const SubstituteRequestsView = ({ programId }: { programId: string }) => {
 
       {renderTable()}
 
-      {modal === ASSIGN_MODAL && modalId && (
+      {modal === ASSIGN_MODAL && modalId && SUBSTITUTE_ID_PATTERN.test(modalId) && (
         <AssignSubstituteModal
           requestId={modalId}
           listed={requests.find((request) => String(request.id) === modalId)}
