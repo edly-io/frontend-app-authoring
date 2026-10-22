@@ -35,6 +35,7 @@ import ResultsTab from './results-tab/ResultsTab';
 import CertificatesTab from './certificates-tab/CertificatesTab';
 import CalendarTab from './calendar-tab/CalendarTab';
 import LocationsTab from './locations-tab/LocationsTab';
+import HolidaysTab from './holidays-tab/HolidaysTab';
 import { DEFAULT_PROGRAM_TAB, getActiveProgramTab, isProgramTabVisible } from './programTabs';
 import './index.scss';
 
@@ -784,7 +785,9 @@ const ProgramDetailPage: React.FC = () => {
             </Tab>
           )}
           {capabilities.canManageProgramOperations && (
-            <Tab eventKey="holidays" title={intl.formatMessage(messages.tabHolidays)} />
+            <Tab eventKey="holidays" title={intl.formatMessage(messages.tabHolidays)} className="pt-4">
+              {activeTab === 'holidays' && <HolidaysTab />}
+            </Tab>
           )}
 
         </Tabs>

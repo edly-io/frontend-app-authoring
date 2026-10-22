@@ -29,6 +29,9 @@ jest.mock('./certificates-tab/CertificatesTab', () => function MockCertificatesT
 jest.mock('./calendar-tab/CalendarTab', () => function MockCalendarTab() {
   return <div>Calendar content</div>;
 });
+jest.mock('./holidays-tab/HolidaysTab', () => function MockHolidaysTab() {
+  return <div>Holidays content</div>;
+});
 jest.mock('./locations-tab/LocationsTab', () => function MockLocationsTab() {
   return <div>Locations content</div>;
 });
@@ -286,6 +289,16 @@ describe('<ProgramDetailPage /> program operation tabs', () => {
 
     renderPage('/programs/prog-key-1/locations');
     expect(screen.getByText('Locations content')).toBeInTheDocument();
+  });
+
+  it('renders the Holidays tab at its URL', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['data_admin']),
+      isLoading: false,
+    });
+
+    renderPage('/programs/prog-key-1/holidays');
+    expect(screen.getByText('Holidays content')).toBeInTheDocument();
   });
 
   it('sends an instructor on an operation tab URL to Details', () => {
