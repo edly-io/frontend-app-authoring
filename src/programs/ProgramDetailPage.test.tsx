@@ -1,5 +1,6 @@
+import { useLocation } from 'react-router-dom';
 import {
-  initializeMocks, render, screen,
+  fireEvent, initializeMocks, render, screen,
 } from '@src/testUtils';
 import ProgramDetailPage from './ProgramDetailPage';
 import { mockProgram } from './data/api.mock';
@@ -89,13 +90,21 @@ jest.mock('./data/apiHooks', () => ({
   }),
 }));
 
-const renderPage = () => render(
-  <ProgramDetailPage />,
+const LocationDisplay = () => <div data-testid="location">{useLocation().pathname}</div>;
+
+const renderPage = (url = '/programs/prog-key-1') => render(
+  <>
+    <ProgramDetailPage />
+    <LocationDisplay />
+  </>,
   {
-    path: '/programs/:programId',
-    params: { programId: 'prog-key-1' },
+    path: '/programs/:programId/*',
+    routerProps: { initialEntries: [url] },
   },
 );
+
+// Some tabs (Feedback) nest their own tabs, so the page-level tab is the first selected one.
+const activeTabName = () => screen.getAllByRole('tab', { selected: true })[0].textContent;
 
 describe('<ProgramDetailPage /> permissions', () => {
   beforeEach(() => {
@@ -162,5 +171,57 @@ describe('<ProgramDetailPage /> permissions', () => {
     renderPage();
 
     expect(screen.getByTestId('permissionDeniedAlert')).toBeInTheDocument();
+  });
+});
+
+describe('<ProgramDetailPage /> tab URLs', () => {
+  beforeEach(() => {
+    initializeMocks();
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['super_admin']),
+      isLoading: false,
+    });
+  });
+
+  it('redirects a program URL with no tab to the details tab', () => {
+    renderPage('/programs/prog-key-1');
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/programs/prog-key-1/details');
+    expect(activeTabName()).toBe('Program Details');
+  });
+
+  it('opens the tab named in the URL', () => {
+    renderPage('/programs/prog-key-1/feedback');
+
+    expect(activeTabName()).toBe('Feedback');
+    expect(screen.getByTestId('location')).toHaveTextContent('/programs/prog-key-1/feedback');
+  });
+
+  it('falls back to details for an unknown tab', () => {
+    renderPage('/programs/prog-key-1/nope');
+
+    expect(activeTabName()).toBe('Program Details');
+    expect(screen.getByTestId('location')).toHaveTextContent('/programs/prog-key-1/details');
+  });
+
+  it('falls back to details for a tab the user cannot see', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['instructor']),
+      isLoading: false,
+    });
+
+    renderPage('/programs/prog-key-1/certificates');
+
+    expect(activeTabName()).toBe('Program Details');
+    expect(screen.getByTestId('location')).toHaveTextContent('/programs/prog-key-1/details');
+  });
+
+  it('changes the URL when a tab is clicked', () => {
+    renderPage('/programs/prog-key-1/details');
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Courses' }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/programs/prog-key-1/courses');
+    expect(activeTabName()).toBe('Courses');
   });
 });

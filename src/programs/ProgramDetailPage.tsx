@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import classNames from 'classnames';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -33,6 +33,7 @@ import EnrollmentTab from './enrollment-tab/EnrollmentTab';
 import FeedbackTab from './feedback-tab/FeedbackTab';
 import ResultsTab from './results-tab/ResultsTab';
 import CertificatesTab from './certificates-tab/CertificatesTab';
+import { DEFAULT_PROGRAM_TAB, getActiveProgramTab, isProgramTabVisible } from './programTabs';
 import './index.scss';
 
 const messages = defineMessages({
@@ -152,9 +153,9 @@ const formatAudienceCreateLabel = (inputValue: string) => (
 );
 
 const ProgramDetailPage: React.FC = () => {
-  const { programId } = useParams<{ programId: string }>();
+  const { programId, '*': tabPath } = useParams<{ programId: string, '*': string }>();
+  const navigate = useNavigate();
   const intl = useIntl();
-  const [activeTab, setActiveTab] = React.useState('details');
   const [imageFile, setImageFile] = React.useState<File | null>(null);
   const { showToast } = useContext(ToastContext);
   const {
@@ -163,6 +164,15 @@ const ProgramDetailPage: React.FC = () => {
     isLoading: isAccessLoading,
   } = useProgramAccess();
   const isSuperAdmin = profile?.roles?.includes('super_admin') ?? false;
+
+  const requestedTab = getActiveProgramTab(tabPath);
+  const activeTab = isProgramTabVisible(requestedTab, capabilities) ? requestedTab : DEFAULT_PROGRAM_TAB;
+  const isTabPathCanonical = tabPath?.split('/')[0] === activeTab;
+  React.useEffect(() => {
+    if (!isAccessLoading && !isTabPathCanonical) {
+      navigate(`/programs/${programId}/${activeTab}`, { replace: true });
+    }
+  }, [isAccessLoading, isTabPathCanonical, activeTab, programId, navigate]);
 
   const { data, isLoading, isError } = useProgramDetail(
     programId ?? '',
@@ -351,7 +361,7 @@ const ProgramDetailPage: React.FC = () => {
         <Tabs
           variant="tabs"
           activeKey={activeTab}
-          onSelect={(k) => setActiveTab(k ?? 'details')}
+          onSelect={(k) => navigate(`/programs/${programId}/${k ?? DEFAULT_PROGRAM_TAB}`)}
           className="program-detail-tabs"
         >
           {/* Program Details ─────────────────────────────────────────── */}
