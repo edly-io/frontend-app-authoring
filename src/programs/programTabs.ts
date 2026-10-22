@@ -17,6 +17,8 @@ export const PROGRAM_TABS = [
 
 export type ProgramTabKey = typeof PROGRAM_TABS[number];
 
+const PROGRAM_OPERATION_TABS: readonly ProgramTabKey[] = ['calendar', 'requests', 'attendance', 'locations', 'holidays'];
+
 export const DEFAULT_PROGRAM_TAB: ProgramTabKey = 'details';
 
 const isProgramTab = (value: string): value is ProgramTabKey => (
@@ -33,6 +35,9 @@ export const getActiveProgramTab = (splat: string | undefined): ProgramTabKey =>
 export const isProgramTabVisible = (tab: ProgramTabKey, capabilities: ProgramCapabilities): boolean => {
   if (tab === 'certificates') {
     return capabilities.canManageCertificates;
+  }
+  if (PROGRAM_OPERATION_TABS.includes(tab)) {
+    return capabilities.canManageProgramOperations;
   }
   return true;
 };

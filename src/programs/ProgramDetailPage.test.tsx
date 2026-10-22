@@ -225,3 +225,48 @@ describe('<ProgramDetailPage /> tab URLs', () => {
     expect(activeTabName()).toBe('Courses');
   });
 });
+
+describe('<ProgramDetailPage /> program operation tabs', () => {
+  const OPERATION_TABS = ['Calendar', 'Requests', 'Attendance', 'Locations', 'Holidays'];
+
+  beforeEach(() => {
+    initializeMocks();
+  });
+
+  it('shows the operation tabs to Middle Admins, after Certificates', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['middle_admin']),
+      isLoading: false,
+    });
+
+    renderPage();
+
+    // Paragon adds a "More..." overflow tab at the end of the strip.
+    const tabNames = screen.getAllByRole('tab').map((tab) => tab.textContent).filter((name) => name !== 'More...');
+    expect(tabNames.slice(-5)).toEqual(OPERATION_TABS);
+  });
+
+  it('hides the operation tabs from instructors', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['instructor']),
+      isLoading: false,
+    });
+
+    renderPage();
+
+    OPERATION_TABS.forEach((name) => {
+      expect(screen.queryByRole('tab', { name })).not.toBeInTheDocument();
+    });
+  });
+
+  it('sends an instructor on an operation tab URL to Details', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['instructor']),
+      isLoading: false,
+    });
+
+    renderPage('/programs/prog-key-1/requests/leaves');
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/programs/prog-key-1/details');
+  });
+});

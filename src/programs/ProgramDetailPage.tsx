@@ -52,6 +52,11 @@ const messages = defineMessages({
   tabFeedback: { id: 'programs.detail.tab.feedback', defaultMessage: 'Feedback' },
   tabTraineeResults: { id: 'programs.detail.tab.bulk-trainee-results', defaultMessage: 'Trainees Results' },
   tabCertificates: { id: 'programs.detail.tab.certificates', defaultMessage: 'Certificates' },
+  tabCalendar: { id: 'programs.detail.tab.calendar', defaultMessage: 'Calendar' },
+  tabRequests: { id: 'programs.detail.tab.requests', defaultMessage: 'Requests' },
+  tabAttendance: { id: 'programs.detail.tab.attendance', defaultMessage: 'Attendance' },
+  tabLocations: { id: 'programs.detail.tab.locations', defaultMessage: 'Locations' },
+  tabHolidays: { id: 'programs.detail.tab.holidays', defaultMessage: 'Holidays' },
   sectionBasicInfo: { id: 'programs.detail.section.basic', defaultMessage: 'Basic Information' },
   sectionBasicSubtitle: { id: 'programs.detail.section.basic.sub', defaultMessage: 'Set the core details of your program' },
   sectionImage: { id: 'programs.detail.section.image', defaultMessage: 'Program Card Image' },
@@ -758,6 +763,22 @@ const ProgramDetailPage: React.FC = () => {
                 isActive={activeTab === 'certificates'}
               />
             </Tab>
+          )}
+
+          {capabilities.canManageProgramOperations && (
+            <Tab eventKey="calendar" title={intl.formatMessage(messages.tabCalendar)} />
+          )}
+          {capabilities.canManageProgramOperations && (
+            <Tab eventKey="requests" title={intl.formatMessage(messages.tabRequests)} />
+          )}
+          {capabilities.canManageProgramOperations && (
+            <Tab eventKey="attendance" title={intl.formatMessage(messages.tabAttendance)} />
+          )}
+          {capabilities.canManageProgramOperations && (
+            <Tab eventKey="locations" title={intl.formatMessage(messages.tabLocations)} />
+          )}
+          {capabilities.canManageProgramOperations && (
+            <Tab eventKey="holidays" title={intl.formatMessage(messages.tabHolidays)} />
           )}
 
         </Tabs>

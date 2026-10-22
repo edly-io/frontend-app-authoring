@@ -10,6 +10,7 @@ const NO_PROGRAM_ACCESS: ProgramCapabilities = {
   canManageInstructors: false,
   canEditFinalizedResults: false,
   canManageCertificates: false,
+  canManageProgramOperations: false,
   isReadOnly: true,
 };
 
@@ -35,6 +36,7 @@ export const getProgramCapabilities = (roles: FbrRole[] = []): ProgramCapabiliti
     canManageInstructors: isProgramAdmin,
     canEditFinalizedResults: isSuperAdmin,
     canManageCertificates: isSuperAdmin,
+    canManageProgramOperations: isProgramAdmin,
     isReadOnly: !isProgramAdmin,
   };
 };
