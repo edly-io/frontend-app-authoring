@@ -106,3 +106,27 @@
     }
   }
 }
+
+// Listing tables in the program operation tabs. fbr-home sets these rules globally in its
+// index.scss; the moved views and the library's SessionLeavesPanel keep the same class names.
+.requests-tab,
+.attendance-tab {
+  .sticky-header-table .pgn__data-table-container {
+    max-height: 420px;
+    overflow-y: auto;
+  }
+
+  .sticky-header-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  // Headers and in-row buttons don't wrap; a wide listing scrolls instead.
+  .sessions-table-scroll .pgn__data-table {
+    th,
+    td .btn {
+      white-space: nowrap;
+    }
+  }
+}
