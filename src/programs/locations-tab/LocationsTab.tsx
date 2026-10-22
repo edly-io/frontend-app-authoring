@@ -1,6 +1,4 @@
-import React, {
-  useCallback, useContext, useMemo, useState,
-} from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import {
@@ -21,6 +19,7 @@ import {
 } from '@edly-io/frontend-component-fbr';
 import { ToastContext } from '@src/generic/toast-context';
 import { useDebouncedValue } from '../certificates-tab/useDebouncedValue';
+import { useDataTablePage } from '../data/useDataTablePage';
 import DeleteLocationModal from './DeleteLocationModal';
 import LocationModal from './LocationModal';
 import { useLocationsPage } from './data/apiHooks';
@@ -215,15 +214,7 @@ const LocationsTab: React.FC<LocationsTabProps> = ({ programId }) => {
 
   const [searchInput, setSearchInput] = useState('');
   const search = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
-  // The page belongs to the search it was picked under, so a new search starts on page 1
-  // without first requesting an out-of-range page of the new results.
-  const [pagedSearch, setPagedSearch] = useState({ search, pageIndex: 0 });
-  const pageIndex = pagedSearch.search === search ? pagedSearch.pageIndex : 0;
-  // DataTable re-runs `fetchData` whenever its identity changes, so it must be stable.
-  const handleFetchData = useCallback(
-    ({ pageIndex: nextPageIndex }: { pageIndex: number }) => setPagedSearch({ search, pageIndex: nextPageIndex }),
-    [search],
-  );
+  const { pageIndex, fetchData: handleFetchData } = useDataTablePage(search);
   const locationsQuery = useLocationsPage({
     search, page: pageIndex + 1, pageSize: PAGE_SIZE, programKey: programId,
   });

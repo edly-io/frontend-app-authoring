@@ -1,6 +1,4 @@
-import React, {
-  useCallback, useContext, useMemo, useState,
-} from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import {
   Alert, Button, DataTable, Form, Spinner, Stack,
@@ -16,6 +14,7 @@ import {
 } from '@edly-io/frontend-component-fbr';
 import { ToastContext } from '@src/generic/toast-context';
 import { useDebouncedValue } from '../certificates-tab/useDebouncedValue';
+import { useDataTablePage } from '../data/useDataTablePage';
 import DeleteHolidayModal from './DeleteHolidayModal';
 import HolidayModal from './HolidayModal';
 import { useHolidaysPage } from './data/apiHooks';
@@ -111,14 +110,7 @@ const HolidaysTab: React.FC = () => {
 
   const [searchInput, setSearchInput] = useState('');
   const search = useDebouncedValue(searchInput, SEARCH_DEBOUNCE_MS);
-  // The page belongs to the search it was picked under, so a new search starts on page 1.
-  const [pagedSearch, setPagedSearch] = useState({ search, pageIndex: 0 });
-  const pageIndex = pagedSearch.search === search ? pagedSearch.pageIndex : 0;
-  // DataTable re-runs `fetchData` whenever its identity changes, so it must be stable.
-  const handleFetchData = useCallback(
-    ({ pageIndex: nextPageIndex }: { pageIndex: number }) => setPagedSearch({ search, pageIndex: nextPageIndex }),
-    [search],
-  );
+  const { pageIndex, fetchData: handleFetchData } = useDataTablePage(search);
   const holidaysQuery = useHolidaysPage({ search, page: pageIndex + 1, pageSize: PAGE_SIZE });
   const [deleteTarget, setDeleteTarget] = useState<Holiday | null>(null);
 
