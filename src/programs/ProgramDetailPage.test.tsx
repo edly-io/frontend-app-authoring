@@ -26,6 +26,9 @@ jest.mock('./enrollment-tab/EnrollmentTab', () => function MockEnrollmentTab() {
 jest.mock('./certificates-tab/CertificatesTab', () => function MockCertificatesTab() {
   return <div>Certificates content</div>;
 });
+jest.mock('./calendar-tab/CalendarTab', () => function MockCalendarTab() {
+  return <div>Calendar content</div>;
+});
 jest.mock('./data/apiHooks', () => ({
   useProgramAccess: () => mockUseProgramAccess(),
   useProgramDetail: () => ({
@@ -257,6 +260,19 @@ describe('<ProgramDetailPage /> program operation tabs', () => {
     OPERATION_TABS.forEach((name) => {
       expect(screen.queryByRole('tab', { name })).not.toBeInTheDocument();
     });
+  });
+
+  it('mounts an operation tab only while it is active', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['middle_admin']),
+      isLoading: false,
+    });
+
+    renderPage('/programs/prog-key-1/details');
+    expect(screen.queryByText('Calendar content')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Calendar' }));
+    expect(screen.getByText('Calendar content')).toBeInTheDocument();
   });
 
   it('sends an instructor on an operation tab URL to Details', () => {

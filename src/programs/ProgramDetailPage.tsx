@@ -33,6 +33,7 @@ import EnrollmentTab from './enrollment-tab/EnrollmentTab';
 import FeedbackTab from './feedback-tab/FeedbackTab';
 import ResultsTab from './results-tab/ResultsTab';
 import CertificatesTab from './certificates-tab/CertificatesTab';
+import CalendarTab from './calendar-tab/CalendarTab';
 import { DEFAULT_PROGRAM_TAB, getActiveProgramTab, isProgramTabVisible } from './programTabs';
 import './index.scss';
 
@@ -766,7 +767,9 @@ const ProgramDetailPage: React.FC = () => {
           )}
 
           {capabilities.canManageProgramOperations && (
-            <Tab eventKey="calendar" title={intl.formatMessage(messages.tabCalendar)} />
+            <Tab eventKey="calendar" title={intl.formatMessage(messages.tabCalendar)} className="pt-4">
+              {activeTab === 'calendar' && <CalendarTab programId={programId ?? ''} />}
+            </Tab>
           )}
           {capabilities.canManageProgramOperations && (
             <Tab eventKey="requests" title={intl.formatMessage(messages.tabRequests)} />
