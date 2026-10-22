@@ -87,6 +87,8 @@ const AssignForm = ({ substituteRequest, programKey, onClose }: AssignFormProps)
   const [error, setError] = useState('');
 
   const courseId = course ? String(course.value) : null;
+  // The summary names the class being covered, so it falls back to the session's course when the field is cleared.
+  const summaryCourseName = course?.label || session.course_name || session.course_id;
   const canListInstructors = !(isLecture && !courseId);
   const coursesQuery = useProgramCourses(programKey);
   const instructorsQuery = useProgramInstructors(programKey, courseId, canListInstructors);
@@ -162,10 +164,10 @@ const AssignForm = ({ substituteRequest, programKey, onClose }: AssignFormProps)
 
       <div className="mb-3 p-3 assign-substitute-modal__session-summary">
         <div className="font-weight-bold mb-1">{session.title}</div>
-        {course && (
+        {summaryCourseName && (
           <div className="assign-substitute-modal__session-summary-line">
             <span className="text-muted">{intl.formatMessage(messages.courseLine)}</span>
-            <strong>{course.label}</strong>
+            <strong>{summaryCourseName}</strong>
           </div>
         )}
         {session.scheduled_start_time && (

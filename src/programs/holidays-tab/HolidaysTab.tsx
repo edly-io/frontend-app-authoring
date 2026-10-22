@@ -165,6 +165,7 @@ const HolidaysTab: React.FC = () => {
     }
     return (
       <DataTable
+        className="sessions-table-scroll"
         key={search}
         isPaginated
         manualPagination

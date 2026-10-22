@@ -277,6 +277,7 @@ const LocationsTab: React.FC<LocationsTabProps> = ({ programId }) => {
     }
     return (
       <DataTable
+        className="sessions-table-scroll"
         key={search}
         isPaginated
         manualPagination

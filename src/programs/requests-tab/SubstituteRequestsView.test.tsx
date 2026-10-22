@@ -125,3 +125,25 @@ describe('SubstituteRequestsView — assign deep links', () => {
     expect(axiosMock.history.get.some((req) => /users/.test(req.url ?? ''))).toBe(false);
   });
 });
+
+describe('AssignSubstituteModal — session summary', () => {
+  it("keeps the session's course in the summary when the course field is cleared", async () => {
+    const withCourse = makeSubstituteRequest({
+      session: {
+        ...makeSubstituteRequest().session, course_id: 'course-v1:X', course_name: 'Intro to Python', session_type: 'workshop',
+      },
+    });
+    mockList([withCourse]);
+    axiosMock.onGet().reply(200, []);
+    render(<SubstituteRequestsView programId={PROGRAM_KEY} />, {
+      routerProps: { initialEntries: ['/?modal=assign-substitute&id=14'] },
+    });
+    const dialog = await screen.findByRole('dialog');
+    const summary = () => dialog.querySelector('.assign-substitute-modal__session-summary');
+    expect(summary()).toHaveTextContent('Course: Intro to Python');
+
+    fireEvent.change(within(dialog).getByLabelText('Course'), { target: { value: 'zz' } });
+
+    expect(summary()).toHaveTextContent('Course: Intro to Python');
+  });
+});

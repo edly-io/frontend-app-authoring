@@ -2,6 +2,7 @@ import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import {
   cancelSession, getAttendanceApiUrl, getProgramsApiUrl, REQUEST_TYPE, updateSession,
 } from '@edly-io/frontend-component-fbr';
+import { pathSegment } from '../../data/pathSegment';
 import type {
   AdminRequest, AssignSubstituteVariables, BulkApproveResult, Paginated, RequestCounts, RequestListParams,
   RequestType, SubstituteListParams, SubstituteRequest,
@@ -11,8 +12,6 @@ const requestsUrl = (type: RequestType, suffix = '') => (
   getAttendanceApiUrl(`requests/${type === REQUEST_TYPE.LEAVE ? 'leave' : 'remote-session'}/${suffix}`)
 );
 const substituteUrl = (suffix = '') => getAttendanceApiUrl(`substitute-requests/${suffix}`);
-// Ids can come from the page URL (`?id=`), so each one stays inside its own path segment.
-const idSegment = (id: number | string) => encodeURIComponent(String(id));
 
 /** Only the params that are set, as strings, so empty filters never reach the query string. */
 const toSearchParams = (params: object) => new URLSearchParams(
@@ -34,7 +33,7 @@ export const reviewRequest = async (
   reviewerNote = '',
 ): Promise<AdminRequest> => {
   const { data } = await getAuthenticatedHttpClient().patch(
-    requestsUrl(request.request_type_label, `${idSegment(request.id)}/review/`),
+    requestsUrl(request.request_type_label, `${pathSegment(request.id)}/review/`),
     { state, reviewer_note: reviewerNote },
   );
   return data;
@@ -61,12 +60,12 @@ export const getSubstituteRequests = async (params: SubstituteListParams): Promi
 };
 
 export const getSubstituteRequest = async (id: number | string): Promise<SubstituteRequest> => {
-  const { data } = await getAuthenticatedHttpClient().get(substituteUrl(`${idSegment(id)}/`));
+  const { data } = await getAuthenticatedHttpClient().get(substituteUrl(`${pathSegment(id)}/`));
   return data;
 };
 
 export const closeSubstituteRequest = async (id: number): Promise<SubstituteRequest> => {
-  const { data } = await getAuthenticatedHttpClient().post(substituteUrl(`${idSegment(id)}/close/`));
+  const { data } = await getAuthenticatedHttpClient().post(substituteUrl(`${pathSegment(id)}/close/`));
   return data;
 };
 
@@ -76,7 +75,7 @@ export const assignSubstitute = async ({
 }: AssignSubstituteVariables): Promise<SubstituteRequest> => {
   await updateSession(substituteRequest.session.id, sessionData);
   const { data } = await getAuthenticatedHttpClient().post(
-    substituteUrl(`${idSegment(substituteRequest.id)}/assign/`),
+    substituteUrl(`${pathSegment(substituteRequest.id)}/assign/`),
     { substitute_instructor_email: substituteEmail },
   );
   return data;
@@ -89,6 +88,6 @@ export const cancelCoveredSession = async (substituteRequest: SubstituteRequest)
 };
 
 export const updateLeaveThreshold = async (programKey: string, threshold: number) => {
-  const { data } = await getAuthenticatedHttpClient().patch(getProgramsApiUrl(`${programKey}/`), { threshold });
+  const { data } = await getAuthenticatedHttpClient().patch(getProgramsApiUrl(`${pathSegment(programKey)}/`), { threshold });
   return data;
 };

@@ -110,7 +110,9 @@
 // Listing tables in the program operation tabs. fbr-home sets these rules globally in its
 // index.scss; the moved views and the library's SessionLeavesPanel keep the same class names.
 .requests-tab,
-.attendance-tab {
+.attendance-tab,
+.locations-tab,
+.holidays-tab {
   .sticky-header-table .pgn__data-table-container {
     max-height: 420px;
     overflow-y: auto;

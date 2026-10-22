@@ -1,5 +1,6 @@
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 import { getAttendanceApiUrl, getProgramsApiUrl } from '@edly-io/frontend-component-fbr';
+import { pathSegment } from '../../data/pathSegment';
 import type {
   AttendanceMark, AttendanceSettings, CourseSession, CourseSummaryRow, PageParams, Paginated, ProgramLearner, Roster,
   SyncResult, TraineeAttendanceRow,
@@ -8,20 +9,18 @@ import type {
 const EXPORT_FALLBACK_FILENAME = 'attendance-export.xlsx';
 const FILENAME_PATTERN = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
 
-// Ids and keys can come from the page URL, so each one stays inside its own path segment.
-const segment = (value: number | string) => encodeURIComponent(String(value));
 const pageQuery = ({ page, pageSize }: PageParams) => ({ page: String(page), page_size: String(pageSize) });
 
 /** Every learner enrolled in the program. */
 export const fetchProgramLearners = async (programKey: string): Promise<ProgramLearner[]> => {
-  const { data } = await getAuthenticatedHttpClient().get(getProgramsApiUrl(`${segment(programKey)}/learners/?no_page`));
+  const { data } = await getAuthenticatedHttpClient().get(getProgramsApiUrl(`${pathSegment(programKey)}/learners/?no_page`));
   return Array.isArray(data) ? data : (data.results ?? []);
 };
 
 /** Upserts manual attendance for one session (admin only). */
 export const markAttendance = async (sessionId: string, records: AttendanceMark[]) => {
   const { data } = await getAuthenticatedHttpClient().post(
-    getAttendanceApiUrl(`sessions/${segment(sessionId)}/mark-attendance/`),
+    getAttendanceApiUrl(`sessions/${pathSegment(sessionId)}/mark-attendance/`),
     { records },
   );
   return data;
@@ -30,7 +29,7 @@ export const markAttendance = async (sessionId: string, records: AttendanceMark[
 /** Pulls the Zoom meeting's participants into the session's attendance. Idempotent. */
 export const syncSessionAttendance = async (sessionId: string): Promise<SyncResult> => {
   const { data } = await getAuthenticatedHttpClient().post(
-    getAttendanceApiUrl(`sessions/${segment(sessionId)}/sync-attendance/`),
+    getAttendanceApiUrl(`sessions/${pathSegment(sessionId)}/sync-attendance/`),
   );
   return data;
 };
@@ -53,7 +52,7 @@ export const getCourseSessionsList = async (
 ): Promise<Paginated<CourseSession>> => {
   const params = new URLSearchParams({ program_key: programKey, ...pageQuery(pageParams) });
   const { data } = await getAuthenticatedHttpClient().get(
-    getAttendanceApiUrl(`courses/${segment(courseKey)}/sessions/?${params}`),
+    getAttendanceApiUrl(`courses/${pathSegment(courseKey)}/sessions/?${params}`),
   );
   return data;
 };
@@ -61,7 +60,7 @@ export const getCourseSessionsList = async (
 /** The derived roster of one session: one row per learner, plus the session's marking window. */
 export const getAttendanceRoster = async (sessionId: string): Promise<Roster> => {
   const { data } = await getAuthenticatedHttpClient().get(
-    getAttendanceApiUrl(`sessions/${segment(sessionId)}/attendance-roster/`),
+    getAttendanceApiUrl(`sessions/${pathSegment(sessionId)}/attendance-roster/`),
   );
   return Array.isArray(data) ? { results: data } : data;
 };
@@ -74,7 +73,7 @@ export const getTraineeAttendance = async (
   const params = new URLSearchParams({ program_key: programKey, ...pageQuery(pageParams) });
   if (courseId) { params.set('course_id', courseId); }
   const { data } = await getAuthenticatedHttpClient().get(
-    getAttendanceApiUrl(`trainees/${segment(userId)}/attendance/?${params}`),
+    getAttendanceApiUrl(`trainees/${pathSegment(userId)}/attendance/?${params}`),
   );
   return data;
 };
@@ -83,7 +82,7 @@ export const getTraineeAttendance = async (
 export const getCourseSummary = async (courseId: string, programKey: string): Promise<CourseSummaryRow[]> => {
   const params = new URLSearchParams({ program_key: programKey });
   const { data } = await getAuthenticatedHttpClient().get(
-    getAttendanceApiUrl(`courses/${segment(courseId)}/attendance-summary/?${params}`),
+    getAttendanceApiUrl(`courses/${pathSegment(courseId)}/attendance-summary/?${params}`),
   );
   return Array.isArray(data) ? data : data.results ?? [];
 };
@@ -102,7 +101,7 @@ const saveBlob = (blob: Blob, filename: string) => {
 /** Downloads the program's full attendance as an XLSX file. */
 export const exportProgramAttendance = async (programKey: string): Promise<void> => {
   const response = await getAuthenticatedHttpClient().get(
-    getAttendanceApiUrl(`programs/${segment(programKey)}/attendance-export/`),
+    getAttendanceApiUrl(`programs/${pathSegment(programKey)}/attendance-export/`),
     { responseType: 'blob' },
   );
   const disposition: string = response.headers?.['content-disposition'] || '';
