@@ -53,4 +53,36 @@ describe('LeaveSettingsModal', () => {
     fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
     expect(await screen.findByText(/failed to save/i)).toBeInTheDocument();
   });
+
+  it('loads a fresh threshold every time it opens', async () => {
+    const input = await openModal();
+    expect(input).toHaveValue(7);
+    fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    // Someone else changed the threshold in the meantime.
+    axiosMock.onGet(PROGRAM_URL).reply(200, { program_key: 'prog1', threshold: 9 });
+    fireEvent.click(screen.getByRole('button', { name: /leave settings/i }));
+
+    await waitFor(() => expect(screen.getByLabelText(/leave threshold/i)).toHaveValue(9));
+  });
+
+  it('shows Cancel and a disabled Save while the threshold loads', async () => {
+    axiosMock.onGet(PROGRAM_URL).reply(() => new Promise(() => {}));
+    render(<LeaveSettingsModal programKey="prog1" />);
+    fireEvent.click(screen.getByRole('button', { name: /leave settings/i }));
+
+    expect(await screen.findByRole('button', { name: /^cancel$/i })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled();
+  });
+
+  it('shows Cancel and a disabled Save when the threshold fails to load', async () => {
+    axiosMock.onGet(PROGRAM_URL).reply(403);
+    render(<LeaveSettingsModal programKey="prog1" />);
+    fireEvent.click(screen.getByRole('button', { name: /leave settings/i }));
+
+    expect(await screen.findByText("Couldn't load leave settings. Try again.")).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^cancel$/i })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled();
+  });
 });

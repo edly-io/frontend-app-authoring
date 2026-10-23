@@ -4,29 +4,42 @@ import {
   Alert, Button, Spinner, StandardModal, useToggle,
 } from '@openedx/paragon';
 import { Settings } from '@openedx/paragon/icons';
-import { useProgram } from '@edly-io/frontend-component-fbr';
 import ThresholdControl, { type ThresholdValue } from './ThresholdControl';
-import { useUpdateLeaveThreshold } from './data/apiHooks';
+import { useLeaveThreshold, useUpdateLeaveThreshold } from './data/apiHooks';
 import messages from './messages';
 
-interface LeaveSettingsFormProps {
-  programKey: string;
-  savedThreshold: number;
-  onClose: () => void;
-}
-
-const LeaveSettingsForm = ({ programKey, savedThreshold, onClose }: LeaveSettingsFormProps) => {
+/**
+ * Edits the program's leave threshold. Cancel and Save are always there; Save stays disabled
+ * until a fresh threshold has loaded and the value differs from it.
+ */
+const LeaveSettingsDialog = ({ programKey, onClose }: { programKey: string; onClose: () => void }) => {
   const intl = useIntl();
-  const [value, setValue] = useState<ThresholdValue>(savedThreshold);
+  const { threshold: savedThreshold, isError: isLoadError } = useLeaveThreshold(programKey);
   const updateThreshold = useUpdateLeaveThreshold();
+  const [draft, setDraft] = useState<ThresholdValue | null>(null);
+  const value = draft ?? savedThreshold ?? '';
   const saving = updateThreshold.isPending;
-  const canSave = !saving && value !== '' && value >= 0 && value !== savedThreshold;
+  const canSave = savedThreshold !== null && !saving && value !== '' && value >= 0 && value !== savedThreshold;
 
   // Flags, at-risk counts and usage all derive from the threshold server-side; the hook refetches them.
   const handleSave = () => updateThreshold.mutate(
     { programKey, threshold: value as number },
     { onSuccess: onClose },
   );
+
+  const renderBody = () => {
+    if (isLoadError) {
+      return <Alert variant="danger" className="mb-3">{intl.formatMessage(messages.leaveSettingsLoadError)}</Alert>;
+    }
+    if (savedThreshold === null) {
+      return (
+        <div className="text-center py-3">
+          <Spinner animation="border" screenReaderText={intl.formatMessage(messages.leaveSettingsLoading)} />
+        </div>
+      );
+    }
+    return <ThresholdControl value={value} onChange={setDraft} disabled={saving} />;
+  };
 
   return (
     <StandardModal
@@ -50,28 +63,7 @@ const LeaveSettingsForm = ({ programKey, savedThreshold, onClose }: LeaveSetting
       {updateThreshold.isError && (
         <Alert variant="danger" className="mb-3">{intl.formatMessage(messages.leaveSettingsSaveError)}</Alert>
       )}
-      <ThresholdControl value={value} onChange={setValue} disabled={saving} />
-    </StandardModal>
-  );
-};
-
-/** Loads the program's threshold only once the modal opens. */
-const LeaveSettingsDialog = ({ programKey, onClose }: { programKey: string; onClose: () => void }) => {
-  const intl = useIntl();
-  const programQuery = useProgram(programKey);
-  if (programQuery.isSuccess) {
-    const threshold = Number(programQuery.data?.threshold ?? 0);
-    return <LeaveSettingsForm programKey={programKey} savedThreshold={threshold} onClose={onClose} />;
-  }
-  return (
-    <StandardModal isOpen onClose={onClose} title={intl.formatMessage(messages.leaveSettings)} size="md" isFullscreenOnMobile>
-      {programQuery.isError ? (
-        <Alert variant="danger" className="mb-3">{intl.formatMessage(messages.leaveSettingsLoadError)}</Alert>
-      ) : (
-        <div className="text-center py-3">
-          <Spinner animation="border" screenReaderText={intl.formatMessage(messages.leaveSettingsLoading)} />
-        </div>
-      )}
+      {renderBody()}
     </StandardModal>
   );
 };

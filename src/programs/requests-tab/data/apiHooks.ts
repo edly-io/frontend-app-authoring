@@ -1,7 +1,7 @@
 import {
   keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient,
 } from '@tanstack/react-query';
-import { FBR_QUERY_OPTIONS, fbrKeys } from '@edly-io/frontend-component-fbr';
+import { FBR_QUERY_OPTIONS, fbrKeys, getProgram } from '@edly-io/frontend-component-fbr';
 import {
   assignSubstitute, bulkApproveLeaves, cancelCoveredSession, closeSubstituteRequest, getRequestCounts, getRequests,
   getSubstituteRequest, getSubstituteRequests, reviewRequest, updateLeaveThreshold,
@@ -117,6 +117,24 @@ export const useCancelCoveredSession = () => {
     mutationFn: cancelCoveredSession,
     onSuccess: () => invalidateAll(queryClient, SUBSTITUTE_DATA_KEYS),
   });
+};
+
+/**
+ * The program's leave threshold, fetched fresh every time Leave settings opens (fbr-home did the
+ * same), so the form never starts from a value someone else has since changed.
+ */
+export const useLeaveThreshold = (programKey: string) => {
+  const query = useQuery({
+    queryKey: fbrKeys.program(programKey),
+    queryFn: () => getProgram(programKey),
+    ...FBR_QUERY_OPTIONS,
+    refetchOnMount: 'always',
+  });
+  const isLoaded = query.isSuccess && query.isFetchedAfterMount;
+  return {
+    threshold: isLoaded ? Number(query.data?.threshold ?? 0) : null,
+    isError: query.isError,
+  };
 };
 
 /** The leave threshold drives at-risk flags, usage and approval warnings, so all of them refetch. */
