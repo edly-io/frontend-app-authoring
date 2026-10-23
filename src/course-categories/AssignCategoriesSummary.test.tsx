@@ -85,11 +85,16 @@ describe('<AssignCategoriesTab /> summary line', () => {
     expect(await screen.findByText(/has no categories yet/)).toHaveClass('text-break');
   });
 
-  it('gives each chip name a title and a chip-item class for truncation', async () => {
+  it('shows a cut-off chip name in full in a tooltip on hover', async () => {
     mockLoaded(axiosMock, { assigned: [chip(ROAD)] });
     render(<AssignCategoriesTab courseId={COURSE_ID} />);
     const name = await screen.findByText('Road Safety');
-    expect(name).toHaveAttribute('title', 'Road Safety');
     expect(name.closest('li')).toHaveClass('course-categories-chip-item');
+    // jsdom has no layout: make the chip's label clip the name, as a browser does for a long one.
+    Object.defineProperty(name.parentElement, 'scrollWidth', { configurable: true, value: 300 });
+    Object.defineProperty(name.parentElement, 'clientWidth', { configurable: true, value: 100 });
+
+    await userEvent.hover(name);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Road Safety');
   });
 });

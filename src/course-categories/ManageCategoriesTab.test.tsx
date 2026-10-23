@@ -37,6 +37,18 @@ describe('<ManageCategoriesTab />', () => {
       expect(within(row('Driving')).getByText('0 courses')).toBeInTheDocument();
     });
 
+    it('shows a cut-off category name in full in a tooltip on hover', async () => {
+      mockLoaded(axiosMock);
+      render(<ManageCategoriesTab />);
+      const name = await screen.findByText('Road Safety');
+      // jsdom has no layout: make the name overflow its truncated row, as a long one does in a browser.
+      Object.defineProperty(name, 'scrollWidth', { configurable: true, value: 300 });
+      Object.defineProperty(name, 'clientWidth', { configurable: true, value: 100 });
+
+      await userEvent.hover(name);
+      expect(await screen.findByRole('tooltip')).toHaveTextContent('Road Safety');
+    });
+
     it('shows an empty state', async () => {
       mockLoaded(axiosMock, { categories: [] });
       render(<ManageCategoriesTab />);
