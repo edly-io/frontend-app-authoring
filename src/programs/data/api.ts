@@ -12,7 +12,9 @@ import type {
   CreateProgramInput,
   Learner,
   PaginatedCourses,
+  PaginatedPrograms,
   PaginatedLearners,
+  ProgramListQuery,
   Program,
   ProgramConfig,
   ProgramDetailResponse,
@@ -102,11 +104,21 @@ export const getProgramsConfig = async (): Promise<ProgramConfig> => {
 };
 
 // ── List — GET /fbr/api/programs/ ────────────────────────────────────────────
-export const getPrograms = async (): Promise<Program[]> => {
-  const { data } = await getAuthenticatedHttpClient().get(`${getProgramsBaseUrl()}/`);
-  // Handle both paginated { results: [...] } and flat array responses
-  const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
-  return results.map(toProgram);
+export const getPrograms = async (query: ProgramListQuery): Promise<PaginatedPrograms> => {
+  const search = query.search.trim();
+  const { data } = await getAuthenticatedHttpClient().get(`${getProgramsBaseUrl()}/`, {
+    params: {
+      page: query.page,
+      ordering: query.ordering,
+      ...(search ? { search } : {}),
+      ...(query.status ? { status: query.status } : {}),
+    },
+  });
+  return {
+    results: data.results.map(toProgram),
+    count: data.pagination.count,
+    numPages: data.pagination.num_pages,
+  };
 };
 
 // ── Detail — GET /fbr/api/programs/<program_key>/ ───────────────────────────

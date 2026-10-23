@@ -1,13 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Dropdown,
   Icon,
+  Pagination,
   Row,
-  SearchField,
 } from '@openedx/paragon';
 import { Check } from '@openedx/paragon/icons';
 import { useIntl, defineMessages } from '@edx/frontend-platform/i18n';
 import { LoadingSpinner } from '@src/generic/Loading';
+import DebouncedSearchField from '@src/programs/feedback-tab/DebouncedSearchField';
 import { useProgramAccess, usePrograms } from '../../../programs/data/apiHooks';
 import ProgramCard from './ProgramCard';
 
@@ -56,6 +57,10 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.programs.tab.filter.freezed',
     defaultMessage: 'Freezed',
   },
+  paginationLabel: {
+    id: 'course-authoring.studio-home.programs.tab.pagination',
+    defaultMessage: 'Programs pagination',
+  },
 });
 
 type SortOrder = 'az' | 'za';
@@ -69,30 +74,22 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
   const [sortOrder, setSortOrder] = useState<SortOrder>('az');
   const { capabilities } = useProgramAccess();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [page, setPage] = useState(1);
 
   // Treat API errors the same as empty — don't show a jarring error banner for the list
-  const { data: programs = [], isLoading } = usePrograms();
+  const { data, isLoading } = usePrograms({
+    page,
+    search,
+    status: statusFilter === 'all' ? undefined : statusFilter,
+    ordering: sortOrder === 'az' ? 'name' : '-name',
+  });
+  const programs = data?.results ?? [];
+  const numPages = data?.numPages ?? 1;
 
-  const filteredPrograms = useMemo(() => {
-    let list = [...programs];
-
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter((p) => p.displayName.toLowerCase().includes(q));
-    }
-
-    if (statusFilter !== 'all') {
-      list = list.filter((p) => (p.status ?? 'draft') === statusFilter);
-    }
-
-    list.sort((a, b) => (
-      sortOrder === 'az'
-        ? a.displayName.localeCompare(b.displayName)
-        : b.displayName.localeCompare(a.displayName)
-    ));
-
-    return list;
-  }, [programs, search, sortOrder, statusFilter]);
+  // A new search, filter or sort starts again from the first page.
+  const changeSearch = (value: string) => { setSearch(value); setPage(1); };
+  const changeStatusFilter = (value: StatusFilter) => { setStatusFilter(value); setPage(1); };
+  const changeSortOrder = (value: SortOrder) => { setSortOrder(value); setPage(1); };
 
   if (isLoading) {
     return (
@@ -120,10 +117,9 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
       {/* ── Search + sort + status filter bar ────────────────────────── */}
       <div className="programs-filters d-flex flex-wrap mb-4">
         <div className="programs-filters__search mr-md-4">
-          <SearchField
-            onSubmit={setSearch}
-            onChange={setSearch}
+          <DebouncedSearchField
             value={search}
+            onSearch={changeSearch}
             placeholder={intl.formatMessage(messages.searchPlaceholder)}
           />
         </div>
@@ -136,7 +132,7 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
           </Dropdown.Toggle>
           <Dropdown.Menu>
             {STATUS_FILTER_OPTIONS.map((s) => (
-              <Dropdown.Item key={s} onClick={() => setStatusFilter(s)}>
+              <Dropdown.Item key={s} onClick={() => changeStatusFilter(s)}>
                 <div className="d-flex align-items-center justify-content-between">
                   {intl.formatMessage(messages[statusFilterMessageKey[s]])}
                   {statusFilter === s && <Icon src={Check} size="xs" className="ml-2" />}
@@ -154,7 +150,7 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
           </Dropdown.Toggle>
           <Dropdown.Menu>
             <Dropdown.Item
-              onClick={() => setSortOrder('az')}
+              onClick={() => changeSortOrder('az')}
             >
               <div className="d-flex align-items-center justify-content-between">
                 {intl.formatMessage(messages.sortAZ)}
@@ -162,7 +158,7 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
               </div>
             </Dropdown.Item>
             <Dropdown.Item
-              onClick={() => setSortOrder('za')}
+              onClick={() => changeSortOrder('za')}
             >
               <div className="d-flex align-items-center justify-content-between">
                 {intl.formatMessage(messages.sortZA)}
@@ -174,7 +170,7 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
       </div>
 
       {/* ── List / empty state ────────────────────────────────────────── */}
-      {filteredPrograms.length === 0 ? (
+      {programs.length === 0 ? (
         <p className="text-muted">
           {search.trim()
             ? intl.formatMessage(messages.emptySearch)
@@ -183,9 +179,18 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
             )}
         </p>
       ) : (
-        filteredPrograms.map((program) => (
+        programs.map((program) => (
           <ProgramCard key={program.id} program={program} />
         ))
+      )}
+      {numPages > 1 && (
+        <Pagination
+          className="d-flex justify-content-center mt-3"
+          paginationLabel={intl.formatMessage(messages.paginationLabel)}
+          pageCount={numPages}
+          currentPage={page}
+          onPageSelect={setPage}
+        />
       )}
     </div>
   );
