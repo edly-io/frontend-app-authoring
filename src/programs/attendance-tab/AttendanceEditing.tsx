@@ -1,11 +1,12 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
+import { useMutationState } from '@tanstack/react-query';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import {
   Alert, Button, Form, Stack, StandardModal,
 } from '@openedx/paragon';
 import { extractApiError } from '@edly-io/frontend-component-fbr';
 import { ToastContext } from '@src/generic/toast-context';
-import { useMarkAttendance } from './data/apiHooks';
+import { attendanceKeys, useMarkAttendance, type MarkAttendanceVariables } from './data/apiHooks';
 import type { AttendanceMark } from './data/types';
 import messages from './messages';
 
@@ -52,14 +53,19 @@ export const useAttendanceEditing = () => {
     }
   };
 
-  const savingKey = markMutation.isPending && markMutation.variables
-    ? `${markMutation.variables.sessionId}:${markMutation.variables.records[0]?.user_id}`
-    : null;
+  // Every save still in flight, not just the latest: marking a second learner must not unlock the first.
+  const pendingMarks = useMutationState({
+    filters: { mutationKey: attendanceKeys.mark, status: 'pending' },
+    select: (mutation) => mutation.state.variables as MarkAttendanceVariables,
+  });
+  const savingKeys = useMemo(() => new Set(pendingMarks.map(({ sessionId, records }) => (
+    targetKey({ sessionId, userId: records[0]?.user_id })
+  ))), [pendingMarks]);
 
   return {
     error,
     clearError: () => setError(''),
-    isSaving: (target: AttendanceTarget) => savingKey === targetKey(target),
+    isSaving: (target: AttendanceTarget) => savingKeys.has(targetKey(target)),
     changeStatus: (target: AttendanceTarget, status: string, hasRecord: boolean) => (
       hasRecord ? setReasonTarget({ ...target, status }) : saveStatus(target, status)
     ),

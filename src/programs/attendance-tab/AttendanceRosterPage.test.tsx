@@ -91,3 +91,23 @@ it('asks for a reason before changing a recorded status', async () => {
     records: [{ user_id: 11, status: 'present', reason: 'Arrived late' }],
   }));
 });
+
+it('keeps a learner locked while their save runs, even after another learner is marked', async () => {
+  const second = {
+    ...trainee, user_id: 12, full_name: 'Sana Second', email: 'sana@fbr.test',
+  };
+  mockRoster({ marking_window_open: true, scheduled_end_time: pastIso() }, [trainee, second]);
+  // Neither save answers until the test lets it.
+  const pendingSaves: Array<() => void> = [];
+  axiosMock.onPost(MARK_URL).reply(() => new Promise((resolve) => { pendingSaves.push(() => resolve([200, {}])); }));
+  renderRoster();
+
+  const [firstPresent, secondPresent] = await screen.findAllByRole('button', { name: 'Present' });
+  fireEvent.click(firstPresent);
+  await waitFor(() => expect(pendingSaves).toHaveLength(1));
+  fireEvent.click(secondPresent);
+  await waitFor(() => expect(pendingSaves).toHaveLength(2));
+
+  expect(firstPresent).toBeDisabled();
+  expect(secondPresent).toBeDisabled();
+});

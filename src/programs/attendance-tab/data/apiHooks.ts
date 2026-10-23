@@ -16,6 +16,7 @@ export const attendanceKeys = {
   courseSummary: (courseId: string, programKey: string) => ['fbr', 'attendance', 'summary', courseId, programKey] as const,
   courseSessions: (params: object) => ['fbr', 'attendance', 'courseSessions', params] as const,
   settings: ['fbr', 'attendanceSettings'] as const,
+  mark: ['fbr', 'attendance', 'mark'] as const,
   learners: (programKey: string) => ['fbr', 'programLearners', programKey] as const,
 };
 
@@ -81,12 +82,16 @@ const useInvalidateAttendance = () => {
   ]);
 };
 
+export interface MarkAttendanceVariables {
+  sessionId: string;
+  records: AttendanceMark[];
+}
+
 export const useMarkAttendance = () => {
   const invalidate = useInvalidateAttendance();
   return useMutation({
-    mutationFn: ({ sessionId, records }: { sessionId: string; records: AttendanceMark[] }) => (
-      markAttendance(sessionId, records)
-    ),
+    mutationKey: attendanceKeys.mark,
+    mutationFn: ({ sessionId, records }: MarkAttendanceVariables) => markAttendance(sessionId, records),
     onSuccess: invalidate,
   });
 };
