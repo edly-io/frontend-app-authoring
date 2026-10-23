@@ -17,6 +17,22 @@ export interface PaginatedCourses {
   numPages: number;
 }
 
+/** Server-side query for the paginated program list. */
+export interface ProgramListQuery {
+  page: number;
+  pageSize: number;
+  search: string;
+  /** Omitted = every status. */
+  status?: string;
+  ordering: 'name' | '-name';
+}
+
+export interface PaginatedPrograms {
+  results: Program[];
+  count: number;
+  numPages: number;
+}
+
 export interface Program {
   id: string;
   displayName: string;

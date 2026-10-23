@@ -52,6 +52,7 @@ import type {
   FeedbackFiltersState,
   InitiateFeedbackPayload,
   Program,
+  ProgramListQuery,
   CertificateConfig,
   CertificateRosterPage,
   CertificateRosterQuery,
@@ -81,9 +82,10 @@ export const useProgramsConfig = () => useQuery({
   queryFn: getProgramsConfig,
 });
 
-export const usePrograms = () => useQuery({
-  queryKey: ['programs'],
-  queryFn: getPrograms,
+export const usePrograms = (query: ProgramListQuery) => useQuery({
+  queryKey: ['programs', query],
+  queryFn: () => getPrograms(query),
+  placeholderData: keepPreviousData,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   retry: (failureCount, error: any) => error?.response?.status !== 403 && failureCount < 3,
 });
