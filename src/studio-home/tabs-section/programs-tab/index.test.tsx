@@ -42,7 +42,7 @@ describe('ProgramsTab', () => {
 
     expect(await screen.findByText('Oldest Program')).toBeInTheDocument();
     expect(lastProgramParams()).toMatchObject({ page: 2 });
-    expect(screen.getByText('Showing 21 - 21 of 21.')).toBeInTheDocument();
+    expect(screen.getByText('Showing 1 of 21')).toBeInTheDocument();
   });
 
   it('shows the row status and pagination control even with one page', async () => {
@@ -50,7 +50,7 @@ describe('ProgramsTab', () => {
 
     render(<ProgramsTab />);
 
-    expect(await screen.findByText('Showing 1 - 2 of 2.')).toBeInTheDocument();
+    expect(await screen.findByText('Showing 2 of 2')).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Programs pagination' })).toBeInTheDocument();
   });
 

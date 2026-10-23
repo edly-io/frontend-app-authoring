@@ -62,10 +62,10 @@ const messages = defineMessages({
     defaultMessage: 'Programs pagination',
     description: 'Accessible label for the page controls under the programs list.',
   },
-  rowStatus: {
-    id: 'course-authoring.studio-home.programs.tab.row-status',
-    defaultMessage: 'Showing {firstRow} - {lastRow} of {itemCount}.',
-    description: 'Which programs of the full list the current page shows. Same wording as the Paragon DataTable footer.',
+  paginationInfo: {
+    id: 'course-authoring.studio-home.programs.tab.pagination.info',
+    defaultMessage: 'Showing {length} of {total}',
+    description: 'How many programs the current page shows out of all matching programs. Same wording as the courses tab.',
   },
 });
 
@@ -94,7 +94,6 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
   });
   const programs = data?.results ?? [];
   const numPages = data?.numPages ?? 1;
-  const firstRow = (page - 1) * PAGE_SIZE + 1;
 
   // A new search, filter or sort starts again from the first page.
   const changeSearch = (value: string) => { setSearch(value); setPage(1); };
@@ -177,6 +176,12 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
             </Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>
+        <p className="my-0 ml-md-auto align-self-center">
+          {intl.formatMessage(messages.paginationInfo, {
+            length: programs.length,
+            total: data?.count ?? 0,
+          })}
+        </p>
       </div>
 
       {/* ── List / empty state ────────────────────────────────────────── */}
@@ -194,21 +199,13 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
         ))
       )}
       {programs.length > 0 && (
-        <div className="d-flex flex-wrap justify-content-between align-items-center mt-3">
-          <span className="small text-muted">
-            {intl.formatMessage(messages.rowStatus, {
-              firstRow,
-              lastRow: firstRow + programs.length - 1,
-              itemCount: data?.count ?? programs.length,
-            })}
-          </span>
-          <Pagination
-            paginationLabel={intl.formatMessage(messages.paginationLabel)}
-            pageCount={numPages}
-            currentPage={page}
-            onPageSelect={setPage}
-          />
-        </div>
+        <Pagination
+          className="d-flex justify-content-center"
+          paginationLabel={intl.formatMessage(messages.paginationLabel)}
+          pageCount={numPages}
+          currentPage={page}
+          onPageSelect={setPage}
+        />
       )}
     </div>
   );
