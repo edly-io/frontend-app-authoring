@@ -109,6 +109,7 @@ export const getPrograms = async (query: ProgramListQuery): Promise<PaginatedPro
   const { data } = await getAuthenticatedHttpClient().get(`${getProgramsBaseUrl()}/`, {
     params: {
       page: query.page,
+      page_size: query.pageSize,
       ordering: query.ordering,
       ...(search ? { search } : {}),
       ...(query.status ? { status: query.status } : {}),

@@ -60,8 +60,16 @@ const messages = defineMessages({
   paginationLabel: {
     id: 'course-authoring.studio-home.programs.tab.pagination',
     defaultMessage: 'Programs pagination',
+    description: 'Accessible label for the page controls under the programs list.',
+  },
+  rowStatus: {
+    id: 'course-authoring.studio-home.programs.tab.row-status',
+    defaultMessage: 'Showing {firstRow} - {lastRow} of {itemCount}.',
+    description: 'Which programs of the full list the current page shows. Same wording as the Paragon DataTable footer.',
   },
 });
+
+const PAGE_SIZE = 20;
 
 type SortOrder = 'az' | 'za';
 type StatusFilter = 'all' | 'draft' | 'active' | 'archived' | 'freezed';
@@ -79,12 +87,14 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
   // Treat API errors the same as empty — don't show a jarring error banner for the list
   const { data, isLoading } = usePrograms({
     page,
+    pageSize: PAGE_SIZE,
     search,
     status: statusFilter === 'all' ? undefined : statusFilter,
     ordering: sortOrder === 'az' ? 'name' : '-name',
   });
   const programs = data?.results ?? [];
   const numPages = data?.numPages ?? 1;
+  const firstRow = (page - 1) * PAGE_SIZE + 1;
 
   // A new search, filter or sort starts again from the first page.
   const changeSearch = (value: string) => { setSearch(value); setPage(1); };
@@ -183,14 +193,22 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
           <ProgramCard key={program.id} program={program} />
         ))
       )}
-      {numPages > 1 && (
-        <Pagination
-          className="d-flex justify-content-center mt-3"
-          paginationLabel={intl.formatMessage(messages.paginationLabel)}
-          pageCount={numPages}
-          currentPage={page}
-          onPageSelect={setPage}
-        />
+      {programs.length > 0 && (
+        <div className="d-flex flex-wrap justify-content-between align-items-center mt-3">
+          <span className="small text-muted">
+            {intl.formatMessage(messages.rowStatus, {
+              firstRow,
+              lastRow: firstRow + programs.length - 1,
+              itemCount: data?.count ?? programs.length,
+            })}
+          </span>
+          <Pagination
+            paginationLabel={intl.formatMessage(messages.paginationLabel)}
+            pageCount={numPages}
+            currentPage={page}
+            onPageSelect={setPage}
+          />
+        </div>
       )}
     </div>
   );

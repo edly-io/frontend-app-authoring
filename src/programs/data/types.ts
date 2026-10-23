@@ -20,6 +20,7 @@ export interface PaginatedCourses {
 /** Server-side query for the paginated program list. */
 export interface ProgramListQuery {
   page: number;
+  pageSize: number;
   search: string;
   /** Omitted = every status. */
   status?: string;

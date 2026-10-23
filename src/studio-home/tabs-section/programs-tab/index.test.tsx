@@ -42,6 +42,16 @@ describe('ProgramsTab', () => {
 
     expect(await screen.findByText('Oldest Program')).toBeInTheDocument();
     expect(lastProgramParams()).toMatchObject({ page: 2 });
+    expect(screen.getByText('Showing 21 - 21 of 21.')).toBeInTheDocument();
+  });
+
+  it('shows the row status and pagination control even with one page', async () => {
+    axiosMock.onGet(programsUrl()).reply(200, page(['Alpha Program', 'Bravo Program']));
+
+    render(<ProgramsTab />);
+
+    expect(await screen.findByText('Showing 1 - 2 of 2.')).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Programs pagination' })).toBeInTheDocument();
   });
 
   describe('sends search, status and sort to the server and restarts at page 1', () => {
@@ -59,7 +69,7 @@ describe('ProgramsTab', () => {
     it('defaults to A-Z with no search or status', async () => {
       render(<ProgramsTab />);
       await screen.findByText('Alpha Program');
-      expect(lastProgramParams()).toEqual({ page: 1, ordering: 'name' });
+      expect(lastProgramParams()).toEqual({ page: 1, page_size: 20, ordering: 'name' });
     });
 
     it('search', async () => {
