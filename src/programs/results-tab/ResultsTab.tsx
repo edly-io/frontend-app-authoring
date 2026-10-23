@@ -6,10 +6,10 @@ import {
   Tab,
   Tabs,
 } from '@openedx/paragon';
+import { AuditLogTable } from '@edly-io/frontend-component-fbr';
 import type { Program } from '../data/types';
 import GradeSchemeTab from '../grade-scheme-tab/GradeSchemeTab';
 import BulkTraineeResults from '../bulk-trainee-results/BulkTraineeResults';
-import AuditLogTable from '../../shared/AuditLogTable';
 
 const messages = defineMessages({
   listTab: { id: 'programs.results.tab.list', defaultMessage: 'List' },

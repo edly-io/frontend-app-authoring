@@ -1,6 +1,7 @@
 import {
   keepPreviousData, useMutation, useQuery, useQueryClient,
 } from '@tanstack/react-query';
+import { fbrKeys } from '@edly-io/frontend-component-fbr';
 
 import {
   finalizeScores, getCourseScores, getScoringGrid, saveScores,
@@ -49,7 +50,7 @@ export const useSaveScores = (programKey: string) => {
     mutationFn: (input: SaveScoresInput) => saveScores(programKey, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: scoringGridQueryKeys.all(programKey) });
-      queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
+      queryClient.invalidateQueries({ queryKey: fbrKeys.auditLogs });
     },
   });
 };
@@ -60,7 +61,7 @@ export const useFinalizeScores = (programKey: string) => {
     mutationFn: (input: FinalizeScoresInput = {}) => finalizeScores(programKey, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: scoringGridQueryKeys.all(programKey) });
-      queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
+      queryClient.invalidateQueries({ queryKey: fbrKeys.auditLogs });
     },
   });
 };

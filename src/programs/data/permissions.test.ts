@@ -1,4 +1,5 @@
 import { getProgramCapabilities } from './permissions';
+import type { FbrRole } from './types';
 
 describe('getProgramCapabilities', () => {
   it('grants full program management, including certificates and editing finalized results, to Super Admins', () => {
@@ -12,6 +13,7 @@ describe('getProgramCapabilities', () => {
       canManageInstructors: true,
       canEditFinalizedResults: true,
       canManageCertificates: true,
+      canManageProgramOperations: true,
       isReadOnly: false,
     });
   });
@@ -27,6 +29,7 @@ describe('getProgramCapabilities', () => {
       canManageInstructors: true,
       canEditFinalizedResults: false,
       canManageCertificates: false,
+      canManageProgramOperations: true,
       isReadOnly: false,
     });
   });
@@ -75,5 +78,16 @@ describe('getProgramCapabilities', () => {
       canEditProgram: false,
       isReadOnly: true,
     });
+  });
+
+  it.each([
+    [['super_admin'], true],
+    [['middle_admin'], true],
+    [['data_admin'], true],
+    [['instructor'], false],
+    [['trainee'], false],
+    [[], false],
+  ])('lets %p manage program operations: %p', (roles, expected) => {
+    expect(getProgramCapabilities(roles as FbrRole[]).canManageProgramOperations).toBe(expected);
   });
 });

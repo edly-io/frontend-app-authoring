@@ -1,0 +1,289 @@
+@use "@openedx/paragon/styles/css/core/custom-media-breakpoints" as paragonCustomMediaBreakpoints;
+
+// Moved from fbr-home `requests/requests.scss` (admin rules only). The --sessions-* tokens are
+// fbr-home's theme; Studio has none, so each use falls back to fbr-home's light value.
+// Rules on elements that also carry Paragon classes are scoped under `.requests-tab`, because
+// Paragon's theme CSS loads later and wins ties.
+
+.requests-tab {
+  .requests-view {
+    &__collapsible--muted {
+      font-size: .875rem;
+    }
+
+    &__collapsible-toggle {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: inherit;
+      color: var(--sessions-text-secondary, #495057);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    &__attachment-link {
+      font-size: .875rem;
+    }
+
+    &__row-actions {
+      display: flex;
+      gap: .4rem;
+    }
+
+    &__inline-status {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    // Reserves a small button's height so Bulk Approve appearing on selection doesn't shift the table.
+    &__bulk-bar {
+      padding: .75rem 0;
+    }
+
+    // Full width on phones, natural width from the sm breakpoint up.
+    &__bulk-approve {
+      width: 100%;
+
+      @media (--pgn-size-breakpoint-min-width-sm) {
+        width: auto;
+      }
+    }
+
+    &__usage-meter {
+      display: block;
+      width: 100%;
+      max-width: 120px;
+      height: 6px;
+      border: none;
+      border-radius: 3px;
+      overflow: hidden;
+      appearance: none;
+      background: var(--sessions-surface-muted, #E9ECEF);
+
+      &::-webkit-progress-bar {
+        background: var(--sessions-surface-muted, #E9ECEF);
+      }
+
+      &::-webkit-progress-value {
+        border-radius: 3px;
+        background: #3B82F6;
+      }
+
+      &::-moz-progress-bar {
+        border-radius: 3px;
+        background: #3B82F6;
+      }
+
+      &--over::-webkit-progress-value {
+        background: #EF4444;
+      }
+
+      &--over::-moz-progress-bar {
+        background: #EF4444;
+      }
+    }
+
+    &__usage-count {
+      font-weight: 600;
+      margin-bottom: 4px;
+
+      &--over {
+        color: var(--sessions-text-danger, #DC2626);
+      }
+    }
+
+    &__detail-cell {
+      min-width: 10rem;
+    }
+
+    &__reason-cell {
+      min-width: 11rem;
+    }
+
+    &__cell-text {
+      font-size: 13px;
+    }
+
+    &__cell-meta {
+      font-size: 12px;
+    }
+
+    &__conflict-note {
+      color: var(--sessions-text-warning, #D97706);
+    }
+
+    &__confirm-text {
+      color: var(--sessions-text-secondary, #495057);
+    }
+
+    &__subheading {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+  }
+
+  // Filter rows use Paragon's grid; only the label scale and the date inputs' widths live here.
+  .requests-filters {
+    // Below `sm` the From/To pair stacks; from `sm` it is one row.
+    &__dates {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: .375rem;
+
+      @media (--pgn-size-breakpoint-min-width-sm) {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
+
+    &__date-field {
+      display: flex;
+      align-items: center;
+      gap: .375rem;
+      min-width: 0;
+    }
+
+    // The date picker's wrapper: wide enough for DD/MM/YYYY plus its calendar icon.
+    &__date {
+      flex: 1 1 auto;
+      min-width: 0;
+
+      @media (--pgn-size-breakpoint-min-width-sm) {
+        flex: 0 0 auto;
+        width: 11rem;
+      }
+
+      @media (--pgn-size-breakpoint-min-width-lg) {
+        width: 12rem;
+      }
+    }
+  }
+
+  // Element-qualified so the labels' type scale wins over Paragon's `.pgn__form-label`.
+  label.requests-filters__label,
+  span.requests-filters__label {
+    display: block;
+    margin-bottom: .25rem;
+    font-size: .8rem;
+    line-height: 1.4;
+    color: var(--sessions-text-muted, #6C757D);
+    white-space: nowrap;
+  }
+
+  // From/To sit beside their input so the stacked pair still reads as one range.
+  label.requests-filters__date-label {
+    flex: 0 0 auto;
+    min-width: 2.5rem;
+    margin-bottom: 0;
+    font-size: .8rem;
+    line-height: 1.4;
+    color: var(--sessions-text-muted, #6C757D);
+    white-space: nowrap;
+  }
+}
+
+// Modals render in a portal outside `.requests-tab`, so their rules are not scoped under it.
+.assign-substitute-modal {
+  &__session-summary {
+    background: var(--sessions-surface-muted, #E9ECEF);
+    border: 1px solid var(--sessions-border, #DEE2E6);
+    border-radius: 4px;
+  }
+
+  &__session-summary-line {
+    font-size: 13px;
+  }
+
+  &__on-leave-banner {
+    background: #FEF2F2;
+    border: 1px solid #FCA5A5;
+    border-radius: 4px;
+  }
+
+  &__on-leave-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #DC2626;
+    margin-bottom: 4px;
+  }
+
+  &__on-leave-email {
+    font-size: 12px;
+    color: #DC2626;
+  }
+
+  &__on-leave-hint {
+    font-size: 11px;
+    color: #991B1B;
+    margin-top: 4px;
+  }
+
+  &__scope-hint {
+    margin-top: -8px;
+    margin-bottom: 12px;
+  }
+
+  &__validation-error {
+    font-size: 12px;
+    color: #DC2626;
+    margin-top: 2px;
+  }
+}
+
+// Threshold stepper: the −/+ buttons replace the native spinners and sit on full-height grey end caps.
+.requests-threshold__input.form-control {
+  appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    margin: 0;
+    appearance: none;
+  }
+}
+
+.requests-threshold.pgn__form-control-decorator-group {
+  .pgn__form-control-decorator {
+    top: var(--pgn-size-form-input-width-border, 1px);
+    bottom: var(--pgn-size-form-input-width-border, 1px);
+    height: auto;
+    padding: 0;
+    background-color: var(--sessions-surface-muted, #E9ECEF);
+  }
+
+  .pgn__form-control-decorator-leading {
+    left: var(--pgn-size-form-input-width-border, 1px);
+    border-right: 1px solid var(--sessions-border-strong, #C8CFD6);
+    border-radius: var(--pgn-size-form-input-radius-border-base) 0 0 var(--pgn-size-form-input-radius-border-base);
+  }
+
+  .pgn__form-control-decorator-trailing {
+    right: var(--pgn-size-form-input-width-border, 1px);
+    border-left: 1px solid var(--sessions-border-strong, #C8CFD6);
+    border-radius: 0 var(--pgn-size-form-input-radius-border-base) var(--pgn-size-form-input-radius-border-base) 0;
+  }
+
+  // Paragon styles decorator icon buttons with !important, so these must be too.
+  .pgn__form-control-decorator .btn-icon {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background-color: transparent !important;
+    color: var(--sessions-text-secondary, #495057) !important;
+
+    &:hover:not(:disabled) {
+      background-color: var(--sessions-border, #DEE2E6) !important;
+      color: var(--sessions-text, #212529) !important;
+    }
+
+    &:focus-visible {
+      box-shadow: inset 0 0 0 2px var(--sessions-text-muted, #6C757D) !important;
+    }
+
+    &:disabled {
+      color: var(--sessions-text-subtle, #ADB5BD) !important;
+    }
+  }
+}

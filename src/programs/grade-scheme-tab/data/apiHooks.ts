@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fbrKeys } from '@edly-io/frontend-component-fbr';
 
 import {
   getProgramScheme,
@@ -35,7 +36,7 @@ export const useSaveProgramScheme = (programKey: string) => {
     mutationFn: (input: SaveSchemeInput) => saveProgramScheme(programKey, input),
     onSuccess: (scheme: Scheme) => {
       queryClient.setQueryData(schemeQueryKeys.scheme(programKey), scheme);
-      queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
+      queryClient.invalidateQueries({ queryKey: fbrKeys.auditLogs });
     },
   });
 };
@@ -56,7 +57,7 @@ export const usePublishProgramScheme = (programKey: string) => {
     mutationFn: () => publishProgramScheme(programKey),
     onSuccess: (scheme: Scheme) => {
       queryClient.setQueryData(schemeQueryKeys.scheme(programKey), scheme);
-      queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
+      queryClient.invalidateQueries({ queryKey: fbrKeys.auditLogs });
     },
   });
 };
@@ -67,7 +68,7 @@ export const useUnpublishProgramScheme = (programKey: string) => {
     mutationFn: () => unpublishProgramScheme(programKey),
     onSuccess: (scheme: Scheme) => {
       queryClient.setQueryData(schemeQueryKeys.scheme(programKey), scheme);
-      queryClient.invalidateQueries({ queryKey: ['auditLogs'] });
+      queryClient.invalidateQueries({ queryKey: fbrKeys.auditLogs });
     },
   });
 };

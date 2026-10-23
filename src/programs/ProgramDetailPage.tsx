@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import classNames from 'classnames';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -33,6 +33,12 @@ import EnrollmentTab from './enrollment-tab/EnrollmentTab';
 import FeedbackTab from './feedback-tab/FeedbackTab';
 import ResultsTab from './results-tab/ResultsTab';
 import CertificatesTab from './certificates-tab/CertificatesTab';
+import AttendanceTab from './attendance-tab/AttendanceTab';
+import CalendarTab from './calendar-tab/CalendarTab';
+import LocationsTab from './locations-tab/LocationsTab';
+import HolidaysTab from './holidays-tab/HolidaysTab';
+import RequestsTab from './requests-tab/RequestsTab';
+import { DEFAULT_PROGRAM_TAB, getActiveProgramTab, isProgramTabVisible } from './programTabs';
 import './index.scss';
 
 const messages = defineMessages({
@@ -51,6 +57,11 @@ const messages = defineMessages({
   tabFeedback: { id: 'programs.detail.tab.feedback', defaultMessage: 'Feedback' },
   tabTraineeResults: { id: 'programs.detail.tab.bulk-trainee-results', defaultMessage: 'Trainees Results' },
   tabCertificates: { id: 'programs.detail.tab.certificates', defaultMessage: 'Certificates' },
+  tabCalendar: { id: 'programs.detail.tab.calendar', defaultMessage: 'Calendar' },
+  tabRequests: { id: 'programs.detail.tab.requests', defaultMessage: 'Requests' },
+  tabAttendance: { id: 'programs.detail.tab.attendance', defaultMessage: 'Attendance' },
+  tabLocations: { id: 'programs.detail.tab.locations', defaultMessage: 'Locations' },
+  tabHolidays: { id: 'programs.detail.tab.holidays', defaultMessage: 'Holidays' },
   sectionBasicInfo: { id: 'programs.detail.section.basic', defaultMessage: 'Basic Information' },
   sectionBasicSubtitle: { id: 'programs.detail.section.basic.sub', defaultMessage: 'Set the core details of your program' },
   sectionImage: { id: 'programs.detail.section.image', defaultMessage: 'Program Card Image' },
@@ -152,9 +163,9 @@ const formatAudienceCreateLabel = (inputValue: string) => (
 );
 
 const ProgramDetailPage: React.FC = () => {
-  const { programId } = useParams<{ programId: string }>();
+  const { programId, '*': tabPath } = useParams<{ programId: string, '*': string }>();
+  const navigate = useNavigate();
   const intl = useIntl();
-  const [activeTab, setActiveTab] = React.useState('details');
   const [imageFile, setImageFile] = React.useState<File | null>(null);
   const { showToast } = useContext(ToastContext);
   const {
@@ -163,6 +174,15 @@ const ProgramDetailPage: React.FC = () => {
     isLoading: isAccessLoading,
   } = useProgramAccess();
   const isSuperAdmin = profile?.roles?.includes('super_admin') ?? false;
+
+  const requestedTab = getActiveProgramTab(tabPath);
+  const activeTab = isProgramTabVisible(requestedTab, capabilities) ? requestedTab : DEFAULT_PROGRAM_TAB;
+  const isTabPathCanonical = tabPath?.split('/')[0] === activeTab;
+  React.useEffect(() => {
+    if (!isAccessLoading && !isTabPathCanonical) {
+      navigate(`/programs/${programId}/${activeTab}`, { replace: true });
+    }
+  }, [isAccessLoading, isTabPathCanonical, activeTab, programId, navigate]);
 
   const { data, isLoading, isError } = useProgramDetail(
     programId ?? '',
@@ -351,7 +371,7 @@ const ProgramDetailPage: React.FC = () => {
         <Tabs
           variant="tabs"
           activeKey={activeTab}
-          onSelect={(k) => setActiveTab(k ?? 'details')}
+          onSelect={(k) => navigate(`/programs/${programId}/${k ?? DEFAULT_PROGRAM_TAB}`)}
           className="program-detail-tabs"
         >
           {/* Program Details ─────────────────────────────────────────── */}
@@ -747,6 +767,32 @@ const ProgramDetailPage: React.FC = () => {
                 programName={program.displayName}
                 isActive={activeTab === 'certificates'}
               />
+            </Tab>
+          )}
+
+          {capabilities.canManageProgramOperations && (
+            <Tab eventKey="calendar" title={intl.formatMessage(messages.tabCalendar)} className="pt-4">
+              {activeTab === 'calendar' && <CalendarTab programId={programId ?? ''} />}
+            </Tab>
+          )}
+          {capabilities.canManageProgramOperations && (
+            <Tab eventKey="requests" title={intl.formatMessage(messages.tabRequests)} className="pt-4">
+              {activeTab === 'requests' && <RequestsTab programId={programId ?? ''} />}
+            </Tab>
+          )}
+          {capabilities.canManageProgramOperations && (
+            <Tab eventKey="attendance" title={intl.formatMessage(messages.tabAttendance)} className="pt-4">
+              {activeTab === 'attendance' && <AttendanceTab programId={programId ?? ''} />}
+            </Tab>
+          )}
+          {capabilities.canManageProgramOperations && (
+            <Tab eventKey="locations" title={intl.formatMessage(messages.tabLocations)} className="pt-4">
+              {activeTab === 'locations' && <LocationsTab programId={programId ?? ''} />}
+            </Tab>
+          )}
+          {capabilities.canManageProgramOperations && (
+            <Tab eventKey="holidays" title={intl.formatMessage(messages.tabHolidays)} className="pt-4">
+              {activeTab === 'holidays' && <HolidaysTab />}
             </Tab>
           )}
 

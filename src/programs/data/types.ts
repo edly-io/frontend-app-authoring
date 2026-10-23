@@ -78,6 +78,8 @@ export interface ProgramCapabilities {
   /** Only a Super Admin may edit/add scores on a trainee row once finalized. */
   canEditFinalizedResults: boolean;
   canManageCertificates: boolean;
+  /** Calendar, requests, attendance, locations and holidays: program admins only. */
+  canManageProgramOperations: boolean;
   isReadOnly: boolean;
 }
 
