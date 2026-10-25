@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Dropdown,
   Icon,
@@ -96,7 +96,11 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
   const numPages = data?.numPages ?? 1;
 
   // A new search, filter or sort starts again from the first page.
-  const changeSearch = (value: string) => { setSearch(value); setPage(1); };
+  // Must keep one identity across renders: Paragon's SearchField calls its
+  // onChange whenever that handler changes, and DebouncedSearchField rebuilds
+  // the handler from onSearch. A fresh function here would re-submit the
+  // current search after every render and knock the list back to page 1.
+  const changeSearch = useCallback((value: string) => { setSearch(value); setPage(1); }, []);
   const changeStatusFilter = (value: StatusFilter) => { setStatusFilter(value); setPage(1); };
   const changeSortOrder = (value: SortOrder) => { setSortOrder(value); setPage(1); };
 
