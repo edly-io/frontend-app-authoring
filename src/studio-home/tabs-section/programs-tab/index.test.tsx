@@ -45,6 +45,21 @@ describe('ProgramsTab', () => {
     expect(screen.getByText('Showing 1 of 21')).toBeInTheDocument();
   });
 
+  it('stays on page 2 after the search debounce has passed', async () => {
+    axiosMock.onGet(programsUrl()).reply((config) => [200, String(config.params?.page) === '2'
+      ? page(['Oldest Program'], { count: 21, numPages: 2 })
+      : page(['Alpha Program'], { count: 21, numPages: 2 })]);
+
+    render(<ProgramsTab />);
+    await screen.findByText('Alpha Program');
+    fireEvent.click(screen.getByRole('button', { name: /next/i }));
+    await screen.findByText('Oldest Program');
+    await new Promise((resolve) => { setTimeout(resolve, 600); });
+
+    expect(lastProgramParams()).toMatchObject({ page: 2 });
+    expect(screen.getByText('Oldest Program')).toBeInTheDocument();
+  });
+
   it('shows the row status and pagination control even with one page', async () => {
     axiosMock.onGet(programsUrl()).reply(200, page(['Alpha Program', 'Bravo Program']));
 
