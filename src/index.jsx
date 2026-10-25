@@ -67,7 +67,7 @@ const App = () => {
       <Route>
         <Route path="/home" element={<StudioHome />} />
         <Route path="/programs" element={<StudioHome />} />
-        <Route path="/programs/:programId" element={<ProgramDetailPage />} />
+        <Route path="/programs/:programId/*" element={<ProgramDetailPage />} />
         <Route path="/libraries" element={<StudioHome />} />
         <Route path="/libraries-v1" element={<StudioHome />} />
         <Route path="/libraries-v1/migrate" element={<LegacyLibMigrationPage />} />

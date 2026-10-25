@@ -11,14 +11,12 @@ import {
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
-import { UserIdentity } from '@edly-io/frontend-component-fbr';
+import { AuditLogTable, toRoleBadges, UserIdentity } from '@edly-io/frontend-component-fbr';
 import type { Program } from '../data/types';
 import { useCourseTeam, useRemoveInstructorFromCourse } from '../data/apiHooks';
 import DeleteModal from '../../generic/delete-modal/DeleteModal';
 import AddInstructorModal from './AddInstructorModal';
 import { getInitials } from '../feedback-tab/dashboard/feedbackDashboardUtils';
-import { toRoleBadges } from '../../shared/roleLabels';
-import AuditLogTable from '../../shared/AuditLogTable';
 
 const messages = defineMessages({
   sectionTitle: { id: 'programs.instructors.title', defaultMessage: 'Course Instructors' },

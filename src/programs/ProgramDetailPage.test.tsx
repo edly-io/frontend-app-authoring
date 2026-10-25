@@ -1,5 +1,6 @@
+import { useLocation } from 'react-router-dom';
 import {
-  initializeMocks, render, screen,
+  fireEvent, initializeMocks, render, screen,
 } from '@src/testUtils';
 import ProgramDetailPage from './ProgramDetailPage';
 import { mockProgram } from './data/api.mock';
@@ -24,6 +25,21 @@ jest.mock('./enrollment-tab/EnrollmentTab', () => function MockEnrollmentTab() {
 });
 jest.mock('./certificates-tab/CertificatesTab', () => function MockCertificatesTab() {
   return <div>Certificates content</div>;
+});
+jest.mock('./calendar-tab/CalendarTab', () => function MockCalendarTab() {
+  return <div>Calendar content</div>;
+});
+jest.mock('./attendance-tab/AttendanceTab', () => function MockAttendanceTab() {
+  return <div>Attendance content</div>;
+});
+jest.mock('./requests-tab/RequestsTab', () => function MockRequestsTab() {
+  return <div>Requests content</div>;
+});
+jest.mock('./holidays-tab/HolidaysTab', () => function MockHolidaysTab() {
+  return <div>Holidays content</div>;
+});
+jest.mock('./locations-tab/LocationsTab', () => function MockLocationsTab() {
+  return <div>Locations content</div>;
 });
 jest.mock('./data/apiHooks', () => ({
   useProgramAccess: () => mockUseProgramAccess(),
@@ -89,13 +105,21 @@ jest.mock('./data/apiHooks', () => ({
   }),
 }));
 
-const renderPage = () => render(
-  <ProgramDetailPage />,
+const LocationDisplay = () => <div data-testid="location">{useLocation().pathname}</div>;
+
+const renderPage = (url = '/programs/prog-key-1') => render(
+  <>
+    <ProgramDetailPage />
+    <LocationDisplay />
+  </>,
   {
-    path: '/programs/:programId',
-    params: { programId: 'prog-key-1' },
+    path: '/programs/:programId/*',
+    routerProps: { initialEntries: [url] },
   },
 );
+
+// Some tabs (Feedback) nest their own tabs, so the page-level tab is the first selected one.
+const activeTabName = () => screen.getAllByRole('tab', { selected: true })[0].textContent;
 
 describe('<ProgramDetailPage /> permissions', () => {
   beforeEach(() => {
@@ -162,5 +186,157 @@ describe('<ProgramDetailPage /> permissions', () => {
     renderPage();
 
     expect(screen.getByTestId('permissionDeniedAlert')).toBeInTheDocument();
+  });
+});
+
+describe('<ProgramDetailPage /> tab URLs', () => {
+  beforeEach(() => {
+    initializeMocks();
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['super_admin']),
+      isLoading: false,
+    });
+  });
+
+  it('redirects a program URL with no tab to the details tab', () => {
+    renderPage('/programs/prog-key-1');
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/programs/prog-key-1/details');
+    expect(activeTabName()).toBe('Program Details');
+  });
+
+  it('opens the tab named in the URL', () => {
+    renderPage('/programs/prog-key-1/feedback');
+
+    expect(activeTabName()).toBe('Feedback');
+    expect(screen.getByTestId('location')).toHaveTextContent('/programs/prog-key-1/feedback');
+  });
+
+  it('falls back to details for an unknown tab', () => {
+    renderPage('/programs/prog-key-1/nope');
+
+    expect(activeTabName()).toBe('Program Details');
+    expect(screen.getByTestId('location')).toHaveTextContent('/programs/prog-key-1/details');
+  });
+
+  it('falls back to details for a tab the user cannot see', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['instructor']),
+      isLoading: false,
+    });
+
+    renderPage('/programs/prog-key-1/certificates');
+
+    expect(activeTabName()).toBe('Program Details');
+    expect(screen.getByTestId('location')).toHaveTextContent('/programs/prog-key-1/details');
+  });
+
+  it('changes the URL when a tab is clicked', () => {
+    renderPage('/programs/prog-key-1/details');
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Courses' }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/programs/prog-key-1/courses');
+    expect(activeTabName()).toBe('Courses');
+  });
+});
+
+describe('<ProgramDetailPage /> program operation tabs', () => {
+  const OPERATION_TABS = ['Calendar', 'Requests', 'Attendance', 'Locations', 'Holidays'];
+
+  beforeEach(() => {
+    initializeMocks();
+  });
+
+  it('shows the operation tabs to Middle Admins, after Certificates', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['middle_admin']),
+      isLoading: false,
+    });
+
+    renderPage();
+
+    // Paragon adds a "More..." overflow tab at the end of the strip.
+    const tabNames = screen.getAllByRole('tab').map((tab) => tab.textContent).filter((name) => name !== 'More...');
+    expect(tabNames.slice(-5)).toEqual(OPERATION_TABS);
+  });
+
+  it('hides the operation tabs from instructors', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['instructor']),
+      isLoading: false,
+    });
+
+    renderPage();
+
+    OPERATION_TABS.forEach((name) => {
+      expect(screen.queryByRole('tab', { name })).not.toBeInTheDocument();
+    });
+  });
+
+  it('mounts an operation tab only while it is active', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['middle_admin']),
+      isLoading: false,
+    });
+
+    renderPage('/programs/prog-key-1/details');
+    expect(screen.queryByText('Calendar content')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Calendar' }));
+    expect(screen.getByText('Calendar content')).toBeInTheDocument();
+  });
+
+  it('renders the Locations tab at its URL', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['middle_admin']),
+      isLoading: false,
+    });
+
+    renderPage('/programs/prog-key-1/locations');
+    expect(screen.getByText('Locations content')).toBeInTheDocument();
+  });
+
+  it('keeps a Requests sub-path in the URL', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['middle_admin']),
+      isLoading: false,
+    });
+
+    renderPage('/programs/prog-key-1/requests/substitute-requests');
+    expect(screen.getByText('Requests content')).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent('/programs/prog-key-1/requests/substitute-requests');
+  });
+
+  it('keeps an attendance roster URL', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['data_admin']),
+      isLoading: false,
+    });
+
+    renderPage('/programs/prog-key-1/attendance/sessions/5?course_id=X');
+    expect(screen.getByText('Attendance content')).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent('/programs/prog-key-1/attendance/sessions/5');
+  });
+
+  it('renders the Holidays tab at its URL', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['data_admin']),
+      isLoading: false,
+    });
+
+    renderPage('/programs/prog-key-1/holidays');
+    expect(screen.getByText('Holidays content')).toBeInTheDocument();
+  });
+
+  it('sends an instructor on an operation tab URL to Details', () => {
+    mockUseProgramAccess.mockReturnValue({
+      capabilities: getProgramCapabilities(['instructor']),
+      isLoading: false,
+    });
+
+    renderPage('/programs/prog-key-1/requests/leaves');
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/programs/prog-key-1/details');
   });
 });

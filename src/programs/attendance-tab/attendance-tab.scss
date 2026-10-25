@@ -1,0 +1,44 @@
+// Moved from fbr-home `attendance/attendance.scss`, plus the two fbr-home globals the roster card used
+// (`.sessions-panel`, `.sessions-eyebrow`) under tab-scoped names.
+
+.attendance-tab {
+  // Paragon's `.small` is percentage-based; these lines have always been 14px.
+  .attendance-meta {
+    font-size: .875rem;
+  }
+
+  .attendance-status-btn.btn {
+    min-width: 4.75rem;
+    border-radius: 20px;
+  }
+
+  // A session's title and date are one label: the listing scrolls sideways rather than wrapping it.
+  .attendance-session-cell {
+    white-space: nowrap;
+  }
+
+  &__session-card {
+    background-color: var(--sessions-panel-bg, #E1DDDB);
+  }
+
+  &__eyebrow {
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  &__picker {
+    max-width: 400px;
+  }
+
+  &__pickers {
+    gap: 1rem;
+  }
+
+  &__picker-item {
+    flex: 1 1 280px;
+    min-width: 280px;
+    max-width: 360px;
+  }
+}

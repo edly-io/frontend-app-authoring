@@ -10,12 +10,12 @@ import {
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
+import { AuditLogTable } from '@edly-io/frontend-component-fbr';
 import type { Course, Program } from '../data/types';
 import { useRemoveCourseFromProgram } from '../data/apiHooks';
 import { useCourseAttribution } from '../../course-lifecycle/data/apiHooks';
 import DeleteModal from '../../generic/delete-modal/DeleteModal';
 import AddCourseModal from './AddCourseModal';
-import AuditLogTable from '../../shared/AuditLogTable';
 import './CoursesTab.scss';
 
 const messages = defineMessages({

@@ -4,9 +4,12 @@ import {
 import EnrollmentTab from './EnrollmentTab';
 import { mockLearner, mockPaginatedLearners } from '../data/api.mock';
 
-jest.mock('../../shared/AuditLogTable', () => function MockAuditLogTable() {
-  return <div data-testid="audit-log-table">No activity recorded yet.</div>;
-});
+jest.mock('@edly-io/frontend-component-fbr', () => ({
+  ...jest.requireActual('@edly-io/frontend-component-fbr'),
+  AuditLogTable: function MockAuditLogTable() {
+    return <div data-testid="audit-log-table">No activity recorded yet.</div>;
+  },
+}));
 
 const mockUnenrollMutate = jest.fn();
 const mockUseProgramEnrollments = jest.fn();
