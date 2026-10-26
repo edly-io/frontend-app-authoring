@@ -196,9 +196,7 @@ const ContainerNode = ({ node, depth }: { node: DiffNodeData; depth: number; }) 
             className={`publish-history-group-trigger d-flex align-items-center py-2 ${INDENTS[Math.min(depth, 3)]}`}
             onKeyDown={toggleOnSpace}
           >
-            <BlockTitle node={node} />
-            {node.change && <Editor node={node} inToggle />}
-            <span className="ml-auto pl-2 d-flex">
+            <span className="mr-2 d-flex flex-shrink-0">
               <Collapsible.Visible whenClosed>
                 <Icon src={ExpandMore} />
               </Collapsible.Visible>
@@ -206,6 +204,8 @@ const ContainerNode = ({ node, depth }: { node: DiffNodeData; depth: number; }) 
                 <Icon src={ExpandLess} />
               </Collapsible.Visible>
             </span>
+            <BlockTitle node={node} />
+            {node.change && <Editor node={node} inToggle />}
           </Collapsible.Trigger>
         </Heading>
         <Collapsible.Body>

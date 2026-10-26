@@ -14,8 +14,8 @@ const FieldName = ({ field }: { field: FieldChangeData; }) => {
   return (
     <>
       <div className="d-flex align-items-center">
-        <code className="mr-2 text-break">{field.name}</code>
-        <Badge variant="light">
+        <code className="publish-history-field-name mr-2 text-break">{field.name}</code>
+        <Badge variant="light" className="flex-shrink-0">
           {intl.formatMessage(field.scope === 'content' ? messages.fieldScopeContent : messages.fieldScopeSettings)}
         </Badge>
       </div>

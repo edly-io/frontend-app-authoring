@@ -36,6 +36,8 @@
     > .publish-history-card:not(.publish-history-card-absent) {
       display: grid;
       grid-template-rows: subgrid;
+      // The implicit column would size to its widest content and push a long title out of the card.
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 }
@@ -47,6 +49,10 @@
   background: var(--pgn-color-white);
 }
 
+.publish-history-card-header {
+  min-width: 0;
+}
+
 .publish-history-card-header:not(:last-child) {
   border-bottom: 1px solid var(--pgn-color-light-300);
 }
@@ -54,6 +60,11 @@
 .publish-history-card-absent {
   min-height: 4rem;
   background: var(--pgn-color-light-200);
+}
+
+.publish-history-field-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .publish-history-slot {
