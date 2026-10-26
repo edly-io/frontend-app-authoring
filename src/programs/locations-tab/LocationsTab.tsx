@@ -159,7 +159,7 @@ const ViewSwitch = ({ activeView, onChange }: ViewSwitchProps) => {
   );
   return (
     <div className="d-flex justify-content-end mb-3">
-      <ButtonGroup size="sm">
+      <ButtonGroup size="sm" className="program-view-toggle">
         {renderButton(LIST_VIEW, intl.formatMessage(messages.viewList))}
         {renderButton(AUDIT_LOG_VIEW, intl.formatMessage(messages.viewAuditLog))}
       </ButtonGroup>

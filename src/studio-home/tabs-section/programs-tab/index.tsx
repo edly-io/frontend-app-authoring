@@ -180,7 +180,7 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
             </Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>
-        <p className="my-0 ml-md-auto align-self-center">
+        <p className="programs-filters__count my-0 ml-md-auto align-self-center">
           {intl.formatMessage(messages.paginationInfo, {
             length: programs.length,
             total: data?.count ?? 0,

@@ -1,0 +1,94 @@
+// Shared FBR responsive overrides for Studio Home and the program pages.
+
+// ── DataTable ─────────────────────────────────────────────────────────────
+
+// Lift Paragon's 20vw cell cap so wide tables scroll instead of clipping.
+.pgn__data-table-cell-wrap {
+  max-width: none;
+}
+
+// Let the flex main column shrink so `.pgn__data-table-container` can scroll.
+div.pgn__data-table-layout-wrapper .pgn__data-table-layout-main {
+  min-width: 0;
+}
+
+// ── Program header actions ────────────────────────────────────────────────
+
+.program-page-header__actions.pgn__hstack {
+  flex-shrink: 0;
+  align-items: center;
+
+  .btn {
+    white-space: nowrap;
+  }
+
+  @media (--pgn-size-breakpoint-max-width-xs) {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+}
+
+// ── View toggles ──────────────────────────────────────────────────────────
+
+// `.calendar-tab .btn-group`: ProgramCalendar (frontend-component-fbr) has no class hook.
+@media (--pgn-size-breakpoint-max-width-xs) {
+  .program-page-header__actions .btn-group,
+  .btn-group.program-view-toggle,
+  .calendar-tab .btn-group {
+    display: flex;
+    width: 100%;
+
+    .btn {
+      flex: 1 1 0;
+      white-space: nowrap;
+    }
+  }
+}
+
+// ── Request cards (Requests tab, below lg) ────────────────────────────────
+
+// Flatten RequestActions' wrappers so its buttons and warning join this row.
+.requests-tab .requests-view__card-actions {
+  display: flex;
+  flex-flow: row wrap;
+  gap: .5rem;
+
+  > div,
+  .requests-view__row-actions {
+    display: contents;
+  }
+
+  .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  small {
+    flex: 0 0 100%;
+    margin-top: 0 !important;
+  }
+
+  @media (--pgn-size-breakpoint-max-width-xs) {
+    flex-direction: column;
+
+    .btn,
+    small {
+      flex: none;
+    }
+
+    .btn {
+      width: 100%;
+    }
+  }
+}
+
+// ── Studio Home: programs filter bar ──────────────────────────────────────
+
+@media (--pgn-size-breakpoint-max-width-xs) {
+  .programs-filters__control,
+  .programs-filters__count {
+    flex: 1 1 100%;
+  }
+}

@@ -6,6 +6,7 @@ import {
   Form,
   OverlayTrigger,
   Spinner,
+  Stack,
   Tooltip,
   useToggle,
 } from '@openedx/paragon';
@@ -72,7 +73,7 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
         </div>
-        <div className="d-flex align-items-center gap-2">
+        <Stack direction="horizontal" gap={2} className="program-page-header__actions">
           {canManage && (
             <Button
               variant="outline-primary"
@@ -85,7 +86,7 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
             </Button>
           )}
           {selectedCourseId && (
-            <ButtonGroup size="sm">
+            <ButtonGroup size="sm" className="program-view-toggle">
               <Button
                 variant={activeView === 'list' ? 'primary' : 'outline-primary'}
                 onClick={() => setActiveView('list')}
@@ -102,7 +103,7 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
               </Button>
             </ButtonGroup>
           )}
-        </div>
+        </Stack>
       </div>
 
       {courses.length === 0 ? (

@@ -55,7 +55,7 @@ const ResultsTab: React.FC<ResultsTabProps> = ({
       </div>
 
       <div className="d-flex justify-content-end mb-3">
-        <ButtonGroup size="sm">
+        <ButtonGroup size="sm" className="program-view-toggle">
           <Button
             variant={activeView === 'list' ? 'primary' : 'outline-primary'}
             size="sm"

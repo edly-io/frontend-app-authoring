@@ -28,9 +28,6 @@ const RequestActions = ({
   const warning = isWithdrawal ? messages.pastLeaveShortWarning : messages.pastLeaveApproveWarning;
   return (
     <div>
-      {isLeaveStartDatePast(request) && (
-        <small className="text-danger d-block mb-1">{intl.formatMessage(warning)}</small>
-      )}
       <div className="requests-view__row-actions">
         <Button
           variant="primary"
@@ -49,6 +46,9 @@ const RequestActions = ({
           {intl.formatMessage(isWithdrawal ? messages.rejectWithdrawalAction : messages.reject)}
         </Button>
       </div>
+      {isLeaveStartDatePast(request) && (
+        <small className="text-danger d-block mt-1">{intl.formatMessage(warning)}</small>
+      )}
     </div>
   );
 };

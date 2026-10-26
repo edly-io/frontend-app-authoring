@@ -73,37 +73,36 @@ const CoursesTab: React.FC<CoursesTabProps> = ({
             <p className="text-muted small mb-0 mt-1">{intl.formatMessage(messages.oneCourseNote)}</p>
           )}
         </div>
-        {canManage && activeView === 'list' && (
-          <Button
-            variant="outline-primary"
-            iconBefore={Add}
-            size="sm"
-            onClick={openModal}
-          >
-            {intl.formatMessage(messages.addCourseBtn)}
-          </Button>
-        )}
-      </div>
-
-      <div className="d-flex justify-content-end mb-3">
-        <ButtonGroup size="sm">
-          <Button
-            variant={activeView === 'list' ? 'primary' : 'outline-primary'}
-            size="sm"
-            aria-pressed={activeView === 'list'}
-            onClick={() => setActiveView('list')}
-          >
-            {intl.formatMessage(messages.listTab)}
-          </Button>
-          <Button
-            variant={activeView === 'audit-log' ? 'primary' : 'outline-primary'}
-            size="sm"
-            aria-pressed={activeView === 'audit-log'}
-            onClick={() => setActiveView('audit-log')}
-          >
-            {intl.formatMessage(messages.auditLogTab)}
-          </Button>
-        </ButtonGroup>
+        <Stack direction="horizontal" gap={2} className="program-page-header__actions">
+          {canManage && activeView === 'list' && (
+            <Button
+              variant="outline-primary"
+              iconBefore={Add}
+              size="sm"
+              onClick={openModal}
+            >
+              {intl.formatMessage(messages.addCourseBtn)}
+            </Button>
+          )}
+          <ButtonGroup size="sm" className="program-view-toggle">
+            <Button
+              variant={activeView === 'list' ? 'primary' : 'outline-primary'}
+              size="sm"
+              aria-pressed={activeView === 'list'}
+              onClick={() => setActiveView('list')}
+            >
+              {intl.formatMessage(messages.listTab)}
+            </Button>
+            <Button
+              variant={activeView === 'audit-log' ? 'primary' : 'outline-primary'}
+              size="sm"
+              aria-pressed={activeView === 'audit-log'}
+              onClick={() => setActiveView('audit-log')}
+            >
+              {intl.formatMessage(messages.auditLogTab)}
+            </Button>
+          </ButtonGroup>
+        </Stack>
       </div>
 
       {activeView === 'audit-log' && (

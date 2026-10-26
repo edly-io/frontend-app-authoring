@@ -49,7 +49,7 @@ const AttendanceLayout = ({ programId }: { programId: string }) => {
   return (
     <div className="attendance-tab">
       <div className="d-flex justify-content-end mb-3">
-        <ButtonGroup size="sm">
+        <ButtonGroup size="sm" className="program-view-toggle">
           {renderViewButton(LIST_VIEW, intl.formatMessage(messages.viewList))}
           {renderViewButton(AUDIT_LOG_VIEW, intl.formatMessage(messages.viewAuditLog))}
         </ButtonGroup>

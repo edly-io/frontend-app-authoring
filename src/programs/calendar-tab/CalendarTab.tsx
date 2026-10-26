@@ -7,7 +7,9 @@ interface CalendarTabProps {
 
 /** The library calendar, with its roster and audit links built under `/programs/:programId`. */
 const CalendarTab: React.FC<CalendarTabProps> = ({ programId }) => (
-  <ProgramCalendar programKey={programId} basePath={`/programs/${programId}`} />
+  <div className="calendar-tab">
+    <ProgramCalendar programKey={programId} basePath={`/programs/${programId}`} />
+  </div>
 );
 
 export default CalendarTab;
