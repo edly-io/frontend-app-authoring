@@ -34,17 +34,18 @@ describe('getProgramCapabilities', () => {
     });
   });
 
-  it('prevents Data Admins from creating or archiving programs, editing finalized results, or managing certificates', () => {
-    expect(getProgramCapabilities(['data_admin'])).toMatchObject({
+  it('grants Data Admins the same program management as Middle Admins', () => {
+    expect(getProgramCapabilities(['data_admin'])).toEqual({
       canAccessPrograms: true,
-      canCreateProgram: false,
+      canCreateProgram: true,
       canEditProgram: true,
-      canArchiveProgram: false,
+      canArchiveProgram: true,
       canManageCourses: true,
       canManageEnrollment: true,
       canManageInstructors: true,
       canEditFinalizedResults: false,
       canManageCertificates: false,
+      canManageProgramOperations: true,
       isReadOnly: false,
     });
   });

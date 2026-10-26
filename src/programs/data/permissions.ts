@@ -28,9 +28,9 @@ export const getProgramCapabilities = (roles: FbrRole[] = []): ProgramCapabiliti
 
   return {
     canAccessPrograms: true,
-    canCreateProgram: isSuperAdmin || isMiddleAdmin,
+    canCreateProgram: isProgramAdmin,
     canEditProgram: isProgramAdmin,
-    canArchiveProgram: isSuperAdmin || isMiddleAdmin,
+    canArchiveProgram: isProgramAdmin,
     canManageCourses: isProgramAdmin,
     canManageEnrollment: isProgramAdmin,
     canManageInstructors: isProgramAdmin,
