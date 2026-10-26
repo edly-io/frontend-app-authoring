@@ -208,4 +208,117 @@ describe('publish history api', () => {
       await expect(getDiff(COURSE_ID, V3, 'draft')).rejects.toMatchObject({ response: { status } });
     });
   });
+
+  describe('apiUrls.render', () => {
+    const USAGE = 'block-v1:Uber+101+2026+type@html+block@h1';
+
+    it('builds the render URL with an encoded course id in the path', () => {
+      expect(apiUrls.render(COURSE_ID, USAGE, V3)).toBe(
+        `${BASE}/courses/course-v1%3AUber%2B101%2B2026/render/?usage_key=${encodeURIComponent(USAGE)}&version=${V3}`,
+      );
+    });
+
+    it('keeps the plus signs of the usage key out of the query as spaces', () => {
+      const url = new URL(apiUrls.render(COURSE_ID, USAGE, 'draft'));
+      expect(url.searchParams.get('usage_key')).toBe(USAGE);
+      expect(url.search).not.toContain('+101');
+    });
+
+    it('passes the published and draft keywords through', () => {
+      expect(apiUrls.render(COURSE_ID, USAGE, 'published')).toContain('version=published');
+      expect(apiUrls.render(COURSE_ID, USAGE, 'draft')).toContain('version=draft');
+    });
+  });
+
+  describe('getDiff JSON diffs', () => {
+    const side = (id: string) => ({ id, kind: 'version', at: null, by: null });
+    const reply = (fields: object[]) => ({
+      from: side(V2),
+      to: side(V3),
+      identical: false,
+      total_changes: 1,
+      truncated: false,
+      budget_exhausted: true,
+      tree: [{
+        usage_key: 'u',
+        block_type: 'html',
+        display_name: 'x',
+        change: 'CHANGED',
+        editor: null,
+        editor_approximate: false,
+        move: null,
+        fields,
+        children: [],
+      }],
+    });
+
+    it('maps json_diff and keeps keys, paths and values as they are (never camelCased)', async () => {
+      axiosMock.onGet().reply(
+        200,
+        reply([{
+          name: 'metadata',
+          scope: 'settings',
+          old: null,
+          new: null,
+          text_diff: null,
+          json_diff: {
+            changes: [{
+              path: ['drop_zones', 0, 'some_key'],
+              old_path: ['drop_zones', 1, 'some_key'],
+              op: 'changed',
+              old: { inner_key: 1 },
+              new: { inner_key: 2 },
+              too_large: true,
+            }],
+            unchanged: [{ path: ['drop_zones'], count: 3 }],
+            truncated: true,
+          },
+          too_large: false,
+          too_large_reason: null,
+        }]),
+      );
+      const { tree } = await getDiff(COURSE_ID, V3, 'previous');
+      expect(tree[0].fields[0].jsonDiff).toEqual({
+        changes: [{
+          path: ['drop_zones', 0, 'some_key'],
+          oldPath: ['drop_zones', 1, 'some_key'],
+          op: 'changed',
+          old: { inner_key: 1 },
+          new: { inner_key: 2 },
+          tooLarge: true,
+        }],
+        unchanged: [{ path: ['drop_zones'], count: 3 }],
+        truncated: true,
+      });
+    });
+
+    it('maps too_large_reason and budget_exhausted', async () => {
+      axiosMock.onGet().reply(
+        200,
+        reply([{
+          name: 'data',
+          scope: 'content',
+          old: 'a',
+          new: 'b',
+          text_diff: null,
+          json_diff: null,
+          too_large: true,
+          too_large_reason: 'budget',
+        }]),
+      );
+      const result = await getDiff(COURSE_ID, V3, 'previous');
+      expect(result.budgetExhausted).toBe(true);
+      expect(result.tree[0].fields[0]).toMatchObject({ tooLarge: true, tooLargeReason: 'budget', jsonDiff: null });
+    });
+
+    it('treats a missing json_diff, reason and budget flag as none', async () => {
+      axiosMock.onGet().reply(200, {
+        ...reply([{ name: 'n', scope: 'settings', old: 1, new: 2, text_diff: null, too_large: false }]),
+        budget_exhausted: undefined,
+      });
+      const result = await getDiff(COURSE_ID, V3, 'previous');
+      expect(result.budgetExhausted).toBe(false);
+      expect(result.tree[0].fields[0]).toMatchObject({ jsonDiff: null, tooLargeReason: null });
+    });
+  });
 });

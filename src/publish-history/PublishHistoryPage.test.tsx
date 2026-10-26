@@ -92,7 +92,8 @@ describe('<PublishHistoryPage />', () => {
   it('links back to the course outline', async () => {
     getVersions.mockResolvedValue(page([version(V3)]));
     render(<PublishHistoryPage />);
-    expect(await screen.findByRole('link', { name: 'Course outline' })).toHaveAttribute('href', `/course/${COURSE_ID}`);
+    expect(await screen.findByRole('link', { name: 'Back to Course Outline' }))
+      .toHaveAttribute('href', `/course/${COURSE_ID}`);
   });
 
   it('shows the empty state', async () => {
@@ -156,5 +157,34 @@ describe('<PublishHistoryPage />', () => {
     getVersions.mockResolvedValue(page([version(V3)]));
     render(<PublishHistoryPage />);
     await waitFor(() => expect(document.title).toContain('Publish history'));
+  });
+
+  it('titles the date column "Published on"', async () => {
+    getVersions.mockResolvedValue(page([version(V3)]));
+    render(<PublishHistoryPage />);
+    expect(await screen.findByRole('columnheader', { name: 'Published on' })).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Published' })).not.toBeInTheDocument();
+  });
+
+  it('has no "Content" subtitle below the back link', async () => {
+    getVersions.mockResolvedValue(page([version(V3)]));
+    render(<PublishHistoryPage />);
+    await screen.findByRole('table');
+    expect(screen.queryByText('Content')).not.toBeInTheDocument();
+  });
+
+  it('shows the title as a heading', async () => {
+    getVersions.mockResolvedValue(page([version(V3)]));
+    render(<PublishHistoryPage />);
+    expect(await screen.findByRole('heading', { name: 'Publish history' })).toBeInTheDocument();
+  });
+
+  it('shows the back link before the title, with an arrow', async () => {
+    getVersions.mockResolvedValue(page([version(V3)]));
+    render(<PublishHistoryPage />);
+    const link = await screen.findByRole('link', { name: 'Back to Course Outline' });
+    const title = screen.getByRole('heading', { name: 'Publish history' });
+    expect(link.compareDocumentPosition(title)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(link.querySelector('svg')).toBeInTheDocument();
   });
 });

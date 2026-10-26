@@ -28,7 +28,9 @@ export const field = (overrides: Partial<FieldChangeData> = {}): FieldChangeData
   old: 'Old name',
   new: 'New name',
   textDiff: null,
+  jsonDiff: null,
   tooLarge: false,
+  tooLargeReason: null,
   ...overrides,
 });
 
@@ -51,6 +53,7 @@ export const diffResult = (overrides: Partial<DiffResult> = {}): DiffResult => (
   identical: false,
   totalChanges: 1,
   truncated: false,
+  budgetExhausted: false,
   tree: [node()],
   ...overrides,
 });

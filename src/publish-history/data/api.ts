@@ -5,6 +5,7 @@ import type {
   DiffNodeData,
   DiffResult,
   FieldChangeData,
+  JsonDiffData,
   PublishHistoryStatus,
   VersionsPage,
 } from '@src/publish-history/types';
@@ -35,6 +36,10 @@ export const apiUrls = {
       ...(against === PREVIOUS ? {} : { against }),
     })
   ),
+  /** The HTML page of one component at `version` (a version id, `published` or `draft`), for a sandboxed iframe. */
+  render: (courseId: string, usageKey: string, version: string) => (
+    makeUrl(`courses/${encodeURIComponent(courseId)}/render/`, { usage_key: usageKey, version })
+  ),
 };
 
 export async function getStatus(courseId: string): Promise<PublishHistoryStatus> {
@@ -52,14 +57,29 @@ export async function getVersions(courseId: string, after?: string): Promise<Ver
   };
 }
 
-// Field values (`old`, `new`) are authored data with arbitrary keys, so they are never camelCased.
+// Values (`old`, `new`) and JSON paths are authored data with arbitrary keys, so they are never camelCased.
+const toJsonDiff = (diff: any): JsonDiffData => ({
+  changes: diff.changes.map((change: any) => ({
+    path: change.path,
+    oldPath: change.old_path,
+    op: change.op,
+    old: change.old,
+    new: change.new,
+    tooLarge: change.too_large,
+  })),
+  unchanged: diff.unchanged,
+  truncated: diff.truncated,
+});
+
 const toField = (field: any): FieldChangeData => ({
   name: field.name,
   scope: field.scope,
   old: field.old,
   new: field.new,
   textDiff: field.text_diff ? camelCaseObject(field.text_diff) : null,
+  jsonDiff: field.json_diff ? toJsonDiff(field.json_diff) : null,
   tooLarge: field.too_large,
+  tooLargeReason: field.too_large_reason ?? null,
 });
 
 const toNode = (node: any): DiffNodeData => ({
@@ -82,6 +102,7 @@ export async function getDiff(courseId: string, version: string, against: string
     identical: data.identical,
     totalChanges: data.total_changes,
     truncated: data.truncated,
+    budgetExhausted: !!data.budget_exhausted,
     tree: data.tree.map(toNode),
   };
 }

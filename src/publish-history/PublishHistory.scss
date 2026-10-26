@@ -5,30 +5,87 @@
   padding-left: 0;
 
   .publish-history-diff {
-    padding-left: 1.5rem;
+    padding-left: var(--pgn-spacing-spacer-4);
     border-left: 1px solid var(--pgn-color-light-400);
   }
 }
 
+.publish-history-group > .collapsible-trigger {
+  padding: var(--pgn-spacing-spacer-2) 0;
+}
+
+.publish-history-block {
+  border: 1px solid var(--pgn-color-light-400);
+  border-radius: var(--pgn-size-border-radius-base);
+  background: var(--pgn-color-white);
+}
+
+.publish-history-node-header {
+  min-width: 0;
+  min-height: 2rem;
+}
+
+.publish-history-field + .publish-history-field {
+  border-top: 1px solid var(--pgn-color-light-300);
+  margin-top: var(--pgn-spacing-spacer-3);
+}
+
+// Changes are coloured by time: removed (red) in the older column, added (green) in the newer one. The -200
+// backgrounds stay readable with the -900 text; line-through and underline keep colour from being the only cue.
+.publish-history-text,
+.publish-history-json-cell {
+  del {
+    background: var(--pgn-color-danger-200);
+    color: var(--pgn-color-danger-900);
+    text-decoration: line-through;
+  }
+
+  ins {
+    background: var(--pgn-color-success-200);
+    color: var(--pgn-color-success-900);
+    text-decoration: underline;
+  }
+}
+
 // Authored HTML is shown as text, so keep its line breaks and wrap long tokens.
-.publish-history-text {
+.publish-history-text,
+.publish-history-json-cell,
+.publish-history-value {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   font-family: var(--pgn-typography-font-family-monospace);
   font-size: .875rem;
-
-  ins {
-    background: var(--pgn-color-success-100);
-    text-decoration: none;
-  }
-
-  del {
-    background: var(--pgn-color-danger-100);
-  }
 }
 
 .publish-history-value {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
   margin: 0;
+  padding: var(--pgn-spacing-spacer-2);
+  border-radius: var(--pgn-size-border-radius-base);
+  background: var(--pgn-color-light-200);
+}
+
+.publish-history-value-older {
+  background: var(--pgn-color-danger-200);
+  color: var(--pgn-color-danger-900);
+}
+
+.publish-history-value-newer {
+  background: var(--pgn-color-success-200);
+  color: var(--pgn-color-success-900);
+}
+
+.publish-history-json-row + .publish-history-json-row {
+  border-top: 1px solid var(--pgn-color-light-300);
+}
+
+.publish-history-json-path {
+  font-family: var(--pgn-typography-font-family-monospace);
+  font-size: .8125rem;
+  overflow-wrap: anywhere;
+}
+
+// The preview frames scroll inside a fixed height, so the modal keeps both sides in view.
+.publish-history-preview-frame {
+  height: 60vh;
+  overflow: hidden;
 }

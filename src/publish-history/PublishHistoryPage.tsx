@@ -14,6 +14,7 @@ import { LoadingSpinner } from '@src/generic/Loading';
 import SubHeader from '@src/generic/sub-header/SubHeader';
 import getPageHeadTitle from '@src/generic/utils';
 
+import BackLink from './BackLink';
 import { useVersions } from './data/apiHooks';
 import messages from './messages';
 import type { PublishVersion } from './types';
@@ -98,12 +99,17 @@ const PublishHistoryPage = () => {
           <DataTable.EmptyTable content={intl.formatMessage(messages.empty)} />
         </DataTable>
         {historyEnds && (
-          <p className="text-gray-700 mt-3">
+          <p className="text-gray-700 mt-3 mb-0">
             {intl.formatMessage(historyEnds === 'pruned' ? messages.historyEndsPruned : messages.historyEndsCreated)}
           </p>
         )}
         {hasNextPage && (
-          <Button variant="outline-primary" onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+          <Button
+            variant="outline-primary"
+            className="mt-3"
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+          >
             {intl.formatMessage(isFetchingNextPage ? messages.loadingMore : messages.loadOlder)}
           </Button>
         )}
@@ -112,12 +118,13 @@ const PublishHistoryPage = () => {
   }
 
   return (
-    <Container size="xl" className="publish-history px-4 mb-4">
-      <SubHeader
-        title={intl.formatMessage(messages.pageTitle)}
-        subtitle={intl.formatMessage(messages.pageSubtitle)}
-        breadcrumbs={<Link to={`/course/${courseId}`}>{intl.formatMessage(messages.backToOutline)}</Link>}
-      />
+    <Container size="xl" className="publish-history p-4 pt-4.5">
+      <div className="mb-4">
+        <SubHeader
+          title={intl.formatMessage(messages.pageTitle)}
+          breadcrumbs={<BackLink to={`/course/${courseId}`} label={intl.formatMessage(messages.backToOutline)} />}
+        />
+      </div>
       {content}
     </Container>
   );

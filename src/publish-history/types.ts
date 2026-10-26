@@ -52,15 +52,49 @@ export interface TextDiffData {
   segments: TextSegment[];
 }
 
+/** A key (string) or list index (number) in a JSON value. */
+export type JsonPathPart = string | number;
+
+export interface JsonChange {
+  /** Where the value is in the newer value; for `removed`, where it was in the older one. */
+  path: JsonPathPart[];
+  /** Where a `changed` value was in the older value, when its list item moved; otherwise null. */
+  oldPath: JsonPathPart[] | null;
+  op: 'added' | 'removed' | 'changed';
+  old: unknown;
+  new: unknown;
+  /** A value was cut: it is then the start of its JSON text. */
+  tooLarge: boolean;
+}
+
+export interface JsonUnchanged {
+  /** The container whose direct keys or items are counted. */
+  path: JsonPathPart[];
+  count: number;
+}
+
+/** A key-level diff of a dict or list value. */
+export interface JsonDiffData {
+  changes: JsonChange[];
+  unchanged: JsonUnchanged[];
+  /** More keys changed than are listed. */
+  truncated: boolean;
+}
+
+/** Why a field was not diffed: over a size cap, or past the comparison's diff budget. */
+export type TooLargeReason = 'size' | 'budget' | null;
+
 export interface FieldChangeData {
   name: string;
   scope: 'settings' | 'content';
-  /** Null when `textDiff` holds the change, or the text was too large to diff. */
+  /** Null when `textDiff` or `jsonDiff` holds the change. Cut short when `tooLarge`. */
   old: unknown;
   new: unknown;
   textDiff: TextDiffData | null;
-  /** The text was not diffed, or the values were cut. */
+  jsonDiff: JsonDiffData | null;
+  /** The field was not diffed, or a value was cut. */
   tooLarge: boolean;
+  tooLargeReason: TooLargeReason;
 }
 
 export type ChangeKind = 'ADDED' | 'REMOVED' | 'CHANGED' | 'MOVED';
@@ -94,8 +128,13 @@ export interface DiffResult {
   totalChanges: number;
   /** More blocks changed than the tree lists. */
   truncated: boolean;
+  /** Some fields were not diffed because the comparison's diff budget ran out. */
+  budgetExhausted: boolean;
   tree: DiffNodeData[];
 }
+
+/** A column of the comparison: the older or the newer side. */
+export type Age = 'older' | 'newer';
 
 /** What `against` can be in the compare page's URL; `previous` is the version before this one. */
 export type AgainstChoice = string;

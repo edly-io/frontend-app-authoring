@@ -1,9 +1,11 @@
 import userEvent from '@testing-library/user-event';
+import { useNavigate } from 'react-router-dom';
 import {
   initializeMocks,
   render,
   screen,
   waitFor,
+  within,
 } from '@src/testUtils';
 
 import * as api from './data/api';
@@ -40,8 +42,33 @@ const renderPage = (search = `?version=${V3}`) =>
     ),
   });
 
+const NavProbe = () => {
+  const navigate = useNavigate();
+  return (
+    <>
+      <button type="button" onClick={() => navigate(-1)}>Go back</button>
+      <button type="button" onClick={() => navigate(1)}>Go forward</button>
+    </>
+  );
+};
+
+const renderWithNav = (search = `?version=${V3}`) =>
+  render(<PublishHistoryComparePage />, {
+    routerProps: { initialEntries: [`/compare${search}`] },
+    extraWrapper: ({ children }) => (
+      <>
+        {children}
+        <LocationProbe />
+        <NavProbe />
+      </>
+    ),
+  });
+
 const location = () => screen.getByTestId('location').textContent;
 const toggle = () => screen.getByRole('button', { name: /^Compare with/ });
+/** The selected version's short id shows once the version list has loaded. */
+const listLoaded = () => screen.findByText(V3.slice(0, 8));
+const card = (heading: string) => screen.getByText(heading).closest('.card') as HTMLElement;
 
 describe('<PublishHistoryComparePage />', () => {
   beforeEach(() => {
@@ -64,7 +91,7 @@ describe('<PublishHistoryComparePage />', () => {
 
     it('offers previous, published, draft and the other loaded versions but not the version itself', async () => {
       renderPage();
-      await screen.findByText(/Version published/);
+      await listLoaded();
       await userEvent.click(toggle());
       const items = (await screen.findAllByRole('button')).map((button) => button.textContent);
       expect(items).toEqual(expect.arrayContaining([
@@ -78,12 +105,13 @@ describe('<PublishHistoryComparePage />', () => {
 
     it('names the version being compared once the list is loaded', async () => {
       renderPage();
-      expect(await screen.findByText(/Version published/)).toBeInTheDocument();
+      await listLoaded();
+      expect(within(card('Selected version')).getByText(V3.slice(0, 8))).toBeInTheDocument();
     });
 
     it('links back to the publish history list', async () => {
       renderPage();
-      expect(await screen.findByRole('link', { name: 'Publish history' }))
+      expect(await screen.findByRole('link', { name: 'Back to Publish History' }))
         .toHaveAttribute('href', `/course/${COURSE_ID}/publish_history`);
     });
 
@@ -124,7 +152,7 @@ describe('<PublishHistoryComparePage />', () => {
 
     it('compares with an older version by its id', async () => {
       renderPage();
-      await screen.findByText(/Version published/);
+      await listLoaded();
       await userEvent.click(toggle());
       await userEvent.click(await screen.findByRole('button', { name: /by older$/ }));
       await userEvent.click(screen.getByRole('button', { name: 'Compare' }));
@@ -162,10 +190,16 @@ describe('<PublishHistoryComparePage />', () => {
   });
 
   describe('result', () => {
-    it('names both sides', async () => {
+    it('names both sides, the selected version on the left', async () => {
       renderPage(`?version=${V3}&against=previous`);
-      expect(await screen.findByText(/^Older: version of .* by writer$/)).toBeInTheDocument();
-      expect(screen.getByText(/^Newer: version of .* by editor$/)).toBeInTheDocument();
+      await screen.findByText('1 changed block');
+      const selected = within(card('Selected version'));
+      expect(selected.getByText('Newer')).toBeInTheDocument();
+      expect(selected.getByText(/ by editor$/)).toBeInTheDocument();
+      const target = within(card('Compared with'));
+      expect(target.getByText('Older')).toBeInTheDocument();
+      expect(target.getByText(/ by writer$/)).toBeInTheDocument();
+      expect(target.getByText(V2.slice(0, 8))).toBeInTheDocument();
     });
 
     it('labels published and draft sides', async () => {
@@ -174,9 +208,11 @@ describe('<PublishHistoryComparePage />', () => {
         from: { id: V2, kind: 'published', at: null, by: null },
       }));
       renderPage(`?version=${V3}&against=draft`);
-      expect(await screen.findByText(/^Newer: current draft, last edited Unknown time by Unknown$/))
+      await screen.findByText('1 changed block');
+      expect(within(card('Selected version')).getByText('Current draft')).toBeInTheDocument();
+      expect(within(card('Compared with')).getByText('Current published version', { selector: 'div' }))
         .toBeInTheDocument();
-      expect(screen.getByText(/^Older: current published version of Unknown time by Unknown$/)).toBeInTheDocument();
+      expect(screen.getAllByText('Unknown time by Unknown')).toHaveLength(2);
     });
 
     it('renders the diff tree', async () => {
@@ -260,8 +296,8 @@ describe('<PublishHistoryComparePage />', () => {
       expect(await screen.findByText(/data of one of these versions was removed/)).toBeInTheDocument();
     });
 
-    it('explains that the oldest version has no previous one (400 against)', async () => {
-      await failWith(httpError(400, { against: ['This is the oldest version.'] }));
+    it('explains that the oldest version has no previous one (400 no_previous_version)', async () => {
+      await failWith(httpError(400, { detail: 'This is the oldest version.', code: 'no_previous_version' }));
       expect(await screen.findByText(/This is the oldest version, so there is no previous version/))
         .toBeInTheDocument();
     });
@@ -271,8 +307,13 @@ describe('<PublishHistoryComparePage />', () => {
       expect(await screen.findByText(/not available for this course or your account/)).toBeInTheDocument();
     });
 
+    it('explains a malformed version in the address (another 400)', async () => {
+      await failWith(httpError(400, { against: ['Enter a version id, "published" or "draft".'] }));
+      expect(await screen.findByText(/This page address names an invalid version/)).toBeInTheDocument();
+    });
+
     it('shows the generic message for another failure', async () => {
-      await failWith(httpError(400, { version: ['bad'] }));
+      await failWith(httpError(404));
       expect(await screen.findByText('The comparison could not be loaded. Try again.')).toBeInTheDocument();
     });
 
@@ -308,7 +349,7 @@ describe('<PublishHistoryComparePage />', () => {
 
     it('has no Load more button when all versions are loaded', async () => {
       renderPage();
-      await screen.findByText(/Version published/);
+      await listLoaded();
       expect(screen.queryByRole('button', { name: 'Load more versions' })).not.toBeInTheDocument();
     });
 
@@ -316,6 +357,265 @@ describe('<PublishHistoryComparePage />', () => {
       getVersions.mockRejectedValue(httpError(403));
       renderPage(`?version=${V3}&against=previous`);
       expect(await screen.findByText('1 changed block')).toBeInTheDocument();
+    });
+  });
+
+  describe('layout', () => {
+    it('has a title heading and no "Content" subtitle', async () => {
+      renderPage();
+      expect(await screen.findByRole('heading', { name: 'Compare versions' })).toBeInTheDocument();
+      expect(screen.queryByText('Content')).not.toBeInTheDocument();
+    });
+
+    it('shows the back link above the title with an arrow', async () => {
+      renderPage();
+      const link = await screen.findByRole('link', { name: 'Back to Publish History' });
+      expect(link.querySelector('svg')).toBeInTheDocument();
+      expect(link.compareDocumentPosition(screen.getByRole('heading', { name: 'Compare versions' })))
+        .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+
+    it('puts the selected version on the left and the compare target on the right', async () => {
+      renderPage();
+      expect(card('Selected version').compareDocumentPosition(card('Compared with')))
+        .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+
+    it('holds the dropdown and Compare button in the right-hand card only', async () => {
+      renderPage();
+      expect(within(card('Compared with')).getByRole('button', { name: 'Compare' })).toBeInTheDocument();
+      expect(within(card('Selected version')).queryByRole('button', { name: 'Compare' })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('column orientation follows time', () => {
+    const scalar = diffResult({
+      tree: [node({ fields: [field()] })],
+    });
+
+    it('labels the selected version Newer and the other Older when the selected one is the newer', async () => {
+      getDiff.mockResolvedValue(scalar);
+      renderPage(`?version=${V3}&against=previous`);
+      await screen.findByText('1 changed block');
+      expect(within(card('Selected version')).getByText('Newer')).toBeInTheDocument();
+      expect(within(card('Compared with')).getByText('Older')).toBeInTheDocument();
+    });
+
+    it('labels the selected version Older and the other Newer when the selected one is the older', async () => {
+      getDiff.mockResolvedValue(scalar);
+      renderPage(`?version=${V2}&against=published`);
+      await screen.findByText('1 changed block');
+      expect(within(card('Selected version')).getByText('Older')).toBeInTheDocument();
+      expect(within(card('Compared with')).getByText('Newer')).toBeInTheDocument();
+    });
+
+    it('shows the selected (newer) version\'s value on the left in green, the older one on the right in red', async () => {
+      getDiff.mockResolvedValue(scalar);
+      renderPage(`?version=${V3}&against=previous`);
+      await screen.findByText('1 changed block');
+      const fresh = screen.getByText('New name');
+      const old = screen.getByText('Old name');
+      expect(fresh).toHaveClass('publish-history-value-newer');
+      expect(old).toHaveClass('publish-history-value-older');
+      expect(fresh.compareDocumentPosition(old)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+
+    it('shows the selected (older) version\'s value on the left in red, the newer one on the right in green', async () => {
+      getDiff.mockResolvedValue(scalar);
+      renderPage(`?version=${V2}&against=published`);
+      await screen.findByText('1 changed block');
+      const fresh = screen.getByText('New name');
+      const old = screen.getByText('Old name');
+      expect(old).toHaveClass('publish-history-value-older');
+      expect(fresh).toHaveClass('publish-history-value-newer');
+      expect(old.compareDocumentPosition(fresh)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+
+    it('shows text removals only in the older column and additions only in the newer one', async () => {
+      getDiff.mockResolvedValue(diffResult({
+        tree: [node({
+          fields: [field({
+            name: 'data',
+            scope: 'content',
+            old: null,
+            new: null,
+            textDiff: { kind: 'words', segments: [{ op: 'delete', text: 'gone' }, { op: 'insert', text: 'fresh' }] },
+          })],
+        })],
+      }));
+      renderPage(`?version=${V3}&against=previous`);
+      const left = await screen.findByRole('group', { name: 'Changes in data, newer version' });
+      const right = screen.getByRole('group', { name: 'Changes in data, older version' });
+      expect(left.querySelector('ins')).toHaveTextContent('fresh');
+      expect(left.querySelector('del')).toBeNull();
+      expect(right.querySelector('del')).toHaveTextContent('gone');
+      expect(right.querySelector('ins')).toBeNull();
+    });
+
+    it('warns when the diff budget ran out', async () => {
+      getDiff.mockResolvedValue(diffResult({ budgetExhausted: true }));
+      renderPage(`?version=${V3}&against=previous`);
+      expect(await screen.findByText(/Too many changes to compare in full/)).toBeInTheDocument();
+    });
+
+    it('renders a field that was too large for the budget with its own note', async () => {
+      getDiff.mockResolvedValue(diffResult({
+        tree: [node({ fields: [field({ tooLarge: true, tooLargeReason: 'budget' })] })],
+      }));
+      renderPage(`?version=${V3}&against=previous`);
+      expect(await screen.findByText(/Not compared, as this comparison has too many changes/)).toBeInTheDocument();
+    });
+
+    it('renders a JSON field with only the changed key highlighted and the unchanged count', async () => {
+      getDiff.mockResolvedValue(diffResult({
+        tree: [node({
+          fields: [field({
+            old: null,
+            new: null,
+            jsonDiff: {
+              changes: [{
+                path: ['color'],
+                oldPath: null,
+                op: 'changed',
+                old: 'red',
+                new: 'blue',
+                tooLarge: false,
+              }],
+              unchanged: [{ path: [], count: 4 }],
+              truncated: false,
+            },
+          })],
+        })],
+      }));
+      const { container } = renderPage(`?version=${V3}&against=previous`);
+      expect(await screen.findByText('4 unchanged entries')).toBeInTheDocument();
+      expect(container.querySelectorAll('.publish-history-json del')).toHaveLength(1);
+      expect(container.querySelectorAll('.publish-history-json ins')).toHaveLength(1);
+    });
+
+    it('renders a <script> payload in a JSON key and value as text', async () => {
+      const payload = '<script>window.__pwned = true</script>';
+      getDiff.mockResolvedValue(diffResult({
+        tree: [node({
+          fields: [field({
+            old: null,
+            new: null,
+            jsonDiff: {
+              changes: [{
+                path: [payload],
+                oldPath: null,
+                op: 'changed',
+                old: payload,
+                new: payload,
+                tooLarge: false,
+              }],
+              unchanged: [],
+              truncated: false,
+            },
+          })],
+        })],
+      }));
+      const { container } = renderPage(`?version=${V3}&against=previous`);
+      expect((await screen.findAllByText(payload, { exact: false })).length).toBeGreaterThan(0);
+      expect(container.querySelector('script')).toBeNull();
+      expect((window as any).__pwned).toBeUndefined();
+    });
+  });
+
+  describe('Back and Forward', () => {
+    it('moves the dropdown with the URL', async () => {
+      renderWithNav();
+      expect(toggle()).toHaveTextContent('Previous version');
+      await userEvent.click(toggle());
+      await userEvent.click(await screen.findByRole('button', { name: 'Current draft' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Compare' }));
+      await waitFor(() => expect(location()).toBe(`/compare?version=${V3}&against=draft`));
+      expect(toggle()).toHaveTextContent('Current draft');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Go back' }));
+      await waitFor(() => expect(location()).toBe(`/compare?version=${V3}`));
+      expect(toggle()).toHaveTextContent('Previous version');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Go forward' }));
+      await waitFor(() => expect(toggle()).toHaveTextContent('Current draft'));
+    });
+
+    it('moves the dropdown between two compared targets', async () => {
+      renderWithNav(`?version=${V3}&against=published`);
+      expect(toggle()).toHaveTextContent('Current published version');
+      await userEvent.click(toggle());
+      await userEvent.click(await screen.findByRole('button', { name: 'Current draft' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Compare' }));
+      await waitFor(() => expect(toggle()).toHaveTextContent('Current draft'));
+      await userEvent.click(screen.getByRole('button', { name: 'Go back' }));
+      await waitFor(() => expect(toggle()).toHaveTextContent('Current published version'));
+    });
+
+    it('fetches the diff of the URL it went back to', async () => {
+      renderWithNav(`?version=${V3}&against=published`);
+      await screen.findByText('1 changed block');
+      await userEvent.click(toggle());
+      await userEvent.click(await screen.findByRole('button', { name: 'Current draft' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Compare' }));
+      await waitFor(() => expect(getDiff).toHaveBeenLastCalledWith(COURSE_ID, V3, 'draft'));
+      await userEvent.click(screen.getByRole('button', { name: 'Go back' }));
+      await waitFor(() => expect(getDiff).toHaveBeenLastCalledWith(COURSE_ID, V3, 'published'));
+    });
+  });
+
+  describe('preview modal', () => {
+    const openModal = async () => {
+      renderPage(`?version=${V3}&against=previous`);
+      await userEvent.click(await screen.findByRole('button', { name: 'Preview Intro text' }));
+    };
+
+    it('opens two sandboxed iframes from a component\'s Preview button', async () => {
+      await openModal();
+      expect(await screen.findByRole('dialog', { name: 'Preview: Intro text' })).toBeInTheDocument();
+      const frames = document.querySelectorAll('iframe');
+      expect(frames).toHaveLength(2);
+      frames.forEach((frame) => expect(frame).toHaveAttribute('sandbox', 'allow-scripts'));
+    });
+
+    it('does not open a browser window', async () => {
+      const open = jest.spyOn(window, 'open').mockImplementation(() => null);
+      await openModal();
+      await screen.findByRole('dialog');
+      expect(open).not.toHaveBeenCalled();
+      open.mockRestore();
+    });
+
+    it('closes again and removes the frames', async () => {
+      await openModal();
+      const buttons = await screen.findAllByRole('button', { name: 'Close' });
+      await userEvent.click(buttons[buttons.length - 1]);
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+      expect(document.querySelectorAll('iframe')).toHaveLength(0);
+    });
+
+    it('has no Preview button on a unit, subsection or section', async () => {
+      getDiff.mockResolvedValue(diffResult({
+        tree: [node({
+          blockType: 'chapter',
+          usageKey: 'chapter',
+          displayName: 'Week 1',
+          children: [node({ blockType: 'vertical', usageKey: 'unit', displayName: 'Unit 1', children: [node()] })],
+        })],
+      }));
+      renderPage(`?version=${V3}&against=previous`);
+      await screen.findByText('Week 1');
+      expect(screen.getAllByRole('button', { name: /^Preview / })).toHaveLength(1);
+      expect(screen.getByRole('button', { name: 'Preview Intro text' })).toBeInTheDocument();
+    });
+  });
+
+  describe('invalid against', () => {
+    it('shows its own message, not the generic one, and offers the dropdown again', async () => {
+      getDiff.mockRejectedValue(httpError(400, { against: ['Enter a version id, "published" or "draft".'] }));
+      renderPage(`?version=${V3}&against=nonsense`);
+      expect(await screen.findByText(/This page address names an invalid version/)).toBeInTheDocument();
+      expect(screen.queryByText('The comparison could not be loaded. Try again.')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Compare' })).toBeEnabled();
     });
   });
 });
