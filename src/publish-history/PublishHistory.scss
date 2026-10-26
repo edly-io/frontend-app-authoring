@@ -1,9 +1,84 @@
 // Scoped to the publish history pages (src/publish-history).
-// Nested levels are not indented (only their headings are), so every block's cards stay in the page's two columns.
 .publish-history-diff {
   list-style: none;
   margin: 0;
   padding-left: 0;
+}
+
+// Each level is a card inset in its parent's, so a child is always narrower than its parent. The tones alternate like
+// the course outline's cards (src/course-outline, drag-helper/SortableItem): beige page and course (light-200, the
+// body's colour), white sections, beige subsections, white units, beige components; same radius and shadow.
+.publish-history-level {
+  padding: var(--pgn-spacing-spacer-3);
+  border-radius: .35rem;
+  box-shadow: 0 0 .125rem rgb(0 0 0 / .15), 0 0 .25rem rgb(0 0 0 / .15);
+
+  & + & {
+    margin-top: var(--pgn-spacing-spacer-3);
+  }
+
+  .publish-history-diff {
+    margin-top: var(--pgn-spacing-spacer-3);
+  }
+}
+
+// Below md the insets are halved, so the deepest card (an xblock in a unit, in a course) keeps room on a phone.
+@media (width < 768px) {
+  .publish-history-level {
+    padding: var(--pgn-spacing-spacer-2);
+
+    & + &,
+    .publish-history-diff {
+      margin-top: var(--pgn-spacing-spacer-2);
+    }
+  }
+}
+
+.publish-history-level-white {
+  background: var(--pgn-color-white);
+}
+
+.publish-history-level-beige {
+  background: var(--pgn-color-light-200);
+}
+
+// "Changed By <user>" wraps (and breaks a long username) in a narrow card rather than overflowing it.
+.publish-history-editor {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.publish-history-block-header {
+  min-width: 0;
+  row-gap: var(--pgn-spacing-spacer-2);
+
+  > .publish-history-node-header {
+    flex: 0 1 auto;
+  }
+
+  > .publish-history-node-header + * {
+    margin-right: var(--pgn-spacing-spacer-3);
+  }
+}
+
+// The bar is shown once the version cards scroll out of view, so it never covers the open Compare With menu. Its
+// two halves use the version cards' columns, the page's top-level column split. The anchor has no height, so showing
+// the bar doesn't move the page; it sticks to the top of the viewport (Studio's header scrolls away).
+.publish-history-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 0;
+}
+
+.publish-history-sticky-bar {
+  background: var(--pgn-color-light-200);
+  box-shadow: 0 .25rem .25rem -.25rem rgb(0 0 0 / .15);
+}
+
+.publish-history-versions-menu {
+  max-height: 20rem;
+  overflow-y: auto;
 }
 
 .publish-history-group-trigger {
@@ -16,9 +91,9 @@
   min-height: 2rem;
 }
 
-// A block's two cards. From md up they sit in the same two columns as the column headers (a Bootstrap row of two
-// md-6 columns has the same widths as this grid with the grid gutter as its gap), and each card is a subgrid of the
-// pair's rows, so a field or JSON key has the same height in both cards. Below md the cards stack, left first.
+// A block's two cards. From md up they sit in two equal columns of the block's card, split by the grid gutter like the
+// version cards above (inset levels make them narrower), and each card is a subgrid of the pair's rows, so a field or
+// JSON key has the same height in both cards. Below md the cards stack, left first.
 .publish-history-pair > .publish-history-card + .publish-history-card {
   margin-top: var(--pgn-spacing-spacer-3);
 }

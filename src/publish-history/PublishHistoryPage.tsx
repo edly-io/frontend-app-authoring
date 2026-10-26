@@ -21,9 +21,9 @@ import type { PublishVersion } from './types';
 import {
   formatTime,
   getErrorMessage,
-  shortId,
   userName,
 } from './utils';
+import { VersionId } from './VersionCard';
 import './PublishHistory.scss';
 
 /** The course's published versions, newest first. A row links to the comparison page for that version. */
@@ -74,7 +74,7 @@ const PublishHistoryPage = () => {
     {
       Header: intl.formatMessage(messages.columnVersion),
       accessor: 'id',
-      Cell: ({ row }: { row: { original: PublishVersion; }; }) => <code>{shortId(row.original.id)}</code>,
+      Cell: ({ row }: { row: { original: PublishVersion; }; }) => <VersionId id={row.original.id} />,
     },
   ], [intl, courseId]);
 

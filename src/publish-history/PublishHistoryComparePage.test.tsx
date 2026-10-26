@@ -67,7 +67,7 @@ const renderWithNav = (search = `?version=${V3}`) =>
 const location = () => screen.getByTestId('location').textContent;
 const toggle = () => screen.getByRole('button', { name: /^Compare With/ });
 /** The selected version's short id shows once the version list has loaded. */
-const listLoaded = () => screen.findByText(V3.slice(0, 8));
+const listLoaded = () => screen.findByText(V3.slice(0, 7));
 const card = (heading: string) => screen.getByText(heading).closest('.card') as HTMLElement;
 
 describe('<PublishHistoryComparePage />', () => {
@@ -106,7 +106,7 @@ describe('<PublishHistoryComparePage />', () => {
     it('names the version being compared once the list is loaded', async () => {
       renderPage();
       await listLoaded();
-      expect(within(card('Selected Version')).getByText(V3.slice(0, 8))).toBeInTheDocument();
+      expect(within(card('Selected Version')).getByText(V3.slice(0, 7))).toBeInTheDocument();
     });
 
     it('links back to the publish history list', async () => {
@@ -183,7 +183,7 @@ describe('<PublishHistoryComparePage />', () => {
 
     it('shows a short id for an against version that is not loaded', async () => {
       renderPage(`?version=${V3}&against=${V1}`);
-      expect(toggle()).toHaveTextContent(V1.slice(0, 8));
+      expect(toggle()).toHaveTextContent(V1.slice(0, 7));
     });
   });
 
@@ -193,11 +193,11 @@ describe('<PublishHistoryComparePage />', () => {
       await screen.findByText('1 changed block');
       const selected = within(card('Selected Version'));
       expect(selected.getByText('Newer')).toBeInTheDocument();
-      expect(selected.getByText(/ by editor$/)).toBeInTheDocument();
-      const target = within(card('Compared With'));
+      expect(selected.getByText('editor', { selector: 'strong' })).toBeInTheDocument();
+      const target = within(card('Compare With'));
       expect(target.getByText('Older')).toBeInTheDocument();
-      expect(target.getByText(/ by writer$/)).toBeInTheDocument();
-      expect(target.getByText(V2.slice(0, 8))).toBeInTheDocument();
+      expect(target.getByText('writer', { selector: 'strong' })).toBeInTheDocument();
+      expect(target.getByText(V2.slice(0, 7))).toBeInTheDocument();
     });
 
     it('labels published and draft sides', async () => {
@@ -208,15 +208,15 @@ describe('<PublishHistoryComparePage />', () => {
       renderPage(`?version=${V3}&against=published`);
       await screen.findByText('1 changed block');
       expect(within(card('Selected Version')).getByText('Current Draft')).toBeInTheDocument();
-      expect(within(card('Compared With')).getByText('Current Published Version', { selector: 'div' }))
-        .toBeInTheDocument();
-      expect(screen.getAllByText('Unknown time by Unknown')).toHaveLength(2);
+      expect(within(card('Compare With')).getByText('Current')).toBeInTheDocument();
+      expect(screen.queryByText(/Published Version$/, { selector: 'div' })).not.toBeInTheDocument();
+      expect(screen.getAllByText('Unknown', { selector: 'strong' })).toHaveLength(2);
     });
 
     it('renders the diff tree', async () => {
       renderPage(`?version=${V3}&against=previous`);
       expect(await screen.findByRole('list', { name: 'Changed blocks' })).toBeInTheDocument();
-      expect(screen.getAllByText('Intro text')).toHaveLength(2);
+      expect(screen.getByText('Intro text')).toBeInTheDocument();
     });
 
     it('says when both sides are the same version', async () => {
@@ -338,17 +338,19 @@ describe('<PublishHistoryComparePage />', () => {
           historyEnds: null,
         });
       renderPage();
-      await userEvent.click(await screen.findByRole('button', { name: 'Load more versions' }));
-      await waitFor(() => expect(getVersions).toHaveBeenLastCalledWith(COURSE_ID, V3));
+      await listLoaded();
       await userEvent.click(toggle());
+      await userEvent.click(await screen.findByRole('button', { name: 'Load More Versions' }));
+      await waitFor(() => expect(getVersions).toHaveBeenLastCalledWith(COURSE_ID, V3));
       expect(await screen.findByRole('button', { name: /by oldest$/ })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Load more versions' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Load More Versions' })).not.toBeInTheDocument();
     });
 
-    it('has no Load more button when all versions are loaded', async () => {
+    it('has no Load More Versions item when all versions are loaded', async () => {
       renderPage();
       await listLoaded();
-      expect(screen.queryByRole('button', { name: 'Load more versions' })).not.toBeInTheDocument();
+      await userEvent.click(toggle());
+      expect(screen.queryByRole('button', { name: 'Load More Versions' })).not.toBeInTheDocument();
     });
 
     it('still compares when the version list fails to load', async () => {
@@ -375,13 +377,13 @@ describe('<PublishHistoryComparePage />', () => {
 
     it('puts the selected version on the left and the compare target on the right', async () => {
       renderPage();
-      expect(card('Selected Version').compareDocumentPosition(card('Compared With')))
+      expect(card('Selected Version').compareDocumentPosition(card('Compare With')))
         .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     });
 
     it('holds the dropdown and Compare button in the right-hand card only', async () => {
       renderPage();
-      expect(within(card('Compared With')).getByRole('button', { name: 'Compare' })).toBeInTheDocument();
+      expect(within(card('Compare With')).getByRole('button', { name: 'Compare' })).toBeInTheDocument();
       expect(within(card('Selected Version')).queryByRole('button', { name: 'Compare' })).not.toBeInTheDocument();
     });
   });
@@ -396,7 +398,7 @@ describe('<PublishHistoryComparePage />', () => {
       renderPage(`?version=${V3}&against=previous`);
       await screen.findByText('1 changed block');
       expect(within(card('Selected Version')).getByText('Newer')).toBeInTheDocument();
-      expect(within(card('Compared With')).getByText('Older')).toBeInTheDocument();
+      expect(within(card('Compare With')).getByText('Older')).toBeInTheDocument();
     });
 
     it('labels the selected version Older and the other Newer when the selected one is the older', async () => {
@@ -404,7 +406,7 @@ describe('<PublishHistoryComparePage />', () => {
       renderPage(`?version=${V2}&against=published`);
       await screen.findByText('1 changed block');
       expect(within(card('Selected Version')).getByText('Older')).toBeInTheDocument();
-      expect(within(card('Compared With')).getByText('Newer')).toBeInTheDocument();
+      expect(within(card('Compare With')).getByText('Newer')).toBeInTheDocument();
     });
 
     it('shows the selected (newer) version\'s value on the left in green, the older one on the right in red', async () => {
@@ -658,7 +660,7 @@ describe('<PublishHistoryComparePage />', () => {
     it('names the two column regions', async () => {
       renderPage();
       expect(await screen.findByRole('region', { name: 'Selected Version' })).toBeInTheDocument();
-      expect(screen.getByRole('region', { name: 'Compared With' })).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: 'Compare With' })).toBeInTheDocument();
     });
 
     it('labels the dropdown "Compare With"', async () => {

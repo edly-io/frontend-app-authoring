@@ -10,6 +10,13 @@ import {
 import DiffTree, { DiffTreeRoot } from './DiffTree';
 import { field, node } from './testHelpers';
 
+/** The editor line ("Changed By writer"), whose username (and "≈") are in <strong> elements. */
+const editorLine = (text: string) =>
+  screen.getByText((_, el) =>
+    !!el && el.tagName === 'SPAN' && el.textContent === text
+    && [...el.children].every((child) => child.tagName === 'STRONG')
+  );
+
 describe('<DiffTree />', () => {
   beforeEach(() => {
     initializeMocks();
@@ -22,28 +29,37 @@ describe('<DiffTree />', () => {
       ['CHANGED', 'Changed'],
       ['MOVED', 'Moved'],
     ] as const,
-  )('shows the %s badge on each card the block is in', (change, text) => {
+  )('shows the %s badge once, in the block\'s header bar', (change, text) => {
     render(<DiffTree nodes={[node({ change })]} />);
-    const cards = change === 'ADDED' || change === 'REMOVED' ? 1 : 2;
-    expect(screen.getAllByText(text)).toHaveLength(cards);
+    expect(screen.getByText(text)).toBeInTheDocument();
   });
 
   it('shows no badge and no editor for a block that only holds changes', () => {
     render(<DiffTree nodes={[node({ change: null, displayName: 'Week 1', blockType: 'chapter' })]} />);
     expect(screen.getByText('Week 1')).toBeInTheDocument();
-    expect(screen.queryByText(/^by /)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ By /)).not.toBeInTheDocument();
     expect(screen.queryByText('Changed')).not.toBeInTheDocument();
   });
 
-  it('shows the editor', () => {
-    render(<DiffTree nodes={[node()]} />);
-    expect(screen.getByText('by writer')).toBeInTheDocument();
+  it.each(
+    [
+      ['ADDED', 'Added By writer'],
+      ['REMOVED', 'Removed By writer'],
+      ['CHANGED', 'Changed By writer'],
+      ['MOVED', 'Moved By writer'],
+    ] as const,
+  )('shows who made the %s change, with the username bold', (change, text) => {
+    render(<DiffTree nodes={[node({ change })]} />);
+    const editor = editorLine(text);
+    expect(editor.querySelector('strong')).toHaveTextContent(/^writer$/);
   });
 
-  it('labels an approximate editor as probable', () => {
+  it('labels an approximate editor as probable, with a bold ≈', () => {
     render(<DiffTree nodes={[node({ change: 'REMOVED', editorApproximate: true })]} />);
-    expect(screen.getByText('by ≈ writer')).toHaveAccessibleName(/^Probably by writer: the editor of the parent/);
-    expect(screen.queryByText('by writer')).not.toBeInTheDocument();
+    const editor = editorLine('Removed By ≈ writer');
+    expect(editor).toHaveAccessibleName(/^Probably by writer: the editor of the parent/);
+    expect([...editor.querySelectorAll('strong')].map((el) => el.textContent)).toEqual(['≈', 'writer']);
+    expect(screen.queryByText(/^Removed By writer/)).not.toBeInTheDocument();
   });
 
   it('explains an approximate editor in a group toggle without a focusable element inside the toggle', () => {
@@ -60,7 +76,7 @@ describe('<DiffTree />', () => {
     const toggle = screen.getByRole('button', { name: /Unit 1/ });
     expect(toggle).toHaveAccessibleName(/Probably by writer: the editor of the parent/);
     expect(toggle.querySelector('[tabindex]')).toBeNull();
-    expect(screen.getByText('by ≈ writer').parentElement).toHaveAttribute(
+    expect(editorLine('Removed By ≈ writer').parentElement).toHaveAttribute(
       'title',
       expect.stringMatching(/^Probably by writer/),
     );
@@ -68,12 +84,12 @@ describe('<DiffTree />', () => {
 
   it('shows Unknown for a missing editor', () => {
     render(<DiffTree nodes={[node({ editor: null })]} />);
-    expect(screen.getByText('by Unknown')).toBeInTheDocument();
+    expect(editorLine('Changed By Unknown')).toBeInTheDocument();
   });
 
   it('falls back to the usage key when the block has no name', () => {
     render(<DiffTree nodes={[node({ displayName: null, usageKey: 'block-v1:Uber+101+2026+type@html+block@h9' })]} />);
-    expect(screen.getAllByText('block-v1:Uber+101+2026+type@html+block@h9')).toHaveLength(2);
+    expect(screen.getByText('block-v1:Uber+101+2026+type@html+block@h9')).toBeInTheDocument();
   });
 
   it('shows the positions of a block moved among its siblings (1-based)', () => {
@@ -191,7 +207,7 @@ describe('<DiffTree />', () => {
     const payload = '<img src=x onerror="window.__pwned = true">';
     const { container } = render(<DiffTree nodes={[node({ displayName: payload })]} />);
     expect(container.querySelector('img')).toBeNull();
-    expect(screen.getAllByText(payload)).toHaveLength(2);
+    expect(screen.getByText(payload)).toBeInTheDocument();
   });
 
   it('says a too-large text was not compared and shows no text diff', () => {
@@ -294,7 +310,7 @@ describe('<DiffTree />', () => {
 
     it('shows groups open by default', () => {
       render(<DiffTreeRoot nodes={tree} columns={['older', 'newer']} />);
-      expect(screen.getAllByText('Child html')).toHaveLength(2);
+      expect(screen.getByText('Child html')).toBeInTheDocument();
     });
 
     it('collapses every group on a collapse signal and expands them on the next', async () => {
@@ -303,7 +319,7 @@ describe('<DiffTree />', () => {
       );
       await waitFor(() => expect(screen.queryAllByText('Child html')).toHaveLength(0));
       rerender(<DiffTreeRoot nodes={tree} columns={['older', 'newer']} expand={{ open: true, version: 2 }} />);
-      await waitFor(() => expect(screen.getAllByText('Child html')).toHaveLength(2));
+      await waitFor(() => expect(screen.getByText('Child html')).toBeInTheDocument());
     });
   });
 
@@ -378,8 +394,10 @@ describe('<DiffTree />', () => {
       expect(left).not.toContainElement(right);
       expect(right).not.toContainElement(left);
       expect(left.compareDocumentPosition(right)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-      expect(left).toHaveTextContent('Changed');
-      expect(right).toHaveTextContent('Changed');
+      expect(left).toHaveTextContent('Selected · Older');
+      expect(right).toHaveTextContent('Compare With · Newer');
+      expect(left).not.toHaveTextContent('Changed');
+      expect(right).not.toHaveTextContent('Changed');
     });
 
     it.each(
@@ -399,14 +417,14 @@ describe('<DiffTree />', () => {
     it('shows the placeholder on the older side of an added block, with the content on the newer side', () => {
       render(<DiffTreeRoot nodes={[node({ change: 'ADDED', fields: [field()] })]} columns={[...both]} />);
       expect(cardOf('Intro text', 'older')).toHaveTextContent('Not in this version');
-      expect(cardOf('Intro text', 'older')).not.toHaveTextContent('Added');
-      expect(cardOf('Intro text', 'newer')).toHaveTextContent('Added');
+      expect(cardOf('Intro text', 'newer')).toHaveTextContent('Compare With · Newer');
+      expect(cardOf('Intro text', 'newer')).toHaveTextContent('New name');
     });
 
     it('shows the placeholder on the newer side of a removed block, also when the columns are swapped', () => {
       render(<DiffTreeRoot nodes={[node({ change: 'REMOVED', fields: [field()] })]} columns={['newer', 'older']} />);
       expect(cardOf('Intro text', 'newer')).toHaveTextContent('Not in this version');
-      expect(cardOf('Intro text', 'older')).toHaveTextContent('Removed');
+      expect(cardOf('Intro text', 'older')).toHaveTextContent('Compare With · Older');
       expect(screen.getAllByText('Not in this version')).toHaveLength(1);
     });
 
@@ -495,7 +513,7 @@ describe('<DiffTree />', () => {
       expect(screen.getByText('o2')).toBeInTheDocument();
     });
 
-    it('puts the editor and Preview after both cards, and Preview only on component rows', () => {
+    it('puts the editor and Preview in the block\'s header bar, a group named by the block, before both cards', () => {
       render(
         <DiffTreeRoot
           nodes={[node({ fields: [field()] })]}
@@ -503,13 +521,15 @@ describe('<DiffTree />', () => {
           onPreview={jest.fn()}
         />,
       );
-      const right = cardOf('Intro text', 'newer');
-      const editor = screen.getByText('by writer');
+      const header = screen.getByRole('group', { name: 'Intro text' });
+      const left = cardOf('Intro text', 'older');
+      const editor = editorLine('Changed By writer');
       const preview = screen.getByRole('button', { name: 'Preview Intro text' });
       [editor, preview].forEach((el) => {
-        expect(right.compareDocumentPosition(el)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-        expect(right).not.toContainElement(el);
-        expect(cardOf('Intro text', 'older')).not.toContainElement(el);
+        expect(header).toContainElement(el);
+        expect(el.compareDocumentPosition(left)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        expect(left).not.toContainElement(el);
+        expect(cardOf('Intro text', 'newer')).not.toContainElement(el);
       });
     });
 
@@ -555,7 +575,7 @@ describe('<DiffTree />', () => {
         await waitFor(() => expect(screen.queryByText('Comp D')).not.toBeInTheDocument());
         expect(screen.getByRole('heading', { level: 3, name: /Section A/ })).toBeInTheDocument();
         await userEvent.click(toggle);
-        expect(await screen.findAllByText('Comp D')).toHaveLength(2);
+        expect(await screen.findByText('Comp D')).toBeInTheDocument();
       });
 
       it('toggles from the keyboard', async () => {
@@ -574,7 +594,7 @@ describe('<DiffTree />', () => {
         await waitFor(() => expect(screen.queryByText('Comp D')).not.toBeInTheDocument());
         expect(toggle).toHaveAttribute('aria-expanded', 'false');
         await userEvent.keyboard(' ');
-        expect(await screen.findAllByText('Comp D')).toHaveLength(2);
+        expect(await screen.findByText('Comp D')).toBeInTheDocument();
       });
 
       it('caps deeper levels at h6', () => {
@@ -609,7 +629,7 @@ describe('<DiffTree />', () => {
     });
 
     describe('a container\'s own change', () => {
-      it('renders a moved unit as two headerless cards under its heading', () => {
+      it('renders a moved unit as two cards under its heading, labelled only by side', () => {
         render(
           <DiffTreeRoot
             nodes={[node({
@@ -628,12 +648,12 @@ describe('<DiffTree />', () => {
         expect(heading.compareDocumentPosition(older)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
         expect(older).toHaveTextContent('Position 3');
         expect(newer).toHaveTextContent('Position 1');
-        expect(older.querySelector('.publish-history-card-header')).toBeNull();
-        expect(newer.querySelector('.publish-history-card-header')).toBeNull();
+        expect(older.querySelector('.publish-history-card-header')).toHaveTextContent(/^Selected · Older$/);
+        expect(newer.querySelector('.publish-history-card-header')).toHaveTextContent(/^Compare With · Newer$/);
         expect(screen.getAllByText('Moved')).toHaveLength(1);
       });
 
-      it('renders a settings change on a section as headerless cards with red and green values', () => {
+      it('renders a settings change on a section as side-labelled cards with red and green values', () => {
         render(
           <DiffTreeRoot
             nodes={[node({ blockType: 'chapter', change: 'CHANGED', displayName: 'Week 1', fields: [field()] })]}
@@ -642,7 +662,7 @@ describe('<DiffTree />', () => {
         );
         expect(within(cardOf('Week 1', 'older')).getByText('Old name')).toHaveClass('publish-history-value-older');
         expect(within(cardOf('Week 1', 'newer')).getByText('New name')).toHaveClass('publish-history-value-newer');
-        expect(cardOf('Week 1', 'older').querySelector('.publish-history-card-header')).toBeNull();
+        expect(cardOf('Week 1', 'older')).not.toHaveTextContent('Week 1');
       });
 
       it('renders no cards for a container with no move and no fields', () => {

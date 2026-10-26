@@ -18,7 +18,7 @@ interface BlockPairProps {
   /** The left and the right column. */
   columns: [Age, Age];
   slots: Slot[];
-  /** The top line of each card: the block's icon, name and change badge. */
+  /** The top line of each card, for example which side it is. */
   header?: (side: Age) => ReactNode;
   /** The side the block is not in (added or removed): a muted placeholder replaces its card. */
   absent?: Age | null;
@@ -27,7 +27,7 @@ interface BlockPairProps {
 }
 
 /**
- * One block as two separate cards in the page's two columns, left then right. From the md breakpoint up, each card is
+ * One block as two separate cards in two equal columns, left then right. From the md breakpoint up, each card is
  * a subgrid of the same rows, so a slot lines up with its counterpart; below it the cards stack, left first.
  */
 const BlockPair = ({

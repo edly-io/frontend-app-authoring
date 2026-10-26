@@ -4,8 +4,8 @@ import { getErrorStatus } from '@src/course-categories/utils';
 import type { HistoryUser, PublishVersion } from './types';
 import messages from './messages';
 
-/** The first eight characters of a version id: enough to tell versions apart on screen. */
-export const shortId = (id: string) => id.slice(0, 8);
+/** The first seven characters of a version id: enough to tell versions apart on screen. */
+export const shortId = (id: string) => id.slice(0, 7);
 
 export const formatTime = (intl: IntlShape, value: string | null) => (
   value

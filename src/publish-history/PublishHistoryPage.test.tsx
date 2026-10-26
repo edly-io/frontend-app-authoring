@@ -52,7 +52,7 @@ describe('<PublishHistoryPage />', () => {
     const rows = await screen.findAllByRole('row');
     expect(rows).toHaveLength(3); // header + 2
     expect(within(rows[1]).getByText('writer')).toBeInTheDocument();
-    expect(within(rows[1]).getByText(V3.slice(0, 8))).toBeInTheDocument();
+    expect(within(rows[1]).getByText(V3.slice(0, 7))).toBeInTheDocument();
     expect(within(rows[2]).getByText('editor')).toBeInTheDocument();
   });
 

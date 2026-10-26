@@ -12,7 +12,7 @@ import {
 import { apiUrls } from './data/api';
 import type { Age, DiffNodeData, DiffSide } from './types';
 import messages from './messages';
-import { AgeBadge, SideSummary } from './VersionCard';
+import { AgeBadge, SideLine } from './VersionCard';
 
 interface PreviewFrameProps {
   courseId: string;
@@ -39,12 +39,12 @@ const PreviewFrame = ({
   const ageText = intl.formatMessage(age === 'older' ? messages.ageOlderText : messages.ageNewerText);
   return (
     <section className="mb-3 mb-md-0">
-      <div className="d-flex align-items-start mb-2">
+      <div className="d-flex align-items-center mb-2">
         <div className="mr-2">
           <AgeBadge age={age} />
         </div>
-        <div className="flex-grow-1">
-          <SideSummary side={side} />
+        <div className="flex-grow-1 small text-gray-700">
+          <SideLine side={side} />
         </div>
       </div>
       {absent ?

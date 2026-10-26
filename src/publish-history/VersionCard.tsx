@@ -1,22 +1,11 @@
 import { useId } from 'react';
-import type { ReactNode } from 'react';
+import type { ClipboardEvent, ReactNode } from 'react';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { Badge, Card } from '@openedx/paragon';
 
 import type { Age, DiffSide } from './types';
 import messages from './messages';
 import { formatTime, shortId, userName } from './utils';
-
-/** What a side is: a past published version, the live version or the draft. */
-export const useKindName = () => {
-  const intl = useIntl();
-  return (side: DiffSide) => {
-    if (side.kind === 'draft') {
-      return intl.formatMessage(messages.optionDraft);
-    }
-    return intl.formatMessage(side.kind === 'published' ? messages.optionPublished : messages.kindVersion);
-  };
-};
 
 /** Older or Newer, red or green like the changes in that column. */
 export const AgeBadge = ({ age }: { age: Age; }) => {
@@ -28,18 +17,42 @@ export const AgeBadge = ({ age }: { age: Age; }) => {
   );
 };
 
-/** One line about a side: kind, then when and by whom, and its short id. */
-export const SideSummary = ({ side }: { side: DiffSide; }) => {
+/**
+ * A version's short id, with the full id as its tooltip. Copying the short id (or part of it) copies the full id.
+ */
+export const VersionId = ({ id }: { id: string; }) => {
+  const short = shortId(id);
+  const copyFullId = (event: ClipboardEvent) => {
+    const selected = window.getSelection()?.toString().trim();
+    if (selected && short.includes(selected)) {
+      event.clipboardData.setData('text/plain', id);
+      event.preventDefault();
+    }
+  };
+  return <code title={id} onCopy={copyFullId}>{short}</code>;
+};
+
+/**
+ * One line about a side: when, by whom (bold) and its short id, with a badge when it is the live version or the
+ * draft.
+ */
+export const SideLine = ({ side }: { side: DiffSide; }) => {
   const intl = useIntl();
-  const kindName = useKindName();
+  let kind: string | null = null;
+  if (side.kind === 'published') {
+    kind = intl.formatMessage(messages.currentBadge);
+  } else if (side.kind === 'draft') {
+    kind = intl.formatMessage(messages.optionDraft);
+  }
   return (
-    <>
-      <div className="font-weight-bold">{kindName(side)}</div>
-      <div className="small text-gray-700">
-        {intl.formatMessage(messages.sideMeta, { date: formatTime(intl, side.at), user: userName(intl, side.by) })}
-        <code className="ml-2" title={side.id}>{shortId(side.id)}</code>
-      </div>
-    </>
+    <span className="publish-history-side-line">
+      {intl.formatMessage(messages.sideLine, {
+        date: formatTime(intl, side.at),
+        user: <strong key="user">{userName(intl, side.by)}</strong>,
+        id: <VersionId key="id" id={side.id} />,
+      })}
+      {kind && <Badge variant="success" className="ml-2">{kind}</Badge>}
+    </span>
   );
 };
 
@@ -70,7 +83,11 @@ const VersionCard = ({
             <h3 id={headingId} className="h5 mb-0 mr-2">{heading}</h3>
             {age && <AgeBadge age={age} />}
           </div>
-          {side && <SideSummary side={side} />}
+          {side && (
+            <div className="small text-gray-700">
+              <SideLine side={side} />
+            </div>
+          )}
           {children}
         </Card.Section>
       </Card>

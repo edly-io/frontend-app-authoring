@@ -2,10 +2,11 @@ import {
   createContext,
   useContext,
   useEffect,
+  useId,
   useMemo,
   useState,
 } from 'react';
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import {
   Badge,
@@ -44,6 +45,20 @@ const CONTAINER_TYPES = new Set(['course', 'chapter', 'sequential', 'vertical'])
 /** Blocks whose learner view picks random children, so two previews of them may differ. */
 const RANDOM_TYPES = new Set(['library_content', 'itembank']);
 
+/**
+ * The background of a level, alternating like the course outline's cards: the page (and the course) beige, sections
+ * white, subsections beige, units white, components beige.
+ */
+type Tone = 'white' | 'beige';
+
+/** The tone of a node's card, from the tone of the list it sits in. */
+const toneOf = (node: DiffNodeData, parent: Tone): Tone => {
+  if (node.blockType === 'course') {
+    return 'beige';
+  }
+  return parent === 'white' ? 'beige' : 'white';
+};
+
 /** Expand all / Collapse all: each press bumps `version`, and every group then takes `open`. */
 export interface ExpandSignal {
   open: boolean;
@@ -64,20 +79,30 @@ const TreeContext = createContext<TreeContextValue>({
 });
 
 /**
- * Who made the change. An approximate editor explains itself in a tooltip; inside a group's toggle (`inToggle`),
- * which is itself a button, the explanation is screen reader text and a `title` instead of a focusable tooltip.
+ * Who made the change: "Added By", "Changed By"... then the user, bold. An approximate editor gets a bold "≈" and
+ * explains itself in a tooltip; inside a group's toggle (`inToggle`), which is itself a button, the explanation is
+ * screen reader text and a `title` instead of a focusable tooltip.
  */
 const Editor = ({ node, inToggle }: { node: DiffNodeData; inToggle: boolean; }) => {
   const intl = useIntl();
   const user = userName(intl, node.editor);
+  const values = { change: node.change ?? 'CHANGED', user: <strong key="user">{user}</strong> };
   if (!node.editorApproximate) {
-    return <span className="small text-gray-700 text-nowrap">{intl.formatMessage(messages.editedBy, { user })}</span>;
+    return (
+      <span className="small text-gray-700 publish-history-editor">
+        {intl.formatMessage(messages.editedBy, values)}
+      </span>
+    );
   }
   const explanation = intl.formatMessage(messages.editedByApproximate, { user });
+  const short = intl.formatMessage(messages.editedByApproximateShort, {
+    ...values,
+    b: (...chunks: ReactNode[]) => <strong key="approximate">{chunks}</strong>,
+  });
   if (inToggle) {
     return (
-      <span className="small text-gray-700 text-nowrap" title={explanation}>
-        <span aria-hidden>{intl.formatMessage(messages.editedByApproximateShort, { user })}</span>
+      <span className="small text-gray-700 publish-history-editor" title={explanation}>
+        <span aria-hidden>{short}</span>
         <span className="sr-only">{explanation}</span>
       </span>
     );
@@ -87,22 +112,22 @@ const Editor = ({ node, inToggle }: { node: DiffNodeData; inToggle: boolean; }) 
       placement="top"
       overlay={<Tooltip id={`publish-history-editor-${node.usageKey}`}>{explanation}</Tooltip>}
     >
-      <span className="small text-gray-700 text-nowrap" tabIndex={0} aria-label={explanation}>
-        {intl.formatMessage(messages.editedByApproximateShort, { user })}
+      <span className="small text-gray-700 publish-history-editor" tabIndex={0} aria-label={explanation}>
+        {short}
       </span>
     </OverlayTrigger>
   );
 };
 
-/** Icon, name and change badge: the title of a section, subsection or unit, and the header of each card. */
-const BlockTitle = ({ node }: { node: DiffNodeData; }) => {
+/** Icon, name and change badge: the title of a section, subsection or unit, and of a component's card. */
+const BlockTitle = ({ node, nameId }: { node: DiffNodeData; nameId?: string; }) => {
   const intl = useIntl();
   const badge = node.change ? CHANGE_BADGES[node.change] : null;
   const name = node.displayName || node.usageKey;
   return (
     <span className="d-flex align-items-center publish-history-node-header">
       <Icon src={getItemIcon(node.blockType)} size="sm" className="mr-2 flex-shrink-0 text-gray-700" />
-      <span className="font-weight-bold text-truncate mr-2" title={name}>{name}</span>
+      <span id={nameId} className="font-weight-bold text-truncate mr-2" title={name}>{name}</span>
       {badge && (
         <Badge variant={badge.variant} className="mr-2 flex-shrink-0">{intl.formatMessage(badge.message)}</Badge>
       )}
@@ -141,8 +166,8 @@ const absentSide = (node: DiffNodeData): Age | null => {
   return node.change === 'REMOVED' ? 'newer' : null;
 };
 
-/** The block's two cards, labelled with its name and side. */
-const NodePair = ({ node, header }: { node: DiffNodeData; header: boolean; }) => {
+/** The block's two cards, labelled with its name and side, each topped by which side it is ("Selected · Newer"). */
+const NodePair = ({ node }: { node: DiffNodeData; }) => {
   const intl = useIntl();
   const { columns } = useContext(TreeContext);
   const name = node.displayName || node.usageKey;
@@ -151,11 +176,19 @@ const NodePair = ({ node, header }: { node: DiffNodeData; header: boolean; }) =>
       name,
       age: intl.formatMessage(side === 'older' ? messages.ageOlderText : messages.ageNewerText),
     });
+  const sideLabel = (side: Age) => (
+    <span className="small text-gray-700">
+      {intl.formatMessage(messages.sideLabel, {
+        side: intl.formatMessage(side === columns[0] ? messages.sideSelected : messages.cardTarget),
+        age: intl.formatMessage(side === 'older' ? messages.ageOlder : messages.ageNewer),
+      })}
+    </span>
+  );
   return (
     <BlockPair
       columns={columns}
       slots={nodeSlots(node)}
-      header={header ? () => <BlockTitle node={node} /> : undefined}
+      header={sideLabel}
       absent={absentSide(node)}
       label={label}
     />
@@ -163,14 +196,19 @@ const NodePair = ({ node, header }: { node: DiffNodeData; header: boolean; }) =>
 };
 
 const HEADINGS = ['h3', 'h4', 'h5', 'h6'] as const;
-const INDENTS = ['', 'pl-3', 'pl-4', 'pl-5'];
+
+interface NodeProps {
+  node: DiffNodeData;
+  depth: number;
+  /** The background of the card this node sits in. */
+  parentTone: Tone;
+}
 
 /**
- * A section, subsection or unit: a full-width heading that opens and closes the group, then its own changes (when it
- * moved or its settings changed) as two cards, then its changed blocks. Only the heading is indented by depth, so the
- * cards of every level stay in the page's two columns.
+ * A section, subsection or unit: a card inset in its parent's, in the other tone, with a heading that opens and closes
+ * it, then its own changes (when it moved or its settings changed) as two cards, then its changed blocks.
  */
-const ContainerNode = ({ node, depth }: { node: DiffNodeData; depth: number; }) => {
+const ContainerNode = ({ node, depth, parentTone }: NodeProps) => {
   const { expand } = useContext(TreeContext);
   const [open, setOpen] = useState(true);
   useEffect(() => {
@@ -187,13 +225,14 @@ const ContainerNode = ({ node, depth }: { node: DiffNodeData; depth: number; }) 
       setOpen((last) => !last);
     }
   };
+  const tone = toneOf(node, parentTone);
   return (
-    <li className="mb-3" data-testid={`diff-node-${node.usageKey}`}>
+    <li className={`publish-history-level publish-history-level-${tone}`} data-testid={`diff-node-${node.usageKey}`}>
       <Collapsible.Advanced open={open} onToggle={setOpen} className="publish-history-group">
         <Heading className="h5 mb-0">
           <Collapsible.Trigger
             tag="span"
-            className={`publish-history-group-trigger d-flex align-items-center py-2 ${INDENTS[Math.min(depth, 3)]}`}
+            className="publish-history-group-trigger d-flex align-items-center py-1"
             onKeyDown={toggleOnSpace}
           >
             <span className="mr-2 d-flex flex-shrink-0">
@@ -210,53 +249,62 @@ const ContainerNode = ({ node, depth }: { node: DiffNodeData; depth: number; }) 
         </Heading>
         <Collapsible.Body>
           {hasOwnChanges && (
-            <div className="mb-3">
-              <NodePair node={node} header={false} />
+            <div className="mt-2">
+              <NodePair node={node} />
             </div>
           )}
-          {node.children.length > 0 && <DiffTree nodes={node.children} depth={depth + 1} />}
+          {node.children.length > 0 && <DiffTree nodes={node.children} depth={depth + 1} tone={tone} />}
         </Collapsible.Body>
       </Collapsible.Advanced>
     </li>
   );
 };
 
-/** A component: its two cards side by side, then who changed it, a random-selection note and the Preview button. */
-const BlockNode = ({ node, depth }: { node: DiffNodeData; depth: number; }) => {
+/**
+ * A component: a card inset in its unit's, in the other tone. One header bar, a group named by the block, holds its
+ * icon, name, change badge, who changed it and the Preview button; a random-selection note follows, then its two
+ * cards side by side.
+ */
+const BlockNode = ({ node, depth, parentTone }: NodeProps) => {
   const intl = useIntl();
+  const nameId = useId();
   const { onPreview } = useContext(TreeContext);
   const name = node.displayName || node.usageKey;
   const canPreview = !!onPreview && !!node.change;
   const random = RANDOM_TYPES.has(node.blockType);
+  const tone = toneOf(node, parentTone);
   return (
-    <li className="mb-4" data-testid={`diff-node-${node.usageKey}`}>
-      <NodePair node={node} header />
-      {(node.change || random || canPreview) && (
-        <div className="d-flex flex-wrap align-items-center mt-2">
-          {node.change && <Editor node={node} inToggle={false} />}
-          {random && <span className="small text-gray-700 ml-3">{intl.formatMessage(messages.randomSelection)}</span>}
-          {canPreview && (
-            <Button
-              variant="outline-primary"
-              size="sm"
-              className="ml-auto flex-shrink-0"
-              onClick={() => onPreview?.(node)}
-              aria-label={intl.formatMessage(messages.previewLabel, { name })}
-            >
-              {intl.formatMessage(messages.preview)}
-            </Button>
-          )}
-        </div>
-      )}
-      {node.children.length > 0 && <DiffTree nodes={node.children} depth={depth + 1} />}
+    <li className={`publish-history-level publish-history-level-${tone}`} data-testid={`diff-node-${node.usageKey}`}>
+      <div
+        role="group"
+        aria-labelledby={nameId}
+        className="publish-history-block-header d-flex flex-wrap align-items-center"
+      >
+        <BlockTitle node={node} nameId={nameId} />
+        {node.change && <Editor node={node} inToggle={false} />}
+        {canPreview && (
+          <Button
+            variant="outline-primary"
+            size="sm"
+            className="ml-auto flex-shrink-0"
+            onClick={() => onPreview?.(node)}
+            aria-label={intl.formatMessage(messages.previewLabel, { name })}
+          >
+            {intl.formatMessage(messages.preview)}
+          </Button>
+        )}
+      </div>
+      {random && <p className="small text-gray-700 mt-1 mb-0">{intl.formatMessage(messages.randomSelection)}</p>}
+      <div className="mt-2">
+        <NodePair node={node} />
+      </div>
+      {node.children.length > 0 && <DiffTree nodes={node.children} depth={depth + 1} tone={tone} />}
     </li>
   );
 };
 
-const DiffNode = ({ node, depth }: { node: DiffNodeData; depth: number; }) => (
-  CONTAINER_TYPES.has(node.blockType)
-    ? <ContainerNode node={node} depth={depth} />
-    : <BlockNode node={node} depth={depth} />
+const DiffNode = (props: NodeProps) => (
+  CONTAINER_TYPES.has(props.node.blockType) ? <ContainerNode {...props} /> : <BlockNode {...props} />
 );
 
 interface DiffTreeProps {
@@ -264,16 +312,24 @@ interface DiffTreeProps {
   label?: string;
   /** How deep these nodes are: sets the level of the group headings, from h3 at the top. */
   depth?: number;
+  /** The background the list sits on: the page's (beige) at the top. */
+  tone?: Tone;
 }
 
 /**
- * The changed blocks as a tree: sections, subsections and units are collapsible full-width headings (open by
- * default); every other block is a row of two cards, the left column's version and the right column's, with its
- * changed fields lined up across them. A block that only holds changes has no badge.
+ * The changed blocks as nested cards, like the course outline: sections, subsections and units are collapsible cards
+ * (open by default), each inset in its parent's and in the other tone; every other block is a card with a header bar
+ * and its two cards, the left column's version and the right column's, with its changed fields lined up across them.
+ * A block that only holds changes has no badge.
  */
-const DiffTree = ({ nodes, label, depth = 0 }: DiffTreeProps) => (
+const DiffTree = ({
+  nodes,
+  label,
+  depth = 0,
+  tone = 'beige',
+}: DiffTreeProps) => (
   <ul className="publish-history-diff" aria-label={label}>
-    {nodes.map((node) => <DiffNode key={node.usageKey} node={node} depth={depth} />)}
+    {nodes.map((node) => <DiffNode key={node.usageKey} node={node} depth={depth} parentTone={tone} />)}
   </ul>
 );
 

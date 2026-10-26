@@ -59,29 +59,26 @@ describe('<DiffTree /> layout', () => {
         <DiffTreeRoot nodes={[node({ displayName: LONG })]} columns={['older', 'newer']} />,
       );
 
-    it('truncates the title on one line with the full name in a title attribute, on both cards', () => {
+    it('truncates the title on one line with the full name in a title attribute, in the header bar', () => {
       renderLong();
-      const titles = screen.getAllByText(LONG);
-      expect(titles).toHaveLength(2);
-      titles.forEach((t) => {
-        expect(t).toHaveClass('text-truncate');
-        expect(t).toHaveAttribute('title', LONG);
-        expect(t.textContent).toBe(LONG);
-      });
+      const title = screen.getByText(LONG);
+      expect(title).toHaveClass('text-truncate');
+      expect(title).toHaveAttribute('title', LONG);
+      expect(title.textContent).toBe(LONG);
     });
 
-    it('includes the full name in each card accessible name', () => {
+    it('includes the full name in the header bar\'s and each card\'s accessible name', () => {
       renderLong();
-      expect(screen.getAllByRole('group', { name: new RegExp(LONG) })).toHaveLength(2);
+      expect(screen.getAllByRole('group', { name: new RegExp(LONG) })).toHaveLength(3);
     });
 
-    it('keeps the icon and the badge from shrinking on both cards', () => {
+    it('keeps the icon and the badge from shrinking in the header bar', () => {
       renderLong();
-      screen.getAllByRole('group').forEach((card) => {
-        const header = card.querySelector('.publish-history-node-header') as HTMLElement;
-        expect(header.querySelector('.pgn__icon')).toHaveClass('flex-shrink-0');
-        expect(within(header).getByText('Changed')).toHaveClass('flex-shrink-0');
-      });
+      const header = screen.getByRole('group', { name: LONG }).querySelector(
+        '.publish-history-node-header',
+      ) as HTMLElement;
+      expect(header.querySelector('.pgn__icon')).toHaveClass('flex-shrink-0');
+      expect(within(header).getByText('Changed')).toHaveClass('flex-shrink-0');
     });
 
     it('gives a group heading the same truncating, titled name', () => {
