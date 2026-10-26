@@ -1,6 +1,7 @@
 import { initializeMocks, render, screen } from '@src/testUtils';
 
-import JsonDiff from './JsonDiff';
+import BlockPair from './BlockPair';
+import { jsonDiffSlots } from './JsonDiff';
 import type { Age, JsonChange, JsonDiffData } from './types';
 
 const change = (overrides: Partial<JsonChange> = {}): JsonChange => ({
@@ -24,13 +25,25 @@ const OLDER_FIRST: [Age, Age] = ['older', 'newer'];
 const NEWER_FIRST: [Age, Age] = ['newer', 'older'];
 
 const renderDiff = (data: JsonDiffData, columns: [Age, Age] = OLDER_FIRST) => (
-  render(<JsonDiff name="metadata" diff={data} columns={columns} />)
+  render(
+    <BlockPair
+      columns={columns}
+      slots={jsonDiffSlots('metadata', data, 'metadata')}
+      label={(side) => `${side} card`}
+    />,
+  )
 );
 
-/** The two value cells of the first changed row, left then right. */
+/** The value cells of one card (`older card` or `newer card`), top to bottom. */
+const cardCells = (side: Age) =>
+  Array.from(
+    screen.getByRole('group', { name: `${side} card` }).querySelectorAll('.publish-history-json-cell'),
+  );
+
+/** The value cells of the left card, then the right card's. */
 const cells = (container: HTMLElement) => Array.from(container.querySelectorAll('.publish-history-json-cell'));
 
-describe('<JsonDiff />', () => {
+describe('jsonDiffSlots', () => {
   beforeEach(() => {
     initializeMocks();
   });
@@ -78,10 +91,9 @@ describe('<JsonDiff />', () => {
         change({ path: ['b'], op: 'removed', old: 2, new: null }),
         change({ path: ['c'], op: 'changed', old: 3, new: 4 }),
       ];
-      const { container } = renderDiff(diff({ changes }));
-      const all = cells(container);
-      const older = all.filter((_, index) => index % 2 === 0);
-      const newer = all.filter((_, index) => index % 2 === 1);
+      renderDiff(diff({ changes }));
+      const older = cardCells('older');
+      const newer = cardCells('newer');
       expect(older.flatMap((cell) => Array.from(cell.querySelectorAll('ins')))).toHaveLength(0);
       expect(newer.flatMap((cell) => Array.from(cell.querySelectorAll('del')))).toHaveLength(0);
     });
@@ -96,18 +108,18 @@ describe('<JsonDiff />', () => {
   describe('only changes are highlighted', () => {
     it('lists the changed key and nothing about unchanged keys except their count', () => {
       const { container } = renderDiff(diff({ unchanged: [{ path: [], count: 2 }] }));
-      expect(screen.getByText('color')).toBeInTheDocument();
+      expect(screen.getAllByText('color')).toHaveLength(2);
       expect(container.querySelectorAll('del, ins')).toHaveLength(2);
     });
 
     it('shows how many entries are unchanged', () => {
       renderDiff(diff({ unchanged: [{ path: [], count: 3 }] }));
-      expect(screen.getByText('3 unchanged entries')).toBeInTheDocument();
+      expect(screen.getAllByText('3 unchanged entries')).toHaveLength(2);
     });
 
     it('uses the singular for one unchanged entry', () => {
       renderDiff(diff({ unchanged: [{ path: [], count: 1 }] }));
-      expect(screen.getByText('1 unchanged entry')).toBeInTheDocument();
+      expect(screen.getAllByText('1 unchanged entry')).toHaveLength(2);
     });
 
     it('shows no unchanged row when nothing is unchanged', () => {
@@ -118,7 +130,7 @@ describe('<JsonDiff />', () => {
     it('does not highlight the unchanged row', () => {
       const { container } = renderDiff(diff({ changes: [], unchanged: [{ path: [], count: 2 }] }));
       expect(container.querySelector('del, ins')).toBeNull();
-      expect(screen.getByText('2 unchanged entries')).toBeInTheDocument();
+      expect(screen.getAllByText('2 unchanged entries')).toHaveLength(2);
     });
 
     it('shows nested paths with their parents as muted context, which are not highlighted', () => {
@@ -126,10 +138,10 @@ describe('<JsonDiff />', () => {
         changes: [change({ path: ['zones', 0, 'title'], old: 'a', new: 'b' })],
         unchanged: [{ path: ['zones', 0], count: 4 }],
       }));
-      expect(screen.getByText('zones')).toBeInTheDocument();
-      expect(screen.getByText('zones › 0')).toBeInTheDocument();
-      expect(screen.getByText('zones › 0 › title')).toBeInTheDocument();
-      expect(screen.getByText('4 unchanged entries')).toBeInTheDocument();
+      expect(screen.getAllByText('zones')).toHaveLength(2);
+      expect(screen.getAllByText('zones › 0')).toHaveLength(2);
+      expect(screen.getAllByText('zones › 0 › title')).toHaveLength(2);
+      expect(screen.getAllByText('4 unchanged entries')).toHaveLength(2);
       expect(container.querySelectorAll('del, ins')).toHaveLength(2);
     });
 
@@ -137,7 +149,7 @@ describe('<JsonDiff />', () => {
       renderDiff(diff({
         changes: [change({ path: ['zones', 'a'] }), change({ path: ['zones', 'b'] })],
       }));
-      expect(screen.getAllByText('zones')).toHaveLength(1);
+      expect(screen.getAllByText('zones')).toHaveLength(2); // once per card
     });
 
     it('orders rows by path, list indexes numerically', () => {
@@ -148,12 +160,12 @@ describe('<JsonDiff />', () => {
         ],
       }));
       const paths = screen.getAllByText(/^items › \d+$/).map((element) => element.textContent);
-      expect(paths).toEqual(['items › 2', 'items › 10']);
+      expect(paths).toEqual(['items › 2', 'items › 10', 'items › 2', 'items › 10']);
     });
 
     it('labels a change at the root with the field name', () => {
       renderDiff(diff({ changes: [change({ path: [] })] }));
-      expect(screen.getByText('metadata')).toBeInTheDocument();
+      expect(screen.getAllByText('metadata')).toHaveLength(2);
     });
   });
 
@@ -170,7 +182,7 @@ describe('<JsonDiff />', () => {
 
     it('says when more entries changed than are listed', () => {
       renderDiff(diff({ truncated: true }));
-      expect(screen.getByText('More changed entries are not listed.')).toBeInTheDocument();
+      expect(screen.getAllByText('More changed entries are not listed.')).toHaveLength(2);
     });
 
     it('does not say so when the list is complete', () => {
@@ -210,8 +222,8 @@ describe('<JsonDiff />', () => {
       const key = '<script>window.__pwned = true</script>';
       const { container } = renderDiff(diff({ changes: [change({ path: [key, 'child'] })] }));
       expect(container.querySelector('script')).toBeNull();
-      expect(screen.getByText(key)).toBeInTheDocument();
-      expect(screen.getByText(`${key} › child`)).toBeInTheDocument();
+      expect(screen.getAllByText(key)).toHaveLength(2);
+      expect(screen.getAllByText(`${key} › child`)).toHaveLength(2);
       expect((window as any).__pwned).toBeUndefined();
     });
 

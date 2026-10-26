@@ -156,13 +156,13 @@ describe('<PublishHistoryPage />', () => {
   it('sets the document title', async () => {
     getVersions.mockResolvedValue(page([version(V3)]));
     render(<PublishHistoryPage />);
-    await waitFor(() => expect(document.title).toContain('Publish history'));
+    await waitFor(() => expect(document.title).toContain('Publish History'));
   });
 
-  it('titles the date column "Published on"', async () => {
+  it('titles the date column "Published On"', async () => {
     getVersions.mockResolvedValue(page([version(V3)]));
     render(<PublishHistoryPage />);
-    expect(await screen.findByRole('columnheader', { name: 'Published on' })).toBeInTheDocument();
+    expect(await screen.findByRole('columnheader', { name: 'Published On' })).toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'Published' })).not.toBeInTheDocument();
   });
 
@@ -176,14 +176,14 @@ describe('<PublishHistoryPage />', () => {
   it('shows the title as a heading', async () => {
     getVersions.mockResolvedValue(page([version(V3)]));
     render(<PublishHistoryPage />);
-    expect(await screen.findByRole('heading', { name: 'Publish history' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Publish History' })).toBeInTheDocument();
   });
 
   it('shows the back link before the title, with an arrow', async () => {
     getVersions.mockResolvedValue(page([version(V3)]));
     render(<PublishHistoryPage />);
     const link = await screen.findByRole('link', { name: 'Back to Course Outline' });
-    const title = screen.getByRole('heading', { name: 'Publish history' });
+    const title = screen.getByRole('heading', { name: 'Publish History' });
     expect(link.compareDocumentPosition(title)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(link.querySelector('svg')).toBeInTheDocument();
   });

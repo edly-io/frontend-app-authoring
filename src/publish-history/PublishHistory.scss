@@ -1,23 +1,14 @@
 // Scoped to the publish history pages (src/publish-history).
+// Nested levels are not indented (only their headings are), so every block's cards stay in the page's two columns.
 .publish-history-diff {
   list-style: none;
   margin: 0;
   padding-left: 0;
-
-  .publish-history-diff {
-    padding-left: var(--pgn-spacing-spacer-4);
-    border-left: 1px solid var(--pgn-color-light-400);
-  }
 }
 
-.publish-history-group > .collapsible-trigger {
-  padding: var(--pgn-spacing-spacer-2) 0;
-}
-
-.publish-history-block {
-  border: 1px solid var(--pgn-color-light-400);
-  border-radius: var(--pgn-size-border-radius-base);
-  background: var(--pgn-color-white);
+.publish-history-group-trigger {
+  cursor: pointer;
+  font-size: 1rem;
 }
 
 .publish-history-node-header {
@@ -25,9 +16,52 @@
   min-height: 2rem;
 }
 
-.publish-history-field + .publish-history-field {
-  border-top: 1px solid var(--pgn-color-light-300);
+// A block's two cards. From md up they sit in the same two columns as the column headers (a Bootstrap row of two
+// md-6 columns has the same widths as this grid with the grid gutter as its gap), and each card is a subgrid of the
+// pair's rows, so a field or JSON key has the same height in both cards. Below md the cards stack, left first.
+.publish-history-pair > .publish-history-card + .publish-history-card {
   margin-top: var(--pgn-spacing-spacer-3);
+}
+
+@media (width >= 768px) {
+  .publish-history-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--pgn-spacing-grid-gutter-width);
+
+    > .publish-history-card + .publish-history-card {
+      margin-top: 0;
+    }
+
+    > .publish-history-card:not(.publish-history-card-absent) {
+      display: grid;
+      grid-template-rows: subgrid;
+    }
+  }
+}
+
+.publish-history-card {
+  min-width: 0;
+  border: 1px solid var(--pgn-color-light-400);
+  border-radius: var(--pgn-size-border-radius-base);
+  background: var(--pgn-color-white);
+}
+
+.publish-history-card-header:not(:last-child) {
+  border-bottom: 1px solid var(--pgn-color-light-300);
+}
+
+.publish-history-card-absent {
+  min-height: 4rem;
+  background: var(--pgn-color-light-200);
+}
+
+.publish-history-slot {
+  min-width: 0;
+
+  &:last-child {
+    padding-bottom: var(--pgn-spacing-spacer-3);
+  }
 }
 
 // Changes are coloured by time: removed (red) in the older column, added (green) in the newer one. The -200
@@ -72,10 +106,6 @@
 .publish-history-value-newer {
   background: var(--pgn-color-success-200);
   color: var(--pgn-color-success-900);
-}
-
-.publish-history-json-row + .publish-history-json-row {
-  border-top: 1px solid var(--pgn-color-light-300);
 }
 
 .publish-history-json-path {

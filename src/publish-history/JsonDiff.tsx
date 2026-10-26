@@ -1,6 +1,6 @@
 import { useIntl } from '@edx/frontend-platform/i18n';
-import { Col, Row } from '@openedx/paragon';
 
+import type { Slot } from './BlockPair';
 import type {
   Age,
   JsonChange,
@@ -32,7 +32,7 @@ const comparePaths = (a: JsonPathPart[], b: JsonPathPart[]) => {
 };
 
 /**
- * One ordered list of rows for both columns, so they line up: each change, the parent keys of changed paths (as
+ * One ordered list of rows for both cards, so they line up: each change, the parent keys of changed paths (as
  * context) and the unchanged counts. Rows at the same path keep the API's order (removed before added).
  */
 const buildRows = (diff: JsonDiffData): JsonRow[] => {
@@ -92,53 +92,55 @@ const Cell = ({ change, side }: CellProps) => {
   );
 };
 
-interface JsonDiffProps {
+interface RowProps {
+  row: JsonRow;
   name: string;
-  diff: JsonDiffData;
-  /** The left and the right column. */
-  columns: [Age, Age];
+  side: Age;
 }
 
-/**
- * A key-level diff of a dict or list value in two aligned columns. Values are authored data and are rendered as
- * text only.
- */
-const JsonDiff = ({ name, diff, columns }: JsonDiffProps) => {
+/** One row of a key-level diff on one side: a muted parent key, an unchanged count, or a change with its key path. */
+const JsonRowView = ({ row, name, side }: RowProps) => {
   const intl = useIntl();
+  const label = row.path.length ? formatPath(row.path) : name;
+  if (row.kind === 'context') {
+    return <div className="publish-history-json-path text-gray-700">{label}</div>;
+  }
+  if (row.kind === 'unchanged') {
+    return (
+      <div className="small text-gray-700 font-italic">
+        {intl.formatMessage(messages.jsonUnchanged, { count: row.count })}
+      </div>
+    );
+  }
   return (
-    <div className="publish-history-json">
-      {buildRows(diff).map((row) => {
-        const label = row.path.length ? formatPath(row.path) : name;
-        if (row.kind === 'context') {
-          return (
-            <div key={`context-${JSON.stringify(row.path)}`} className="publish-history-json-path text-gray-700 pt-2">
-              {label}
-            </div>
-          );
-        }
-        if (row.kind === 'unchanged') {
-          return (
-            <div key={`unchanged-${JSON.stringify(row.path)}`} className="small text-gray-700 font-italic py-1">
-              {intl.formatMessage(messages.jsonUnchanged, { count: row.count })}
-            </div>
-          );
-        }
-        return (
-          <div key={`${row.change.op}-${JSON.stringify(row.path)}`} className="publish-history-json-row py-2">
-            <div className="publish-history-json-path mb-1">{label}</div>
-            <Row>
-              {columns.map((side) => (
-                <Col xs={6} key={side}>
-                  <Cell change={row.change} side={side} />
-                </Col>
-              ))}
-            </Row>
-          </div>
-        );
-      })}
-      {diff.truncated && <p className="small text-gray-700 mt-2 mb-0">{intl.formatMessage(messages.jsonTruncated)}</p>}
+    <div className="publish-history-json-row">
+      <div className="publish-history-json-path mb-1">{label}</div>
+      <Cell change={row.change} side={side} />
     </div>
   );
 };
 
-export default JsonDiff;
+const Truncated = () => {
+  const intl = useIntl();
+  return <p className="small text-gray-700 mb-0">{intl.formatMessage(messages.jsonTruncated)}</p>;
+};
+
+const rowKey = (row: JsonRow) => (
+  `${row.kind === 'change' ? row.change.op : row.kind}-${JSON.stringify(row.path)}`
+);
+
+/**
+ * A key-level diff of a dict or list value as slots, one per row, so each key lines up across the two cards. Values
+ * are authored data and are rendered as text only.
+ */
+export const jsonDiffSlots = (name: string, diff: JsonDiffData, keyPrefix: string): Slot[] => {
+  const slots: Slot[] = buildRows(diff).map((row) => ({
+    key: `${keyPrefix}-${rowKey(row)}`,
+    className: `publish-history-json ${row.kind === 'change' ? 'py-2' : 'py-1'}`,
+    render: (side: Age) => <JsonRowView row={row} name={name} side={side} />,
+  }));
+  if (diff.truncated) {
+    slots.push({ key: `${keyPrefix}-truncated`, className: 'py-1', render: () => <Truncated /> });
+  }
+  return slots;
+};

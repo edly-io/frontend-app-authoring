@@ -5,22 +5,29 @@ import {
   useMemo,
   useState,
 } from 'react';
+import type { KeyboardEvent } from 'react';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import {
   Badge,
   Button,
-  Col,
   Collapsible,
   Icon,
   OverlayTrigger,
-  Row,
   Tooltip,
 } from '@openedx/paragon';
+import { ExpandLess, ExpandMore } from '@openedx/paragon/icons';
 
 import { getItemIcon } from '@src/generic/block-type-utils';
 
-import FieldChange from './FieldChange';
-import type { Age, ChangeKind, DiffNodeData } from './types';
+import BlockPair from './BlockPair';
+import type { Slot } from './BlockPair';
+import { fieldSlots } from './FieldChange';
+import type {
+  Age,
+  ChangeKind,
+  DiffNodeData,
+  MoveData,
+} from './types';
 import messages from './messages';
 import { userName } from './utils';
 
@@ -31,7 +38,7 @@ export const CHANGE_BADGES: Record<ChangeKind, { variant: string; message: typeo
   MOVED: { variant: 'info', message: messages.changeMoved },
 };
 
-/** Sections, subsections and units: shown as collapsible groups, never previewed. */
+/** Sections, subsections and units: shown as collapsible headings, never previewed. */
 const CONTAINER_TYPES = new Set(['course', 'chapter', 'sequential', 'vertical']);
 
 /** Blocks whose learner view picks random children, so two previews of them may differ. */
@@ -87,114 +94,186 @@ const Editor = ({ node, inToggle }: { node: DiffNodeData; inToggle: boolean; }) 
   );
 };
 
-/** One line per block: type icon, name, change badge, editor and, for components, a Preview button at the end. */
-const NodeHeader = ({ node }: { node: DiffNodeData; }) => {
+/** Icon, name and change badge: the title of a section, subsection or unit, and the header of each card. */
+const BlockTitle = ({ node }: { node: DiffNodeData; }) => {
   const intl = useIntl();
-  const { onPreview } = useContext(TreeContext);
   const badge = node.change ? CHANGE_BADGES[node.change] : null;
   const name = node.displayName || node.usageKey;
-  const isContainer = CONTAINER_TYPES.has(node.blockType);
-  const canPreview = !!onPreview && !!node.change && !isContainer;
   return (
-    <div className="d-flex align-items-center w-100 publish-history-node-header">
+    <span className="d-flex align-items-center publish-history-node-header">
       <Icon src={getItemIcon(node.blockType)} size="sm" className="mr-2 flex-shrink-0 text-gray-700" />
       <span className="font-weight-bold text-truncate mr-2" title={name}>{name}</span>
       {badge && (
         <Badge variant={badge.variant} className="mr-2 flex-shrink-0">{intl.formatMessage(badge.message)}</Badge>
       )}
-      {badge && <Editor node={node} inToggle={isContainer} />}
-      {canPreview && (
-        <Button
-          variant="outline-primary"
-          size="sm"
-          className="ml-auto flex-shrink-0"
-          onClick={() => onPreview?.(node)}
-          aria-label={intl.formatMessage(messages.previewLabel, { name })}
-        >
-          {intl.formatMessage(messages.preview)}
-        </Button>
-      )}
-    </div>
+    </span>
   );
 };
 
-/** Where a moved block was (older column) and is (newer column). */
-const MoveInfo = ({ node }: { node: DiffNodeData; }) => {
+/** Where a moved block was (older side) or is (newer side). */
+const MoveText = ({ move, side }: { move: MoveData; side: Age; }) => {
+  const intl = useIntl();
+  if (move.fromParent === move.toParent && move.fromIndex !== null && move.toIndex !== null) {
+    const index = side === 'older' ? move.fromIndex : move.toIndex;
+    return <>{intl.formatMessage(messages.movePosition, { position: index + 1 })}</>;
+  }
+  return <>{intl.formatMessage(side === 'older' ? messages.moveParentOld : messages.moveParentNew)}</>;
+};
+
+/** A block's own changes as card slots: where it moved, then each changed field. */
+const nodeSlots = (node: DiffNodeData): Slot[] => {
+  const { move } = node;
+  const moveSlot: Slot[] = move
+    ? [{
+      key: 'move',
+      className: 'pt-3 small text-gray-700',
+      render: (side: Age) => <MoveText move={move} side={side} />,
+    }]
+    : [];
+  return [...moveSlot, ...node.fields.flatMap(fieldSlots)];
+};
+
+/** The side a block is not in: the older one for an added block, the newer one for a removed block. */
+const absentSide = (node: DiffNodeData): Age | null => {
+  if (node.change === 'ADDED') {
+    return 'older';
+  }
+  return node.change === 'REMOVED' ? 'newer' : null;
+};
+
+/** The block's two cards, labelled with its name and side. */
+const NodePair = ({ node, header }: { node: DiffNodeData; header: boolean; }) => {
   const intl = useIntl();
   const { columns } = useContext(TreeContext);
-  const { move } = node;
-  if (!move) {
-    return null;
-  }
-  const sameParent = move.fromParent === move.toParent && move.fromIndex !== null && move.toIndex !== null;
-  const text = (side: Age) => {
-    if (sameParent) {
-      const index = (side === 'older' ? move.fromIndex : move.toIndex) as number;
-      return intl.formatMessage(messages.movePosition, { position: index + 1 });
-    }
-    return intl.formatMessage(side === 'older' ? messages.moveParentOld : messages.moveParentNew);
-  };
+  const name = node.displayName || node.usageKey;
+  const label = (side: Age) =>
+    intl.formatMessage(messages.blockCardLabel, {
+      name,
+      age: intl.formatMessage(side === 'older' ? messages.ageOlderText : messages.ageNewerText),
+    });
   return (
-    <Row className="small text-gray-700 pt-2">
-      {columns.map((side) => <Col xs={6} key={side}>{text(side)}</Col>)}
-    </Row>
+    <BlockPair
+      columns={columns}
+      slots={nodeSlots(node)}
+      header={header ? () => <BlockTitle node={node} /> : undefined}
+      absent={absentSide(node)}
+      label={label}
+    />
   );
 };
 
-const DiffNode = ({ node }: { node: DiffNodeData; }) => {
-  const intl = useIntl();
-  const { columns, expand } = useContext(TreeContext);
+const HEADINGS = ['h3', 'h4', 'h5', 'h6'] as const;
+const INDENTS = ['', 'pl-3', 'pl-4', 'pl-5'];
+
+/**
+ * A section, subsection or unit: a full-width heading that opens and closes the group, then its own changes (when it
+ * moved or its settings changed) as two cards, then its changed blocks. Only the heading is indented by depth, so the
+ * cards of every level stay in the page's two columns.
+ */
+const ContainerNode = ({ node, depth }: { node: DiffNodeData; depth: number; }) => {
+  const { expand } = useContext(TreeContext);
   const [open, setOpen] = useState(true);
   useEffect(() => {
     if (expand.version) {
       setOpen(expand.open);
     }
   }, [expand]);
-
-  if (CONTAINER_TYPES.has(node.blockType)) {
-    return (
-      <li className="mb-3" data-testid={`diff-node-${node.usageKey}`}>
-        <Collapsible
-          styling="basic"
-          title={<NodeHeader node={node} />}
-          open={open}
-          onToggle={setOpen}
-          className="publish-history-group"
-        >
-          {node.fields.map((field) => (
-            <FieldChange key={`${field.scope}-${field.name}`} field={field} columns={columns} />
-          ))}
-          <MoveInfo node={node} />
-          {node.children.length > 0 && <DiffTree nodes={node.children} />}
-        </Collapsible>
-      </li>
-    );
-  }
+  const Heading = HEADINGS[Math.min(depth, HEADINGS.length - 1)];
+  const hasOwnChanges = !!node.move || node.fields.length > 0;
+  // Paragon's trigger is a span with role="button" that toggles on Enter only; a button also toggles on Space.
+  const toggleOnSpace = (event: KeyboardEvent) => {
+    if (event.key === ' ') {
+      event.preventDefault();
+      setOpen((last) => !last);
+    }
+  };
   return (
-    <li className="publish-history-block mb-3 p-3" data-testid={`diff-node-${node.usageKey}`}>
-      <NodeHeader node={node} />
-      {RANDOM_TYPES.has(node.blockType) && (
-        <p className="small text-gray-700 mt-2 mb-0">{intl.formatMessage(messages.randomSelection)}</p>
-      )}
-      <MoveInfo node={node} />
-      {node.fields.map((field) => <FieldChange key={`${field.scope}-${field.name}`} field={field} columns={columns} />)}
-      {node.children.length > 0 && <DiffTree nodes={node.children} />}
+    <li className="mb-3" data-testid={`diff-node-${node.usageKey}`}>
+      <Collapsible.Advanced open={open} onToggle={setOpen} className="publish-history-group">
+        <Heading className="h5 mb-0">
+          <Collapsible.Trigger
+            tag="span"
+            className={`publish-history-group-trigger d-flex align-items-center py-2 ${INDENTS[Math.min(depth, 3)]}`}
+            onKeyDown={toggleOnSpace}
+          >
+            <BlockTitle node={node} />
+            {node.change && <Editor node={node} inToggle />}
+            <span className="ml-auto pl-2 d-flex">
+              <Collapsible.Visible whenClosed>
+                <Icon src={ExpandMore} />
+              </Collapsible.Visible>
+              <Collapsible.Visible whenOpen>
+                <Icon src={ExpandLess} />
+              </Collapsible.Visible>
+            </span>
+          </Collapsible.Trigger>
+        </Heading>
+        <Collapsible.Body>
+          {hasOwnChanges && (
+            <div className="mb-3">
+              <NodePair node={node} header={false} />
+            </div>
+          )}
+          {node.children.length > 0 && <DiffTree nodes={node.children} depth={depth + 1} />}
+        </Collapsible.Body>
+      </Collapsible.Advanced>
     </li>
   );
 };
 
+/** A component: its two cards side by side, then who changed it, a random-selection note and the Preview button. */
+const BlockNode = ({ node, depth }: { node: DiffNodeData; depth: number; }) => {
+  const intl = useIntl();
+  const { onPreview } = useContext(TreeContext);
+  const name = node.displayName || node.usageKey;
+  const canPreview = !!onPreview && !!node.change;
+  const random = RANDOM_TYPES.has(node.blockType);
+  return (
+    <li className="mb-4" data-testid={`diff-node-${node.usageKey}`}>
+      <NodePair node={node} header />
+      {(node.change || random || canPreview) && (
+        <div className="d-flex flex-wrap align-items-center mt-2">
+          {node.change && <Editor node={node} inToggle={false} />}
+          {random && <span className="small text-gray-700 ml-3">{intl.formatMessage(messages.randomSelection)}</span>}
+          {canPreview && (
+            <Button
+              variant="outline-primary"
+              size="sm"
+              className="ml-auto flex-shrink-0"
+              onClick={() => onPreview?.(node)}
+              aria-label={intl.formatMessage(messages.previewLabel, { name })}
+            >
+              {intl.formatMessage(messages.preview)}
+            </Button>
+          )}
+        </div>
+      )}
+      {node.children.length > 0 && <DiffTree nodes={node.children} depth={depth + 1} />}
+    </li>
+  );
+};
+
+const DiffNode = ({ node, depth }: { node: DiffNodeData; depth: number; }) => (
+  CONTAINER_TYPES.has(node.blockType)
+    ? <ContainerNode node={node} depth={depth} />
+    : <BlockNode node={node} depth={depth} />
+);
+
 interface DiffTreeProps {
   nodes: DiffNodeData[];
   label?: string;
+  /** How deep these nodes are: sets the level of the group headings, from h3 at the top. */
+  depth?: number;
 }
 
 /**
- * The changed blocks as a tree: sections, subsections and units are collapsible groups (open by default), other
- * blocks are cards with their changed fields in two columns. A block that only holds changes has no badge.
+ * The changed blocks as a tree: sections, subsections and units are collapsible full-width headings (open by
+ * default); every other block is a row of two cards, the left column's version and the right column's, with its
+ * changed fields lined up across them. A block that only holds changes has no badge.
  */
-const DiffTree = ({ nodes, label }: DiffTreeProps) => (
+const DiffTree = ({ nodes, label, depth = 0 }: DiffTreeProps) => (
   <ul className="publish-history-diff" aria-label={label}>
-    {nodes.map((node) => <DiffNode key={node.usageKey} node={node} />)}
+    {nodes.map((node) => <DiffNode key={node.usageKey} node={node} depth={depth} />)}
   </ul>
 );
 

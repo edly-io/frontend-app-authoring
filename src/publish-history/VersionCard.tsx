@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { Badge, Card } from '@openedx/paragon';
@@ -50,23 +51,31 @@ interface VersionCardProps {
   children?: ReactNode;
 }
 
-/** The head of one comparison column: which version it holds and whether it is the older or the newer one. */
+/**
+ * The head of one comparison column, a region named by its heading: which version it holds and whether it is the
+ * older or the newer one.
+ */
 const VersionCard = ({
   heading,
   age,
   side,
   children,
-}: VersionCardProps) => (
-  <Card className="h-100">
-    <Card.Section>
-      <div className="d-flex align-items-center mb-2">
-        <h3 className="h5 mb-0 mr-2">{heading}</h3>
-        {age && <AgeBadge age={age} />}
-      </div>
-      {side && <SideSummary side={side} />}
-      {children}
-    </Card.Section>
-  </Card>
-);
+}: VersionCardProps) => {
+  const headingId = useId();
+  return (
+    <section aria-labelledby={headingId} className="h-100">
+      <Card className="h-100">
+        <Card.Section>
+          <div className="d-flex align-items-center mb-2">
+            <h3 id={headingId} className="h5 mb-0 mr-2">{heading}</h3>
+            {age && <AgeBadge age={age} />}
+          </div>
+          {side && <SideSummary side={side} />}
+          {children}
+        </Card.Section>
+      </Card>
+    </section>
+  );
+};
 
 export default VersionCard;

@@ -54,16 +54,19 @@ const toSide = (version: PublishVersion): DiffSide => ({
 
 /**
  * Compares the version in `?version=` (the left column) with another (the right column). `?against=` is `previous`
- * (the default), `published`, `draft` or a version id; the diff is fetched once the URL has an `against`, which the
- * Compare button writes. Colours follow time, whichever side the selected version is on: removed (red) in the older
- * column, added (green) in the newer one.
+ * (the default), `published` or a version id; the diff is fetched once the URL has an `against`, which the Compare
+ * button writes. The page doesn't offer the draft: `against=draft`, which the API still accepts, is treated as
+ * `previous`. The column headers and every block's two cards share the same two columns, stacked below md. Colours
+ * follow time, whichever side the selected version is on: removed (red) in the older column, added (green) in the
+ * newer one.
  */
 const PublishHistoryComparePage = () => {
   const intl = useIntl();
   const { courseId, courseDetails } = useCourseAuthoringContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const version = searchParams.get('version') ?? '';
-  const against = searchParams.get('against');
+  const requested = searchParams.get('against');
+  const against = requested === DRAFT ? PREVIOUS : requested;
   const [choice, setChoice] = useState(against ?? PREVIOUS);
   const [expand, setExpand] = useState<ExpandSignal>({ open: true, version: 0 });
   const [previewNode, setPreviewNode] = useState<DiffNodeData | null>(null);
@@ -92,15 +95,12 @@ const PublishHistoryComparePage = () => {
     if (value === PUBLISHED) {
       return intl.formatMessage(messages.optionPublished);
     }
-    if (value === DRAFT) {
-      return intl.formatMessage(messages.optionDraft);
-    }
     const match = loaded.find((candidate) => candidate.id === value);
     return match ? versionLabel(intl, match) : value.slice(0, 8);
   };
 
   const others = loaded.filter((candidate: PublishVersion) => candidate.id !== version);
-  const options = [PREVIOUS, PUBLISHED, DRAFT, ...others.map((candidate) => candidate.id)];
+  const options = [PREVIOUS, PUBLISHED, ...others.map((candidate) => candidate.id)];
 
   const handleCompare = () => {
     const next = new URLSearchParams(searchParams);
