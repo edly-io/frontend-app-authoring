@@ -1,4 +1,5 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { focusManager, onlineManager } from '@tanstack/react-query';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import type MockAdapter from 'axios-mock-adapter';
 import { initializeMocks, makeWrapper } from '@src/testUtils';
 
@@ -97,6 +98,17 @@ describe('publish history hooks', () => {
       expect(result.current.data?.pages[1].historyEnds).toBe('course_created');
     });
 
+    it('refetches on a new mount despite the app\'s one-hour default stale time (a publish adds a version)', async () => {
+      // src/index.jsx gives every query a one-hour staleTime; the test client doesn't, so set it here.
+      queryClient.setDefaultOptions({ queries: { retry: false, staleTime: 60 * 60_000 } });
+      axiosMock.onGet(apiUrls.versions(COURSE_ID)).reply(200, { next: null, results: [row(V3)], history_ends: null });
+      const wrapper = makeWrapper();
+      const first = renderHook(() => useVersions(COURSE_ID), { wrapper });
+      await waitFor(() => expect(first.result.current.data?.pages).toHaveLength(1));
+      renderHook(() => useVersions(COURSE_ID), { wrapper });
+      await waitFor(() => expect(axiosMock.history.get).toHaveLength(2));
+    });
+
     it('does not retry a client error', async () => {
       axiosMock.onGet(apiUrls.versions(COURSE_ID)).reply(403);
       const { result } = renderHook(() => useVersions(COURSE_ID), { wrapper: makeWrapper() });
@@ -151,6 +163,24 @@ describe('publish history hooks', () => {
       await waitFor(() => expect(first.result.current.data).toBeDefined());
       renderHook(() => useDiff(COURSE_ID, V3, 'draft'), { wrapper });
       await waitFor(() => expect(axiosMock.history.get).toHaveLength(2));
+    });
+
+    it('does not refetch a comparison with the current published version on window focus or reconnect', async () => {
+      axiosMock.onGet().reply(200, emptyDiff);
+      const { result } = renderHook(() => useDiff(COURSE_ID, V3, 'published'), { wrapper: makeWrapper() });
+      await waitFor(() => expect(result.current.data).toBeDefined());
+      await act(async () => {
+        focusManager.setFocused(false);
+        focusManager.setFocused(true);
+        onlineManager.setOnline(false);
+        onlineManager.setOnline(true);
+        // The client refetches after resuming paused mutations, a few ticks later.
+        await new Promise((resolve) => {
+          setTimeout(resolve, 50);
+        });
+      });
+      focusManager.setFocused(undefined);
+      expect(axiosMock.history.get).toHaveLength(1);
     });
 
     it.each(['previous', V2])('does not refetch a comparison against %s on a new mount', async (against) => {

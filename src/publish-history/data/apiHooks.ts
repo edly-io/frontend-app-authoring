@@ -39,19 +39,26 @@ export const usePublishHistoryStatus = (courseId: string) => {
   };
 };
 
-/** The course's published versions, newest first, a page at a time (`fetchNextPage` loads older ones). */
+/**
+ * The course's published versions, newest first, a page at a time (`fetchNextPage` loads older ones). Every publish
+ * adds a version and moves "current", so the list is refetched whenever a page mounts, not kept for the app's default
+ * stale time.
+ */
 export const useVersions = (courseId: string) =>
   useInfiniteQuery({
     queryKey: publishHistoryQueryKeys.versions(courseId),
     queryFn: ({ pageParam }) => api.getVersions(courseId, pageParam),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextAfter ?? undefined,
+    staleTime: 0,
     retry: retryUnlessClientError,
   });
 
 /**
  * The comparison of `version` with `against`. A comparison with the draft or the current published version is
- * always refetched, since both move on with every edit or publish; two version ids (or `previous`) never change.
+ * refetched on every mount, since both move on with every edit or publish; two version ids (or `previous`) never
+ * change. It is not refetched on window focus or reconnect: the page hides the result while it loads, so a refetch
+ * would collapse the tree and close the preview under the user.
  */
 export const useDiff = (courseId: string, version: string, against: string | null) =>
   useQuery({
@@ -59,5 +66,7 @@ export const useDiff = (courseId: string, version: string, against: string | nul
     queryFn: () => api.getDiff(courseId, version, against as string),
     enabled: against !== null,
     staleTime: against === DRAFT || against === PUBLISHED ? 0 : Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     retry: retryUnlessClientError,
   });

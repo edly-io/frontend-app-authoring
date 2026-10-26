@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import userEvent from '@testing-library/user-event';
 import {
   initializeMocks,
@@ -7,6 +8,7 @@ import {
   within,
 } from '@src/testUtils';
 
+import * as blockTypeUtils from '@src/generic/block-type-utils';
 import DiffTree, { DiffTreeRoot } from './DiffTree';
 import { field, node } from './testHelpers';
 
@@ -701,5 +703,27 @@ describe('<DiffTree />', () => {
       expect(within(cardOf('Intro text', 'newer')).getByText(payload)).toBeInTheDocument();
       expect((window as any).__pwned).toBeUndefined();
     });
+  });
+
+  it('does not re-render the tree when the page re-renders with the same props', async () => {
+    const iconOf = jest.spyOn(blockTypeUtils, 'getItemIcon');
+    const nodes = [node()];
+    const columns: ['older', 'newer'] = ['older', 'newer'];
+    const Page = () => {
+      const [count, setCount] = useState(0);
+      return (
+        <>
+          <button type="button" onClick={() => setCount(count + 1)}>{`Bump ${count}`}</button>
+          <DiffTreeRoot nodes={nodes} columns={columns} />
+        </>
+      );
+    };
+    render(<Page />);
+    const renders = iconOf.mock.calls.length;
+    expect(renders).toBeGreaterThan(0);
+    await userEvent.click(screen.getByRole('button', { name: 'Bump 0' }));
+    expect(screen.getByRole('button', { name: 'Bump 1' })).toBeInTheDocument();
+    expect(iconOf).toHaveBeenCalledTimes(renders);
+    iconOf.mockRestore();
   });
 });

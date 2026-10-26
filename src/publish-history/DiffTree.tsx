@@ -1,5 +1,6 @@
 import {
   createContext,
+  memo,
   useContext,
   useEffect,
   useId,
@@ -341,8 +342,11 @@ interface DiffTreeRootProps extends DiffTreeProps {
   onPreview?: (node: DiffNodeData) => void;
 }
 
-/** The top of the tree: sets the column order, the expand signal and the preview handler for every level. */
-export const DiffTreeRoot = ({
+/**
+ * The top of the tree: sets the column order, the expand signal and the preview handler for every level. Memoized, so
+ * the page's own updates (the dropdown, the sticky bar, the preview) don't re-render a large tree.
+ */
+const DiffTreeRootBase = ({
   nodes,
   label,
   columns,
@@ -356,5 +360,7 @@ export const DiffTreeRoot = ({
     </TreeContext.Provider>
   );
 };
+
+export const DiffTreeRoot = memo(DiffTreeRootBase);
 
 export default DiffTree;

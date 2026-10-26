@@ -19,6 +19,7 @@ import {
 } from '@openedx/paragon';
 import { useSearchParams } from 'react-router-dom';
 
+import { getErrorStatus } from '@src/course-categories/utils';
 import { useCourseAuthoringContext } from '@src/CourseAuthoringContext';
 import SubHeader from '@src/generic/sub-header/SubHeader';
 import getPageHeadTitle from '@src/generic/utils';
@@ -55,17 +56,20 @@ const toSide = (version: PublishVersion): DiffSide => ({
   by: version.publishedBy,
 });
 
-/** Whether the element is on screen; true until the browser says otherwise. */
-const useInView = (ref: RefObject<HTMLElement>) => {
+/**
+ * Whether the element is on screen; true until the browser says otherwise. `mounted` says whether the element is
+ * rendered, so the observer follows it when it comes and goes.
+ */
+const useInView = (ref: RefObject<HTMLElement>, mounted: boolean) => {
   const [inView, setInView] = useState(true);
   useEffect(() => {
-    if (!ref.current) {
+    if (!mounted || !ref.current) {
       return undefined;
     }
     const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting));
     observer.observe(ref.current);
     return () => observer.disconnect();
-  }, [ref]);
+  }, [ref, mounted]);
   return inView;
 };
 
@@ -76,23 +80,32 @@ const useInView = (ref: RefObject<HTMLElement>) => {
  * `previous`. The Compare With dropdown ends with "Load More Versions" while older versions remain. Once the version
  * cards scroll out of view, a sticky bar names both sides in the cards' two columns. Every block's two cards follow
  * the same left/right order, stacked below md. Colours follow time, whichever side the selected version is on:
- * removed (red) in the older column, added (green) in the newer one.
+ * removed (red) in the older column, added (green) in the newer one. When the API refuses the version list (the
+ * feature is off for the user, or they can't edit the course), the page shows only that message.
  */
 const PublishHistoryComparePage = () => {
   const intl = useIntl();
   const { courseId, courseDetails } = useCourseAuthoringContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const version = searchParams.get('version') ?? '';
-  const requested = searchParams.get('against');
+  // An empty `?against=` is no choice yet, like a missing one.
+  const requested = searchParams.get('against') || null;
   const against = requested === DRAFT ? PREVIOUS : requested;
   const [choice, setChoice] = useState(against ?? PREVIOUS);
   const [expand, setExpand] = useState<ExpandSignal>({ open: true, version: 0 });
   const [previewNode, setPreviewNode] = useState<DiffNodeData | null>(null);
 
-  // Back and Forward change the URL without remounting the page: the dropdown follows the URL.
+  // Back and Forward change the URL without remounting the page: the dropdown follows the URL, and a preview of the
+  // comparison that was shown closes, so it doesn't come back over the next one once that loads.
   useEffect(() => setChoice(against ?? PREVIOUS), [against]);
+  useEffect(() => setPreviewNode(null), [version, against]);
 
   const versions = useVersions(courseId);
+  // A failed Load More Versions keeps the loaded pages, and its item stays for another try: not a list error.
+  const versionsError = versions.data ? null : versions.error;
+  // The API refuses the list when the feature is off for the user or they can't edit the course: a typed or bookmarked
+  // address then shows only that, not controls that would fail the same way.
+  const noAccess = getErrorStatus(versionsError) === 403;
   const loaded = useMemo(() => versions.data?.pages.flatMap((page) => page.results) ?? [], [versions.data]);
   const current = loaded.find((candidate) => candidate.id === version);
   const diff = useDiff(courseId, version, version ? against : null);
@@ -106,7 +119,7 @@ const PublishHistoryComparePage = () => {
   const selectedSide = sides ? sides[columns[0]] : (current && toSide(current)) ?? null;
   const onPreview = useCallback((node: DiffNodeData) => setPreviewNode(node), []);
   const cardsRef = useRef<HTMLDivElement>(null);
-  const cardsInView = useInView(cardsRef);
+  const cardsInView = useInView(cardsRef, !noAccess);
 
   const choiceLabel = (value: string) => {
     if (value === PREVIOUS) {
@@ -208,115 +221,122 @@ const PublishHistoryComparePage = () => {
           }
         />
       </div>
-      <Row className="mb-4" ref={cardsRef}>
-        <Col md={6} className="mb-3 mb-md-0">
-          <VersionCard
-            heading={intl.formatMessage(messages.cardSelected)}
-            age={data ? columns[0] : null}
-            side={selectedSide}
-          />
-        </Col>
-        <Col md={6}>
-          <VersionCard
-            heading={intl.formatMessage(messages.cardTarget)}
-            age={data ? columns[1] : null}
-            side={null}
-          >
-            <div className="d-flex flex-wrap align-items-center">
-              <Dropdown className="mr-2 mb-2">
-                <Dropdown.Toggle
-                  variant="outline-primary"
-                  id="publish-history-against"
-                  aria-label={`${intl.formatMessage(messages.compareWith)}: ${choiceLabel(choice)}`}
-                >
-                  {choiceLabel(choice)}
-                </Dropdown.Toggle>
-                <Dropdown.Menu ref={menuRef} className="publish-history-versions-menu">
-                  {options.map((value) => (
-                    <Dropdown.Item
-                      key={value}
-                      active={value === choice}
-                      onClick={() => setChoice(value)}
-                    >
-                      {choiceLabel(value)}
-                    </Dropdown.Item>
-                  ))}
-                  {versions.hasNextPage && (
-                    <>
-                      <Dropdown.Divider />
-                      {
-                        /* A plain button, not a Dropdown.Item: selecting an item closes the menu. The dropdown-item
-                          class keeps it in the menu's arrow-key order. */
-                      }
-                      <button
-                        type="button"
-                        className="dropdown-item d-flex align-items-center"
-                        onClick={loadMoreVersions}
-                        aria-busy={versions.isFetchingNextPage}
-                      >
-                        {versions.isFetchingNextPage && (
-                          <Spinner
-                            animation="border"
-                            size="sm"
-                            className="mr-2"
-                            screenReaderText={intl.formatMessage(messages.loadingMoreVersions)}
-                          />
-                        )}
-                        {intl.formatMessage(messages.loadMoreVersions)}
-                      </button>
-                    </>
-                  )}
-                </Dropdown.Menu>
-              </Dropdown>
-              <Button variant="primary" className="mr-2 mb-2" onClick={handleCompare} disabled={!version}>
-                {intl.formatMessage(messages.compareButton)}
-              </Button>
-            </div>
-            {sides && (
-              <div className="pt-2 border-top small text-gray-700">
-                <SideLine side={sides[columns[1]]} />
-              </div>
-            )}
-          </VersionCard>
-        </Col>
-      </Row>
-      <div className="publish-history-sticky">
-        {!cardsInView && selectedSide && (
-          // Hidden from screen readers: it repeats the version cards and comes and goes with the scroll position.
-          <div
-            className="publish-history-sticky-bar mx-n3 px-3 py-2"
-            data-testid="publish-history-sticky-bar"
-            aria-hidden
-          >
-            <Row className="small">
-              <Col md={6} className="text-truncate">
-                {intl.formatMessage(messages.stickySide, {
-                  side: <strong key="side">{intl.formatMessage(messages.cardSelected)}</strong>,
-                  line: <SideLine key="line" side={selectedSide} />,
-                })}
+      {noAccess ?
+        <Alert variant="danger">{intl.formatMessage(messages.permissionError)}</Alert> :
+        (
+          <>
+            {versionsError && <Alert variant="warning">{intl.formatMessage(messages.versionsError)}</Alert>}
+            <Row className="mb-4" ref={cardsRef}>
+              <Col md={6} className="mb-3 mb-md-0">
+                <VersionCard
+                  heading={intl.formatMessage(messages.cardSelected)}
+                  age={data ? columns[0] : null}
+                  side={selectedSide}
+                />
               </Col>
-              {sides && (
-                <Col md={6} className="text-truncate">
-                  {intl.formatMessage(messages.stickySide, {
-                    side: <strong key="side">{intl.formatMessage(messages.cardTarget)}</strong>,
-                    line: <SideLine key="line" side={sides[columns[1]]} />,
-                  })}
-                </Col>
-              )}
+              <Col md={6}>
+                <VersionCard
+                  heading={intl.formatMessage(messages.cardTarget)}
+                  age={data ? columns[1] : null}
+                  side={null}
+                >
+                  <div className="d-flex flex-wrap align-items-center">
+                    <Dropdown className="publish-history-against mr-2 mb-2">
+                      <Dropdown.Toggle
+                        variant="outline-primary"
+                        id="publish-history-against"
+                        aria-label={intl.formatMessage(messages.compareWithChoice, { choice: choiceLabel(choice) })}
+                      >
+                        {choiceLabel(choice)}
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu ref={menuRef} className="publish-history-versions-menu">
+                        {options.map((value) => (
+                          <Dropdown.Item
+                            key={value}
+                            active={value === choice}
+                            onClick={() => setChoice(value)}
+                          >
+                            {choiceLabel(value)}
+                          </Dropdown.Item>
+                        ))}
+                        {versions.hasNextPage && (
+                          <>
+                            <Dropdown.Divider />
+                            {
+                              /* A plain button, not a Dropdown.Item: selecting an item closes the menu. The dropdown-item
+                              class keeps it in the menu's arrow-key order. */
+                            }
+                            <button
+                              type="button"
+                              className="dropdown-item d-flex align-items-center"
+                              onClick={loadMoreVersions}
+                              aria-busy={versions.isFetchingNextPage}
+                            >
+                              {versions.isFetchingNextPage && (
+                                <Spinner
+                                  animation="border"
+                                  size="sm"
+                                  className="mr-2"
+                                  screenReaderText={intl.formatMessage(messages.loadingMoreVersions)}
+                                />
+                              )}
+                              {intl.formatMessage(messages.loadMoreVersions)}
+                            </button>
+                          </>
+                        )}
+                      </Dropdown.Menu>
+                    </Dropdown>
+                    <Button variant="primary" className="mr-2 mb-2" onClick={handleCompare} disabled={!version}>
+                      {intl.formatMessage(messages.compareButton)}
+                    </Button>
+                  </div>
+                  {sides && (
+                    <div className="pt-2 border-top small text-gray-700">
+                      <SideLine side={sides[columns[1]]} />
+                    </div>
+                  )}
+                </VersionCard>
+              </Col>
             </Row>
-          </div>
+            <div className="publish-history-sticky">
+              {!cardsInView && selectedSide && (
+                // Hidden from screen readers: it repeats the version cards and comes and goes with the scroll position.
+                <div
+                  className="publish-history-sticky-bar mx-n3 px-3 py-2"
+                  data-testid="publish-history-sticky-bar"
+                  aria-hidden
+                >
+                  <Row className="small">
+                    <Col md={6} className="text-truncate">
+                      {intl.formatMessage(messages.stickySide, {
+                        side: <strong key="side">{intl.formatMessage(messages.cardSelected)}</strong>,
+                        line: <SideLine key="line" side={selectedSide} />,
+                      })}
+                    </Col>
+                    {sides && (
+                      <Col md={6} className="text-truncate">
+                        {intl.formatMessage(messages.stickySide, {
+                          side: <strong key="side">{intl.formatMessage(messages.cardTarget)}</strong>,
+                          line: <SideLine key="line" side={sides[columns[1]]} />,
+                        })}
+                      </Col>
+                    )}
+                  </Row>
+                </div>
+              )}
+            </div>
+            {result}
+            {previewNode && sides && (
+              <PreviewModal
+                courseId={courseId}
+                node={previewNode}
+                sides={sides}
+                columns={columns}
+                onClose={() => setPreviewNode(null)}
+              />
+            )}
+          </>
         )}
-      </div>
-      {result}
-      {previewNode && sides && (
-        <PreviewModal
-          courseId={courseId}
-          node={previewNode}
-          sides={sides}
-          columns={columns}
-          onClose={() => setPreviewNode(null)}
-        />
-      )}
     </Container>
   );
 };

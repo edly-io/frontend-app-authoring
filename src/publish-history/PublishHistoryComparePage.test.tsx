@@ -1,6 +1,8 @@
 import userEvent from '@testing-library/user-event';
 import { useNavigate } from 'react-router-dom';
+import type { NavigateFunction } from 'react-router-dom';
 import {
+  act,
   initializeMocks,
   render,
   screen,
@@ -353,10 +355,21 @@ describe('<PublishHistoryComparePage />', () => {
       expect(screen.queryByRole('button', { name: 'Load More Versions' })).not.toBeInTheDocument();
     });
 
-    it('still compares when the version list fails to load', async () => {
-      getVersions.mockRejectedValue(httpError(403));
+    it('still compares when the version list fails to load, and says why the options are few', async () => {
+      getVersions.mockRejectedValue(httpError(404));
       renderPage(`?version=${V3}&against=previous`);
       expect(await screen.findByText('1 changed block')).toBeInTheDocument();
+      expect(await screen.findByText(/The list of versions could not be loaded/)).toBeInTheDocument();
+    });
+
+    it('shows only the permission message when the API refuses the list (flag off or no access)', async () => {
+      getVersions.mockRejectedValue(httpError(403));
+      renderPage(`?version=${V3}&against=previous`);
+      expect(await screen.findByText(/not available for this course or your account/)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Compare' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /^Compare With/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole('list', { name: 'Changed blocks' })).not.toBeInTheDocument();
+      expect(screen.queryByText(/The list of versions could not be loaded/)).not.toBeInTheDocument();
     });
   });
 
@@ -593,6 +606,29 @@ describe('<PublishHistoryComparePage />', () => {
       expect(document.querySelectorAll('iframe')).toHaveLength(0);
     });
 
+    it('closes when the address moves to another comparison, and stays closed once that one loads', async () => {
+      let navigate: NavigateFunction | undefined;
+      const Capture = () => {
+        navigate = useNavigate();
+        return null;
+      };
+      render(<PublishHistoryComparePage />, {
+        routerProps: { initialEntries: [`/compare?version=${V3}&against=previous`] },
+        extraWrapper: ({ children }) => (
+          <>
+            {children}
+            <Capture />
+          </>
+        ),
+      });
+      await userEvent.click(await screen.findByRole('button', { name: 'Preview Intro text' }));
+      await screen.findByRole('dialog');
+      act(() => navigate?.(`/compare?version=${V3}&against=published`));
+      await waitFor(() => expect(getDiff).toHaveBeenLastCalledWith(COURSE_ID, V3, 'published'));
+      await screen.findByText('1 changed block');
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
     it('has no Preview button on a unit, subsection or section', async () => {
       getDiff.mockResolvedValue(diffResult({
         tree: [node({
@@ -616,6 +652,15 @@ describe('<PublishHistoryComparePage />', () => {
       expect(await screen.findByText(/This page address names an invalid version/)).toBeInTheDocument();
       expect(screen.queryByText('The comparison could not be loaded. Try again.')).not.toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Compare' })).toBeEnabled();
+    });
+  });
+
+  describe('an empty against in the address', () => {
+    it('is no choice yet: Previous Version in the dropdown and no request', async () => {
+      renderPage(`?version=${V3}&against=`);
+      await listLoaded();
+      expect(toggle()).toHaveTextContent('Previous Version');
+      expect(getDiff).not.toHaveBeenCalled();
     });
   });
 

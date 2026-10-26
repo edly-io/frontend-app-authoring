@@ -76,9 +76,29 @@
   box-shadow: 0 .25rem .25rem -.25rem rgb(0 0 0 / .15);
 }
 
+// Version labels ("date by user") are long, and Paragon keeps the toggle and its items on one line: on a phone they
+// wrap instead of running out of the card and the viewport.
+.publish-history-against {
+  min-width: 0;
+  max-width: 100%;
+
+  .dropdown-toggle {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: left;
+  }
+}
+
 .publish-history-versions-menu {
+  max-width: calc(100vw - 2rem);
   max-height: 20rem;
   overflow-y: auto;
+
+  .dropdown-item {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 }
 
 .publish-history-group-trigger {
