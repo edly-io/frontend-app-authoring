@@ -42,8 +42,8 @@ describe('<CompareSummary />', () => {
     const onExpandAll = jest.fn();
     const onCollapseAll = jest.fn();
     renderSummary({}, { onExpandAll, onCollapseAll });
-    await userEvent.click(screen.getByRole('button', { name: 'Expand all' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Collapse all' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Expand All' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Collapse All' }));
     expect(onExpandAll).toHaveBeenCalledTimes(1);
     expect(onCollapseAll).toHaveBeenCalledTimes(1);
   });

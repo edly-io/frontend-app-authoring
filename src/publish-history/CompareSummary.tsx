@@ -34,7 +34,7 @@ interface CompareSummaryProps {
   onCollapseAll: () => void;
 }
 
-/** The totals above the tree, the truncation and budget notices, and Expand all / Collapse all. */
+/** The totals above the tree, the truncation and budget notices, and Expand All / Collapse All. */
 const CompareSummary = ({ data, onExpandAll, onCollapseAll }: CompareSummaryProps) => {
   const intl = useIntl();
   const counts = countByKind(data.tree);

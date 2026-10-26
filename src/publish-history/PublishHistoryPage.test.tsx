@@ -106,7 +106,7 @@ describe('<PublishHistoryPage />', () => {
     getVersions.mockResolvedValue(page([version(V3)]));
     render(<PublishHistoryPage />);
     await screen.findByRole('table');
-    expect(screen.queryByRole('button', { name: 'Load older versions' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Load Older Versions' })).not.toBeInTheDocument();
   });
 
   it('loads the next page with the cursor and keeps the earlier rows', async () => {
@@ -114,11 +114,11 @@ describe('<PublishHistoryPage />', () => {
       .mockResolvedValueOnce(page([version(V3, { publishedBy: { id: 1, username: 'first' } })], V3))
       .mockResolvedValueOnce(page([version(V2, { publishedBy: { id: 2, username: 'second' } })]));
     render(<PublishHistoryPage />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Load older versions' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Load Older Versions' }));
     expect(await screen.findByText('second')).toBeInTheDocument();
     expect(screen.getByText('first')).toBeInTheDocument();
     expect(getVersions).toHaveBeenLastCalledWith(COURSE_ID, V3);
-    expect(screen.queryByRole('button', { name: 'Load older versions' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Load Older Versions' })).not.toBeInTheDocument();
   });
 
   it('says the history ends at course creation', async () => {

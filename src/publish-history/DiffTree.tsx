@@ -60,7 +60,7 @@ const toneOf = (node: DiffNodeData, parent: Tone): Tone => {
   return parent === 'white' ? 'beige' : 'white';
 };
 
-/** Expand all / Collapse all: each press bumps `version`, and every group then takes `open`. */
+/** Expand All / Collapse All: each press bumps `version`, and every group then takes `open`. */
 export interface ExpandSignal {
   open: boolean;
   version: number;
