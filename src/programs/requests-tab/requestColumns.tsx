@@ -103,7 +103,7 @@ export const RequestCards = ({ requests, options, intl }: RequestCardsProps) => 
         title={<RequestDetailCell req={request} programKey={options.programKey} />}
         subtitle={request.created ? formatDateTime(request.created) : null}
         footer={(
-          <div className="d-flex flex-wrap w-100 justify-content-end requests-view__row-actions">
+          <div className="requests-view__card-actions w-100">
             <HistoryLink request={request} label={intl.formatMessage(messages.history)} />
             <RequestActions request={request} {...options} isBusy={options.isRequestBusy(request)} />
           </div>

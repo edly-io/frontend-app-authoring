@@ -62,9 +62,9 @@ const RequestsLayout = ({ programId }: { programId: string }) => {
 
   return (
     <div className="requests-tab">
-      <Stack direction="horizontal" gap={2} className="flex-wrap justify-content-end mb-3">
+      <Stack direction="horizontal" gap={2} className="program-page-header__actions justify-content-end mb-3">
         {isLeavesTab && !isAuditLog && <LeaveSettingsModal programKey={programId} />}
-        <ButtonGroup size="sm">
+        <ButtonGroup size="sm" className="program-view-toggle">
           {renderViewButton(LIST_VIEW, intl.formatMessage(messages.viewList))}
           {renderViewButton(AUDIT_LOG_VIEW, intl.formatMessage(messages.viewAuditLog))}
         </ButtonGroup>

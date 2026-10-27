@@ -79,47 +79,46 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
         </div>
-        {canManage && activeView === 'list' && (
-          <Stack direction="horizontal" gap={2}>
+        <Stack direction="horizontal" gap={2} className="program-page-header__actions">
+          {canManage && activeView === 'list' && (
+            <>
+              <Button
+                variant="outline-primary"
+                iconBefore={Add}
+                size="sm"
+                onClick={openBatchModal}
+              >
+                {intl.formatMessage(messages.enrollBatchBtn)}
+              </Button>
+              <Button
+                variant="outline-primary"
+                iconBefore={Add}
+                size="sm"
+                onClick={openModal}
+              >
+                {intl.formatMessage(messages.enrollLearnerBtn)}
+              </Button>
+            </>
+          )}
+          <ButtonGroup size="sm" className="program-view-toggle">
             <Button
-              variant="outline-primary"
-              iconBefore={Add}
+              variant={activeView === 'list' ? 'primary' : 'outline-primary'}
               size="sm"
-              onClick={openBatchModal}
+              aria-pressed={activeView === 'list'}
+              onClick={() => setActiveView('list')}
             >
-              {intl.formatMessage(messages.enrollBatchBtn)}
+              {intl.formatMessage(messages.listTab)}
             </Button>
             <Button
-              variant="outline-primary"
-              iconBefore={Add}
+              variant={activeView === 'audit-log' ? 'primary' : 'outline-primary'}
               size="sm"
-              onClick={openModal}
+              aria-pressed={activeView === 'audit-log'}
+              onClick={() => setActiveView('audit-log')}
             >
-              {intl.formatMessage(messages.enrollLearnerBtn)}
+              {intl.formatMessage(messages.auditLogTab)}
             </Button>
-          </Stack>
-        )}
-      </div>
-
-      <div className="d-flex justify-content-end mb-3">
-        <ButtonGroup size="sm">
-          <Button
-            variant={activeView === 'list' ? 'primary' : 'outline-primary'}
-            size="sm"
-            aria-pressed={activeView === 'list'}
-            onClick={() => setActiveView('list')}
-          >
-            {intl.formatMessage(messages.listTab)}
-          </Button>
-          <Button
-            variant={activeView === 'audit-log' ? 'primary' : 'outline-primary'}
-            size="sm"
-            aria-pressed={activeView === 'audit-log'}
-            onClick={() => setActiveView('audit-log')}
-          >
-            {intl.formatMessage(messages.auditLogTab)}
-          </Button>
-        </ButtonGroup>
+          </ButtonGroup>
+        </Stack>
       </div>
 
       {activeView === 'audit-log' && (

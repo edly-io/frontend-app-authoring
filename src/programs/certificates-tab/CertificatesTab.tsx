@@ -212,7 +212,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
   const renderAwardsPanel = () => {
     const toggle = (
       <div className="d-flex justify-content-end mb-3">
-        <ButtonGroup size="sm">
+        <ButtonGroup size="sm" className="program-view-toggle">
           <Button
             variant={awardsView === 'list' ? 'primary' : 'outline-primary'}
             size="sm"

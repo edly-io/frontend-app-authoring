@@ -144,7 +144,7 @@ const FeedbackTab: React.FC<FeedbackTabProps> = ({ programId, isActive = true })
 
         <Tab eventKey="responses" title={intl.formatMessage(messages.responsesTab)}>
           <div className="d-flex justify-content-end mb-3 mt-3">
-            <ButtonGroup size="sm">
+            <ButtonGroup size="sm" className="program-view-toggle">
               <Button
                 variant={responsesAuditView === 'list' ? 'primary' : 'outline-primary'}
                 size="sm"
