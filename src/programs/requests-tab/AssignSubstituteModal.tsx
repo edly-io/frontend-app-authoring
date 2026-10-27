@@ -38,8 +38,6 @@ interface ApiCourse {
 
 interface ApiLeave {
   submitter_email?: string;
-  leave_start_date?: string;
-  leave_end_date?: string;
 }
 
 const formatInstructorLabel = (instructor: ApiInstructor) => {
@@ -53,13 +51,14 @@ const toCourseOption = (session: SubstituteSession): SelectOption | null => (
 
 /** Instructors on approved leave on the session's date can't cover it. */
 const useOnLeaveEmails = (programKey: string, sessionDate: string | null) => {
-  const { data: leaves } = useApprovedLeaves({ program_key: programKey });
+  // Asks only for leaves covering the date: the unfiltered list is capped and drops older leaves.
+  const { data: leaves } = useApprovedLeaves(
+    { program_key: programKey, leave_date: sessionDate ?? undefined },
+    Boolean(sessionDate),
+  );
   return useMemo(() => {
     if (!sessionDate) { return new Set<string>(); }
-    const onLeave = ((leaves ?? []) as ApiLeave[]).filter((leave) => (
-      leave.leave_start_date && leave.leave_end_date
-      && sessionDate >= leave.leave_start_date && sessionDate <= leave.leave_end_date
-    ));
+    const onLeave = (leaves ?? []) as ApiLeave[];
     return new Set(onLeave.map((leave) => leave.submitter_email).filter(Boolean) as string[]);
   }, [leaves, sessionDate]);
 };
