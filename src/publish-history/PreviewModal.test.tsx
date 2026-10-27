@@ -5,6 +5,7 @@ import { initializeMocks, render, screen } from '@src/testUtils';
 import PreviewModal from './PreviewModal';
 import { COURSE_ID, node, V2, V3 } from './testHelpers';
 import type { Age, DiffNodeData, DiffSide } from './types';
+import messages from './messages';
 
 const OLDER: DiffSide = { id: V2, kind: 'version', at: '2026-01-02T12:00:00Z', by: { id: 7, username: 'writer' } };
 const NEWER: DiffSide = { id: V3, kind: 'version', at: '2026-01-03T12:00:00Z', by: { id: 8, username: 'editor' } };
@@ -98,31 +99,31 @@ describe('<PreviewModal />', () => {
 
   it('labels each column Older or Newer', () => {
     renderModal();
-    expect(screen.getByText('Older')).toBeInTheDocument();
-    expect(screen.getByText('Newer')).toBeInTheDocument();
+    expect(screen.getByText(messages.ageOlder.defaultMessage)).toBeInTheDocument();
+    expect(screen.getByText(messages.ageNewer.defaultMessage)).toBeInTheDocument();
   });
 
   it('shows a spinner until a frame has loaded', () => {
     renderModal();
-    expect(screen.getAllByText('Loading the preview')).toHaveLength(2);
+    expect(screen.getAllByText(messages.previewLoading.defaultMessage)).toHaveLength(2);
     fireEvent.load(frame('older'));
-    expect(screen.getAllByText('Loading the preview')).toHaveLength(1);
+    expect(screen.getAllByText(messages.previewLoading.defaultMessage)).toHaveLength(1);
     fireEvent.load(frame('newer'));
-    expect(screen.queryByText('Loading the preview')).not.toBeInTheDocument();
+    expect(screen.queryByText(messages.previewLoading.defaultMessage)).not.toBeInTheDocument();
   });
 
   it('shows no iframe for the older side of an added component', () => {
     renderModal({ block: node({ change: 'ADDED' }) });
     expect(screen.queryByTitle('Intro text, older version')).not.toBeInTheDocument();
     expect(frames()).toHaveLength(1);
-    expect(screen.getByText('Not in this version')).toBeInTheDocument();
+    expect(screen.getByText(messages.previewNotInVersion.defaultMessage)).toBeInTheDocument();
   });
 
   it('shows no iframe for the newer side of a removed component', () => {
     renderModal({ block: node({ change: 'REMOVED' }) });
     expect(screen.queryByTitle('Intro text, newer version')).not.toBeInTheDocument();
     expect(frame('older')).toBeInTheDocument();
-    expect(screen.getByText('Not in this version')).toBeInTheDocument();
+    expect(screen.getByText(messages.previewNotInVersion.defaultMessage)).toBeInTheDocument();
   });
 
   it('keeps the placeholder on the right side when the columns are swapped', () => {
@@ -131,21 +132,21 @@ describe('<PreviewModal />', () => {
     expect(screen.queryByTitle('Intro text, older version')).not.toBeInTheDocument();
   });
 
-  it('says the preview is read-only and shows today\'s files and code', () => {
+  it('shows the note that renders use current data and code', () => {
     renderModal();
-    expect(screen.getByText(/Read-only\. Files and XBlock code are today's/)).toBeInTheDocument();
+    expect(screen.getByText(messages.previewNote.defaultMessage)).toBeInTheDocument();
   });
 
   it('closes from the footer Close button', async () => {
     const onClose = renderModal();
-    const buttons = screen.getAllByRole('button', { name: 'Close' });
+    const buttons = screen.getAllByRole('button', { name: messages.previewClose.defaultMessage });
     await userEvent.click(buttons[buttons.length - 1]);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('closes from the header Close button', async () => {
     const onClose = renderModal();
-    await userEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
+    await userEvent.click(screen.getAllByRole('button', { name: messages.previewClose.defaultMessage })[0]);
     expect(onClose).toHaveBeenCalled();
   });
 

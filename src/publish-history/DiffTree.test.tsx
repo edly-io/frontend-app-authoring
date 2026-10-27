@@ -11,6 +11,7 @@ import {
 import * as blockTypeUtils from '@src/generic/block-type-utils';
 import DiffTree, { DiffTreeRoot } from './DiffTree';
 import { field, node } from './testHelpers';
+import messages from './messages';
 
 /** The editor line ("Changed By writer"), whose username (and "≈") are in <strong> elements. */
 const editorLine = (text: string) =>
@@ -40,7 +41,7 @@ describe('<DiffTree />', () => {
     render(<DiffTree nodes={[node({ change: null, displayName: 'Week 1', blockType: 'chapter' })]} />);
     expect(screen.getByText('Week 1')).toBeInTheDocument();
     expect(screen.queryByText(/ By /)).not.toBeInTheDocument();
-    expect(screen.queryByText('Changed')).not.toBeInTheDocument();
+    expect(screen.queryByText(messages.changeChanged.defaultMessage)).not.toBeInTheDocument();
   });
 
   it.each(
@@ -116,8 +117,8 @@ describe('<DiffTree />', () => {
         })]}
       />,
     );
-    expect(screen.getByText('Under another parent')).toBeInTheDocument();
-    expect(screen.getByText('Moved here from another parent')).toBeInTheDocument();
+    expect(screen.getByText(messages.moveParentOld.defaultMessage)).toBeInTheDocument();
+    expect(screen.getByText(messages.moveParentNew.defaultMessage)).toBeInTheDocument();
   });
 
   it('nests children in a list under their parent', () => {
@@ -139,14 +140,14 @@ describe('<DiffTree />', () => {
   it('shows settings as before and after values', () => {
     render(<DiffTree nodes={[node({ fields: [field()] })]} />);
     expect(screen.getAllByText('display_name')).toHaveLength(2);
-    expect(screen.getAllByText('Setting')).toHaveLength(2);
+    expect(screen.getAllByText(messages.fieldScopeSettings.defaultMessage)).toHaveLength(2);
     expect(screen.getByText('Old name')).toBeInTheDocument();
     expect(screen.getByText('New name')).toBeInTheDocument();
   });
 
   it('shows non-string values as JSON and unset values as (empty)', () => {
     render(<DiffTree nodes={[node({ fields: [field({ old: null, new: { a: [1] } })] })]} />);
-    expect(screen.getByText('(empty)')).toBeInTheDocument();
+    expect(screen.getByText(messages.fieldEmpty.defaultMessage)).toBeInTheDocument();
     expect(screen.getByText(/"a": \[/)).toBeInTheDocument();
   });
 
@@ -220,19 +221,19 @@ describe('<DiffTree />', () => {
         })]}
       />,
     );
-    expect(screen.getAllByText('Too large to compare. Values are cut short.')).toHaveLength(2);
+    expect(screen.getAllByText(messages.tooLargeSize.defaultMessage)).toHaveLength(2);
     expect(screen.queryByRole('group', { name: /^Changes in/ })).not.toBeInTheDocument();
   });
 
   it('shows cut values together with the too-large note', () => {
     render(<DiffTree nodes={[node({ fields: [field({ old: 'abc', new: 'abd', tooLarge: true })] })]} />);
-    expect(screen.getAllByText('Too large to compare. Values are cut short.')).toHaveLength(2);
+    expect(screen.getAllByText(messages.tooLargeSize.defaultMessage)).toHaveLength(2);
     expect(screen.getByText('abc')).toBeInTheDocument();
   });
 
   it('gives the list the label it is passed', () => {
     render(<DiffTree nodes={[node()]} label="Changed blocks" />);
-    expect(screen.getByRole('list', { name: 'Changed blocks' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: messages.treeLabel.defaultMessage })).toBeInTheDocument();
   });
 
   describe('Preview button', () => {
@@ -398,8 +399,8 @@ describe('<DiffTree />', () => {
       expect(left.compareDocumentPosition(right)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
       expect(left).toHaveTextContent('Selected · Older');
       expect(right).toHaveTextContent('Compare With · Newer');
-      expect(left).not.toHaveTextContent('Changed');
-      expect(right).not.toHaveTextContent('Changed');
+      expect(left).not.toHaveTextContent(messages.changeChanged.defaultMessage);
+      expect(right).not.toHaveTextContent(messages.changeChanged.defaultMessage);
     });
 
     it.each(
@@ -418,16 +419,16 @@ describe('<DiffTree />', () => {
 
     it('shows the placeholder on the older side of an added block, with the content on the newer side', () => {
       render(<DiffTreeRoot nodes={[node({ change: 'ADDED', fields: [field()] })]} columns={[...both]} />);
-      expect(cardOf('Intro text', 'older')).toHaveTextContent('Not in this version');
+      expect(cardOf('Intro text', 'older')).toHaveTextContent(messages.blockNotInVersion.defaultMessage);
       expect(cardOf('Intro text', 'newer')).toHaveTextContent('Compare With · Newer');
       expect(cardOf('Intro text', 'newer')).toHaveTextContent('New name');
     });
 
     it('shows the placeholder on the newer side of a removed block, also when the columns are swapped', () => {
       render(<DiffTreeRoot nodes={[node({ change: 'REMOVED', fields: [field()] })]} columns={['newer', 'older']} />);
-      expect(cardOf('Intro text', 'newer')).toHaveTextContent('Not in this version');
+      expect(cardOf('Intro text', 'newer')).toHaveTextContent(messages.blockNotInVersion.defaultMessage);
       expect(cardOf('Intro text', 'older')).toHaveTextContent('Compare With · Older');
-      expect(screen.getAllByText('Not in this version')).toHaveLength(1);
+      expect(screen.getAllByText(messages.blockNotInVersion.defaultMessage)).toHaveLength(1);
     });
 
     it('marks the older value red only in the older card and the newer value green only in the newer card', () => {
@@ -652,7 +653,7 @@ describe('<DiffTree />', () => {
         expect(newer).toHaveTextContent('Position 1');
         expect(older.querySelector('.publish-history-card-header')).toHaveTextContent(/^Selected · Older$/);
         expect(newer.querySelector('.publish-history-card-header')).toHaveTextContent(/^Compare With · Newer$/);
-        expect(screen.getAllByText('Moved')).toHaveLength(1);
+        expect(screen.getAllByText(messages.changeMoved.defaultMessage)).toHaveLength(1);
       });
 
       it('renders a settings change on a section as side-labelled cards with red and green values', () => {
@@ -674,7 +675,7 @@ describe('<DiffTree />', () => {
             columns={[...both]}
           />,
         );
-        expect(screen.getByRole('heading', { name: /Week 2/ })).toHaveTextContent('Added');
+        expect(screen.getByRole('heading', { name: /Week 2/ })).toHaveTextContent(messages.changeAdded.defaultMessage);
         expect(screen.queryAllByRole('group')).toHaveLength(0);
       });
     });

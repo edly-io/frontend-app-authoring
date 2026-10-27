@@ -3,6 +3,7 @@ import { initializeMocks, render, screen, within } from '@src/testUtils';
 import BlockPair from './BlockPair';
 import type { Slot } from './BlockPair';
 import type { Age } from './types';
+import messages from './messages';
 
 const slots: Slot[] = [
   { key: 'a', render: (side: Age) => <span>{`first ${side}`}</span> },
@@ -67,18 +68,20 @@ describe('<BlockPair />', () => {
     );
     const older = screen.getByRole('group', { name: 'Block, older version' });
     const newer = screen.getByRole('group', { name: 'Block, newer version' });
-    expect(older).toHaveTextContent('Not in this version');
+    expect(older).toHaveTextContent(messages.blockNotInVersion.defaultMessage);
     expect(older).not.toHaveTextContent('first');
     expect(older).not.toHaveTextContent('Head');
-    expect(newer).not.toHaveTextContent('Not in this version');
+    expect(newer).not.toHaveTextContent(messages.blockNotInVersion.defaultMessage);
     expect(newer).toHaveTextContent('first newer');
     expect(cards()[0]).toBe(left === 'older' ? older : newer);
   });
 
   it('shows the placeholder on the newer side for a removed block', () => {
     render(<BlockPair columns={['older', 'newer']} slots={slots} absent="newer" label={label} />);
-    expect(screen.getByRole('group', { name: 'Block, newer version' })).toHaveTextContent('Not in this version');
-    expect(screen.getAllByText('Not in this version')).toHaveLength(1);
+    expect(screen.getByRole('group', { name: 'Block, newer version' })).toHaveTextContent(
+      messages.blockNotInVersion.defaultMessage,
+    );
+    expect(screen.getAllByText(messages.blockNotInVersion.defaultMessage)).toHaveLength(1);
   });
 
   it('renders at least one grid row when there are no slots and no header', () => {

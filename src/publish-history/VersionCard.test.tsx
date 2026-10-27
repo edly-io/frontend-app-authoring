@@ -14,6 +14,7 @@ import {
   V3,
 } from './testHelpers';
 import type { DiffSide } from './types';
+import messages from './messages';
 
 const OLDER: DiffSide = { id: V2, kind: 'version', at: '2026-01-02T12:00:00Z', by: { id: 7, username: 'writer' } };
 const NEWER: DiffSide = { id: V3, kind: 'version', at: '2026-01-03T12:00:00Z', by: { id: 8, username: 'editor' } };
@@ -82,14 +83,14 @@ describe('version ids and side lines', () => {
 
     it('shows Unknown for a missing user', () => {
       const { container } = render(<SideLine side={{ ...OLDER, by: null }} />);
-      expect(within(container).getByText('Unknown').tagName).toBe('STRONG');
+      expect(within(container).getByText(messages.unknownUser.defaultMessage).tagName).toBe('STRONG');
     });
 
     it('adds a Current badge to the published side and Current Draft to the draft side', () => {
       const { rerender } = render(<SideLine side={{ ...NEWER, kind: 'published' }} />);
-      expect(screen.getByText('Current')).toBeInTheDocument();
+      expect(screen.getByText(messages.currentBadge.defaultMessage)).toBeInTheDocument();
       rerender(<SideLine side={{ ...NEWER, kind: 'draft' }} />);
-      expect(screen.getByText('Current Draft')).toBeInTheDocument();
+      expect(screen.getByText(messages.optionDraft.defaultMessage)).toBeInTheDocument();
     });
 
     it('has no badge on an ordinary version', () => {

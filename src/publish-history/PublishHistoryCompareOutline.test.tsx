@@ -18,6 +18,7 @@ import {
   V3,
   version,
 } from './testHelpers';
+import messages from './messages';
 
 jest.mock('./data/api');
 jest.mock('@src/CourseAuthoringContext', () => ({
@@ -53,7 +54,10 @@ describe('<PublishHistoryComparePage /> outline follow-up', () => {
     initializeMocks();
     mockObserver();
     getVersions.mockResolvedValue({
-      results: [version(V3, { isCurrent: true }), version(V2, { publishedBy: { id: 9, username: 'older' } })],
+      results: [
+        version(V3, { isCurrent: true }),
+        version(V2, { publishedBy: { id: 9, username: 'older' } }),
+      ],
       nextAfter: null,
       historyEnds: null,
     });
@@ -64,10 +68,10 @@ describe('<PublishHistoryComparePage /> outline follow-up', () => {
     it('shows "date by user · short id" under the heading, with the full id in a title and no Published Version', async () => {
       renderPage(`?version=${V3}&against=previous`);
       await screen.findByText('1 changed block');
-      const selected = screen.getByRole('region', { name: 'Selected Version' });
+      const selected = screen.getByRole('region', { name: messages.cardSelected.defaultMessage });
       expect(selected).toHaveTextContent(/by editor · 3333333/);
       expect(within(selected).getByTitle(V3)).toBeInTheDocument();
-      const target = screen.getByRole('region', { name: 'Compare With' });
+      const target = screen.getByRole('region', { name: messages.cardTarget.defaultMessage });
       expect(target).toHaveTextContent(/by writer · 2222222/);
       expect(within(target).getByTitle(V2)).toBeInTheDocument();
       expect(selected).not.toHaveTextContent('Published Version');
@@ -126,7 +130,7 @@ describe('<PublishHistoryComparePage /> outline follow-up', () => {
       setInView(false);
       const bar = screen.getByTestId('publish-history-sticky-bar');
       expect(bar).toHaveTextContent('Selected Version · ');
-      expect(bar).not.toHaveTextContent('Compare With');
+      expect(bar).not.toHaveTextContent(messages.cardTarget.defaultMessage);
     });
 
     it('stops observing when the page unmounts', async () => {
@@ -149,7 +153,7 @@ describe('<PublishHistoryComparePage /> outline follow-up', () => {
       await listLoaded();
       expect(loadMore()).not.toBeInTheDocument();
       await userEvent.click(toggle());
-      const button = await screen.findByRole('button', { name: 'Load More Versions' });
+      const button = await screen.findByRole('button', { name: messages.loadMoreVersions.defaultMessage });
       const menu = button.closest('.dropdown-menu') as HTMLElement;
       expect(menu).toHaveClass('show');
       expect(within(menu).getAllByRole('button').at(-1)).toBe(button);
@@ -168,7 +172,7 @@ describe('<PublishHistoryComparePage /> outline follow-up', () => {
       renderPage();
       await listLoaded();
       await userEvent.click(toggle());
-      await userEvent.click(await screen.findByRole('button', { name: 'Load More Versions' }));
+      await userEvent.click(await screen.findByRole('button', { name: messages.loadMoreVersions.defaultMessage }));
       const added = await screen.findByRole('button', { name: /by oldest$/ });
       expect(getVersions).toHaveBeenLastCalledWith(COURSE_ID, V3);
       expect(getVersions).toHaveBeenCalledTimes(2);
@@ -183,9 +187,9 @@ describe('<PublishHistoryComparePage /> outline follow-up', () => {
       renderPage();
       await listLoaded();
       await userEvent.click(toggle());
-      await userEvent.click(await screen.findByRole('button', { name: 'Load More Versions' }));
+      await userEvent.click(await screen.findByRole('button', { name: messages.loadMoreVersions.defaultMessage }));
       await screen.findByRole('button', { name: /by oldest$/ });
-      expect(toggle()).toHaveTextContent('Previous Version');
+      expect(toggle()).toHaveTextContent(messages.optionPrevious.defaultMessage);
     });
 
     it('shows a spinner while loading and ignores a second click', async () => {
@@ -199,16 +203,16 @@ describe('<PublishHistoryComparePage /> outline follow-up', () => {
       renderPage();
       await listLoaded();
       await userEvent.click(toggle());
-      const button = await screen.findByRole('button', { name: 'Load More Versions' });
+      const button = await screen.findByRole('button', { name: messages.loadMoreVersions.defaultMessage });
       await userEvent.click(button);
-      expect(await within(button).findByText('Loading More Versions')).toBeInTheDocument();
+      expect(await within(button).findByText(messages.loadingMoreVersions.defaultMessage)).toBeInTheDocument();
       expect(button).toHaveAttribute('aria-busy', 'true');
       await userEvent.click(button);
       await userEvent.click(button);
       expect(getVersions).toHaveBeenCalledTimes(2);
       await act(async () => resolve({ results: [oldest], nextAfter: null, historyEnds: null }));
       await screen.findByRole('button', { name: /by oldest$/ });
-      expect(screen.queryByText('Loading More Versions')).not.toBeInTheDocument();
+      expect(screen.queryByText(messages.loadingMoreVersions.defaultMessage)).not.toBeInTheDocument();
     });
 
     it('can be reached with the arrow keys and activated with Enter', async () => {
@@ -218,7 +222,7 @@ describe('<PublishHistoryComparePage /> outline follow-up', () => {
       await listLoaded();
       toggle().focus();
       await userEvent.keyboard('{Enter}');
-      const button = await screen.findByRole('button', { name: 'Load More Versions' });
+      const button = await screen.findByRole('button', { name: messages.loadMoreVersions.defaultMessage });
       await waitFor(() => expect(button.closest('.dropdown-menu')).toHaveClass('show'));
       const items = within(button.closest('.dropdown-menu') as HTMLElement).getAllByRole('button');
       for (let i = 0; i < items.length && document.activeElement !== button; i += 1) {
@@ -236,7 +240,7 @@ describe('<PublishHistoryComparePage /> outline follow-up', () => {
       renderPage();
       await listLoaded();
       await userEvent.click(toggle());
-      const button = await screen.findByRole('button', { name: 'Load More Versions' });
+      const button = await screen.findByRole('button', { name: messages.loadMoreVersions.defaultMessage });
       button.focus();
       await userEvent.keyboard('{Enter}');
       const added = await screen.findByRole('button', { name: /by oldest$/ });
@@ -252,12 +256,14 @@ describe('<PublishHistoryComparePage /> outline follow-up', () => {
       renderPage();
       await listLoaded();
       await userEvent.click(toggle());
-      const button = await screen.findByRole('button', { name: 'Load More Versions' });
+      const button = await screen.findByRole('button', { name: messages.loadMoreVersions.defaultMessage });
       button.focus();
       await userEvent.keyboard('{Enter}');
       await waitFor(() => expect(getVersions).toHaveBeenCalledTimes(2));
-      await waitFor(() => expect(screen.queryByText('Loading More Versions')).not.toBeInTheDocument());
-      expect(screen.getByRole('button', { name: 'Load More Versions' })).toHaveFocus();
+      await waitFor(() =>
+        expect(screen.queryByText(messages.loadingMoreVersions.defaultMessage)).not.toBeInTheDocument()
+      );
+      expect(screen.getByRole('button', { name: messages.loadMoreVersions.defaultMessage })).toHaveFocus();
     });
 
     it('keeps the item for another try when loading fails', async () => {
@@ -266,10 +272,12 @@ describe('<PublishHistoryComparePage /> outline follow-up', () => {
       renderPage();
       await listLoaded();
       await userEvent.click(toggle());
-      await userEvent.click(await screen.findByRole('button', { name: 'Load More Versions' }));
+      await userEvent.click(await screen.findByRole('button', { name: messages.loadMoreVersions.defaultMessage }));
       await waitFor(() => expect(getVersions).toHaveBeenCalledTimes(2));
-      await waitFor(() => expect(screen.queryByText('Loading More Versions')).not.toBeInTheDocument());
-      expect(await screen.findByRole('button', { name: 'Load More Versions' })).toBeInTheDocument();
+      await waitFor(() =>
+        expect(screen.queryByText(messages.loadingMoreVersions.defaultMessage)).not.toBeInTheDocument()
+      );
+      expect(await screen.findByRole('button', { name: messages.loadMoreVersions.defaultMessage })).toBeInTheDocument();
     });
   });
 });

@@ -3,6 +3,7 @@ import { initializeMocks, render, screen } from '@src/testUtils';
 import BlockPair from './BlockPair';
 import { jsonDiffSlots } from './JsonDiff';
 import type { Age, JsonChange, JsonDiffData } from './types';
+import messages from './messages';
 
 const change = (overrides: Partial<JsonChange> = {}): JsonChange => ({
   path: ['color'],
@@ -72,7 +73,7 @@ describe('jsonDiffSlots', () => {
       const [older, newer] = cells(container);
       expect(older.querySelector('del')).toBeNull();
       expect(older.querySelector('ins')).toBeNull();
-      expect(older).toHaveTextContent('Not in this version');
+      expect(older).toHaveTextContent(messages.jsonAbsent.defaultMessage);
       expect(newer.querySelector('ins')).toHaveTextContent('blue');
     });
 
@@ -82,7 +83,7 @@ describe('jsonDiffSlots', () => {
       expect(older.querySelector('del')).toHaveTextContent('red');
       expect(newer.querySelector('del')).toBeNull();
       expect(newer.querySelector('ins')).toBeNull();
-      expect(newer).toHaveTextContent('Not in this version');
+      expect(newer).toHaveTextContent(messages.jsonAbsent.defaultMessage);
     });
 
     it('never puts a red mark in the newer column or a green mark in the older one', () => {
@@ -182,27 +183,27 @@ describe('jsonDiffSlots', () => {
 
     it('says when more entries changed than are listed', () => {
       renderDiff(diff({ truncated: true }));
-      expect(screen.getAllByText('More changed entries are not listed.')).toHaveLength(2);
+      expect(screen.getAllByText(messages.jsonTruncated.defaultMessage)).toHaveLength(2);
     });
 
     it('does not say so when the list is complete', () => {
       renderDiff(diff());
-      expect(screen.queryByText('More changed entries are not listed.')).not.toBeInTheDocument();
+      expect(screen.queryByText(messages.jsonTruncated.defaultMessage)).not.toBeInTheDocument();
     });
 
     it('says a cut value is cut short', () => {
       renderDiff(diff({ changes: [change({ tooLarge: true })] }));
-      expect(screen.getAllByText('Cut short').length).toBeGreaterThan(0);
+      expect(screen.getAllByText(messages.jsonValueCut.defaultMessage).length).toBeGreaterThan(0);
     });
 
     it('does not say so for a value shown in full', () => {
       renderDiff(diff());
-      expect(screen.queryByText('Cut short')).not.toBeInTheDocument();
+      expect(screen.queryByText(messages.jsonValueCut.defaultMessage)).not.toBeInTheDocument();
     });
 
     it('shows (empty) for an unset value and JSON for a non-text one', () => {
       const { container } = renderDiff(diff({ changes: [change({ old: null, new: { a: 1 } })] }));
-      expect(screen.getByText('(empty)')).toBeInTheDocument();
+      expect(screen.getByText(messages.fieldEmpty.defaultMessage)).toBeInTheDocument();
       expect(container.querySelector('ins')).toHaveTextContent('"a": 1');
     });
   });

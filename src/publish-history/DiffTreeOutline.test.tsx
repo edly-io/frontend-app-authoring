@@ -7,6 +7,7 @@ import {
 
 import { DiffTreeRoot } from './DiffTree';
 import { field, node } from './testHelpers';
+import messages from './messages';
 
 const key = (type: string, id: string) => `block-v1:Uber+101+2026+type@${type}+block@${id}`;
 const item = (usageKey: string) => screen.getByTestId(`diff-node-${usageKey}`);
@@ -141,7 +142,7 @@ describe('<DiffTree /> xblock header bar', () => {
     const header = screen.getByRole('group', { name: 'Intro text' });
     expect(header.querySelector('svg')).not.toBeNull();
     expect(within(header).getByText('Intro text')).toBeInTheDocument();
-    expect(within(header).getByText('Changed')).toBeInTheDocument();
+    expect(within(header).getByText(messages.changeChanged.defaultMessage)).toBeInTheDocument();
     expect(within(header).getByText('Changed By', { exact: false })).toBeInTheDocument();
     expect(within(header).getByText('writer').tagName).toBe('STRONG');
     // The editor line may wrap in a narrow (deeply inset) card instead of overflowing it.
@@ -163,7 +164,7 @@ describe('<DiffTree /> xblock header bar', () => {
   it('shows the name and the badge only once in the block, not again on the side cards', () => {
     renderBlock();
     expect(screen.getAllByText('Intro text')).toHaveLength(1);
-    expect(screen.getAllByText('Changed')).toHaveLength(1);
+    expect(screen.getAllByText(messages.changeChanged.defaultMessage)).toHaveLength(1);
   });
 
   it('keeps the block\'s header bar out of container cards', () => {
@@ -212,8 +213,8 @@ describe('<DiffTree /> xblock header bar', () => {
     it('keeps the label on the present side of an added block, the absent side showing only the placeholder', () => {
       renderBlock({ change: 'ADDED' }, ['newer', 'older']);
       expect(left('newer')).toHaveTextContent('Selected · Newer');
-      expect(left('older')).toHaveTextContent('Not in this version');
-      expect(left('newer')).not.toHaveTextContent('Not in this version');
+      expect(left('older')).toHaveTextContent(messages.blockNotInVersion.defaultMessage);
+      expect(left('newer')).not.toHaveTextContent(messages.blockNotInVersion.defaultMessage);
     });
   });
 

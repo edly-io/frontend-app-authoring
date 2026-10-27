@@ -3,6 +3,7 @@ import { initializeMocks, render, screen } from '@src/testUtils';
 
 import CompareSummary from './CompareSummary';
 import { diffResult, node } from './testHelpers';
+import messages from './messages';
 
 const renderSummary = (overrides = {}, handlers = {}) =>
   render(
@@ -42,8 +43,8 @@ describe('<CompareSummary />', () => {
     const onExpandAll = jest.fn();
     const onCollapseAll = jest.fn();
     renderSummary({}, { onExpandAll, onCollapseAll });
-    await userEvent.click(screen.getByRole('button', { name: 'Expand All' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Collapse All' }));
+    await userEvent.click(screen.getByRole('button', { name: messages.expandAll.defaultMessage }));
+    await userEvent.click(screen.getByRole('button', { name: messages.collapseAll.defaultMessage }));
     expect(onExpandAll).toHaveBeenCalledTimes(1);
     expect(onCollapseAll).toHaveBeenCalledTimes(1);
   });

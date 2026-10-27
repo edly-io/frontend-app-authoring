@@ -17,6 +17,7 @@ import {
   V3,
   version,
 } from './testHelpers';
+import messages from './messages';
 
 jest.mock('./data/api');
 jest.mock('@src/CourseAuthoringContext', () => ({
@@ -40,7 +41,7 @@ describe('<PublishHistoryPage />', () => {
     getVersions.mockReturnValue(new Promise(() => {}));
     render(<PublishHistoryPage />);
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
-    expect(screen.queryByText('This course has not been published yet.')).not.toBeInTheDocument();
+    expect(screen.queryByText(messages.empty.defaultMessage)).not.toBeInTheDocument();
   });
 
   it('lists the versions with publisher and short version id', async () => {
@@ -67,15 +68,15 @@ describe('<PublishHistoryPage />', () => {
     getVersions.mockResolvedValue(page([version(V3, { isCurrent: true }), version(V2)]));
     render(<PublishHistoryPage />);
     await screen.findByRole('table');
-    expect(screen.getAllByText('Current')).toHaveLength(1);
-    expect(within(screen.getAllByRole('row')[1]).getByText('Current')).toBeInTheDocument();
+    expect(screen.getAllByText(messages.currentBadge.defaultMessage)).toHaveLength(1);
+    expect(within(screen.getAllByRole('row')[1]).getByText(messages.currentBadge.defaultMessage)).toBeInTheDocument();
   });
 
   it('shows Unknown for an unknown publisher and time', async () => {
     getVersions.mockResolvedValue(page([version(V3, { publishedBy: null, publishedAt: null })]));
     render(<PublishHistoryPage />);
     await screen.findByRole('table');
-    expect(screen.getByText('Unknown')).toBeInTheDocument();
+    expect(screen.getByText(messages.unknownUser.defaultMessage)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Compare Unknown time' })).toBeInTheDocument();
   });
 
@@ -92,21 +93,21 @@ describe('<PublishHistoryPage />', () => {
   it('links back to the course outline', async () => {
     getVersions.mockResolvedValue(page([version(V3)]));
     render(<PublishHistoryPage />);
-    expect(await screen.findByRole('link', { name: 'Back to Course Outline' }))
+    expect(await screen.findByRole('link', { name: messages.backToOutline.defaultMessage }))
       .toHaveAttribute('href', `/course/${COURSE_ID}`);
   });
 
   it('shows the empty state', async () => {
     getVersions.mockResolvedValue(page([]));
     render(<PublishHistoryPage />);
-    expect(await screen.findByText('This course has not been published yet.')).toBeInTheDocument();
+    expect(await screen.findByText(messages.empty.defaultMessage)).toBeInTheDocument();
   });
 
   it('has no Load older button on the last page', async () => {
     getVersions.mockResolvedValue(page([version(V3)]));
     render(<PublishHistoryPage />);
     await screen.findByRole('table');
-    expect(screen.queryByRole('button', { name: 'Load Older Versions' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: messages.loadOlder.defaultMessage })).not.toBeInTheDocument();
   });
 
   it('loads the next page with the cursor and keeps the earlier rows', async () => {
@@ -114,11 +115,11 @@ describe('<PublishHistoryPage />', () => {
       .mockResolvedValueOnce(page([version(V3, { publishedBy: { id: 1, username: 'first' } })], V3))
       .mockResolvedValueOnce(page([version(V2, { publishedBy: { id: 2, username: 'second' } })]));
     render(<PublishHistoryPage />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Load Older Versions' }));
+    await userEvent.click(await screen.findByRole('button', { name: messages.loadOlder.defaultMessage }));
     expect(await screen.findByText('second')).toBeInTheDocument();
     expect(screen.getByText('first')).toBeInTheDocument();
     expect(getVersions).toHaveBeenLastCalledWith(COURSE_ID, V3);
-    expect(screen.queryByRole('button', { name: 'Load Older Versions' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: messages.loadOlder.defaultMessage })).not.toBeInTheDocument();
   });
 
   it('says the history ends at course creation', async () => {
@@ -150,7 +151,7 @@ describe('<PublishHistoryPage />', () => {
   it('shows the generic error for another failure', async () => {
     getVersions.mockRejectedValue(httpError(400));
     render(<PublishHistoryPage />);
-    expect(await screen.findByText('The publish history could not be loaded. Try again later.')).toBeInTheDocument();
+    expect(await screen.findByText(messages.loadError.defaultMessage)).toBeInTheDocument();
   });
 
   it('sets the document title', async () => {
@@ -162,7 +163,8 @@ describe('<PublishHistoryPage />', () => {
   it('titles the date column "Published On"', async () => {
     getVersions.mockResolvedValue(page([version(V3)]));
     render(<PublishHistoryPage />);
-    expect(await screen.findByRole('columnheader', { name: 'Published On' })).toBeInTheDocument();
+    expect(await screen.findByRole('columnheader', { name: messages.columnPublishedAt.defaultMessage }))
+      .toBeInTheDocument();
     expect(screen.queryByRole('columnheader', { name: 'Published' })).not.toBeInTheDocument();
   });
 
@@ -170,20 +172,20 @@ describe('<PublishHistoryPage />', () => {
     getVersions.mockResolvedValue(page([version(V3)]));
     render(<PublishHistoryPage />);
     await screen.findByRole('table');
-    expect(screen.queryByText('Content')).not.toBeInTheDocument();
+    expect(screen.queryByText(messages.fieldScopeContent.defaultMessage)).not.toBeInTheDocument();
   });
 
   it('shows the title as a heading', async () => {
     getVersions.mockResolvedValue(page([version(V3)]));
     render(<PublishHistoryPage />);
-    expect(await screen.findByRole('heading', { name: 'Publish History' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: messages.pageTitle.defaultMessage })).toBeInTheDocument();
   });
 
   it('shows the back link before the title, with an arrow', async () => {
     getVersions.mockResolvedValue(page([version(V3)]));
     render(<PublishHistoryPage />);
-    const link = await screen.findByRole('link', { name: 'Back to Course Outline' });
-    const title = screen.getByRole('heading', { name: 'Publish History' });
+    const link = await screen.findByRole('link', { name: messages.backToOutline.defaultMessage });
+    const title = screen.getByRole('heading', { name: messages.pageTitle.defaultMessage });
     expect(link.compareDocumentPosition(title)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(link.querySelector('svg')).toBeInTheDocument();
   });

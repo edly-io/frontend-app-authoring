@@ -24,6 +24,7 @@ import {
   V3,
   version,
 } from './testHelpers';
+import messages from './messages';
 
 jest.mock('./data/api');
 jest.mock('@src/CourseAuthoringContext', () => ({
@@ -76,7 +77,10 @@ describe('<PublishHistoryComparePage />', () => {
   beforeEach(() => {
     initializeMocks();
     getVersions.mockResolvedValue({
-      results: [version(V3, { isCurrent: true }), version(V2, { publishedBy: { id: 9, username: 'older' } })],
+      results: [
+        version(V3, { isCurrent: true }),
+        version(V2, { publishedBy: { id: 9, username: 'older' } }),
+      ],
       nextAfter: null,
       historyEnds: null,
     });
@@ -86,7 +90,7 @@ describe('<PublishHistoryComparePage />', () => {
   describe('before comparing', () => {
     it('defaults to the previous version and fetches nothing until Compare is pressed', async () => {
       renderPage();
-      expect(toggle()).toHaveTextContent('Previous Version');
+      expect(toggle()).toHaveTextContent(messages.optionPrevious.defaultMessage);
       await waitFor(() => expect(getVersions).toHaveBeenCalled());
       expect(getDiff).not.toHaveBeenCalled();
     });
@@ -108,18 +112,18 @@ describe('<PublishHistoryComparePage />', () => {
     it('names the version being compared once the list is loaded', async () => {
       renderPage();
       await listLoaded();
-      expect(within(card('Selected Version')).getByText(V3.slice(0, 7))).toBeInTheDocument();
+      expect(within(card(messages.cardSelected.defaultMessage)).getByText(V3.slice(0, 7))).toBeInTheDocument();
     });
 
     it('links back to the publish history list', async () => {
       renderPage();
-      expect(await screen.findByRole('link', { name: 'Back to Publish History' }))
+      expect(await screen.findByRole('link', { name: messages.compareBack.defaultMessage }))
         .toHaveAttribute('href', `/course/${COURSE_ID}/publish_history`);
     });
 
     it('disables Compare when the URL has no version', async () => {
       renderPage('');
-      expect(screen.getByRole('button', { name: 'Compare' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: messages.compareButton.defaultMessage })).toBeDisabled();
       await waitFor(() => expect(getVersions).toHaveBeenCalled());
       expect(getDiff).not.toHaveBeenCalled();
     });
@@ -134,7 +138,7 @@ describe('<PublishHistoryComparePage />', () => {
   describe('Compare button', () => {
     it('fetches the comparison with the previous version and writes against to the URL', async () => {
       renderPage();
-      await userEvent.click(screen.getByRole('button', { name: 'Compare' }));
+      await userEvent.click(screen.getByRole('button', { name: messages.compareButton.defaultMessage }));
       await waitFor(() => expect(getDiff).toHaveBeenCalledWith(COURSE_ID, V3, 'previous'));
       expect(location()).toBe(`/compare?version=${V3}&against=previous`);
     });
@@ -142,9 +146,9 @@ describe('<PublishHistoryComparePage />', () => {
     it('compares with "Current Published Version"', async () => {
       renderPage();
       await userEvent.click(toggle());
-      await userEvent.click(await screen.findByRole('button', { name: 'Current Published Version' }));
+      await userEvent.click(await screen.findByRole('button', { name: messages.optionPublished.defaultMessage }));
       expect(getDiff).not.toHaveBeenCalled(); // choosing alone does not fetch
-      await userEvent.click(screen.getByRole('button', { name: 'Compare' }));
+      await userEvent.click(screen.getByRole('button', { name: messages.compareButton.defaultMessage }));
       await waitFor(() => expect(getDiff).toHaveBeenCalledWith(COURSE_ID, V3, 'published'));
       expect(location()).toBe(`/compare?version=${V3}&against=published`);
     });
@@ -154,7 +158,7 @@ describe('<PublishHistoryComparePage />', () => {
       await listLoaded();
       await userEvent.click(toggle());
       await userEvent.click(await screen.findByRole('button', { name: /by older$/ }));
-      await userEvent.click(screen.getByRole('button', { name: 'Compare' }));
+      await userEvent.click(screen.getByRole('button', { name: messages.compareButton.defaultMessage }));
       await waitFor(() => expect(getDiff).toHaveBeenCalledWith(COURSE_ID, V3, V2));
       expect(location()).toBe(`/compare?version=${V3}&against=${V2}`);
     });
@@ -164,7 +168,7 @@ describe('<PublishHistoryComparePage />', () => {
       await listLoaded();
       await userEvent.click(toggle());
       await userEvent.click(await screen.findByRole('button', { name: /by older$/ }));
-      await userEvent.click(screen.getByRole('button', { name: 'Compare' }));
+      await userEvent.click(screen.getByRole('button', { name: messages.compareButton.defaultMessage }));
       await waitFor(() => expect(location()).toBe(`/compare?version=${V3}&against=${V2}`));
     });
   });
@@ -174,7 +178,7 @@ describe('<PublishHistoryComparePage />', () => {
       renderPage(`?version=${V3}&against=published`);
       expect(await screen.findByText('1 changed block')).toBeInTheDocument();
       expect(getDiff).toHaveBeenCalledWith(COURSE_ID, V3, 'published');
-      expect(toggle()).toHaveTextContent('Current Published Version');
+      expect(toggle()).toHaveTextContent(messages.optionPublished.defaultMessage);
     });
 
     it('passes a version id as against', async () => {
@@ -193,11 +197,11 @@ describe('<PublishHistoryComparePage />', () => {
     it('names both sides, the selected version on the left', async () => {
       renderPage(`?version=${V3}&against=previous`);
       await screen.findByText('1 changed block');
-      const selected = within(card('Selected Version'));
-      expect(selected.getByText('Newer')).toBeInTheDocument();
+      const selected = within(card(messages.cardSelected.defaultMessage));
+      expect(selected.getByText(messages.ageNewer.defaultMessage)).toBeInTheDocument();
       expect(selected.getByText('editor', { selector: 'strong' })).toBeInTheDocument();
-      const target = within(card('Compare With'));
-      expect(target.getByText('Older')).toBeInTheDocument();
+      const target = within(card(messages.cardTarget.defaultMessage));
+      expect(target.getByText(messages.ageOlder.defaultMessage)).toBeInTheDocument();
       expect(target.getByText('writer', { selector: 'strong' })).toBeInTheDocument();
       expect(target.getByText(V2.slice(0, 7))).toBeInTheDocument();
     });
@@ -209,29 +213,31 @@ describe('<PublishHistoryComparePage />', () => {
       }));
       renderPage(`?version=${V3}&against=published`);
       await screen.findByText('1 changed block');
-      expect(within(card('Selected Version')).getByText('Current Draft')).toBeInTheDocument();
-      expect(within(card('Compare With')).getByText('Current')).toBeInTheDocument();
+      expect(within(card(messages.cardSelected.defaultMessage)).getByText(messages.optionDraft.defaultMessage))
+        .toBeInTheDocument();
+      expect(within(card(messages.cardTarget.defaultMessage)).getByText(messages.currentBadge.defaultMessage))
+        .toBeInTheDocument();
       expect(screen.queryByText(/Published Version$/, { selector: 'div' })).not.toBeInTheDocument();
-      expect(screen.getAllByText('Unknown', { selector: 'strong' })).toHaveLength(2);
+      expect(screen.getAllByText(messages.unknownUser.defaultMessage, { selector: 'strong' })).toHaveLength(2);
     });
 
     it('renders the diff tree', async () => {
       renderPage(`?version=${V3}&against=previous`);
-      expect(await screen.findByRole('list', { name: 'Changed blocks' })).toBeInTheDocument();
+      expect(await screen.findByRole('list', { name: messages.treeLabel.defaultMessage })).toBeInTheDocument();
       expect(screen.getByText('Intro text')).toBeInTheDocument();
     });
 
     it('says when both sides are the same version', async () => {
       getDiff.mockResolvedValue(diffResult({ identical: true, totalChanges: 0, tree: [] }));
       renderPage(`?version=${V3}&against=${V3}`);
-      expect(await screen.findByText('These are the same version, so nothing differs.')).toBeInTheDocument();
-      expect(screen.queryByRole('list', { name: 'Changed blocks' })).not.toBeInTheDocument();
+      expect(await screen.findByText(messages.identical.defaultMessage)).toBeInTheDocument();
+      expect(screen.queryByRole('list', { name: messages.treeLabel.defaultMessage })).not.toBeInTheDocument();
     });
 
     it('says when two versions have no differences', async () => {
       getDiff.mockResolvedValue(diffResult({ totalChanges: 0, tree: [] }));
       renderPage(`?version=${V3}&against=previous`);
-      expect(await screen.findByText('No differences in the course content or settings.')).toBeInTheDocument();
+      expect(await screen.findByText(messages.noChanges.defaultMessage)).toBeInTheDocument();
     });
 
     it('warns when the list is truncated, with the shown and total counts', async () => {
@@ -288,7 +294,7 @@ describe('<PublishHistoryComparePage />', () => {
 
     it('explains a version that is not in this course (404 version_not_found)', async () => {
       await failWith(httpError(404, { code: 'version_not_found' }));
-      expect(await screen.findByText('That version is not part of this course\'s history.')).toBeInTheDocument();
+      expect(await screen.findByText(messages.versionNotFound.defaultMessage)).toBeInTheDocument();
     });
 
     it('explains a pruned version (410)', async () => {
@@ -314,19 +320,19 @@ describe('<PublishHistoryComparePage />', () => {
 
     it('shows the generic message for another failure', async () => {
       await failWith(httpError(404));
-      expect(await screen.findByText('The comparison could not be loaded. Try again.')).toBeInTheDocument();
+      expect(await screen.findByText(messages.compareError.defaultMessage)).toBeInTheDocument();
     });
 
     it('shows no tree after an error', async () => {
       await failWith(httpError(404, { code: 'version_not_found' }));
       await screen.findByRole('alert');
-      expect(screen.queryByRole('list', { name: 'Changed blocks' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('list', { name: messages.treeLabel.defaultMessage })).not.toBeInTheDocument();
     });
 
     it('still lets the user pick another version after an error', async () => {
       await failWith(httpError(404, { code: 'version_not_found' }));
       await screen.findByRole('alert');
-      expect(screen.getByRole('button', { name: 'Compare' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: messages.compareButton.defaultMessage })).toBeEnabled();
     });
   });
 
@@ -342,17 +348,17 @@ describe('<PublishHistoryComparePage />', () => {
       renderPage();
       await listLoaded();
       await userEvent.click(toggle());
-      await userEvent.click(await screen.findByRole('button', { name: 'Load More Versions' }));
+      await userEvent.click(await screen.findByRole('button', { name: messages.loadMoreVersions.defaultMessage }));
       await waitFor(() => expect(getVersions).toHaveBeenLastCalledWith(COURSE_ID, V3));
       expect(await screen.findByRole('button', { name: /by oldest$/ })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Load More Versions' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: messages.loadMoreVersions.defaultMessage })).not.toBeInTheDocument();
     });
 
     it('has no Load More Versions item when all versions are loaded', async () => {
       renderPage();
       await listLoaded();
       await userEvent.click(toggle());
-      expect(screen.queryByRole('button', { name: 'Load More Versions' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: messages.loadMoreVersions.defaultMessage })).not.toBeInTheDocument();
     });
 
     it('still compares when the version list fails to load, and says why the options are few', async () => {
@@ -366,9 +372,9 @@ describe('<PublishHistoryComparePage />', () => {
       getVersions.mockRejectedValue(httpError(403));
       renderPage(`?version=${V3}&against=previous`);
       expect(await screen.findByText(/not available for this course or your account/)).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Compare' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: messages.compareButton.defaultMessage })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /^Compare With/ })).not.toBeInTheDocument();
-      expect(screen.queryByRole('list', { name: 'Changed blocks' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('list', { name: messages.treeLabel.defaultMessage })).not.toBeInTheDocument();
       expect(screen.queryByText(/The list of versions could not be loaded/)).not.toBeInTheDocument();
     });
   });
@@ -376,28 +382,38 @@ describe('<PublishHistoryComparePage />', () => {
   describe('layout', () => {
     it('has a title heading and no "Content" subtitle', async () => {
       renderPage();
-      expect(await screen.findByRole('heading', { name: 'Compare Versions' })).toBeInTheDocument();
-      expect(screen.queryByText('Content')).not.toBeInTheDocument();
+      expect(await screen.findByRole('heading', { name: messages.compareTitle.defaultMessage })).toBeInTheDocument();
+      expect(screen.queryByText(messages.fieldScopeContent.defaultMessage)).not.toBeInTheDocument();
     });
 
     it('shows the back link above the title with an arrow', async () => {
       renderPage();
-      const link = await screen.findByRole('link', { name: 'Back to Publish History' });
+      const link = await screen.findByRole('link', { name: messages.compareBack.defaultMessage });
       expect(link.querySelector('svg')).toBeInTheDocument();
-      expect(link.compareDocumentPosition(screen.getByRole('heading', { name: 'Compare Versions' })))
+      expect(link.compareDocumentPosition(screen.getByRole('heading', { name: messages.compareTitle.defaultMessage })))
         .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     });
 
     it('puts the selected version on the left and the compare target on the right', async () => {
       renderPage();
-      expect(card('Selected Version').compareDocumentPosition(card('Compare With')))
+      expect(
+        card(messages.cardSelected.defaultMessage).compareDocumentPosition(card(messages.cardTarget.defaultMessage)),
+      )
         .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     });
 
     it('holds the dropdown and Compare button in the right-hand card only', async () => {
       renderPage();
-      expect(within(card('Compare With')).getByRole('button', { name: 'Compare' })).toBeInTheDocument();
-      expect(within(card('Selected Version')).queryByRole('button', { name: 'Compare' })).not.toBeInTheDocument();
+      expect(
+        within(card(messages.cardTarget.defaultMessage)).getByRole('button', {
+          name: messages.compareButton.defaultMessage,
+        }),
+      ).toBeInTheDocument();
+      expect(
+        within(card(messages.cardSelected.defaultMessage)).queryByRole('button', {
+          name: messages.compareButton.defaultMessage,
+        }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -410,16 +426,20 @@ describe('<PublishHistoryComparePage />', () => {
       getDiff.mockResolvedValue(scalar);
       renderPage(`?version=${V3}&against=previous`);
       await screen.findByText('1 changed block');
-      expect(within(card('Selected Version')).getByText('Newer')).toBeInTheDocument();
-      expect(within(card('Compare With')).getByText('Older')).toBeInTheDocument();
+      expect(within(card(messages.cardSelected.defaultMessage)).getByText(messages.ageNewer.defaultMessage))
+        .toBeInTheDocument();
+      expect(within(card(messages.cardTarget.defaultMessage)).getByText(messages.ageOlder.defaultMessage))
+        .toBeInTheDocument();
     });
 
     it('labels the selected version Older and the other Newer when the selected one is the older', async () => {
       getDiff.mockResolvedValue(scalar);
       renderPage(`?version=${V2}&against=published`);
       await screen.findByText('1 changed block');
-      expect(within(card('Selected Version')).getByText('Older')).toBeInTheDocument();
-      expect(within(card('Compare With')).getByText('Newer')).toBeInTheDocument();
+      expect(within(card(messages.cardSelected.defaultMessage)).getByText(messages.ageOlder.defaultMessage))
+        .toBeInTheDocument();
+      expect(within(card(messages.cardTarget.defaultMessage)).getByText(messages.ageNewer.defaultMessage))
+        .toBeInTheDocument();
     });
 
     it('shows the selected (newer) version\'s value on the left in green, the older one on the right in red', async () => {
@@ -538,38 +558,38 @@ describe('<PublishHistoryComparePage />', () => {
   describe('Back and Forward', () => {
     it('moves the dropdown with the URL', async () => {
       renderWithNav();
-      expect(toggle()).toHaveTextContent('Previous Version');
+      expect(toggle()).toHaveTextContent(messages.optionPrevious.defaultMessage);
       await userEvent.click(toggle());
-      await userEvent.click(await screen.findByRole('button', { name: 'Current Published Version' }));
-      await userEvent.click(screen.getByRole('button', { name: 'Compare' }));
+      await userEvent.click(await screen.findByRole('button', { name: messages.optionPublished.defaultMessage }));
+      await userEvent.click(screen.getByRole('button', { name: messages.compareButton.defaultMessage }));
       await waitFor(() => expect(location()).toBe(`/compare?version=${V3}&against=published`));
-      expect(toggle()).toHaveTextContent('Current Published Version');
+      expect(toggle()).toHaveTextContent(messages.optionPublished.defaultMessage);
 
       await userEvent.click(screen.getByRole('button', { name: 'Go back' }));
       await waitFor(() => expect(location()).toBe(`/compare?version=${V3}`));
-      expect(toggle()).toHaveTextContent('Previous Version');
+      expect(toggle()).toHaveTextContent(messages.optionPrevious.defaultMessage);
 
       await userEvent.click(screen.getByRole('button', { name: 'Go forward' }));
-      await waitFor(() => expect(toggle()).toHaveTextContent('Current Published Version'));
+      await waitFor(() => expect(toggle()).toHaveTextContent(messages.optionPublished.defaultMessage));
     });
 
     it('moves the dropdown between two compared targets', async () => {
       renderWithNav(`?version=${V3}&against=published`);
-      expect(toggle()).toHaveTextContent('Current Published Version');
+      expect(toggle()).toHaveTextContent(messages.optionPublished.defaultMessage);
       await userEvent.click(toggle());
-      await userEvent.click(await screen.findByRole('button', { name: 'Previous Version' }));
-      await userEvent.click(screen.getByRole('button', { name: 'Compare' }));
-      await waitFor(() => expect(toggle()).toHaveTextContent('Previous Version'));
+      await userEvent.click(await screen.findByRole('button', { name: messages.optionPrevious.defaultMessage }));
+      await userEvent.click(screen.getByRole('button', { name: messages.compareButton.defaultMessage }));
+      await waitFor(() => expect(toggle()).toHaveTextContent(messages.optionPrevious.defaultMessage));
       await userEvent.click(screen.getByRole('button', { name: 'Go back' }));
-      await waitFor(() => expect(toggle()).toHaveTextContent('Current Published Version'));
+      await waitFor(() => expect(toggle()).toHaveTextContent(messages.optionPublished.defaultMessage));
     });
 
     it('fetches the diff of the URL it went back to', async () => {
       renderWithNav(`?version=${V3}&against=published`);
       await screen.findByText('1 changed block');
       await userEvent.click(toggle());
-      await userEvent.click(await screen.findByRole('button', { name: 'Previous Version' }));
-      await userEvent.click(screen.getByRole('button', { name: 'Compare' }));
+      await userEvent.click(await screen.findByRole('button', { name: messages.optionPrevious.defaultMessage }));
+      await userEvent.click(screen.getByRole('button', { name: messages.compareButton.defaultMessage }));
       await waitFor(() => expect(getDiff).toHaveBeenLastCalledWith(COURSE_ID, V3, 'previous'));
       await userEvent.click(screen.getByRole('button', { name: 'Go back' }));
       await waitFor(() => expect(getDiff).toHaveBeenLastCalledWith(COURSE_ID, V3, 'published'));
@@ -600,7 +620,7 @@ describe('<PublishHistoryComparePage />', () => {
 
     it('closes again and removes the frames', async () => {
       await openModal();
-      const buttons = await screen.findAllByRole('button', { name: 'Close' });
+      const buttons = await screen.findAllByRole('button', { name: messages.previewClose.defaultMessage });
       await userEvent.click(buttons[buttons.length - 1]);
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
       expect(document.querySelectorAll('iframe')).toHaveLength(0);
@@ -650,8 +670,8 @@ describe('<PublishHistoryComparePage />', () => {
       getDiff.mockRejectedValue(httpError(400, { against: ['Enter a version id, "published" or "draft".'] }));
       renderPage(`?version=${V3}&against=nonsense`);
       expect(await screen.findByText(/This page address names an invalid version/)).toBeInTheDocument();
-      expect(screen.queryByText('The comparison could not be loaded. Try again.')).not.toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Compare' })).toBeEnabled();
+      expect(screen.queryByText(messages.compareError.defaultMessage)).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: messages.compareButton.defaultMessage })).toBeEnabled();
     });
   });
 
@@ -659,7 +679,7 @@ describe('<PublishHistoryComparePage />', () => {
     it('is no choice yet: Previous Version in the dropdown and no request', async () => {
       renderPage(`?version=${V3}&against=`);
       await listLoaded();
-      expect(toggle()).toHaveTextContent('Previous Version');
+      expect(toggle()).toHaveTextContent(messages.optionPrevious.defaultMessage);
       expect(getDiff).not.toHaveBeenCalled();
     });
   });
@@ -668,7 +688,7 @@ describe('<PublishHistoryComparePage />', () => {
     it('falls back to Previous Version in the dropdown and never asks the API for draft', async () => {
       renderPage(`?version=${V3}&against=draft`);
       await screen.findByText('1 changed block');
-      expect(toggle()).toHaveTextContent('Previous Version');
+      expect(toggle()).toHaveTextContent(messages.optionPrevious.defaultMessage);
       expect(getDiff).toHaveBeenCalledWith(COURSE_ID, V3, 'previous');
       expect(getDiff).not.toHaveBeenCalledWith(expect.anything(), expect.anything(), 'draft');
     });
@@ -677,19 +697,19 @@ describe('<PublishHistoryComparePage />', () => {
       renderPage(`?version=${V3}&against=draft`);
       await screen.findByText('1 changed block');
       await userEvent.click(toggle());
-      expect(screen.queryByRole('button', { name: 'Current Draft' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: messages.optionDraft.defaultMessage })).not.toBeInTheDocument();
     });
 
     it('falls back again when Back returns to a draft address', async () => {
       renderWithNav(`?version=${V3}&against=draft`);
       await waitFor(() => expect(getDiff).toHaveBeenCalledWith(COURSE_ID, V3, 'previous'));
       await userEvent.click(toggle());
-      await userEvent.click(await screen.findByRole('button', { name: 'Current Published Version' }));
-      await userEvent.click(screen.getByRole('button', { name: 'Compare' }));
+      await userEvent.click(await screen.findByRole('button', { name: messages.optionPublished.defaultMessage }));
+      await userEvent.click(screen.getByRole('button', { name: messages.compareButton.defaultMessage }));
       await waitFor(() => expect(getDiff).toHaveBeenLastCalledWith(COURSE_ID, V3, 'published'));
       await userEvent.click(screen.getByRole('button', { name: 'Go back' }));
       await waitFor(() => expect(location()).toBe(`/compare?version=${V3}&against=draft`));
-      await waitFor(() => expect(toggle()).toHaveTextContent('Previous Version'));
+      await waitFor(() => expect(toggle()).toHaveTextContent(messages.optionPrevious.defaultMessage));
       expect(await screen.findByText('1 changed block')).toBeInTheDocument();
       expect(getDiff).not.toHaveBeenCalledWith(expect.anything(), expect.anything(), 'draft');
     });
@@ -704,8 +724,8 @@ describe('<PublishHistoryComparePage />', () => {
 
     it('names the two column regions', async () => {
       renderPage();
-      expect(await screen.findByRole('region', { name: 'Selected Version' })).toBeInTheDocument();
-      expect(screen.getByRole('region', { name: 'Compare With' })).toBeInTheDocument();
+      expect(await screen.findByRole('region', { name: messages.cardSelected.defaultMessage })).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: messages.cardTarget.defaultMessage })).toBeInTheDocument();
     });
 
     it('labels the dropdown "Compare With"', async () => {

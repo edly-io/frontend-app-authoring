@@ -8,6 +8,7 @@ import {
 
 import { DiffTreeRoot } from './DiffTree';
 import { field, node } from './testHelpers';
+import messages from './messages';
 
 const LONG = 'W'.repeat(120);
 
@@ -78,7 +79,7 @@ describe('<DiffTree /> layout', () => {
         '.publish-history-node-header',
       ) as HTMLElement;
       expect(header.querySelector('.pgn__icon')).toHaveClass('flex-shrink-0');
-      expect(within(header).getByText('Changed')).toHaveClass('flex-shrink-0');
+      expect(within(header).getByText(messages.changeChanged.defaultMessage)).toHaveClass('flex-shrink-0');
     });
 
     it('gives a group heading the same truncating, titled name', () => {
@@ -113,8 +114,10 @@ describe('<DiffTree /> layout', () => {
       const names = screen.getAllByText(LONG);
       expect(names).toHaveLength(2);
       names.forEach((n) => expect(n).toHaveClass('publish-history-field-name'));
-      screen.getAllByText('Content').forEach((b) => expect(b).toHaveClass('flex-shrink-0'));
-      expect(screen.getAllByText('Content')).toHaveLength(2);
+      screen.getAllByText(messages.fieldScopeContent.defaultMessage).forEach((b) =>
+        expect(b).toHaveClass('flex-shrink-0')
+      );
+      expect(screen.getAllByText(messages.fieldScopeContent.defaultMessage)).toHaveLength(2);
     });
   });
 });

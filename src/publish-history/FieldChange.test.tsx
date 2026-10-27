@@ -4,6 +4,7 @@ import BlockPair from './BlockPair';
 import { fieldSlots } from './FieldChange';
 import { field } from './testHelpers';
 import type { Age, FieldChangeData } from './types';
+import messages from './messages';
 
 const OLDER_FIRST: [Age, Age] = ['older', 'newer'];
 const NEWER_FIRST: [Age, Age] = ['newer', 'older'];
@@ -44,7 +45,7 @@ describe('fieldSlots', () => {
     it('shows the field name and its scope in both cards', () => {
       renderField(field({ scope: 'content' }), OLDER_FIRST);
       expect(screen.getAllByText('display_name')).toHaveLength(2);
-      expect(screen.getAllByText('Content')).toHaveLength(2);
+      expect(screen.getAllByText(messages.fieldScopeContent.defaultMessage)).toHaveLength(2);
     });
 
     it('renders markup in a value as text', () => {
@@ -116,13 +117,13 @@ describe('fieldSlots', () => {
   describe('too large', () => {
     it('explains a field over the size cap', () => {
       renderField(field({ tooLarge: true, tooLargeReason: 'size' }), OLDER_FIRST);
-      expect(screen.getAllByText('Too large to compare. Values are cut short.')).toHaveLength(2);
+      expect(screen.getAllByText(messages.tooLargeSize.defaultMessage)).toHaveLength(2);
     });
 
     it('explains a field past the comparison budget differently', () => {
       renderField(field({ tooLarge: true, tooLargeReason: 'budget' }), OLDER_FIRST);
       expect(screen.getAllByText(/Not compared, as this comparison has too many changes/)).toHaveLength(2);
-      expect(screen.queryByText('Too large to compare. Values are cut short.')).not.toBeInTheDocument();
+      expect(screen.queryByText(messages.tooLargeSize.defaultMessage)).not.toBeInTheDocument();
     });
 
     it('still shows the cut values, without red or green', () => {
