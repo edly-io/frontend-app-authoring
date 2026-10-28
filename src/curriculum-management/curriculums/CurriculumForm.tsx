@@ -101,15 +101,17 @@ const CurriculumForm = ({
       .transform(emptyAs(undefined))
       .min(1, intl.formatMessage(messages.passThresholdRange))
       .max(100, intl.formatMessage(messages.passThresholdRange))
-      .required(intl.formatMessage(messages.passThresholdRequired)),
+      .required(intl.formatMessage(messages.passThresholdRange)),
     knowledgeCheckMaxAttempts: wholeNumber()
       .transform(emptyAs(undefined))
       .min(1, intl.formatMessage(messages.numberMinOne))
+      .max(32767, intl.formatMessage(messages.numberTooLarge))
       .required(intl.formatMessage(messages.maxAttemptsRequired)),
     knowledgeCheckTimeLimit: wholeNumber()
       .transform(emptyAs(null))
       .nullable()
-      .min(1, intl.formatMessage(messages.numberMinOne)),
+      .min(1, intl.formatMessage(messages.numberMinOne))
+      .max(32767, intl.formatMessage(messages.numberTooLarge)),
   });
 
   const onSubmit = async (
@@ -373,6 +375,7 @@ const CurriculumForm = ({
                         onChange={handleChange}
                         onBlur={handleBlur}
                         min={1}
+                        max={32767}
                       />
                       <Form.Text>{intl.formatMessage(messages.maxAttemptsHelp)}</Form.Text>
                       {errorFor('knowledgeCheckMaxAttempts') && (
@@ -394,6 +397,7 @@ const CurriculumForm = ({
                         onChange={handleChange}
                         onBlur={handleBlur}
                         min={1}
+                        max={32767}
                       />
                       <Form.Text>{intl.formatMessage(messages.timeLimitHelp)}</Form.Text>
                       {errorFor('knowledgeCheckTimeLimit') && (
@@ -402,7 +406,6 @@ const CurriculumForm = ({
                         </Form.Control.Feedback>
                       )}
                     </Form.Group>
-
                   </FormSection>
 
                   <FormSection

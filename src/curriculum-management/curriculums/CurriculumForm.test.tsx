@@ -137,8 +137,20 @@ describe('<CurriculumForm />', () => {
     expect(screen.getByText('Enter 1 or more.')).toBeInTheDocument();
 
     await user.type(screen.getByLabelText('Pass mark (%)'), '101');
-    expect(await screen.findByText('Enter a number between 1 and 100.')).toBeInTheDocument();
+    expect(await screen.findByText('Enter a pass mark between 1 and 100.')).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Maximum attempts'), '1.5');
+    expect(await screen.findByText('Enter a whole number.')).toBeInTheDocument();
     expect(axiosMock.history.put).toHaveLength(0);
+
+    // Each error clears as soon as its value is fixed.
+    await user.clear(screen.getByLabelText('Pass mark (%)'));
+    await user.type(screen.getByLabelText('Pass mark (%)'), '100');
+    await user.clear(screen.getByLabelText('Maximum attempts'));
+    await user.type(screen.getByLabelText('Maximum attempts'), '3');
+    await user.clear(screen.getByLabelText('Time limit (minutes, optional)'));
+    await waitFor(() => expect(screen.queryByText('Enter 1 or more.')).not.toBeInTheDocument());
+    expect(screen.queryByText('Enter a pass mark between 1 and 100.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Enter a whole number.')).not.toBeInTheDocument();
   });
 
   it('sends edited knowledge check settings, and an emptied optional one as blank', async () => {

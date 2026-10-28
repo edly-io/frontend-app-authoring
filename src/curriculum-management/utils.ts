@@ -34,7 +34,7 @@ export interface CurriculumFormValues {
   knowledgeCheckDelayDays: '15' | '30';
   /*
    * Number inputs: Formik stores a number once edited, or '' when the input is empty.
-   * The pass mark (1–100) and attempts (1 or more) are required; '' on the optional two means "not set".
+   * The pass mark (1–100) and attempts (1 or more) are required; '' on the optional time limit means "no limit".
    */
   knowledgeCheckPassThreshold: number | '';
   knowledgeCheckMaxAttempts: number | '';
@@ -75,7 +75,8 @@ export const toCurriculumFormValues = (curriculum?: Curriculum): CurriculumFormV
       exists: curriculum.knowledgeCheck.exists,
     },
     knowledgeCheckDelayDays: String(curriculum.knowledgeCheckDelayDays) === '15' ? '15' : '30',
-    // A curriculum saved before these settings existed may come back without them: use the backend defaults.
+    // The backend always sends these (its migration backfills the defaults); the fallback only covers an LMS
+    // that doesn't have the settings yet, so the form still opens with the values the backend would apply.
     knowledgeCheckPassThreshold: curriculum.knowledgeCheckPassThreshold ?? KC_PASS_THRESHOLD_DEFAULT,
     knowledgeCheckMaxAttempts: curriculum.knowledgeCheckMaxAttempts ?? KC_MAX_ATTEMPTS_DEFAULT,
     knowledgeCheckTimeLimit: curriculum.knowledgeCheckTimeLimit ?? '',

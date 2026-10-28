@@ -84,7 +84,6 @@ describe('curriculum-management apiHooks', () => {
       knowledgeCheckPassThreshold: 80,
       knowledgeCheckMaxAttempts: 1,
       knowledgeCheckTimeLimit: null,
-      knowledgeCheckQuestionCount: null,
       badges: { complete: null, retained: null },
       image: null,
       removeImage: false,
