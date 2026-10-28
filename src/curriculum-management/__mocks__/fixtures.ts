@@ -80,6 +80,9 @@ export const rawCurriculums = [
     ],
     knowledge_check: { course_id: 'course-v1:Uber+DRVKC1+2026_Q4', display_name: 'Essentials check', exists: true },
     knowledge_check_delay_days: 30,
+    knowledge_check_pass_threshold: 80,
+    knowledge_check_max_attempts: 1,
+    knowledge_check_time_limit: null,
     badges: {
       complete: {
         uuid: rawBadges[0].uuid,

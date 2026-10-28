@@ -41,6 +41,9 @@ import CoursePicker from './CoursePicker';
 const KC_ERROR_ID = 'curriculum-knowledge-check-error';
 const FORM_ID = 'curriculum-form';
 
+/** Yup transform for an empty number input: without it '' casts to NaN and fails as "not a number". */
+const emptyAs = (empty: undefined | null) => (value: number, original: unknown) => (original === '' ? empty : value);
+
 export interface CurriculumFormProps {
   curriculum?: Curriculum;
   /** Closes the modal after a successful save. */
@@ -75,6 +78,11 @@ const CurriculumForm = ({
   const [focusKcSearch, setFocusKcSearch] = useState(false);
   const focusKcChange = useRef(false);
 
+  const wholeNumber = () =>
+    Yup.number()
+      .typeError(intl.formatMessage(messages.invalidWholeNumber))
+      .integer(intl.formatMessage(messages.invalidWholeNumber));
+
   const validationSchema = Yup.object({
     title: Yup.string().trim()
       .required(intl.formatMessage(messages.titleRequired))
@@ -89,6 +97,19 @@ const CurriculumForm = ({
         return !value || !courses.some((course) => course.id === (value as unknown as { id: string; }).id);
       }),
     knowledgeCheckDelayDays: Yup.string().oneOf([...DELAY_OPTIONS]),
+    knowledgeCheckPassThreshold: wholeNumber()
+      .transform(emptyAs(undefined))
+      .min(1, intl.formatMessage(messages.passThresholdRange))
+      .max(100, intl.formatMessage(messages.passThresholdRange))
+      .required(intl.formatMessage(messages.passThresholdRequired)),
+    knowledgeCheckMaxAttempts: wholeNumber()
+      .transform(emptyAs(undefined))
+      .min(1, intl.formatMessage(messages.numberMinOne))
+      .required(intl.formatMessage(messages.maxAttemptsRequired)),
+    knowledgeCheckTimeLimit: wholeNumber()
+      .transform(emptyAs(null))
+      .nullable()
+      .min(1, intl.formatMessage(messages.numberMinOne)),
   });
 
   const onSubmit = async (
@@ -317,6 +338,71 @@ const CurriculumForm = ({
                         </Form.Control.Feedback>
                       )}
                     </Form.Group>
+
+                    <Form.Group
+                      controlId="curriculum-kc-pass-threshold"
+                      isInvalid={!!errorFor('knowledgeCheckPassThreshold')}
+                    >
+                      <Form.Label>{intl.formatMessage(messages.passThresholdLabel)}</Form.Label>
+                      <Form.Control
+                        type="number"
+                        name="knowledgeCheckPassThreshold"
+                        value={values.knowledgeCheckPassThreshold}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        min={1}
+                        max={100}
+                      />
+                      <Form.Text>{intl.formatMessage(messages.passThresholdHelp)}</Form.Text>
+                      {errorFor('knowledgeCheckPassThreshold') && (
+                        <Form.Control.Feedback type="invalid" hasIcon={false}>
+                          {errorFor('knowledgeCheckPassThreshold')}
+                        </Form.Control.Feedback>
+                      )}
+                    </Form.Group>
+
+                    <Form.Group
+                      controlId="curriculum-kc-max-attempts"
+                      isInvalid={!!errorFor('knowledgeCheckMaxAttempts')}
+                    >
+                      <Form.Label>{intl.formatMessage(messages.maxAttemptsLabel)}</Form.Label>
+                      <Form.Control
+                        type="number"
+                        name="knowledgeCheckMaxAttempts"
+                        value={values.knowledgeCheckMaxAttempts}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        min={1}
+                      />
+                      <Form.Text>{intl.formatMessage(messages.maxAttemptsHelp)}</Form.Text>
+                      {errorFor('knowledgeCheckMaxAttempts') && (
+                        <Form.Control.Feedback type="invalid" hasIcon={false}>
+                          {errorFor('knowledgeCheckMaxAttempts')}
+                        </Form.Control.Feedback>
+                      )}
+                    </Form.Group>
+
+                    <Form.Group
+                      controlId="curriculum-kc-time-limit"
+                      isInvalid={!!errorFor('knowledgeCheckTimeLimit')}
+                    >
+                      <Form.Label>{intl.formatMessage(messages.timeLimitLabel)}</Form.Label>
+                      <Form.Control
+                        type="number"
+                        name="knowledgeCheckTimeLimit"
+                        value={values.knowledgeCheckTimeLimit}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        min={1}
+                      />
+                      <Form.Text>{intl.formatMessage(messages.timeLimitHelp)}</Form.Text>
+                      {errorFor('knowledgeCheckTimeLimit') && (
+                        <Form.Control.Feedback type="invalid" hasIcon={false}>
+                          {errorFor('knowledgeCheckTimeLimit')}
+                        </Form.Control.Feedback>
+                      )}
+                    </Form.Group>
+
                   </FormSection>
 
                   <FormSection

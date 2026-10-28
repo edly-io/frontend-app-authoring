@@ -75,6 +75,10 @@ const toCurriculumFormData = (data: CurriculumWriteData): FormData => {
   data.courseIds.forEach((id) => formData.append('course_ids', id));
   formData.append('knowledge_check_course_id', data.knowledgeCheckCourseId);
   formData.append('knowledge_check_delay_days', String(data.knowledgeCheckDelayDays));
+  formData.append('knowledge_check_pass_threshold', String(data.knowledgeCheckPassThreshold));
+  formData.append('knowledge_check_max_attempts', String(data.knowledgeCheckMaxAttempts));
+  // Always sent: '' is multipart's null (DRF reads it as None for an allow_null field), so a PUT can clear it.
+  formData.append('knowledge_check_time_limit', String(data.knowledgeCheckTimeLimit ?? ''));
   // DRF's DictField reads multipart as badges.<slot>; send one key per slot (only when a value is set).
   const BADGE_SLOTS = ['complete', 'retained'] as const;
   BADGE_SLOTS.forEach((slot) => {

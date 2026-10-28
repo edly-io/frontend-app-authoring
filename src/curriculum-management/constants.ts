@@ -15,5 +15,8 @@ export const BADGE_IMAGE_ACCEPT = { 'image/png': ['.png'], 'image/jpeg': ['.jpg'
 export const CURRICULUM_IMAGE_MAX_BYTES = BADGE_IMAGE_MAX_BYTES;
 export const CURRICULUM_IMAGE_ACCEPT = BADGE_IMAGE_ACCEPT;
 export const DELAY_OPTIONS = ['15', '30'] as const;
+/** Must match the Curriculum model defaults on the backend. */
+export const KC_PASS_THRESHOLD_DEFAULT = 80;
+export const KC_MAX_ATTEMPTS_DEFAULT = 1;
 export const CURRICULUM_MANAGEMENT_PATH = '/curriculum-management';
 export const BADGES_PATH = '/curriculum-management/badges';

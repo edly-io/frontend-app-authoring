@@ -140,6 +140,25 @@ const CurriculumCard = ({ curriculum, defaultExpanded = false, onEdit }: Curricu
             <Badge variant="light" className="mt-1">
               {intl.formatMessage(messages.opensAfter, { days: curriculum.knowledgeCheckDelayDays })}
             </Badge>
+            <ul className="list-unstyled mb-0 mt-2 small text-gray-700">
+              <li>
+                {intl.formatMessage(messages.passThresholdLabel)}
+                {': '}
+                <strong>{curriculum.knowledgeCheckPassThreshold}%</strong>
+              </li>
+              <li>
+                {intl.formatMessage(messages.maxAttemptsLabel)}
+                {': '}
+                <strong>{curriculum.knowledgeCheckMaxAttempts}</strong>
+              </li>
+              {curriculum.knowledgeCheckTimeLimit != null && (
+                <li>
+                  {intl.formatMessage(messages.timeLimitLabel)}
+                  {': '}
+                  <strong>{curriculum.knowledgeCheckTimeLimit}</strong>
+                </li>
+              )}
+            </ul>
           </DetailRow>
           <DetailRow label={intl.formatMessage(messages.badgesHeading)}>
             {/* Read-only: the slots are picked on the curriculum form. */}
