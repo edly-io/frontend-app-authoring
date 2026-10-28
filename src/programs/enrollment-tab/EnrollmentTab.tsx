@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from 'react';
 import {
-  Badge,
   Button,
   ButtonGroup,
   OverlayTrigger,
@@ -13,8 +12,9 @@ import {
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
-import { AuditLogTable } from '@edly-io/frontend-component-fbr';
+import { AuditLogTable, toRoleBadges, UserIdentity } from '@edly-io/frontend-component-fbr';
 import { useProgramEnrollments, useUnenrollLearner } from '../data/apiHooks';
+import { getInitials } from '../feedback-tab/dashboard/feedbackDashboardUtils';
 import DeleteModal from '../../generic/delete-modal/DeleteModal';
 import AddLearnerModal from './AddLearnerModal';
 import EnrollBatchModal from './EnrollBatchModal';
@@ -159,30 +159,21 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
           {!isLoading && data?.results.map((learner, index) => (
             <div
               key={learner.id}
-              className="d-flex align-items-center py-3"
-              style={{ borderBottom: '1px solid #dee2e6' }}
+              className="program-member-row d-flex align-items-center py-3"
             >
-              <span
-                className="mr-3 font-weight-bold text-muted"
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  background: '#f0f0f0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  fontSize: '0.8em',
-                }}
-              >
+              <span className="program-member-row__number mr-3 font-weight-bold text-muted">
                 {(enrolledPage - 1) * 5 + index + 1}
               </span>
-              <div className="flex-grow-1">
-                <p className="mb-0 font-weight-bold">{learner.name}</p>
-                <Stack direction="horizontal" gap={1} className="flex-wrap mt-1">
-                  <Badge variant="light">{learner.email}</Badge>
-                </Stack>
+              <div className="program-member-row__main flex-grow-1 d-flex flex-wrap align-items-center">
+                <div className="program-member-row__identity">
+                  <UserIdentity
+                    name={learner.name}
+                    badges={toRoleBadges('trainee')}
+                    size="compact"
+                    avatarValue={getInitials(learner.name)}
+                  />
+                </div>
+                <span className="program-member-row__email text-muted">{learner.email}</span>
               </div>
               {canManage && (
                 hasStarted ? (

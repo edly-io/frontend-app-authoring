@@ -11,9 +11,11 @@ import {
   Spinner,
 } from '@openedx/paragon';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
+import { toRoleBadges, UserIdentity } from '@edly-io/frontend-component-fbr';
 import {
   useBatches, useBatchUsers, useEnrollLearner, useEnrolledLearnerIds, useProgramDetail,
 } from '../data/apiHooks';
+import { getInitials } from '../feedback-tab/dashboard/feedbackDashboardUtils';
 
 const messages = defineMessages({
   title: { id: 'programs.enrollment.batch.title', defaultMessage: 'Enroll Batch' },
@@ -168,18 +170,15 @@ const EnrollBatchModal: React.FC<EnrollBatchModalProps> = ({
         {selectedBatchId && !isUsersLoading && batchUsers && batchUsers.length > 0 && (
           <>
             <div className="d-flex justify-content-between align-items-center mb-3">
-              <p className="mb-0 text-muted small">
-                {batchUsers.length}
-                {' '}
-                learners ·
-                {' '}
-                {batchUsers.filter((u) => enrolledIdSet?.has(u.id)).length}
-                {' '}
-                already enrolled
+              <p className="enroll-batch-summary mb-0 mr-3 text-muted small">
+                <span>{`${batchUsers.length} learners`}</span>
+                <span className="enroll-batch-summary__sep" aria-hidden="true">{' · '}</span>
+                <span>{`${batchUsers.filter((u) => enrolledIdSet?.has(u.id)).length} already enrolled`}</span>
               </p>
               <Button
                 variant="primary"
                 size="sm"
+                className="text-nowrap"
                 onClick={handleEnrollAll}
                 disabled={isEnrollingAll || unenrolledUsers.length === 0}
               >
@@ -193,12 +192,18 @@ const EnrollBatchModal: React.FC<EnrollBatchModalProps> = ({
               return (
                 <div
                   key={user.id}
-                  className="d-flex justify-content-between align-items-center py-3"
-                  style={{ borderBottom: '1px solid #dee2e6' }}
+                  className="program-member-row d-flex align-items-center py-3"
                 >
-                  <div>
-                    <p className="mb-1 font-weight-bold">{user.name}</p>
-                    <p className="mb-0 small text-muted">{user.email}</p>
+                  <div className="program-member-row__main flex-grow-1 d-flex flex-wrap align-items-center">
+                    <div className="program-member-row__identity">
+                      <UserIdentity
+                        name={user.name}
+                        badges={toRoleBadges('trainee')}
+                        size="compact"
+                        avatarValue={getInitials(user.name)}
+                      />
+                    </div>
+                    <span className="program-member-row__email text-muted">{user.email}</span>
                   </div>
                   {isEnrolled && (
                     <Badge variant="success">{intl.formatMessage(messages.enrolledBadge)}</Badge>

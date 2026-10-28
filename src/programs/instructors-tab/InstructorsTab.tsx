@@ -174,15 +174,15 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
                 return (
                   <div
                     key={instructor.id}
-                    className="instructor-row d-flex align-items-center py-3"
+                    className="program-member-row d-flex align-items-center py-3"
                   >
                     <span
-                      className="instructor-row__number mr-3 font-weight-bold text-muted"
+                      className="program-member-row__number mr-3 font-weight-bold text-muted"
                     >
                       {index + 1}
                     </span>
-                    <div className="instructor-row__main flex-grow-1 d-flex flex-wrap align-items-center">
-                      <div className="instructor-row__identity">
+                    <div className="program-member-row__main flex-grow-1 d-flex flex-wrap align-items-center">
+                      <div className="program-member-row__identity">
                         <UserIdentity
                           name={instructor.name}
                           badges={toRoleBadges(instructor.role)}
@@ -190,7 +190,7 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
                           avatarValue={instructor.avatar || getInitials(instructor.name)}
                         />
                       </div>
-                      <span className="instructor-row__email text-muted">{instructor.email}</span>
+                      <span className="program-member-row__email text-muted">{instructor.email}</span>
                     </div>
                     {canManage && (
                       blockedReason ? (
