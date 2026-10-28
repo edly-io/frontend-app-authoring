@@ -2,10 +2,12 @@ import React, { useState, useCallback } from 'react';
 import {
   Badge,
   Button,
+  OverlayTrigger,
   Pagination,
   SearchField,
   Spinner,
   Stack,
+  Tooltip,
   useToggle,
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
@@ -26,15 +28,23 @@ const messages = defineMessages({
     id: 'programs.enrollment.paid-admin-only',
     defaultMessage: 'This is a paid program. Only Rwaq admins can enroll learners into it.',
   },
+  subscriptionEnrollNote: {
+    id: 'programs.enrollment.subscription-note',
+    defaultMessage: 'Learners join this program through their Rwaq subscription.',
+  },
 });
 
 interface EnrollmentTabProps {
   programId: string;
   /** False for a paid program when the user is not a superadmin. */
   canEnroll?: boolean;
+  /** True when the program's pricing category is is_part_of_subscription. Nobody enrolls learners into it here. */
+  isSubscriptionProgram?: boolean;
 }
 
-const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canEnroll = true }) => {
+const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
+  programId, canEnroll = true, isSubscriptionProgram = false,
+}) => {
   const intl = useIntl();
   const [isModalOpen, openModal, closeModal] = useToggle(false);
   const [enrolledSearch, setEnrolledSearch] = useState('');
@@ -59,7 +69,30 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canEnroll = tr
           <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
         </div>
-        {canEnroll ? (
+        {isSubscriptionProgram && (
+          // Disabled but kept, so it can say why: a disabled button takes no hover or focus,
+          // so it is only marked disabled and ignores clicks.
+          <OverlayTrigger
+            placement="top"
+            overlay={(
+              <Tooltip id="subscription-enroll-tooltip">
+                {intl.formatMessage(messages.subscriptionEnrollNote)}
+              </Tooltip>
+            )}
+          >
+            <Button
+              variant="outline-primary"
+              iconBefore={Add}
+              size="sm"
+              className="disabled"
+              aria-disabled="true"
+              onClick={(event: React.MouseEvent) => event.preventDefault()}
+            >
+              {intl.formatMessage(messages.enrollLearnerBtn)}
+            </Button>
+          </OverlayTrigger>
+        )}
+        {!isSubscriptionProgram && (canEnroll ? (
           <Button
             variant="outline-primary"
             iconBefore={Add}
@@ -70,7 +103,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canEnroll = tr
           </Button>
         ) : (
           <p className="text-muted small mb-0">{intl.formatMessage(messages.paidEnrollAdminOnly)}</p>
-        )}
+        ))}
       </div>
 
       <div className="mb-3">

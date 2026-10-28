@@ -2,7 +2,7 @@ import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 
 /** Mirrors rwaq_features.models.CoursePricing.PRICING_CATEGORY_CHOICES. */
-export type PricingCategory = 'is_free' | 'is_paid' | 'is_program_only';
+export type PricingCategory = 'is_free' | 'is_paid' | 'is_program_only' | 'is_part_of_subscription';
 
 export interface CoursePricing {
   /** null when the course has no type yet (legacy courses). */
