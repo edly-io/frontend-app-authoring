@@ -1,0 +1,227 @@
+// Scoped to the publish history pages (src/publish-history).
+.publish-history-diff {
+  list-style: none;
+  margin: 0;
+  padding-left: 0;
+}
+
+// Each level is a card inset in its parent's, so a child is always narrower than its parent. The tones alternate like
+// the course outline's cards (src/course-outline, drag-helper/SortableItem): beige page and course (light-200, the
+// body's colour), white sections, beige subsections, white units, beige components; same radius and shadow.
+.publish-history-level {
+  padding: var(--pgn-spacing-spacer-3);
+  border-radius: .35rem;
+  box-shadow: 0 0 .125rem rgb(0 0 0 / .15), 0 0 .25rem rgb(0 0 0 / .15);
+
+  & + & {
+    margin-top: var(--pgn-spacing-spacer-3);
+  }
+
+  .publish-history-diff {
+    margin-top: var(--pgn-spacing-spacer-3);
+  }
+}
+
+// Below md the insets are halved, so the deepest card (an xblock in a unit, in a course) keeps room on a phone.
+@media (width < 768px) {
+  .publish-history-level {
+    padding: var(--pgn-spacing-spacer-2);
+
+    & + &,
+    .publish-history-diff {
+      margin-top: var(--pgn-spacing-spacer-2);
+    }
+  }
+}
+
+.publish-history-level-white {
+  background: var(--pgn-color-white);
+}
+
+.publish-history-level-beige {
+  background: var(--pgn-color-light-200);
+}
+
+// "Changed By <user>" wraps (and breaks a long username) in a narrow card rather than overflowing it.
+.publish-history-editor {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.publish-history-block-header {
+  min-width: 0;
+  row-gap: var(--pgn-spacing-spacer-2);
+
+  > .publish-history-node-header {
+    flex: 0 1 auto;
+  }
+
+  > .publish-history-node-header + * {
+    margin-right: var(--pgn-spacing-spacer-3);
+  }
+}
+
+// The bar is shown once the version cards scroll out of view, so it never covers the open Compare With menu. Its
+// two halves use the version cards' columns, the page's top-level column split. The anchor has no height, so showing
+// the bar doesn't move the page; it sticks to the top of the viewport (Studio's header scrolls away).
+.publish-history-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 0;
+}
+
+.publish-history-sticky-bar {
+  background: var(--pgn-color-light-200);
+  box-shadow: 0 .25rem .25rem -.25rem rgb(0 0 0 / .15);
+}
+
+// Version labels ("date by user") are long, and Paragon keeps the toggle and its items on one line: on a phone they
+// wrap instead of running out of the card and the viewport.
+.publish-history-against {
+  min-width: 0;
+  max-width: 100%;
+
+  .dropdown-toggle {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: left;
+  }
+}
+
+.publish-history-versions-menu {
+  max-width: calc(100vw - 2rem);
+  max-height: 20rem;
+  overflow-y: auto;
+
+  .dropdown-item {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+.publish-history-group-trigger {
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.publish-history-node-header {
+  min-width: 0;
+  min-height: 2rem;
+}
+
+// A block's two cards. From md up they sit in two equal columns of the block's card, split by the grid gutter like the
+// version cards above (inset levels make them narrower), and each card is a subgrid of the pair's rows, so a field or
+// JSON key has the same height in both cards. Below md the cards stack, left first.
+.publish-history-pair > .publish-history-card + .publish-history-card {
+  margin-top: var(--pgn-spacing-spacer-3);
+}
+
+@media (width >= 768px) {
+  .publish-history-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--pgn-spacing-grid-gutter-width);
+
+    > .publish-history-card + .publish-history-card {
+      margin-top: 0;
+    }
+
+    > .publish-history-card:not(.publish-history-card-absent) {
+      display: grid;
+      grid-template-rows: subgrid;
+      // The implicit column would size to its widest content and push a long title out of the card.
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}
+
+.publish-history-card {
+  min-width: 0;
+  border: 1px solid var(--pgn-color-light-400);
+  border-radius: var(--pgn-size-border-radius-base);
+  background: var(--pgn-color-white);
+}
+
+.publish-history-card-header {
+  min-width: 0;
+}
+
+.publish-history-card-header:not(:last-child) {
+  border-bottom: 1px solid var(--pgn-color-light-300);
+}
+
+.publish-history-card-absent {
+  min-height: 4rem;
+  background: var(--pgn-color-light-200);
+}
+
+.publish-history-field-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.publish-history-slot {
+  min-width: 0;
+
+  &:last-child {
+    padding-bottom: var(--pgn-spacing-spacer-3);
+  }
+}
+
+// Changes are coloured by time: removed (red) in the older column, added (green) in the newer one. The -200
+// backgrounds stay readable with the -900 text; line-through and underline keep colour from being the only cue.
+.publish-history-text,
+.publish-history-json-cell {
+  del {
+    background: var(--pgn-color-danger-200);
+    color: var(--pgn-color-danger-900);
+    text-decoration: line-through;
+  }
+
+  ins {
+    background: var(--pgn-color-success-200);
+    color: var(--pgn-color-success-900);
+    text-decoration: underline;
+  }
+}
+
+// Authored HTML is shown as text, so keep its line breaks and wrap long tokens.
+.publish-history-text,
+.publish-history-json-cell,
+.publish-history-value {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: var(--pgn-typography-font-family-monospace);
+  font-size: .875rem;
+}
+
+.publish-history-value {
+  margin: 0;
+  padding: var(--pgn-spacing-spacer-2);
+  border-radius: var(--pgn-size-border-radius-base);
+  background: var(--pgn-color-light-200);
+}
+
+.publish-history-value-older {
+  background: var(--pgn-color-danger-200);
+  color: var(--pgn-color-danger-900);
+}
+
+.publish-history-value-newer {
+  background: var(--pgn-color-success-200);
+  color: var(--pgn-color-success-900);
+}
+
+.publish-history-json-path {
+  font-family: var(--pgn-typography-font-family-monospace);
+  font-size: .8125rem;
+  overflow-wrap: anywhere;
+}
+
+// The preview frames scroll inside a fixed height, so the modal keeps both sides in view.
+.publish-history-preview-frame {
+  height: 60vh;
+  overflow: hidden;
+}

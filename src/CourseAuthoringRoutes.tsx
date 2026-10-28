@@ -37,6 +37,7 @@ import { IframeProvider } from './generic/hooks/context/iFrameContext';
 import { CourseAuthoringProvider } from './CourseAuthoringContext';
 import { CourseImportProvider } from './import-page/CourseImportContext';
 import { CourseExportProvider } from './export-page/CourseExportContext';
+import { PublishHistoryComparePage, PublishHistoryPage } from './publish-history';
 
 /**
  * As of this writing, these routes are mounted at a path prefixed with the following:
@@ -236,6 +237,22 @@ const CourseAuthoringRoutes = () => {
             element={
               <PageWrap>
                 <CourseOptimizerPage />
+              </PageWrap>
+            }
+          />
+          <Route
+            path="publish_history"
+            element={
+              <PageWrap>
+                <PublishHistoryPage />
+              </PageWrap>
+            }
+          />
+          <Route
+            path="publish_history/compare"
+            element={
+              <PageWrap>
+                <PublishHistoryComparePage />
               </PageWrap>
             }
           />

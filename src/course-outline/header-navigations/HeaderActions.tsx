@@ -13,6 +13,7 @@ import {
 
 import { CourseCategoriesButton } from '@src/course-categories';
 import { OutlinePageErrors, XBlockActions } from '@src/data/types';
+import { PublishHistoryButton } from '@src/publish-history';
 
 import { useOutlineSidebarContext } from '../outline-sidebar/OutlineSidebarContext';
 
@@ -68,6 +69,7 @@ const HeaderActions = ({
         </Button>
       </OverlayTrigger>
       <CourseCategoriesButton />
+      <PublishHistoryButton />
       {isReIndexShow && (
         <OverlayTrigger
           placement="bottom"

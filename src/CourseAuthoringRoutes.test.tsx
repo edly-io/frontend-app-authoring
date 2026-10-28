@@ -13,6 +13,8 @@ const editorContainerMockText = 'Editor Container';
 const videoSelectorContainerMockText = 'Video Selector Container';
 const customPagesMockText = 'Custom Pages';
 const mockComponentFn = jest.fn();
+const publishHistoryMockText = 'Publish History Page';
+const publishHistoryCompareMockText = 'Publish History Compare Page';
 
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
@@ -44,6 +46,10 @@ jest.mock('./selectors/VideoSelectorContainer', () => (props) => {
   mockComponentFn(props);
   return videoSelectorContainerMockText;
 });
+jest.mock('./publish-history', () => ({
+  PublishHistoryPage: () => publishHistoryMockText,
+  PublishHistoryComparePage: () => publishHistoryCompareMockText,
+}));
 jest.mock('./custom-pages/CustomPages', () => (props) => {
   mockComponentFn(props);
   return customPagesMockText;
@@ -98,5 +104,23 @@ describe('<CourseAuthoringRoutes>', () => {
       expect(screen.queryByText(pagesAndResourcesMockText)).not.toBeInTheDocument();
       expect(mockComponentFn).toHaveBeenCalled();
     });
+  });
+
+  it('renders the publish history page on its route', async () => {
+    render(
+      <CourseAuthoringRoutes />,
+      { routerProps: { initialEntries: ['/publish_history'] } },
+    );
+    expect(await screen.findByText(publishHistoryMockText)).toBeInTheDocument();
+    expect(screen.queryByText(publishHistoryCompareMockText)).not.toBeInTheDocument();
+  });
+
+  it('renders the compare page on the compare route, keeping the query string', async () => {
+    render(
+      <CourseAuthoringRoutes />,
+      { routerProps: { initialEntries: ['/publish_history/compare?version=abc'] } },
+    );
+    expect(await screen.findByText(publishHistoryCompareMockText)).toBeInTheDocument();
+    expect(screen.queryByText(publishHistoryMockText)).not.toBeInTheDocument();
   });
 });
