@@ -140,6 +140,26 @@ const CurriculumCard = ({ curriculum, defaultExpanded = false, onEdit }: Curricu
             <Badge variant="light" className="mt-1">
               {intl.formatMessage(messages.opensAfter, { days: curriculum.knowledgeCheckDelayDays })}
             </Badge>
+            {/* Pass mark and attempts are hidden when the LMS doesn't send them; a missing time limit shows as 'No time limit'. */}
+            <ul className="list-unstyled mb-0 mt-2 small text-gray-700">
+              {curriculum.knowledgeCheckPassThreshold != null && (
+                <li>
+                  {intl.formatMessage(messages.passThresholdSummary, {
+                    threshold: curriculum.knowledgeCheckPassThreshold,
+                  })}
+                </li>
+              )}
+              {curriculum.knowledgeCheckMaxAttempts != null && (
+                <li>
+                  {intl.formatMessage(messages.maxAttemptsSummary, { count: curriculum.knowledgeCheckMaxAttempts })}
+                </li>
+              )}
+              <li>
+                {curriculum.knowledgeCheckTimeLimit != null
+                  ? intl.formatMessage(messages.timeLimitSummary, { minutes: curriculum.knowledgeCheckTimeLimit })
+                  : intl.formatMessage(messages.noTimeLimit)}
+              </li>
+            </ul>
           </DetailRow>
           <DetailRow label={intl.formatMessage(messages.badgesHeading)}>
             {/* Read-only: the slots are picked on the curriculum form. */}

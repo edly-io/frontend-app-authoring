@@ -30,6 +30,33 @@ describe('<CurriculumCard />', () => {
     expect(within(screen.getByTestId('slot-complete')).getByText('Road ready')).toBeInTheDocument();
   });
 
+  it('shows the knowledge check settings, and "No time limit" when none is set', () => {
+    initializeMocks();
+    const { rerender } = render(<CurriculumCard curriculum={curriculum} defaultExpanded onEdit={jest.fn()} />);
+    expect(screen.getByText('Pass mark: 80%')).toBeInTheDocument();
+    expect(screen.getByText('Maximum attempts: 1')).toBeInTheDocument();
+    expect(screen.getByText('No time limit')).toBeInTheDocument();
+
+    rerender(
+      <CurriculumCard curriculum={{ ...curriculum, knowledgeCheckTimeLimit: 1 }} defaultExpanded onEdit={jest.fn()} />,
+    );
+    expect(screen.getByText('Time limit: 1 minute')).toBeInTheDocument();
+    rerender(
+      <CurriculumCard curriculum={{ ...curriculum, knowledgeCheckTimeLimit: 20 }} defaultExpanded onEdit={jest.fn()} />,
+    );
+    expect(screen.getByText('Time limit: 20 minutes')).toBeInTheDocument();
+    expect(screen.queryByText('No time limit')).not.toBeInTheDocument();
+  });
+
+  it('leaves out the pass mark and attempts when the LMS does not send them', () => {
+    initializeMocks();
+    const { knowledgeCheckPassThreshold, knowledgeCheckMaxAttempts, ...legacy } = curriculum;
+    render(<CurriculumCard curriculum={legacy as Curriculum} defaultExpanded onEdit={jest.fn()} />);
+    expect(screen.queryByText(/^Pass mark/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Maximum attempts/)).not.toBeInTheDocument();
+    expect(screen.getByText('No time limit')).toBeInTheDocument();
+  });
+
   it('shows each slot read-only, with the badge image, and "None" for an empty slot', () => {
     initializeMocks();
     const withEmptySlot = { ...curriculum, badges: { ...curriculum.badges, retained: null } };

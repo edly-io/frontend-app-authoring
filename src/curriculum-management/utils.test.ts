@@ -40,10 +40,44 @@ describe('curriculum form mapping', () => {
         courseIds: ['course-v1:Uber+DRV101+2026_Q4', 'course-v1:Uber+DRV102+2026_Q4'],
         knowledgeCheckCourseId: 'course-v1:Uber+DRVKC1+2026_Q4',
         knowledgeCheckDelayDays: 30,
+        knowledgeCheckPassThreshold: 80,
+        knowledgeCheckMaxAttempts: 1,
+        knowledgeCheckTimeLimit: null,
         badges: { complete: null, retained: rawBadges[2].uuid },
         image: null,
         removeImage: false,
       });
+  });
+
+  it('maps the knowledge check settings both ways; an empty optional input becomes null', () => {
+    const curriculum = {
+      ...(camelCaseObject(rawCurriculums[0]) as Curriculum),
+      knowledgeCheckPassThreshold: 70,
+      knowledgeCheckMaxAttempts: 2,
+      knowledgeCheckTimeLimit: 15,
+    };
+    const values = toCurriculumFormValues(curriculum);
+    expect(values).toMatchObject({
+      knowledgeCheckPassThreshold: 70,
+      knowledgeCheckMaxAttempts: 2,
+      knowledgeCheckTimeLimit: 15,
+    });
+    expect(toCurriculumWriteData({ ...values, knowledgeCheckTimeLimit: '' }))
+      .toMatchObject({
+        knowledgeCheckPassThreshold: 70,
+        knowledgeCheckMaxAttempts: 2,
+        knowledgeCheckTimeLimit: null,
+      });
+  });
+
+  it('falls back to the backend defaults when a curriculum has no knowledge check settings', () => {
+    const { knowledgeCheckPassThreshold, knowledgeCheckMaxAttempts, ...legacy } = camelCaseObject(
+      rawCurriculums[0],
+    ) as Curriculum;
+    expect(toCurriculumFormValues(legacy as Curriculum)).toMatchObject({
+      knowledgeCheckPassThreshold: 80,
+      knowledgeCheckMaxAttempts: 1,
+    });
   });
 
   it('gives empty defaults for a new curriculum', () => {
@@ -53,6 +87,9 @@ describe('curriculum form mapping', () => {
       courses: [],
       knowledgeCheck: null,
       knowledgeCheckDelayDays: '30',
+      knowledgeCheckPassThreshold: 80,
+      knowledgeCheckMaxAttempts: 1,
+      knowledgeCheckTimeLimit: '',
       badges: { complete: '', retained: '' },
       image: null,
       removeImage: false,
@@ -86,6 +123,9 @@ describe('mapCurriculumErrors', () => {
         course_ids: { 1: ['Course not found.'] },
         knowledge_check_course_id: ['Must not be a curriculum course.'],
         knowledge_check_delay_days: ['"7" is not a valid choice.'],
+        knowledge_check_pass_threshold: ['Ensure this value is less than or equal to 100.'],
+        knowledge_check_max_attempts: ['Ensure this value is greater than or equal to 1.'],
+        knowledge_check_time_limit: ['A valid integer is required.'],
         non_field_errors: ['Something general.'],
       }),
       ['course-v1:A+1+R', 'course-v1:A+2+R'],
@@ -95,6 +135,9 @@ describe('mapCurriculumErrors', () => {
         title: 'Too long.',
         knowledgeCheck: 'Must not be a curriculum course.',
         knowledgeCheckDelayDays: '"7" is not a valid choice.',
+        knowledgeCheckPassThreshold: 'Ensure this value is less than or equal to 100.',
+        knowledgeCheckMaxAttempts: 'Ensure this value is greater than or equal to 1.',
+        knowledgeCheckTimeLimit: 'A valid integer is required.',
       },
       rowErrors: { 'course-v1:A+2+R': 'Course not found.' },
       formError: 'Something general.',

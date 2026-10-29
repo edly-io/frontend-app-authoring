@@ -119,6 +119,58 @@ describe('<CurriculumForm />', () => {
     expect(axiosMock.history.post).toHaveLength(0);
   });
 
+  it('prefills the knowledge check settings with the defaults for a new curriculum', () => {
+    setup();
+    expect(screen.getByLabelText('Pass mark (%)')).toHaveValue(80);
+    expect(screen.getByLabelText('Maximum attempts')).toHaveValue(1);
+    expect(screen.getByLabelText('Time limit (minutes, optional)')).toHaveValue(null);
+  });
+
+  it('validates the knowledge check settings: required, range, at least 1 and whole numbers', async () => {
+    const { axiosMock, user } = setup({ curriculum });
+    await user.clear(screen.getByLabelText('Pass mark (%)'));
+    await user.clear(screen.getByLabelText('Maximum attempts'));
+    await user.type(screen.getByLabelText('Time limit (minutes, optional)'), '0');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('Enter a pass mark between 1 and 100.')).toBeInTheDocument();
+    expect(screen.getByText('Enter the maximum number of attempts.')).toBeInTheDocument();
+    expect(screen.getByText('Enter 1 or more.')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Pass mark (%)'), '101');
+    expect(await screen.findByText('Enter a pass mark between 1 and 100.')).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Maximum attempts'), '1.5');
+    expect(await screen.findByText('Enter a whole number.')).toBeInTheDocument();
+    expect(axiosMock.history.put).toHaveLength(0);
+
+    // Each error clears as soon as its value is fixed.
+    await user.clear(screen.getByLabelText('Pass mark (%)'));
+    await user.type(screen.getByLabelText('Pass mark (%)'), '100');
+    await user.clear(screen.getByLabelText('Maximum attempts'));
+    await user.type(screen.getByLabelText('Maximum attempts'), '3');
+    await user.clear(screen.getByLabelText('Time limit (minutes, optional)'));
+    await waitFor(() => expect(screen.queryByText('Enter 1 or more.')).not.toBeInTheDocument());
+    expect(screen.queryByText('Enter a pass mark between 1 and 100.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Enter a whole number.')).not.toBeInTheDocument();
+  });
+
+  it('sends edited knowledge check settings, and an emptied optional one as blank', async () => {
+    const withLimits = { ...curriculum, knowledgeCheckTimeLimit: 20 };
+    const { axiosMock, onClose, user } = setup({ curriculum: withLimits });
+    axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(200, rawCurriculums[0]);
+    expect(screen.getByLabelText('Time limit (minutes, optional)')).toHaveValue(20);
+    await user.clear(screen.getByLabelText('Pass mark (%)'));
+    await user.type(screen.getByLabelText('Pass mark (%)'), '70');
+    await user.clear(screen.getByLabelText('Maximum attempts'));
+    await user.type(screen.getByLabelText('Maximum attempts'), '2');
+    await user.clear(screen.getByLabelText('Time limit (minutes, optional)'));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    const putBody = axiosMock.history.put[0].data as FormData;
+    expect(putBody.get('knowledge_check_pass_threshold')).toEqual('70');
+    expect(putBody.get('knowledge_check_max_attempts')).toEqual('2');
+    expect(putBody.get('knowledge_check_time_limit')).toEqual('');
+  });
+
   it('moves focus to the first invalid field after a failed save', async () => {
     const { user } = setup();
     await user.click(screen.getByRole('button', { name: 'Create' }));

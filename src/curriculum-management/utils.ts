@@ -2,7 +2,7 @@ import type { AxiosError } from 'axios';
 import type { FormikErrors } from 'formik';
 import type { MessageDescriptor } from 'react-intl';
 
-import { SLOT_KEYS } from './constants';
+import { KC_MAX_ATTEMPTS_DEFAULT, KC_PASS_THRESHOLD_DEFAULT, SLOT_KEYS } from './constants';
 import type { CourseItem } from './curriculums/CourseOrderList';
 import messages from './messages';
 import type {
@@ -32,6 +32,13 @@ export interface CurriculumFormValues {
   courses: CourseItem[];
   knowledgeCheck: CourseItem | null;
   knowledgeCheckDelayDays: '15' | '30';
+  /*
+   * Number inputs: Formik stores a number once edited, or '' when the input is empty.
+   * The pass mark (1–100) and attempts (1 or more) are required; '' on the optional time limit means "no limit".
+   */
+  knowledgeCheckPassThreshold: number | '';
+  knowledgeCheckMaxAttempts: number | '';
+  knowledgeCheckTimeLimit: number | '';
   /** Slot -> badge UUID, or '' for no badge. */
   badges: Record<SlotKey, string>;
 }
@@ -46,6 +53,9 @@ export const toCurriculumFormValues = (curriculum?: Curriculum): CurriculumFormV
       courses: [],
       knowledgeCheck: null,
       knowledgeCheckDelayDays: '30',
+      knowledgeCheckPassThreshold: KC_PASS_THRESHOLD_DEFAULT,
+      knowledgeCheckMaxAttempts: KC_MAX_ATTEMPTS_DEFAULT,
+      knowledgeCheckTimeLimit: '',
       badges: { complete: '', retained: '' },
     };
   }
@@ -65,12 +75,20 @@ export const toCurriculumFormValues = (curriculum?: Curriculum): CurriculumFormV
       exists: curriculum.knowledgeCheck.exists,
     },
     knowledgeCheckDelayDays: String(curriculum.knowledgeCheckDelayDays) === '15' ? '15' : '30',
+    // The backend always sends these (its migration backfills the defaults); the fallback only covers an LMS
+    // that doesn't have the settings yet, so the form still opens with the values the backend would apply.
+    knowledgeCheckPassThreshold: curriculum.knowledgeCheckPassThreshold ?? KC_PASS_THRESHOLD_DEFAULT,
+    knowledgeCheckMaxAttempts: curriculum.knowledgeCheckMaxAttempts ?? KC_MAX_ATTEMPTS_DEFAULT,
+    knowledgeCheckTimeLimit: curriculum.knowledgeCheckTimeLimit ?? '',
     badges: {
       complete: curriculum.badges.complete?.uuid ?? '',
       retained: curriculum.badges.retained?.uuid ?? '',
     },
   };
 };
+
+/** An optional number input: '' (empty) is null. */
+const optionalNumber = (value: number | ''): number | null => (value === '' ? null : Number(value));
 
 export const toCurriculumWriteData = (values: CurriculumFormValues): CurriculumWriteData => ({
   title: values.title.trim(),
@@ -80,6 +98,10 @@ export const toCurriculumWriteData = (values: CurriculumFormValues): CurriculumW
   courseIds: values.courses.map((course) => course.id),
   knowledgeCheckCourseId: values.knowledgeCheck?.id ?? '',
   knowledgeCheckDelayDays: Number(values.knowledgeCheckDelayDays),
+  // The form schema requires the pass mark and attempts, so '' never reaches here for them.
+  knowledgeCheckPassThreshold: Number(values.knowledgeCheckPassThreshold),
+  knowledgeCheckMaxAttempts: Number(values.knowledgeCheckMaxAttempts),
+  knowledgeCheckTimeLimit: optionalNumber(values.knowledgeCheckTimeLimit),
   badges: {
     complete: values.badges.complete || null,
     retained: values.badges.retained || null,
@@ -143,6 +165,9 @@ export const mapCurriculumErrors = (error: unknown, courseIds: string[]): Mapped
   setField('image', body.image);
   setField('knowledgeCheck', body.knowledge_check_course_id);
   setField('knowledgeCheckDelayDays', body.knowledge_check_delay_days);
+  setField('knowledgeCheckPassThreshold', body.knowledge_check_pass_threshold);
+  setField('knowledgeCheckMaxAttempts', body.knowledge_check_max_attempts);
+  setField('knowledgeCheckTimeLimit', body.knowledge_check_time_limit);
 
   if (isPlainObject(body.course_ids)) {
     Object.entries(body.course_ids).forEach(([index, value]) => {

@@ -40,6 +40,9 @@ export interface Curriculum {
   courses: CurriculumCourse[];
   knowledgeCheck: CourseRef;
   knowledgeCheckDelayDays: number;
+  knowledgeCheckPassThreshold?: number | null;
+  knowledgeCheckMaxAttempts?: number | null;
+  knowledgeCheckTimeLimit?: number | null;
   /** Always both keys; null = empty slot (spec §6.4). */
   badges: Record<SlotKey, SlotBadge | null>;
   created: string;
@@ -93,6 +96,9 @@ export interface CurriculumWriteData {
   courseIds: string[];
   knowledgeCheckCourseId: string;
   knowledgeCheckDelayDays: number;
+  knowledgeCheckPassThreshold: number;
+  knowledgeCheckMaxAttempts: number;
+  knowledgeCheckTimeLimit: number | null;
   /** Slot -> badge UUID, or null for an empty slot (spec R6). */
   badges: Record<SlotKey, string | null>;
 }

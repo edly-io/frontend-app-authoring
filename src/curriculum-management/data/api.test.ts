@@ -79,6 +79,9 @@ describe('curriculum-management api', () => {
     courseIds: ['course-v1:A+B+C'],
     knowledgeCheckCourseId: 'course-v1:A+KC+C',
     knowledgeCheckDelayDays: 15,
+    knowledgeCheckPassThreshold: 80,
+    knowledgeCheckMaxAttempts: 1,
+    knowledgeCheckTimeLimit: null as number | null,
     badges: { complete: 'b-1', retained: null } as { complete: string | null; retained: string | null; },
     image: null as File | null,
     removeImage: false,
@@ -95,6 +98,17 @@ describe('curriculum-management api', () => {
     expect(body.has('badges.retained')).toBe(false);
     expect(body.has('image')).toBe(false);
     expect(body.has('remove_image')).toBe(false);
+    expect(body.get('knowledge_check_pass_threshold')).toEqual('80');
+    expect(body.get('knowledge_check_max_attempts')).toEqual('1');
+    // Unset optional time limit is sent empty so a PUT can clear it.
+    expect(body.get('knowledge_check_time_limit')).toEqual('');
+  });
+
+  it('sends a set time limit as a number', async () => {
+    axiosMock.onPost(apiUrls.curriculums()).reply(201, rawCurriculums[0]);
+    await api.createCurriculum({ ...curriculumData, knowledgeCheckTimeLimit: 15 });
+    const body = axiosMock.history.post[0].data as FormData;
+    expect(body.get('knowledge_check_time_limit')).toEqual('15');
   });
 
   it('includes image file in POST body when image is provided', async () => {
@@ -122,6 +136,9 @@ describe('curriculum-management api', () => {
       courseIds: [],
       knowledgeCheckCourseId: 'k',
       knowledgeCheckDelayDays: 30,
+      knowledgeCheckPassThreshold: 80,
+      knowledgeCheckMaxAttempts: 1,
+      knowledgeCheckTimeLimit: null,
       badges: { complete: null, retained: null },
       image: null,
       removeImage: false,
