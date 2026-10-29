@@ -107,8 +107,10 @@ export const CourseExportProvider = ({ children }: CourseExportProviderProps) =>
   const handleStartExportingCourse = async () => {
     reset();
     invalidateExportStatus();
-    setExportTriggered(true);
+    // Start polling only once the POST has created the new export task. A status request sent
+    // before that reports the previous export as done, with a download link Studio then 404s.
     await exportMutation.mutateAsync();
+    setExportTriggered(true);
     const momentDate = moment().valueOf();
     setExportCookie(momentDate);
     setSuccessDate(momentDate);

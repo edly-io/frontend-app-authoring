@@ -139,6 +139,35 @@ describe('<CourseExportPage />', () => {
     expect(screen.getByText(stepperMessages.stepperPreparingDescription.defaultMessage)).toBeInTheDocument();
   });
 
+  it('does not fetch the export status until the new export has started', async () => {
+    // Until the POST returns, Studio still reports the previous export: done, with its download link.
+    let exportStarted = false;
+    let statusFetchedEarly = false;
+    axiosMock
+      .onPost(postExportCourseApiUrl(courseId))
+      .reply(() =>
+        new Promise((resolve) => {
+          setTimeout(() => {
+            exportStarted = true;
+            resolve([200, exportPageMock]);
+          }, 50);
+        })
+      );
+    axiosMock
+      .onGet(getExportStatusApiUrl(courseId))
+      .reply(() => {
+        statusFetchedEarly ||= !exportStarted;
+        return [200, { exportStatus: EXPORT_STAGES.PREPARING }];
+      });
+    const user = userEvent.setup();
+    const { container } = renderComponent();
+    await user.click(container.querySelector('.btn-primary')!);
+    await waitFor(() =>
+      expect(axiosMock.history.get.some((r) => r.url === getExportStatusApiUrl(courseId))).toBe(true)
+    );
+    expect(statusFetchedEarly).toBe(false);
+  });
+
   it('should show download path for relative path', async () => {
     axiosMock
       .onGet(getExportStatusApiUrl(courseId))
