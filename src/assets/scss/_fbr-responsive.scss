@@ -92,3 +92,17 @@ div.pgn__data-table-layout-wrapper .pgn__data-table-layout-main {
     flex: 1 1 100%;
   }
 }
+
+// ── Enroll Batch modal ────────────────────────────────────────────────────
+
+@media (--pgn-size-breakpoint-max-width-xs) {
+  .enroll-batch-summary {
+    > span {
+      display: block;
+    }
+
+    .enroll-batch-summary__sep {
+      display: none;
+    }
+  }
+}

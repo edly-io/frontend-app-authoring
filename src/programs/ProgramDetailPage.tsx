@@ -53,7 +53,7 @@ const messages = defineMessages({
   tabDetails: { id: 'programs.detail.tab.details', defaultMessage: 'Program Details' },
   tabCourses: { id: 'programs.detail.tab.courses', defaultMessage: 'Courses' },
   tabInstructors: { id: 'programs.detail.tab.instructors', defaultMessage: 'Instructors' },
-  tabEnrollment: { id: 'programs.detail.tab.enrollment', defaultMessage: 'Enrollment' },
+  tabEnrollment: { id: 'programs.detail.tab.enrollment', defaultMessage: 'Trainee Enrollment' },
   tabFeedback: { id: 'programs.detail.tab.feedback', defaultMessage: 'Feedback' },
   tabTraineeResults: { id: 'programs.detail.tab.bulk-trainee-results', defaultMessage: 'Trainees Results' },
   tabCertificates: { id: 'programs.detail.tab.certificates', defaultMessage: 'Certificates' },

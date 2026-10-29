@@ -12,7 +12,9 @@ import {
   Spinner,
 } from '@openedx/paragon';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
+import { toRoleBadges, UserIdentity } from '@edly-io/frontend-component-fbr';
 import { useLearners, useEnrollLearner, useEnrolledLearnerIds } from '../data/apiHooks';
+import { getInitials } from '../feedback-tab/dashboard/feedbackDashboardUtils';
 
 const messages = defineMessages({
   title: { id: 'programs.enrollment.modal.title', defaultMessage: 'Enroll Learner in Program' },
@@ -123,12 +125,18 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
             return (
               <div
                 key={learner.id}
-                className="d-flex justify-content-between align-items-center py-3"
-                style={{ borderBottom: '1px solid #dee2e6' }}
+                className="program-member-row d-flex align-items-center py-3"
               >
-                <div>
-                  <p className="mb-1 font-weight-bold">{learner.name}</p>
-                  <p className="mb-0 small text-muted">{learner.email}</p>
+                <div className="program-member-row__main flex-grow-1 d-flex flex-wrap align-items-center">
+                  <div className="program-member-row__identity">
+                    <UserIdentity
+                      name={learner.name}
+                      badges={toRoleBadges('trainee')}
+                      size="compact"
+                      avatarValue={getInitials(learner.name)}
+                    />
+                  </div>
+                  <span className="program-member-row__email text-muted">{learner.email}</span>
                 </div>
                 {isEnrolled ? (
                   <Badge variant="success">{intl.formatMessage(messages.enrolledBadge)}</Badge>

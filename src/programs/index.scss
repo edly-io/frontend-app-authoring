@@ -36,7 +36,8 @@
   }
 }
 
-.instructor-row {
+// Member rows on the Instructors and Trainee Enrollment tabs.
+.program-member-row {
   border-bottom: 1px solid var(--pgn-color-gray-200);
 
   &__number {
@@ -48,6 +49,7 @@
   &__main {
     min-width: 0;
     gap: var(--pgn-spacing-spacer-2);
+    padding-right: var(--pgn-spacing-spacer-3);
   }
 
   &__identity {
