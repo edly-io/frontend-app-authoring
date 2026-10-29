@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert, Button, Form, Spinner,
 } from '@openedx/paragon';
+import { getConfig } from '@edx/frontend-platform';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { logError } from '@edx/frontend-platform/logging';
 import SectionSubHeader from '../../generic/section-sub-header';
@@ -25,6 +26,7 @@ const getErrorBody = (err: unknown): CoursePricingError | null => {
 
 const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
   const intl = useIntl();
+  const siteName = getConfig().SITE_NAME || 'platform';
   const [isLoading, setIsLoading] = useState(true);
   // '' means the course has no type yet, so no radio is selected.
   const [category, setCategory] = useState<PricingCategory | ''>('');
@@ -159,7 +161,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
       />
 
       {isReadOnly && managedByAdmin && (
-        <Alert variant="info" className="mb-3">{intl.formatMessage(messages.managedByAdmin)}</Alert>
+        <Alert variant="info" className="mb-3">{intl.formatMessage(messages.managedByAdmin, { siteName })}</Alert>
       )}
       {programName && (
         <Alert variant="info" className="mb-3">
@@ -202,7 +204,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
           </Form.Radio>
           <Form.Radio
             value="is_part_of_subscription"
-            description={intl.formatMessage(messages.categorySubscriptionDescription)}
+            description={intl.formatMessage(messages.categorySubscriptionDescription, { siteName })}
             disabled={isSaving || isTypeLocked}
           >
             {intl.formatMessage(messages.categorySubscription)}

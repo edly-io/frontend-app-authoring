@@ -1,3 +1,4 @@
+import { mergeConfig } from '@edx/frontend-platform';
 import {
   fireEvent, initializeMocks, render, screen, waitFor,
 } from '@src/testUtils';
@@ -39,6 +40,7 @@ const renderPage = (overrides: Partial<Program> = {}) => {
 const saveProgram = () => fireEvent.click(screen.getByRole('button', { name: 'Save Program' }));
 
 describe('<ProgramDetailPage /> pricing', () => {
+  beforeAll(() => { mergeConfig({ SITE_NAME: 'Arbisoft' }); });
   let mockShowToast: jest.Mock;
 
   beforeEach(() => {
@@ -54,7 +56,7 @@ describe('<ProgramDetailPage /> pricing', () => {
     expect(screen.getByRole('radio', { name: 'Paid' })).toBeChecked();
     expect(screen.getByLabelText('Price (SAR)')).toBeEnabled();
     expect(screen.getByLabelText('Discounted Price / Sale Price (SAR)')).toBeEnabled();
-    expect(screen.queryByText(/managed by the Rwaq admin/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/managed by the Arbisoft admin/)).not.toBeInTheDocument();
   });
 
   it('computes the discount percentage live from the inputs', () => {

@@ -11,6 +11,7 @@ import {
   useToggle,
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
+import { getConfig } from '@edx/frontend-platform';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import { useProgramEnrollments } from '../data/apiHooks';
 import AddLearnerModal from './AddLearnerModal';
@@ -26,11 +27,11 @@ const messages = defineMessages({
   paginationLabel: { id: 'programs.enrollment.pagination', defaultMessage: 'Enrolled learner list pagination' },
   paidEnrollAdminOnly: {
     id: 'programs.enrollment.paid-admin-only',
-    defaultMessage: 'This is a paid program. Only Rwaq admins can enroll learners into it.',
+    defaultMessage: 'This is a paid program. Only {siteName} admins can enroll learners into it.',
   },
   subscriptionEnrollNote: {
     id: 'programs.enrollment.subscription-note',
-    defaultMessage: 'Learners join this program through their Rwaq subscription.',
+    defaultMessage: 'Learners join this program through their {siteName} subscription.',
   },
 });
 
@@ -46,6 +47,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
   programId, canEnroll = true, isSubscriptionProgram = false,
 }) => {
   const intl = useIntl();
+  const siteName = getConfig().SITE_NAME || 'platform';
   const [isModalOpen, openModal, closeModal] = useToggle(false);
   const [enrolledSearch, setEnrolledSearch] = useState('');
   const [enrolledPage, setEnrolledPage] = useState(1);
@@ -76,7 +78,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
             placement="top"
             overlay={(
               <Tooltip id="subscription-enroll-tooltip">
-                {intl.formatMessage(messages.subscriptionEnrollNote)}
+                {intl.formatMessage(messages.subscriptionEnrollNote, { siteName })}
               </Tooltip>
             )}
           >
@@ -102,7 +104,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
             {intl.formatMessage(messages.enrollLearnerBtn)}
           </Button>
         ) : (
-          <p className="text-muted small mb-0">{intl.formatMessage(messages.paidEnrollAdminOnly)}</p>
+          <p className="text-muted small mb-0">{intl.formatMessage(messages.paidEnrollAdminOnly, { siteName })}</p>
         ))}
       </div>
 

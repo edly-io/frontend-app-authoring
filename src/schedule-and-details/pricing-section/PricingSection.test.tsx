@@ -1,4 +1,4 @@
-import { getConfig } from '@edx/frontend-platform';
+import { getConfig, mergeConfig } from '@edx/frontend-platform';
 import {
   fireEvent, initializeMocks, render, screen, waitFor,
 } from '@src/testUtils';
@@ -29,6 +29,7 @@ const renderSection = async (overrides = {}) => {
 };
 
 describe('<PricingSection />', () => {
+  beforeAll(() => { mergeConfig({ SITE_NAME: 'Arbisoft' }); });
   beforeEach(() => {
     ({ axiosMock } = initializeMocks());
   });
@@ -161,7 +162,7 @@ describe('<PricingSection />', () => {
     await renderSection({
       pricing_category: 'is_paid', regular_price: '100.00', can_edit: false, pricing_managed_by_admin: true,
     });
-    expect(screen.getByText(/managed by the Rwaq admin/)).toBeInTheDocument();
+    expect(screen.getByText(/managed by the Arbisoft admin/)).toBeInTheDocument();
     screen.getAllByRole('radio').forEach((radio) => expect(radio).toBeDisabled());
     expect(screen.getByLabelText('Price (SAR)')).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Save course type' })).not.toBeInTheDocument();
@@ -169,7 +170,7 @@ describe('<PricingSection />', () => {
 
   it('hides the admin alert when course team cannot edit but admin is not managing pricing', async () => {
     await renderSection({ can_edit: false, pricing_managed_by_admin: false });
-    expect(screen.queryByText(/managed by the Rwaq admin/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/managed by the Arbisoft admin/)).not.toBeInTheDocument();
     screen.getAllByRole('radio').forEach((radio) => expect(radio).toBeDisabled());
     expect(screen.queryByRole('button', { name: 'Save course type' })).not.toBeInTheDocument();
   });
