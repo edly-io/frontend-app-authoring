@@ -140,7 +140,7 @@ const CurriculumCard = ({ curriculum, defaultExpanded = false, onEdit }: Curricu
             <Badge variant="light" className="mt-1">
               {intl.formatMessage(messages.opensAfter, { days: curriculum.knowledgeCheckDelayDays })}
             </Badge>
-            {/* Guarded for an LMS that doesn't send these settings yet (see toCurriculumFormValues). */}
+            {/* Pass mark and attempts are hidden when the LMS doesn't send them; a missing time limit shows as 'No time limit'. */}
             <ul className="list-unstyled mb-0 mt-2 small text-gray-700">
               {curriculum.knowledgeCheckPassThreshold != null && (
                 <li>

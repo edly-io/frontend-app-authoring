@@ -40,9 +40,9 @@ export interface Curriculum {
   courses: CurriculumCourse[];
   knowledgeCheck: CourseRef;
   knowledgeCheckDelayDays: number;
-  knowledgeCheckPassThreshold: number;
-  knowledgeCheckMaxAttempts: number;
-  knowledgeCheckTimeLimit: number | null;
+  knowledgeCheckPassThreshold?: number | null;
+  knowledgeCheckMaxAttempts?: number | null;
+  knowledgeCheckTimeLimit?: number | null;
   /** Always both keys; null = empty slot (spec §6.4). */
   badges: Record<SlotKey, SlotBadge | null>;
   created: string;

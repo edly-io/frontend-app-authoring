@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ChangeEvent } from 'react';
 import { useHref } from 'react-router-dom';
 import { Formik, getIn } from 'formik';
 import * as Yup from 'yup';
@@ -40,9 +40,6 @@ import CoursePicker from './CoursePicker';
 
 const KC_ERROR_ID = 'curriculum-knowledge-check-error';
 const FORM_ID = 'curriculum-form';
-
-/** Yup transform for an empty number input: without it '' casts to NaN and fails as "not a number". */
-const emptyAs = (empty: undefined | null) => (value: number, original: unknown) => (original === '' ? empty : value);
 
 export interface CurriculumFormProps {
   curriculum?: Curriculum;
@@ -98,17 +95,14 @@ const CurriculumForm = ({
       }),
     knowledgeCheckDelayDays: Yup.string().oneOf([...DELAY_OPTIONS]),
     knowledgeCheckPassThreshold: wholeNumber()
-      .transform(emptyAs(undefined))
       .min(1, intl.formatMessage(messages.passThresholdRange))
       .max(100, intl.formatMessage(messages.passThresholdRange))
       .required(intl.formatMessage(messages.passThresholdRange)),
     knowledgeCheckMaxAttempts: wholeNumber()
-      .transform(emptyAs(undefined))
       .min(1, intl.formatMessage(messages.numberMinOne))
       .max(32767, intl.formatMessage(messages.numberTooLarge))
       .required(intl.formatMessage(messages.maxAttemptsRequired)),
     knowledgeCheckTimeLimit: wholeNumber()
-      .transform(emptyAs(null))
       .nullable()
       .min(1, intl.formatMessage(messages.numberMinOne))
       .max(32767, intl.formatMessage(messages.numberTooLarge)),
@@ -350,7 +344,10 @@ const CurriculumForm = ({
                         type="number"
                         name="knowledgeCheckPassThreshold"
                         value={values.knowledgeCheckPassThreshold}
-                        onChange={handleChange}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                          if (event.target.validity.badInput) { return; }
+                          handleChange(event);
+                        }}
                         onBlur={handleBlur}
                         min={1}
                         max={100}
@@ -372,7 +369,10 @@ const CurriculumForm = ({
                         type="number"
                         name="knowledgeCheckMaxAttempts"
                         value={values.knowledgeCheckMaxAttempts}
-                        onChange={handleChange}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                          if (event.target.validity.badInput) { return; }
+                          handleChange(event);
+                        }}
                         onBlur={handleBlur}
                         min={1}
                         max={32767}
@@ -394,7 +394,10 @@ const CurriculumForm = ({
                         type="number"
                         name="knowledgeCheckTimeLimit"
                         value={values.knowledgeCheckTimeLimit}
-                        onChange={handleChange}
+                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                          if (event.target.validity.badInput) { return; }
+                          handleChange(event);
+                        }}
                         onBlur={handleBlur}
                         min={1}
                         max={32767}
