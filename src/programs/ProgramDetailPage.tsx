@@ -21,6 +21,7 @@ import {
   Tabs,
   useToggle,
 } from '@openedx/paragon';
+import { getConfig } from '@edx/frontend-platform';
 import { useIntl, defineMessages } from '@edx/frontend-platform/i18n';
 import { StudioFooterSlot } from '@edx/frontend-component-footer';
 import Header from '../header';
@@ -74,7 +75,7 @@ const messages = defineMessages({
   pricingPaid: { id: 'programs.detail.field.pricing.paid', defaultMessage: 'Paid' },
   pricingPaidDescription: { id: 'programs.detail.field.pricing.paid.description', defaultMessage: 'Sold at the price set below.' },
   pricingSubscription: { id: 'programs.detail.field.pricing.subscription', defaultMessage: 'Part of Subscription' },
-  pricingSubscriptionDescription: { id: 'programs.detail.field.pricing.subscription.description', defaultMessage: 'Learners reach this program through the Rwaq subscription. It has no price of its own.' },
+  pricingSubscriptionDescription: { id: 'programs.detail.field.pricing.subscription.description', defaultMessage: 'Learners reach this program through the {siteName} subscription. It has no price of its own.' },
   fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price ({currency})' },
   fieldPriceHint: { id: 'programs.detail.field.price.hint', defaultMessage: 'Regular price shown on the marketing site.' },
   fieldSalePrice: { id: 'programs.detail.field.sale-price', defaultMessage: 'Discounted Price / Sale Price ({currency})' },
@@ -570,7 +571,7 @@ const ProgramDetailPage: React.FC = () => {
                           </Form.Radio>
                           <Form.Radio
                             value="is_part_of_subscription"
-                            description={intl.formatMessage(messages.pricingSubscriptionDescription)}
+                            description={intl.formatMessage(messages.pricingSubscriptionDescription, { siteName: getConfig().SITE_NAME || 'platform' })}
                           >
                             {intl.formatMessage(messages.pricingSubscription)}
                           </Form.Radio>

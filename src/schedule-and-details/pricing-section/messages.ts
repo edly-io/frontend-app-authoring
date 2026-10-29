@@ -39,7 +39,7 @@ const messages = defineMessages({
   },
   categorySubscriptionDescription: {
     id: 'course-authoring.schedule-section.pricing.category-subscription.description',
-    defaultMessage: 'Learners reach this course through the Rwaq subscription. It has no price of its own.',
+    defaultMessage: 'Learners reach this course through the {siteName} subscription. It has no price of its own.',
   },
   noTypeHint: {
     id: 'course-authoring.schedule-section.pricing.no-type-hint',
@@ -99,7 +99,7 @@ const messages = defineMessages({
   },
   managedByAdmin: {
     id: 'course-authoring.schedule-section.pricing.managed-by-admin',
-    defaultMessage: 'The type and price of this course are managed by the Rwaq admin and cannot be changed here.',
+    defaultMessage: 'The type and price of this course are managed by the {siteName} admin and cannot be changed here.',
   },
 });
 

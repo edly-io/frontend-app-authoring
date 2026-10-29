@@ -1,3 +1,4 @@
+import { mergeConfig } from '@edx/frontend-platform';
 import {
   fireEvent, initializeMocks, render, screen,
 } from '@src/testUtils';
@@ -16,6 +17,7 @@ jest.mock('@src/programs/data/apiHooks', () => ({
 const programId = 'prog-key-1';
 
 describe('<EnrollmentTab />', () => {
+  beforeAll(() => { mergeConfig({ SITE_NAME: 'Arbisoft' }); });
   beforeEach(() => {
     initializeMocks();
     mockUseProgramEnrollments.mockReturnValue({
@@ -64,7 +66,7 @@ describe('<EnrollmentTab />', () => {
   it('hides "Enroll Learner" when the user may not enroll into this paid program', () => {
     render(<EnrollmentTab programId={programId} canEnroll={false} />);
     expect(screen.queryByRole('button', { name: /Enroll Learner/i })).not.toBeInTheDocument();
-    expect(screen.getByText(/Only Rwaq admins can enroll learners/i)).toBeInTheDocument();
+    expect(screen.getByText(/Only Arbisoft admins can enroll learners/i)).toBeInTheDocument();
   });
 
   it('disables "Enroll Learner" for a subscription program, even for a superadmin, and says why', async () => {
@@ -75,7 +77,7 @@ describe('<EnrollmentTab />', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     fireEvent.mouseOver(button);
     expect(await screen.findByRole('tooltip')).toHaveTextContent(
-      'Learners join this program through their Rwaq subscription.',
+      'Learners join this program through their Arbisoft subscription.',
     );
   });
 
