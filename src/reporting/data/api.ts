@@ -17,6 +17,8 @@ export interface CourseEnrollmentRow {
   totalUnits: number | null;
   completedAt: string | null;
   badgeAwarded: boolean;
+  /** False when no badge exists for this course, which is not the same as nobody earning one. */
+  badgeConfigured: boolean;
 }
 
 export interface CourseCurriculum {
@@ -45,6 +47,7 @@ export interface CurriculumAssignmentRow {
   courseProgress: CourseProgress[];
   completeAt: string | null;
   completeBadgeAwardedAt: string | null;
+  completeBadgeConfigured: boolean;
   kcUnlocksAt: string | null;
   kcTakenAt: string | null;
   kcScorePct: number | null;
@@ -52,6 +55,7 @@ export interface CurriculumAssignmentRow {
   kcAttemptsUsed: number | null;
   retainedAt: string | null;
   retainedBadgeAwardedAt: string | null;
+  retainedBadgeConfigured: boolean;
   currentStreak: number | null;
   longestStreak: number | null;
   lifetimePoints: number | null;

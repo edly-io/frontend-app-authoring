@@ -32,7 +32,7 @@ jest.mock('@edx/frontend-component-footer', () => ({
 const courseId = 'course-v1:Uber+101+2026';
 const curriculumUuid = 'abc-123';
 
-const enrollment = (n: number) => ({
+const enrollment = (n: number, badge = { badge_awarded: true, badge_configured: true }) => ({
   username: `learner${n}`,
   email: `learner${n}@example.com`,
   name: `Learner ${n}`,
@@ -42,7 +42,7 @@ const enrollment = (n: number) => ({
   completed_units: 5,
   total_units: 10,
   completed_at: null,
-  badge_awarded: true,
+  ...badge,
 });
 
 const assignment = (courseProgress) => ({
@@ -55,6 +55,11 @@ const assignment = (courseProgress) => ({
   courses_total: 3,
   course_progress: courseProgress,
   complete_at: null,
+  complete_badge_awarded_at: null,
+  complete_badge_configured: false,
+  retained_at: null,
+  retained_badge_awarded_at: null,
+  retained_badge_configured: false,
   kc_score_pct: 90,
   kc_passed: true,
 });
@@ -180,6 +185,44 @@ describe('<ReportingPage />', () => {
     expect(screen.getByText('Locked', { selector: 'span.reporting-badge' })).toBeInTheDocument();
     // The in-progress course shows how far along it is; a locked one shows nothing.
     expect(screen.getByText('40%')).toBeInTheDocument();
+  });
+
+  it('shows a course badge as awarded, not awarded or absent', async () => {
+    axiosMock.onGet(getCourseEnrollmentsUrl(courseId)).reply(200, {
+      count: 3,
+      results: [
+        enrollment(1, { badge_awarded: true, badge_configured: true }),
+        enrollment(2, { badge_awarded: false, badge_configured: true }),
+        // No badge is linked to this course at all, so there is nothing for anyone to earn.
+        enrollment(3, { badge_awarded: false, badge_configured: false }),
+      ],
+    });
+    render(<ReportingPage />, { path: '/reporting' });
+    await selectCourse();
+
+    expect(await screen.findByText('learner1')).toBeInTheDocument();
+    expect(screen.getByText('Awarded', { selector: 'span.reporting-badge' })).toBeInTheDocument();
+    expect(screen.getByText('Not Awarded', { selector: 'span.reporting-badge' })).toBeInTheDocument();
+    expect(screen.getByText('No Badge', { selector: 'span.reporting-badge' })).toBeInTheDocument();
+  });
+
+  it('shows curriculum slot badges, and marks an empty slot as having no badge', async () => {
+    const row = assignment([]);
+    axiosMock.onGet(getCurriculumAssignmentsUrl(curriculumUuid)).reply(200, {
+      count: 1,
+      results: [{
+        ...row,
+        complete_badge_awarded_at: '2026-10-20T00:00:00Z',
+        complete_badge_configured: true,
+        // The Retained slot is empty, so it reads as "No Badge" rather than as a missed milestone.
+        retained_badge_configured: false,
+      }],
+    });
+    render(<ReportingPage />, { path: '/reporting' });
+    await selectCurriculum();
+
+    expect(await screen.findByText('assigned1')).toBeInTheDocument();
+    expect(screen.getByText('No Badge', { selector: 'span.reporting-badge' })).toBeInTheDocument();
   });
 
   it('shows no curriculum table until one is picked', async () => {
