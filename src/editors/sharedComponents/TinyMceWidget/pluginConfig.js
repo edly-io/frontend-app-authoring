@@ -1,6 +1,19 @@
 import { StrictDict } from '../../utils';
 import { buttons, plugins } from '../../data/constants/tinyMCE';
 
+const uberColorMap = [
+  '000000', 'Content Primary',
+  '4B4B4B', 'Content Secondary',
+  '757575', 'Content Tertiary',
+  '276EF1', 'Uber Blue',
+  '0E8345', 'Positive Green',
+  'DE1135', 'Negative Red',
+  'E46B10', 'Warning Orange',
+  'FFFFFF', 'White',
+  'F6F6F6', 'Background Secondary',
+  'E2E2E2', 'Border',
+];
+
 const mapToolbars = toolbars => toolbars.map(toolbar => toolbar.join(' ')).join(' | ');
 
 const pluginConfig = ({ placeholder, editorType, enableImageUpload }) => {
@@ -102,6 +115,7 @@ const pluginConfig = ({ placeholder, editorType, enableImageUpload }) => {
         powerpaste_html_import: 'prompt',
         powerpaste_googledoc_import: 'prompt',
         autoresize_bottom_margin: autoresizeBottomMargin,
+        color_map: uberColorMap,
       },
     })
   );
