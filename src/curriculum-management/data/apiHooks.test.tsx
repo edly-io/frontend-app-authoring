@@ -4,7 +4,9 @@ import { initializeMocks, makeWrapper } from '@src/testUtils';
 import {
   page,
   rawBadges,
+  rawCourseGroups,
   rawCurriculums,
+  rawDeepLinksConfig,
   rawStatus,
 } from '../__mocks__/fixtures';
 import { apiUrls } from './api';
@@ -15,7 +17,10 @@ import {
   useCreateCurriculum,
   useCurriculums,
   useCurriculumManagementStatus,
+  useDeepLinksConfig,
   useDeleteBadge,
+  useDeleteCourseGroup,
+  useCourseGroups,
 } from './apiHooks';
 
 describe('curriculum-management apiHooks', () => {
@@ -76,6 +81,7 @@ describe('curriculum-management apiHooks', () => {
     axiosMock.onPost(apiUrls.curriculums()).reply(201, rawCurriculums[0]);
     const { result } = renderHook(() => useCreateCurriculum(), { wrapper: makeWrapper() });
     await result.current.mutateAsync({
+      slug: '',
       title: 'T',
       description: '',
       courseIds: ['c'],
@@ -159,5 +165,27 @@ describe('curriculum-management apiHooks', () => {
     expect(result.current.badges.isFetching).toBe(false);
     expect(result.current.badges.data).toHaveLength(1);
     expect(badgeFetches).toBe(2);
+  });
+
+  it('useCourseGroups loads every page; deleting a group refreshes only the groups list', async () => {
+    const { axiosMock, queryClient } = initializeMocks();
+    axiosMock.onGet(apiUrls.courseGroupsPage(1)).reply(200, page(rawCourseGroups));
+    axiosMock.onDelete(apiUrls.courseGroup('ev-drivers')).reply(204);
+    const { result } = renderHook(() => useCourseGroups(), { wrapper: makeWrapper() });
+    await waitFor(() => expect(result.current.data).toHaveLength(2));
+    const spy = jest.spyOn(queryClient, 'invalidateQueries');
+    const { result: remove } = renderHook(() => useDeleteCourseGroup(), { wrapper: makeWrapper() });
+    await remove.current.mutateAsync('ev-drivers');
+    expect(spy).toHaveBeenCalledWith({ queryKey: curriculumQueryKeys.courseGroups() });
+    expect(spy).not.toHaveBeenCalledWith({ queryKey: curriculumQueryKeys.curriculums() });
+    expect(spy).not.toHaveBeenCalledWith({ queryKey: curriculumQueryKeys.badges() });
+  });
+
+  it('useDeepLinksConfig is fetched once and not retried on a 4xx', async () => {
+    const { axiosMock } = initializeMocks();
+    axiosMock.onGet(apiUrls.deepLinksConfig()).reply(200, rawDeepLinksConfig());
+    const { result } = renderHook(() => useDeepLinksConfig(), { wrapper: makeWrapper() });
+    await waitFor(() => expect(result.current.data?.scheme).toEqual('uber-launch-v3'));
+    expect(axiosMock.history.get.filter((r) => r.url === apiUrls.deepLinksConfig())).toHaveLength(1);
   });
 });

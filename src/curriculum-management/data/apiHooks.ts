@@ -6,7 +6,13 @@ import {
 } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
-import type { BadgeWriteData, CurriculumWriteData } from '../types';
+import type {
+  BadgeWriteData,
+  CourseGroupWriteData,
+  CurriculumWriteData,
+  DeepLinkWriteData,
+  TestLinkRequest,
+} from '../types';
 import * as api from './api';
 
 // Query-key factory, in the style of taxonomyQueryKeys (src/taxonomy/data/apiHooks.ts).
@@ -16,6 +22,9 @@ export const curriculumQueryKeys = {
   curriculums: () => [...curriculumQueryKeys.all, 'curriculums'],
   badges: () => [...curriculumQueryKeys.all, 'badges'],
   courseSearch: (term: string) => [...curriculumQueryKeys.all, 'courseSearch', term],
+  courseGroups: () => [...curriculumQueryKeys.all, 'courseGroups'],
+  deepLinksConfig: () => [...curriculumQueryKeys.all, 'deepLinksConfig'],
+  deepLinks: () => [...curriculumQueryKeys.all, 'deepLinks'],
 };
 
 const isClientError = (error: unknown) => {
@@ -142,3 +151,98 @@ export const useDeleteBadge = () => {
     onSuccess: invalidate,
   });
 };
+
+/** The driver groups (optional courses), for the Course groups tab and the Deep links tab's group checkboxes. */
+export const useCourseGroups = () =>
+  useQuery({
+    queryKey: curriculumQueryKeys.courseGroups(),
+    queryFn: api.getAllCourseGroups,
+    retry: retryUnlessClientError,
+  });
+
+/**
+ * Course groups are their own list (nothing else embeds them), so their mutations refresh only it. The refetch
+ * promise is returned for the same reason as the curriculum lists: the form closes once the list is fresh.
+ */
+const useInvalidateCourseGroups = () => {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: curriculumQueryKeys.courseGroups() });
+};
+
+export const useCreateCourseGroup = () => {
+  const invalidate = useInvalidateCourseGroups();
+  return useMutation({
+    mutationFn: (data: CourseGroupWriteData) => api.createCourseGroup(data),
+    onSuccess: invalidate,
+  });
+};
+
+export const useUpdateCourseGroup = () => {
+  const invalidate = useInvalidateCourseGroups();
+  return useMutation({
+    mutationFn: ({ slug, data }: { slug: string; data: CourseGroupWriteData; }) => api.updateCourseGroup(slug, data),
+    onSuccess: invalidate,
+  });
+};
+
+export const useDeleteCourseGroup = () => {
+  const invalidate = useInvalidateCourseGroups();
+  return useMutation({
+    mutationFn: (slug: string) => api.deleteCourseGroup(slug),
+    onSuccess: invalidate,
+  });
+};
+
+/** The link shapes and whether test links can be minted; settings rarely change, so once per session. */
+export const useDeepLinksConfig = () =>
+  useQuery({
+    queryKey: curriculumQueryKeys.deepLinksConfig(),
+    queryFn: api.getDeepLinksConfig,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    retry: retryUnlessClientError,
+  });
+
+/** The saved deep links, for the Deep links tab. */
+export const useDeepLinks = () =>
+  useQuery({
+    queryKey: curriculumQueryKeys.deepLinks(),
+    queryFn: api.getAllDeepLinks,
+    retry: retryUnlessClientError,
+  });
+
+/** Deep links are their own list, so their mutations refresh only it (the form closes once it is fresh). */
+const useInvalidateDeepLinks = () => {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: curriculumQueryKeys.deepLinks() });
+};
+
+export const useCreateDeepLink = () => {
+  const invalidate = useInvalidateDeepLinks();
+  return useMutation({
+    mutationFn: (data: DeepLinkWriteData) => api.createDeepLink(data),
+    onSuccess: invalidate,
+  });
+};
+
+export const useUpdateDeepLink = () => {
+  const invalidate = useInvalidateDeepLinks();
+  return useMutation({
+    mutationFn: ({ uuid, data }: { uuid: string; data: DeepLinkWriteData; }) => api.updateDeepLink(uuid, data),
+    onSuccess: invalidate,
+  });
+};
+
+export const useDeleteDeepLink = () => {
+  const invalidate = useInvalidateDeepLinks();
+  return useMutation({
+    mutationFn: (uuid: string) => api.deleteDeepLink(uuid),
+    onSuccess: invalidate,
+  });
+};
+
+/** Mints a signed test link. Nothing to invalidate: a test link is not stored anywhere. */
+export const useMintTestLink = () =>
+  useMutation({
+    mutationFn: (request: TestLinkRequest) => api.mintTestLink(request),
+  });

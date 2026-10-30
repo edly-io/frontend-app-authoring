@@ -14,7 +14,7 @@ describe('<CurriculumCard />', () => {
     const user = userEvent.setup();
     render(<CurriculumCard curriculum={curriculum} defaultExpanded={false} onEdit={jest.fn()} />);
     expect(screen.getByRole('heading', { name: 'New driver essentials' })).toBeInTheDocument();
-    expect(screen.getByText('ID: cur-1')).toBeInTheDocument();
+    expect(screen.getByText('Path ID: new-driver-essentials')).toBeInTheDocument();
     expect(screen.getByText('2 courses')).toBeInTheDocument();
     expect(screen.getByText('Knowledge check after 30 days')).toBeInTheDocument();
     expect(screen.getByText('2 of 2 badges')).toBeInTheDocument();

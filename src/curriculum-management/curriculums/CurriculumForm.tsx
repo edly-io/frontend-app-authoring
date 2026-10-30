@@ -19,6 +19,8 @@ import {
   CURRICULUM_IMAGE_MAX_BYTES,
   CURRICULUM_TITLE_MAX,
   DELAY_OPTIONS,
+  GROUP_SLUG_PATTERN,
+  PATH_SLUG_MAX,
   SLOT_KEYS,
 } from '../constants';
 import ImageField from '../ImageField';
@@ -29,6 +31,7 @@ import type { Curriculum } from '../types';
 import {
   type CurriculumFormValues,
   mapCurriculumErrors,
+  suggestSlug,
   toCurriculumFormValues,
   toCurriculumWriteData,
 } from '../utils';
@@ -74,6 +77,8 @@ const CurriculumForm = ({
   // Focus hand-offs: after "Change" the new search input; after picking, the "Change" button.
   const [focusKcSearch, setFocusKcSearch] = useState(false);
   const focusKcChange = useRef(false);
+  // On the create form the ID follows the title until the author types their own.
+  const slugEdited = useRef(false);
 
   const wholeNumber = () =>
     Yup.number()
@@ -81,6 +86,9 @@ const CurriculumForm = ({
       .integer(intl.formatMessage(messages.invalidWholeNumber));
 
   const validationSchema = Yup.object({
+    slug: Yup.string().trim()
+      .max(PATH_SLUG_MAX, intl.formatMessage(messages.pathIdInvalid))
+      .test('slug', intl.formatMessage(messages.pathIdInvalid), (value) => !value || GROUP_SLUG_PATTERN.test(value)),
     title: Yup.string().trim()
       .required(intl.formatMessage(messages.titleRequired))
       .max(CURRICULUM_TITLE_MAX, intl.formatMessage(messages.tooLong, { max: CURRICULUM_TITLE_MAX })),
@@ -153,6 +161,8 @@ const CurriculumForm = ({
         <ModalDialog.Title>{heading}</ModalDialog.Title>
         {curriculum && (
           <p className="x-small text-gray-700 mt-1 mb-0">
+            {intl.formatMessage(messages.pathId, { id: curriculum.slug })}
+            {' · '}
             {intl.formatMessage(messages.itemId, { id: curriculum.uuid })}
           </p>
         )}
@@ -197,10 +207,43 @@ const CurriculumForm = ({
                   <FormSection>
                     <Form.Group controlId="curriculum-title" isInvalid={!!errorFor('title')}>
                       <Form.Label>{intl.formatMessage(messages.titleLabel)}</Form.Label>
-                      <Form.Control name="title" value={values.title} onChange={handleChange} onBlur={handleBlur} />
+                      <Form.Control
+                        name="title"
+                        value={values.title}
+                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                          handleChange(event);
+                          if (!curriculum && !slugEdited.current) {
+                            setFieldValue('slug', suggestSlug(event.target.value));
+                          }
+                        }}
+                        onBlur={handleBlur}
+                      />
                       {errorFor('title') && (
                         <Form.Control.Feedback type="invalid" hasIcon={false}>
                           {errorFor('title')}
+                        </Form.Control.Feedback>
+                      )}
+                    </Form.Group>
+                    <Form.Group controlId="curriculum-slug" isInvalid={!!errorFor('slug')}>
+                      <Form.Label>{intl.formatMessage(messages.pathIdLabel)}</Form.Label>
+                      <Form.Control
+                        name="slug"
+                        value={values.slug}
+                        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                          slugEdited.current = true;
+                          handleChange(event);
+                        }}
+                        onBlur={handleBlur}
+                        readOnly={!!curriculum}
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+                      <Form.Text>
+                        {intl.formatMessage(curriculum ? messages.pathIdLocked : messages.pathIdHelp)}
+                      </Form.Text>
+                      {errorFor('slug') && (
+                        <Form.Control.Feedback type="invalid" hasIcon={false}>
+                          {errorFor('slug')}
                         </Form.Control.Feedback>
                       )}
                     </Form.Group>

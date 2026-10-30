@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   NavLink,
   Outlet,
@@ -23,7 +24,12 @@ import Loading from '../generic/Loading';
 import NotFoundAlert from '../generic/NotFoundAlert';
 import ConnectionErrorAlert from '../generic/ConnectionErrorAlert';
 import { HelpSidebar } from '../generic/help-sidebar';
-import { BADGES_PATH, CURRICULUM_MANAGEMENT_PATH } from './constants';
+import {
+  BADGES_PATH,
+  COURSE_GROUPS_PATH,
+  CURRICULUM_MANAGEMENT_PATH,
+  DEEP_LINKS_PATH,
+} from './constants';
 import { useBadges, useCurriculums, useCurriculumManagementStatus } from './data/apiHooks';
 import ConfirmNavigationModal from './ConfirmNavigationModal';
 import StudioHomeNav from './StudioHomeNav';
@@ -31,9 +37,9 @@ import type { CurriculumManagementOutletContext, FormTarget, ManagementSection }
 import messages from './messages';
 import './CurriculumManagement.scss';
 
-/** Per-tab copy; the shell itself is shared. */
+/** Per-tab copy; the shell itself is shared. A tab without `newLabel` has no New button (nothing to create). */
 const SECTIONS: Record<ManagementSection, {
-  newLabel: MessageDescriptor;
+  newLabel?: MessageDescriptor;
   help: [MessageDescriptor, MessageDescriptor][];
 }> = {
   curriculums: {
@@ -51,16 +57,49 @@ const SECTIONS: Record<ManagementSection, {
       [messages.sidebarCourseBadgesTitle, messages.sidebarCourseBadgesBody],
     ],
   },
+  courseGroups: {
+    newLabel: messages.newCourseGroup,
+    help: [
+      [messages.sidebarCourseGroupsTitle, messages.sidebarCourseGroupsBody],
+      [messages.sidebarGroupIdTitle, messages.sidebarGroupIdBody],
+      [messages.sidebarLearnerFlagTitle, messages.sidebarLearnerFlagBody],
+    ],
+  },
+  deepLinks: {
+    newLabel: messages.newDeepLink,
+    help: [
+      [messages.sidebarDeepLinksTitle, messages.sidebarDeepLinksBody],
+      [messages.sidebarTestLinksTitle, messages.sidebarTestLinksBody],
+    ],
+  },
 };
 
+/** The tab bar: path and label, in order. `end` keeps Curriculum inactive on the other paths. */
+const TABS: [string, MessageDescriptor][] = [
+  [CURRICULUM_MANAGEMENT_PATH, messages.navCurriculums],
+  [BADGES_PATH, messages.navBadges],
+  [COURSE_GROUPS_PATH, messages.navCourseGroups],
+  [DEEP_LINKS_PATH, messages.navDeepLinks],
+];
+
 /**
- * Shell of the Curriculum management page: Curriculum (index) and Badges tabs as child routes,
- * gated by the `uber_features.curriculum_management` flag (spec §7.3).
+ * Shell of the Curriculum management page: Curriculum (index), Badges, Course groups and Deep links tabs as
+ * child routes, gated by the `uber_features.curriculum_management` flag (spec §7.3).
  */
 const ManagementPageLayout = () => {
   const intl = useIntl();
   const { pathname } = useLocation();
-  const section: ManagementSection = useMatch(BADGES_PATH) ? 'badges' : 'curriculums';
+  const onBadges = useMatch(BADGES_PATH);
+  const onCourseGroups = useMatch(COURSE_GROUPS_PATH);
+  const onDeepLinks = useMatch(DEEP_LINKS_PATH);
+  let section: ManagementSection = 'curriculums';
+  if (onBadges) {
+    section = 'badges';
+  } else if (onCourseGroups) {
+    section = 'courseGroups';
+  } else if (onDeepLinks) {
+    section = 'deepLinks';
+  }
   // Status and both lists start together (no waterfall). Both tabs need both lists: the curriculum
   // form's slot selects list the badges.
   const status = useCurriculumManagementStatus();
@@ -77,6 +116,8 @@ const ManagementPageLayout = () => {
   const formTarget = formState.pathname === pathname ? formState.target : null;
   const setFormTargetState = (target: FormTarget) => setFormState({ pathname, target });
   const [formDirty, setFormDirty] = useState(false);
+  /** Reference content the current tab shows above the help text (the Deep links tab's launch string fields). */
+  const [sidebarExtra, setSidebarExtra] = useState<ReactNode>(null);
   /** A form switch waiting for the unsaved-changes prompt; `undefined` = none pending. */
   const [pendingTarget, setPendingTarget] = useState<FormTarget | undefined>(undefined);
   const blocker = useBlocker(formDirty);
@@ -101,6 +142,7 @@ const ManagementPageLayout = () => {
       setFormDirty(false);
     },
     setFormDirty,
+    setSidebarExtra,
   };
 
   // `formDirty` is not cleared here: it is the open form's own state, and FormDirtyReporter
@@ -122,7 +164,7 @@ const ManagementPageLayout = () => {
     }
   };
 
-  const newButton = (
+  const newButton = copy.newLabel && (
     <Button iconBefore={Add} onClick={() => setFormTarget('new')}>
       {intl.formatMessage(copy.newLabel)}
     </Button>
@@ -130,7 +172,7 @@ const ManagementPageLayout = () => {
 
   const listsFailed = curriculums.isError || badges.isError;
   // Without the lists there is no <Outlet> to render a form into, so there is nothing to create from.
-  const canCreate = status.enabled && !listsFailed;
+  const canCreate = status.enabled && !listsFailed && !!copy.newLabel;
 
   const renderBody = () => {
     if (status.isPending) {
@@ -149,14 +191,13 @@ const ManagementPageLayout = () => {
       <>
         {/* NavLink sets the `active` class and aria-current="page"; `end` keeps Curriculum inactive on /badges. */}
         <Nav as="nav" variant="tabs" className="mb-4" aria-label={intl.formatMessage(messages.navLabel)}>
-          <Nav.Item>
-            <NavLink to={CURRICULUM_MANAGEMENT_PATH} end className="nav-link">
-              {intl.formatMessage(messages.navCurriculums)}
-            </NavLink>
-          </Nav.Item>
-          <Nav.Item>
-            <NavLink to={BADGES_PATH} className="nav-link">{intl.formatMessage(messages.navBadges)}</NavLink>
-          </Nav.Item>
+          {TABS.map(([path, label]) => (
+            <Nav.Item key={path}>
+              <NavLink to={path} end={path === CURRICULUM_MANAGEMENT_PATH} className="nav-link">
+                {intl.formatMessage(label)}
+              </NavLink>
+            </Nav.Item>
+          ))}
         </Nav>
         <Layout
           lg={[{ span: 9 }, { span: 3 }]}
@@ -170,6 +211,7 @@ const ManagementPageLayout = () => {
           </Layout.Element>
           <Layout.Element>
             <HelpSidebar courseId="">
+              {sidebarExtra}
               {copy.help.map(([heading, body]) => (
                 <div key={heading.id}>
                   <h4 className="help-sidebar-about-title">{intl.formatMessage(heading)}</h4>

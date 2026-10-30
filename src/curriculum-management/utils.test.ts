@@ -1,10 +1,15 @@
 import { camelCaseObject } from '@edx/frontend-platform';
 import { AxiosError, AxiosHeaders } from 'axios';
-import { rawBadges, rawCurriculums } from './__mocks__/fixtures';
-import type { Curriculum } from './types';
+import { rawBadges, rawCourseGroups, rawCurriculums } from './__mocks__/fixtures';
+import type { CourseGroup, Curriculum } from './types';
 import {
+  buildAppLink,
   mapBadgeErrors,
+  mapCourseGroupErrors,
   mapCurriculumErrors,
+  mapTestLinkErrors,
+  toCourseGroupFormValues,
+  toCourseGroupWriteData,
   toCurriculumFormValues,
   toCurriculumWriteData,
 } from './utils';
@@ -35,6 +40,7 @@ describe('curriculum form mapping', () => {
     });
     expect(toCurriculumWriteData({ ...values, title: '  Trimmed  ', badges: { ...values.badges, complete: '' } }))
       .toEqual({
+        slug: 'new-driver-essentials',
         title: 'Trimmed',
         description: 'Required courses for new drivers.',
         courseIds: ['course-v1:Uber+DRV101+2026_Q4', 'course-v1:Uber+DRV102+2026_Q4'],
@@ -82,6 +88,7 @@ describe('curriculum form mapping', () => {
 
   it('gives empty defaults for a new curriculum', () => {
     expect(toCurriculumFormValues()).toEqual({
+      slug: '',
       title: '',
       description: '',
       courses: [],
@@ -198,5 +205,78 @@ describe('mapBadgeErrors', () => {
     expect(rows?.rowErrors).toEqual({ 'course-v1:A+2+R': 'This course already awards "Airport pro".' });
     const list = mapBadgeErrors(axiosError(400, { course_ids: ['Only course badges have courses.'] }), []);
     expect(list?.fieldErrors).toEqual({ courses: 'Only course badges have courses.' });
+  });
+});
+
+describe('course group form mapping', () => {
+  it('round-trips a group into form values and back, trimming text', () => {
+    const group = camelCaseObject(rawCourseGroups[0]) as CourseGroup;
+    const values = toCourseGroupFormValues(group);
+    expect(values).toEqual({
+      slug: 'ev-drivers',
+      title: 'EV drivers',
+      description: 'Drivers with an electric vehicle.',
+      courses: [
+        { id: 'course-v1:Uber+DRV101+2026_Q4', displayName: 'Getting started', exists: true },
+        { id: 'course-v1:Uber+DRV102+2026_Q4', displayName: null, exists: false },
+      ],
+    });
+    expect(toCourseGroupWriteData({ ...values, title: '  EV  ', slug: ' ev-drivers ' })).toEqual({
+      slug: 'ev-drivers',
+      title: 'EV',
+      description: 'Drivers with an electric vehicle.',
+      courseIds: ['course-v1:Uber+DRV101+2026_Q4', 'course-v1:Uber+DRV102+2026_Q4'],
+    });
+    expect(toCourseGroupFormValues()).toEqual({ slug: '', title: '', description: '', courses: [] });
+  });
+
+  it('maps a 400 onto fields, course rows and the form; anything else is null', () => {
+    const mapped = mapCourseGroupErrors(
+      axiosError(400, {
+        slug: ['A course group with this ID already exists.'],
+        course_ids: { 1: ['Course not found.'] },
+        non_field_errors: ['Nope.'],
+      }),
+      ['c1', 'c2'],
+    );
+    expect(mapped).toEqual({
+      fieldErrors: { slug: 'A course group with this ID already exists.' },
+      rowErrors: { c2: 'Course not found.' },
+      formError: 'Nope.',
+    });
+    expect(mapCourseGroupErrors(axiosError(400, { course_ids: ['Add a course.'] }), [])?.fieldErrors).toEqual({
+      courses: 'Add a course.',
+    });
+    expect(mapCourseGroupErrors(axiosError(500, {}), [])).toBeNull();
+  });
+});
+
+describe('deep links helpers', () => {
+  it('buildAppLink adds the course key only for a course link, percent-encoded', () => {
+    expect(buildAppLink('uber://learn', 'home', '')).toEqual('uber://learn?target=home');
+    expect(buildAppLink('uber://learn', 'optional', '')).toEqual('uber://learn?target=optional');
+    expect(buildAppLink('uber://learn', 'optional', 'course-v1:Uber+DRV101+2026_Q4'))
+      .toEqual('uber://learn?target=optional&course_id=course-v1%3AUber%2BDRV101%2B2026_Q4');
+    expect(buildAppLink('uber://learn', 'course', 'course-v1:Uber+DRV101+2026_Q4'))
+      .toEqual('uber://learn?target=course&course_id=course-v1%3AUber%2BDRV101%2B2026_Q4');
+    expect(buildAppLink('uber://learn', 'path', '', '3f2c9b7d-4e10-4a6b-9c1d-0b7e4f2a91c3'))
+      .toEqual('uber://learn?target=path&path_id=3f2c9b7d-4e10-4a6b-9c1d-0b7e4f2a91c3');
+    expect(buildAppLink('uber://learn', 'home', '', 'a,b')).toEqual('uber://learn?target=home&path_id=a%2Cb');
+    expect(buildAppLink('uber://learn', 'home', '', '', 'ev,nyc')).toEqual('uber://learn?target=home&groups=ev%2Cnyc');
+  });
+
+  it('mapTestLinkErrors maps API fields onto the form fields', () => {
+    expect(
+      mapTestLinkErrors(
+        axiosError(400, { external_id: ['Bad.'], course_id: ['Pick one.'], ttl: ['No.'], path_id: ['P.'] }),
+      ),
+    )
+      .toEqual({
+        fieldErrors: { externalId: 'Bad.', courseId: 'Pick one.', ttl: 'No.', pathId: 'P.' },
+        formError: null,
+      });
+    expect(mapTestLinkErrors(axiosError(400, { detail: 'CSRF failed.' })))
+      .toEqual({ fieldErrors: {}, formError: 'CSRF failed.' });
+    expect(mapTestLinkErrors(axiosError(404, { error_code: 'launch_disabled' }))).toBeNull();
   });
 });

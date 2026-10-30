@@ -85,7 +85,7 @@ const CurriculumCard = ({ curriculum, defaultExpanded = false, onEdit }: Curricu
             {/* The chips share the ID line so the title row keeps its full width; they wrap under it when narrow. */}
             <div className="d-flex flex-wrap align-items-center curriculum-management-meta">
               <span className="x-small text-gray-700 text-break">
-                {intl.formatMessage(messages.itemId, { id: curriculum.uuid })}
+                {intl.formatMessage(messages.pathId, { id: curriculum.slug })}
               </span>
               <Badge variant="primary">
                 <span className="small">

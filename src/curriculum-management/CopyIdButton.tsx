@@ -12,6 +12,8 @@ const COPY_MESSAGES = {
     copied: messages.curriculumIdCopied,
     failed: messages.copyCurriculumIdFailed,
   },
+  courseGroup: { copy: messages.copyGroupId, copied: messages.groupIdCopied, failed: messages.copyGroupIdFailed },
+  link: { copy: messages.copyLink, copied: messages.linkCopied, failed: messages.copyLinkFailed },
 };
 
 /** `navigator.clipboard` only exists on secure origins; plain-http Studio (local dev) falls back to execCommand. */
