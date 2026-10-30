@@ -5,22 +5,34 @@ import { PAGE_SIZE } from '../constants';
 import type {
   Badge,
   BadgeWriteData,
+  CourseGroup,
+  CourseGroupWriteData,
   CourseSearchResult,
   Curriculum,
   CurriculumWriteData,
+  DeepLink,
+  DeepLinkWriteData,
+  DeepLinksConfig,
   ManagementStatus,
   Paginated,
+  TestLink,
+  TestLinkRequest,
 } from '../types';
 
 const getApiBaseUrl = () => getConfig().STUDIO_BASE_URL;
 
-const makeUrl = (path: string, searchParams?: Record<string, string | number>): string => {
-  const url = new URL(`api/uber/curriculum/v1/curriculum-management/${path}`, getApiBaseUrl());
+/** A URL under the plugin's Studio prefix, `api/uber/`. */
+const makeUberUrl = (path: string, searchParams?: Record<string, string | number>): string => {
+  const url = new URL(`api/uber/${path}`, getApiBaseUrl());
   if (searchParams) {
     Object.entries(searchParams).forEach(([key, value]) => url.searchParams.append(key, String(value)));
   }
   return url.href;
 };
+
+const makeUrl = (path: string, searchParams?: Record<string, string | number>): string => (
+  makeUberUrl(`curriculum/v1/curriculum-management/${path}`, searchParams)
+);
 
 export const apiUrls = {
   status: () => makeUrl('status/'),
@@ -31,6 +43,15 @@ export const apiUrls = {
   badges: () => makeUrl('badges/'),
   badgesPage: (pageNumber: number) => makeUrl('badges/', { page: pageNumber }),
   badge: (uuid: string) => makeUrl(`badges/${uuid}/`),
+  // Course groups and deep links are other sub-apps of the plugin, under their own prefixes.
+  courseGroups: () => makeUberUrl('optional-courses/v1/course-groups/'),
+  courseGroupsPage: (pageNumber: number) => makeUberUrl('optional-courses/v1/course-groups/', { page: pageNumber }),
+  courseGroup: (slug: string) => makeUberUrl(`optional-courses/v1/course-groups/${encodeURIComponent(slug)}/`),
+  deepLinksConfig: () => makeUberUrl('deep-links/v1/config/'),
+  testLinks: () => makeUberUrl('deep-links/v1/test-links/'),
+  deepLinks: () => makeUberUrl('deep-links/v1/links/'),
+  deepLinksPage: (pageNumber: number) => makeUberUrl('deep-links/v1/links/', { page: pageNumber }),
+  deepLink: (uuid: string) => makeUberUrl(`deep-links/v1/links/${uuid}/`),
 };
 
 /**
@@ -65,6 +86,9 @@ export async function searchCourses(search: string): Promise<CourseSearchResult[
 /** Curriculum writes use multipart/form-data so an image file can be included. */
 const toCurriculumFormData = (data: CurriculumWriteData): FormData => {
   const formData = new FormData();
+  if (data.slug) {
+    formData.append('slug', data.slug);
+  }
   formData.append('title', data.title);
   formData.append('description', data.description);
   if (data.image) {
@@ -130,4 +154,73 @@ export async function updateBadge(uuid: string, data: BadgeWriteData): Promise<B
 
 export async function deleteBadge(uuid: string): Promise<void> {
   await getAuthenticatedHttpClient().delete(apiUrls.badge(uuid));
+}
+
+export const getAllCourseGroups = () => getAllPages<CourseGroup>(apiUrls.courseGroupsPage);
+
+/** Course group writes are JSON; keys are written by hand in snake_case. */
+const toCourseGroupBody = (data: CourseGroupWriteData) => ({
+  slug: data.slug,
+  title: data.title,
+  description: data.description,
+  course_ids: data.courseIds,
+});
+
+export async function createCourseGroup(data: CourseGroupWriteData): Promise<CourseGroup> {
+  const { data: body } = await getAuthenticatedHttpClient().post(apiUrls.courseGroups(), toCourseGroupBody(data));
+  return camelCaseObject(body) as CourseGroup;
+}
+
+export async function updateCourseGroup(slug: string, data: CourseGroupWriteData): Promise<CourseGroup> {
+  const { data: body } = await getAuthenticatedHttpClient().put(apiUrls.courseGroup(slug), toCourseGroupBody(data));
+  return camelCaseObject(body) as CourseGroup;
+}
+
+export async function deleteCourseGroup(slug: string): Promise<void> {
+  await getAuthenticatedHttpClient().delete(apiUrls.courseGroup(slug));
+}
+
+export const getAllDeepLinks = () => getAllPages<DeepLink>(apiUrls.deepLinksPage);
+
+/** Deep link writes are JSON; keys are written by hand in snake_case. */
+const toDeepLinkBody = (data: DeepLinkWriteData) => ({
+  title: data.title,
+  description: data.description,
+  target: data.target,
+  course_id: data.courseId,
+  path_ids: data.pathIds,
+  groups: data.groups,
+});
+
+export async function createDeepLink(data: DeepLinkWriteData): Promise<DeepLink> {
+  const { data: body } = await getAuthenticatedHttpClient().post(apiUrls.deepLinks(), toDeepLinkBody(data));
+  return camelCaseObject(body) as DeepLink;
+}
+
+export async function updateDeepLink(uuid: string, data: DeepLinkWriteData): Promise<DeepLink> {
+  const { data: body } = await getAuthenticatedHttpClient().put(apiUrls.deepLink(uuid), toDeepLinkBody(data));
+  return camelCaseObject(body) as DeepLink;
+}
+
+export async function deleteDeepLink(uuid: string): Promise<void> {
+  await getAuthenticatedHttpClient().delete(apiUrls.deepLink(uuid));
+}
+
+export async function getDeepLinksConfig(): Promise<DeepLinksConfig> {
+  const { data } = await getAuthenticatedHttpClient().get(apiUrls.deepLinksConfig());
+  return camelCaseObject(data) as DeepLinksConfig;
+}
+
+/** Mint a signed test link. The response carries the link itself: never log it. */
+export async function mintTestLink(request: TestLinkRequest): Promise<TestLink> {
+  const body = {
+    target: request.target,
+    course_id: request.courseId,
+    path_id: request.pathId,
+    external_id: request.externalId,
+    groups: request.groups,
+    ...(request.ttl !== undefined ? { ttl: request.ttl } : {}),
+  };
+  const { data } = await getAuthenticatedHttpClient().post(apiUrls.testLinks(), body);
+  return camelCaseObject(data) as TestLink;
 }

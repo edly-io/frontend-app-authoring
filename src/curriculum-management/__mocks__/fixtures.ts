@@ -71,6 +71,7 @@ export const rawCourseBadge = {
 export const rawCurriculums = [
   {
     uuid: 'cur-1',
+    slug: 'new-driver-essentials',
     title: 'New driver essentials',
     description: 'Required courses for new drivers.',
     image_url: 'https://example.com/curriculum-image.png',
@@ -133,3 +134,86 @@ export const page = <T>(results: T[], count = results.length) => ({ count, next:
 
 /** The `status/` payload (spec §6.4). */
 export const rawStatus = (enabled = true) => ({ enabled });
+
+/** Course groups as the optional-courses Studio API returns them. */
+export const rawCourseGroups = [
+  {
+    slug: 'ev-drivers',
+    title: 'EV drivers',
+    description: 'Drivers with an electric vehicle.',
+    courses: [
+      { course_id: 'course-v1:Uber+DRV101+2026_Q4', display_name: 'Getting started', exists: true, position: 1 },
+      { course_id: 'course-v1:Uber+DRV102+2026_Q4', display_name: null, exists: false, position: 2 },
+    ],
+    learner_count: 12,
+    created: '2026-10-20T10:00:00Z',
+    modified: '2026-10-20T10:00:00Z',
+  },
+  {
+    slug: 'nyc-new-drivers',
+    title: 'New drivers in NYC',
+    description: '',
+    courses: [],
+    learner_count: 0,
+    created: '2026-10-20T10:00:00Z',
+    modified: '2026-10-20T10:00:00Z',
+  },
+];
+
+/** Deep links as the Studio API returns them: one carrying everything, one bare. */
+export const rawDeepLinks = [
+  {
+    uuid: 'link-1',
+    title: 'Lisbon onboarding',
+    description: 'Handed to Uber for the Lisbon launch.',
+    target: 'home',
+    course: { course_id: 'course-v1:Uber+DRV101+2026_Q4', display_name: 'Getting started', exists: true },
+    paths: [
+      { slug: 'new-driver-essentials', title: 'New driver essentials', exists: true },
+      { slug: 'gone', title: null, exists: false },
+    ],
+    groups: [{ slug: 'ev-drivers', title: 'EV drivers', exists: true }, { slug: 'porto', title: null, exists: false }],
+    app_link:
+      'uber://learn?target=home&course_id=course-v1%3AUber%2BDRV101%2B2026_Q4&path_id=new-driver-essentials%2Cgone&groups=ev-drivers%2Cporto',
+    created: '2026-10-28T10:00:00Z',
+    modified: '2026-10-28T10:00:00Z',
+  },
+  {
+    uuid: 'link-2',
+    title: 'Optional courses reminder',
+    description: '',
+    target: 'optional',
+    course: null,
+    paths: [],
+    groups: [],
+    app_link: 'uber://learn?target=optional',
+    created: '2026-10-28T10:00:00Z',
+    modified: '2026-10-28T10:00:00Z',
+  },
+];
+
+/** The `deep-links/config/` payload, with test links on. */
+export const rawDeepLinksConfig = (overrides: Record<string, unknown> = {}) => ({
+  targets: ['home', 'course', 'optional', 'path'],
+  scheme: 'uber-launch-v3',
+  app_link_base: 'uber://learn',
+  learn_base_url: 'http://apps.local.openedx.io:2011/uber-learn',
+  test_links: { enabled: true, unavailable_reason: null },
+  max_ttl_seconds: 300,
+  default_ttl_seconds: 300,
+  ...overrides,
+});
+
+/** A minted test link (the launch string is a stand-in: no real signature). */
+export const rawTestLink = (overrides: Record<string, unknown> = {}) => ({
+  url:
+    'http://apps.local.openedx.io:2011/uber-learn/launch#external_id=dev-1&target=home&course_id=&expires=1&nonce=n&sig=s',
+  launch: 'external_id=dev-1&target=home&course_id=&expires=1&nonce=n&sig=s',
+  external_id: 'dev-1',
+  target: 'home',
+  course_id: '',
+  path_id: '',
+  groups: null,
+  expires_at: '2026-10-26T12:05:00+00:00',
+  ...overrides,
+});
