@@ -10,6 +10,7 @@ import { useIntl } from '@edx/frontend-platform/i18n';
 
 import { useCurriculumManagementStatus } from '@src/curriculum-management/data/apiHooks';
 import curriculumMessages from '@src/curriculum-management/messages';
+import { useUberFlags } from '@src/reporting';
 
 import messages from './messages';
 import { BaseFilterState, Filter, LibrariesList } from './libraries-tab';
@@ -38,6 +39,8 @@ const TabsSection = ({
   const [migrationFilter, setMigrationFilter] = useState<Filter[]>(BaseFilterState);
   // Global page, gated only by its waffle flag (uber_features.curriculum_management).
   const { enabled: curriculumManagement } = useCurriculumManagementStatus();
+  const { data: uberFlags } = useUberFlags();
+  const reportingEnabled = uberFlags?.enableReporting ?? false;
   const TABS_LIST = {
     courses: 'courses',
     libraries: 'libraries',
@@ -45,6 +48,7 @@ const TabsSection = ({
     archived: 'archived',
     taxonomies: 'taxonomies',
     curriculumManagement: 'curriculumManagement',
+    reporting: 'reporting',
   } as const;
   type TabKeyType = keyof typeof TABS_LIST;
 
@@ -57,6 +61,10 @@ const TabsSection = ({
       return librariesV2Enabled
         ? TABS_LIST.libraries
         : TABS_LIST.legacyLibraries;
+    }
+
+    if (pname.includes('/reporting')) {
+      return TABS_LIST.reporting;
     }
 
     // Default to courses tab
@@ -146,8 +154,18 @@ const TabsSection = ({
       );
     }
 
+    if (reportingEnabled) {
+      tabs.push(
+        <Tab
+          key={TABS_LIST.reporting}
+          eventKey={TABS_LIST.reporting}
+          title={intl.formatMessage(messages.reportingTabTitle)}
+        />,
+      );
+    }
+
     return tabs;
-  }, [showNewCourseContainer, migrationFilter, isShowProcessing, curriculumManagement]);
+  }, [showNewCourseContainer, migrationFilter, isShowProcessing, curriculumManagement, reportingEnabled]);
 
   const handleSelectTab = (tab: TabKeyType) => {
     if (tab === TABS_LIST.courses) {
@@ -160,6 +178,8 @@ const TabsSection = ({
       navigate('/taxonomies');
     } else if (tab === TABS_LIST.curriculumManagement) {
       navigate('/curriculum-management');
+    } else if (tab === TABS_LIST.reporting) {
+      navigate('/reporting');
     }
     setTabKey(tab);
   };
@@ -168,7 +188,7 @@ const TabsSection = ({
     <Tabs
       // Paragon only measures overflow on mount/resize; remount once the async-gated tab appears
       // so it isn't pushed into "More...".
-      key={`tabs-${curriculumManagement}`}
+      key={`tabs-${curriculumManagement}-${reportingEnabled}`}
       className="studio-home-tabs"
       variant="tabs"
       activeKey={tabKey}
