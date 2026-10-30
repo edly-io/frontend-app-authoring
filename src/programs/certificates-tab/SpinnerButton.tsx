@@ -12,6 +12,8 @@ interface SpinnerButtonProps {
   variant?: string;
   size?: 'sm' | 'inline' | 'md' | 'lg';
   className?: string;
+  /** Accessible name when the visible label alone is ambiguous (e.g. repeated per row). */
+  ariaLabel?: string;
 }
 
 /**
@@ -27,8 +29,16 @@ const SpinnerButton: React.FC<SpinnerButtonProps> = ({
   variant,
   size,
   className,
+  ariaLabel,
 }) => (
-  <Button variant={variant} size={size} className={className} onClick={onClick} disabled={disabled}>
+  <Button
+    variant={variant}
+    size={size}
+    className={className}
+    onClick={onClick}
+    disabled={disabled}
+    aria-label={ariaLabel}
+  >
     {isPending ? (
       <Spinner animation="border" size="sm" screenReaderText={label} />
     ) : label}

@@ -1,11 +1,12 @@
 import React from 'react';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import {
-  Badge, Button, Icon, IconButton, OverlayTrigger, Stack, Tooltip,
+  Badge, Button, Icon, IconButton, Stack,
 } from '@openedx/paragon';
 import { Edit } from '@openedx/paragon/icons';
 import { ATTENDANCE_STATUS, getStatusVariant } from '@edly-io/frontend-component-fbr';
 import messages from './messages';
+import DisabledReasonButton from '../common/DisabledReasonButton';
 
 export const EMPTY_VALUE = '—';
 export const LEAVE_STATUS = 'leave';
@@ -95,14 +96,15 @@ export const NoteControl = ({
   const intl = useIntl();
   if (!hasRecord) {
     return (
-      <OverlayTrigger
-        trigger={['hover', 'focus']}
-        overlay={<Tooltip id={tooltipId}>{intl.formatMessage(messages.noteNeedsRecord)}</Tooltip>}
+      <DisabledReasonButton
+        id={tooltipId}
+        reason={intl.formatMessage(messages.noteNeedsRecord)}
+        variant="outline-primary"
+        size="sm"
+        className="text-nowrap"
       >
-        <span>
-          <Button variant="outline-primary" size="sm" disabled className="text-nowrap">{intl.formatMessage(messages.addNote)}</Button>
-        </span>
-      </OverlayTrigger>
+        {intl.formatMessage(messages.addNote)}
+      </DisabledReasonButton>
     );
   }
   if (!notes) {

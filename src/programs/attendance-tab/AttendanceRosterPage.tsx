@@ -129,10 +129,10 @@ const SessionCard = ({
         </div>
       )}
       {navState?.sessionTitle && (
-        <h4 className="mb-0">
+        <h2 className="h4 mb-0">
           <span className="attendance-tab__eyebrow text-muted mr-2 align-middle">{intl.formatMessage(messages.rosterSession)}</span>
           {navState.sessionTitle}
-        </h4>
+        </h2>
       )}
       {navState?.sessionTime && <div className="attendance-meta text-muted mt-1">{formatDateTime(navState.sessionTime)}</div>}
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center">

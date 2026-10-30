@@ -126,7 +126,7 @@ const SchemeSummaryPanel: React.FC<SchemeSummaryPanelProps> = ({
 
           {sections.length > 0 && (
             <>
-              <ProgressBar className="mb-3 border-0 rounded-lg">
+              <ProgressBar className="mb-3 border-0 rounded-lg" aria-hidden="true">
                 {sections.map((section, index) => (
                   <ProgressBar
                     key={section.localId}

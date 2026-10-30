@@ -69,7 +69,7 @@ describe('<HolidaysTab />', () => {
     renderTab();
     await screen.findByText('Eid al-Fitr');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Eid al-Fitr' }));
     const dialog = await screen.findByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
 

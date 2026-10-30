@@ -118,7 +118,7 @@ describe('<LocationsTab />', () => {
     axiosMock.onGet(LIST_URL).reply(200, page([irsa]));
     renderTab();
     await screen.findByText('IRSA 1');
-    fireEvent.click(screen.getByRole('button', { name: 'History' }));
+    fireEvent.click(screen.getByRole('button', { name: 'History IRSA 1' }));
     expect(await screen.findByTestId('audit-log-table')).toHaveTextContent('Audit Log loc1');
   });
 
@@ -154,7 +154,7 @@ describe('<LocationsTab />', () => {
     renderTab();
     await screen.findByText('IRSA 1');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit IRSA 1' }));
     fireEvent.change(await screen.findByDisplayValue('IRSA 1'), { target: { value: 'IRSA 2' } });
     fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
 
@@ -167,7 +167,7 @@ describe('<LocationsTab />', () => {
     renderTab();
     await screen.findByText('IRSA 1');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete IRSA 1' }));
     const dialog = await screen.findByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
 
@@ -182,7 +182,7 @@ describe('<LocationsTab />', () => {
     renderTab();
     await screen.findByText('IRSA 1');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete IRSA 1' }));
     const dialog = await screen.findByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
 

@@ -37,32 +37,32 @@ beforeEach(() => {
 describe('PENDING request actions', () => {
   it('shows Approve and Reject buttons', async () => {
     renderView();
-    expect(await screen.findByRole('button', { name: /^approve$/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^reject$/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /^approve /i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^reject /i })).toBeInTheDocument();
   });
 
   it('does not show withdrawal action buttons for PENDING', async () => {
     renderView();
-    await screen.findByRole('button', { name: /^approve$/i });
+    await screen.findByRole('button', { name: /^approve /i });
     expect(screen.queryByRole('button', { name: /approve withdrawal/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /reject withdrawal/i })).not.toBeInTheDocument();
   });
 
   it('approves with an empty note when Approve is clicked', async () => {
     renderView();
-    fireEvent.click(await screen.findByRole('button', { name: /^approve$/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /^approve /i }));
     await waitFor(() => expect(reviewBody()).toEqual({ state: 'APPROVED', reviewer_note: '' }));
   });
 
   it('opens note modal when Reject is clicked', async () => {
     renderView();
-    fireEvent.click(await screen.findByRole('button', { name: /^reject$/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /^reject /i }));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
   it('rejects with the note on modal confirm', async () => {
     renderView();
-    fireEvent.click(await screen.findByRole('button', { name: /^reject$/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /^reject /i }));
     fireEvent.change(screen.getByPlaceholderText(/let them know why/i), { target: { value: 'No capacity' } });
     fireEvent.click(screen.getByRole('button', { name: /reject request/i }));
     await waitFor(() => expect(reviewBody()).toEqual({ state: 'REJECTED', reviewer_note: 'No capacity' }));
@@ -76,7 +76,7 @@ describe('PENDING request actions', () => {
       return [200, page([makeRequest({ state: listCalls === 1 ? 'PENDING' : 'APPROVED' })])];
     });
     renderView();
-    fireEvent.click(await screen.findByRole('button', { name: /^approve$/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /^approve /i }));
     expect(await within(await screen.findByRole('table')).findByText('Approved')).toBeInTheDocument();
     expect(listRequests()).toHaveLength(2);
   });
@@ -96,8 +96,8 @@ describe('WITHDRAWAL_PENDING request actions', () => {
   it('does not show plain Approve/Reject buttons for WITHDRAWAL_PENDING', async () => {
     renderView();
     await screen.findByRole('button', { name: /approve withdrawal/i });
-    expect(screen.queryByRole('button', { name: /^approve$/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^reject$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^approve (?!withdrawal)/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^reject (?!withdrawal)/i })).not.toBeInTheDocument();
   });
 
   it('marks the request WITHDRAWN when Approve Withdrawal is clicked', async () => {
@@ -131,7 +131,7 @@ describe('past-dated leave approvals', () => {
   it('approves a past-dated pending leave in one click, with no note and no modal', async () => {
     mockList([makeRequest({ leave_start_date: offsetDate(-1) })]);
     renderView();
-    fireEvent.click(await screen.findByRole('button', { name: /^approve$/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /^approve /i }));
     await waitFor(() => expect(reviewBody()).toEqual({ state: 'APPROVED', reviewer_note: '' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });

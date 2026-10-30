@@ -122,7 +122,7 @@ const LeaveUsagePanel = ({ programKey }: { programKey: string }) => {
 
   return (
     <div>
-      <h3 className="requests-view__subheading">{intl.formatMessage(messages.leaveUsage)}</h3>
+      <h2 className="h3 requests-view__subheading">{intl.formatMessage(messages.leaveUsage)}</h2>
 
       <Row className="requests-filters align-items-end">
         <Col xs={12} sm={6} lg={4} className="mb-2">

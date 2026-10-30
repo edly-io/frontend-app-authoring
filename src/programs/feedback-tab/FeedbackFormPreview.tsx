@@ -23,7 +23,7 @@ const FeedbackFormPreview: React.FC<FeedbackFormPreviewProps> = ({ formName, que
 
   return (
     <div className="mt-4">
-      <h4 className="h5 mb-3">{intl.formatMessage(messages.sectionTitle)}</h4>
+      <h3 className="h5 mb-3">{intl.formatMessage(messages.sectionTitle)}</h3>
       {formName && <p className="font-weight-bold mb-4">{formName}</p>}
       {questions.map((question) => (
         <Form.Group key={question.id} className="mb-4">

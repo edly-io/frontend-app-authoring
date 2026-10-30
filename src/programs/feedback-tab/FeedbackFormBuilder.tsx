@@ -47,7 +47,7 @@ const FeedbackFormBuilder: React.FC<FeedbackFormBuilderProps> = ({
 
   return (
     <div className="mt-4">
-      <h4 className="h5 mb-3">{intl.formatMessage(messages.title)}</h4>
+      <h3 className="h5 mb-3">{intl.formatMessage(messages.title)}</h3>
       {validationError && (
         <Alert variant="danger" className="mb-3">
           {validationError}
@@ -65,7 +65,7 @@ const FeedbackFormBuilder: React.FC<FeedbackFormBuilderProps> = ({
 
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div>
-          <h5 className="mb-1">Questions</h5>
+          <h4 className="h5 mb-1">Questions</h4>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.questionsHelp)}</p>
         </div>
         <Button variant="outline-primary" size="sm" onClick={onAddQuestion}>

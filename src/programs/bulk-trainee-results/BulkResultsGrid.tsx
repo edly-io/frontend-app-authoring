@@ -162,7 +162,7 @@ const BulkResultsGrid: React.FC<BulkResultsGridProps> = ({
 
       {rows.length > 0 && (
         <div className="d-flex flex-wrap align-items-center justify-content-between mt-3 gap-2">
-          <span className="small text-muted">
+          <span className="small text-muted" role="status">
             {intl.formatMessage(messages.showingRange, { start: rangeStart, end: rangeEnd, total: totalCount })}
           </span>
           <Pagination

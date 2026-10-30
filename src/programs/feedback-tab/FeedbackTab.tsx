@@ -123,7 +123,7 @@ const FeedbackTab: React.FC<FeedbackTabProps> = ({ programId, isActive = true })
     <div className="mt-4">
       <div className="program-page-header mb-4">
         <div>
-          <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
+          <h2 className="h3 mb-1">{intl.formatMessage(messages.sectionTitle)}</h2>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
         </div>
         <Button variant="primary" size="sm" onClick={openInitiateModal} className="mt-3 mt-md-0">

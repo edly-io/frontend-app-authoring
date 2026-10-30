@@ -2,12 +2,10 @@ import React, { useState, useCallback } from 'react';
 import {
   Button,
   ButtonGroup,
-  OverlayTrigger,
   Pagination,
   SearchField,
   Spinner,
   Stack,
-  Tooltip,
   useToggle,
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
@@ -18,6 +16,8 @@ import { getInitials } from '../feedback-tab/dashboard/feedbackDashboardUtils';
 import DeleteModal from '../../generic/delete-modal/DeleteModal';
 import AddLearnerModal from './AddLearnerModal';
 import EnrollBatchModal from './EnrollBatchModal';
+import DisabledReasonButton from '../common/DisabledReasonButton';
+import rowActionMessages from '../common/messages';
 
 const messages = defineMessages({
   listTab: { id: 'programs.enrollment.tab.list', defaultMessage: 'List' },
@@ -76,7 +76,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
     <div className="mt-4">
       <div className="program-page-header mb-4">
         <div>
-          <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
+          <h2 className="h3 mb-1">{intl.formatMessage(messages.sectionTitle)}</h2>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
         </div>
         <Stack direction="horizontal" gap={2} className="program-page-header__actions">
@@ -177,27 +177,26 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
               </div>
               {canManage && (
                 hasStarted ? (
-                  <OverlayTrigger
-                    trigger={['hover', 'focus']}
-                    placement="top"
-                    overlay={(
-                      <Tooltip id={`unenroll-disabled-${learner.id}`}>
-                        Learners cannot be unenrolled after a program has started.
-                      </Tooltip>
-                  )}
+                  <DisabledReasonButton
+                    id={`unenroll-disabled-${learner.id}`}
+                    reason="Learners cannot be unenrolled after a program has started."
+                    variant="outline-danger"
+                    size="sm"
+                    aria-label={intl.formatMessage(rowActionMessages.rowAction, {
+                      action: intl.formatMessage(messages.unenrollBtn), name: learner.name,
+                    })}
                   >
-                    <span>
-                      <Button variant="outline-danger" size="sm" disabled style={{ pointerEvents: 'none' }}>
-                        {intl.formatMessage(messages.unenrollBtn)}
-                      </Button>
-                    </span>
-                  </OverlayTrigger>
+                    {intl.formatMessage(messages.unenrollBtn)}
+                  </DisabledReasonButton>
                 ) : (
                   <Button
                     variant="outline-danger"
                     size="sm"
                     onClick={() => setConfirmUnenrollUsername(learner.username)}
                     disabled={confirmUnenrollUsername !== null}
+                    aria-label={intl.formatMessage(rowActionMessages.rowAction, {
+                      action: intl.formatMessage(messages.unenrollBtn), name: learner.name,
+                    })}
                   >
                     {intl.formatMessage(messages.unenrollBtn)}
                   </Button>

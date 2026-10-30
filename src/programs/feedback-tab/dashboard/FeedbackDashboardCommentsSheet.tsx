@@ -105,7 +105,7 @@ const FeedbackDashboardCommentsSheet: React.FC<FeedbackDashboardCommentsSheetPro
       <div className="feedback-dashboard-comments-sheet-header">
         <div>
           <p className="feedback-dashboard-comments-sheet-kicker">Feedback comments</p>
-          <h3>{subject?.name ?? 'Comments'}</h3>
+          <h2>{subject?.name ?? 'Comments'}</h2>
           <p>{total} {total === 1 ? 'comment' : 'comments'}</p>
         </div>
         <Button

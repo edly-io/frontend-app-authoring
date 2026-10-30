@@ -309,7 +309,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
   return (
     <div className="certificates-tab-section">
       <div className="certificate-intro">
-        <h3 className="certificate-intro__title">{intl.formatMessage(messages.pageTitle)}</h3>
+        <h2 className="certificate-intro__title">{intl.formatMessage(messages.pageTitle)}</h2>
         <p className="certificate-intro__subtitle">{intl.formatMessage(messages.pageDescription)}</p>
       </div>
 

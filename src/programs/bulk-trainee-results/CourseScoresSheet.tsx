@@ -127,7 +127,7 @@ const CourseScoresSheet: React.FC<CourseScoresSheetProps> = ({
                                 key={courseModule.name}
                                 className={`py-3 ${isLastModule ? '' : 'course-scores-sheet-module-divider'}`}
                               >
-                                <ProgressBar className="flex-grow-1 mb-0 border-0 rounded-pill">
+                                <ProgressBar className="flex-grow-1 mb-0 border-0 rounded-pill" aria-hidden="true">
                                   <ProgressBar
                                     now={max > 0 ? (achieved / max) * 100 : 0}
                                     className="bg-success rounded-pill"

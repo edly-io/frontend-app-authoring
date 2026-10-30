@@ -115,6 +115,7 @@ const ReasonModal = ({ onClose, onConfirm }: { onClose: () => void; onConfirm: (
         value={reason}
         onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setReason(e.target.value)}
         placeholder={intl.formatMessage(messages.reasonPlaceholder)}
+        aria-label={intl.formatMessage(messages.reasonTitle)}
       />
     </StandardModal>
   );
@@ -164,6 +165,7 @@ const NoteModal = ({
         value={notes}
         onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)}
         placeholder={intl.formatMessage(messages.notePlaceholder)}
+        aria-label={intl.formatMessage(messages.noteTitle)}
       />
     </StandardModal>
   );

@@ -51,6 +51,7 @@ const messages = defineMessages({
   savedError: { id: 'programs.detail.error', defaultMessage: 'Failed to save program. Please try again.' },
   notFound: { id: 'programs.detail.not-found', defaultMessage: 'Program not found.' },
   tabDetails: { id: 'programs.detail.tab.details', defaultMessage: 'Program Details' },
+  required: { id: 'programs.detail.field.required', defaultMessage: '(required)' },
   tabCourses: { id: 'programs.detail.tab.courses', defaultMessage: 'Courses' },
   tabInstructors: { id: 'programs.detail.tab.instructors', defaultMessage: 'Instructors' },
   tabEnrollment: { id: 'programs.detail.tab.enrollment', defaultMessage: 'Trainee Enrollment' },
@@ -140,9 +141,15 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
   ),
 );
 
-const RequiredMark: React.FC = () => (
-  <span className="text-danger ml-1" aria-hidden="true">*</span>
-);
+const RequiredMark: React.FC = () => {
+  const intl = useIntl();
+  return (
+    <>
+      <span className="text-danger ml-1" aria-hidden="true">*</span>
+      <span className="sr-only">{` ${intl.formatMessage(messages.required)}`}</span>
+    </>
+  );
+};
 
 // Label/value pair used in the read-only Program Summary card
 const SummaryField: React.FC<{ label: string; value: string; mono?: boolean }> = ({
@@ -269,7 +276,7 @@ const ProgramDetailPage: React.FC = () => {
     return (
       <>
         <Header isHiddenMainMenu />
-        <Container size="xl" className="p-4 mt-3 d-flex justify-content-center">
+        <Container id="main" size="xl" className="p-4 mt-3 d-flex justify-content-center">
           <LoadingSpinner />
         </Container>
       </>
@@ -280,7 +287,7 @@ const ProgramDetailPage: React.FC = () => {
     return (
       <>
         <Header isHiddenMainMenu />
-        <Container size="xl" className="p-4 mt-3">
+        <Container id="main" size="xl" className="p-4 mt-3">
           <PermissionDeniedAlert />
         </Container>
       </>
@@ -291,7 +298,7 @@ const ProgramDetailPage: React.FC = () => {
     return (
       <>
         <Header isHiddenMainMenu />
-        <Container size="xl" className="p-4 mt-3">
+        <Container id="main" size="xl" className="p-4 mt-3">
           <Alert variant="danger">{intl.formatMessage(messages.notFound)}</Alert>
         </Container>
       </>
@@ -301,7 +308,7 @@ const ProgramDetailPage: React.FC = () => {
   return (
     <>
       <Header isHiddenMainMenu />
-      <Container size="xl" className="p-4 mt-3">
+      <Container id="main" size="xl" className="program-detail-page p-4 mt-3">
 
         {/* ── Page header ─────────────────────────────────────────────── */}
         <div className="program-page-header mb-4">
@@ -309,14 +316,14 @@ const ProgramDetailPage: React.FC = () => {
             <Link to="/programs" className="small text-muted text-decoration-none">
               {intl.formatMessage(messages.backToPrograms)}
             </Link>
-            <h2 className="mt-1 mb-0 d-flex align-items-center gap-2">
+            <h1 className="h2 mt-1 mb-0 d-flex align-items-center gap-2">
               {formik.values.displayName || program.displayName}
               {formik.values.isFeatured && (
                 <Badge variant="primary" className="ml-2 align-middle" style={{ fontSize: '0.55em', verticalAlign: 'middle' }}>
                   Featured
                 </Badge>
               )}
-            </h2>
+            </h1>
             <p className="text-muted small mb-0">
               {intl.formatMessage(
                 capabilities.isReadOnly ? messages.viewSubtitle : messages.configureSubtitle,
@@ -390,7 +397,7 @@ const ProgramDetailPage: React.FC = () => {
                 {/* Basic Information card */}
                 <Card className="mb-4">
                   <Card.Header
-                    title={intl.formatMessage(messages.sectionBasicInfo)}
+                    title={<h2 className="program-heading-plain">{intl.formatMessage(messages.sectionBasicInfo)}</h2>}
                     subtitle={intl.formatMessage(messages.sectionBasicSubtitle)}
                   />
                   <Card.Section>
@@ -404,6 +411,7 @@ const ProgramDetailPage: React.FC = () => {
                         <Form.Label>{intl.formatMessage(messages.fieldTitle)}<RequiredMark /></Form.Label>
                         <Form.Control
                           name="displayName"
+                          aria-required="true"
                           placeholder="e.g. Advanced Tax Assessment Program"
                           value={formik.values.displayName}
                           onChange={formik.handleChange}
@@ -451,11 +459,13 @@ const ProgramDetailPage: React.FC = () => {
 
                       {/* Target Audience — creatable, case-insensitive */}
                       <Form.Group
+                        controlId="program-target-audience"
                         isInvalid={formik.touched.targetAudience && !!formik.errors.targetAudience}
                         className="mb-4"
                       >
                         <Form.Label>{intl.formatMessage(messages.fieldAudience)}<RequiredMark /></Form.Label>
                         <CreatableSelect
+                          inputId="program-target-audience"
                           isClearable
                           isDisabled={!capabilities.canEditProgram}
                           options={audienceOptions}
@@ -499,6 +509,7 @@ const ProgramDetailPage: React.FC = () => {
                         <Form.Control
                           as="select"
                           name="city"
+                          aria-required={isSuperAdmin || undefined}
                           value={formik.values.city ?? ''}
                           onChange={formik.handleChange}
                           onBlur={formik.handleBlur}
@@ -614,7 +625,7 @@ const ProgramDetailPage: React.FC = () => {
                 {/* Program Card Image */}
                 <Card className="mb-4">
                   <Card.Header
-                    title={intl.formatMessage(messages.sectionImage)}
+                    title={<h2 className="program-heading-plain">{intl.formatMessage(messages.sectionImage)}</h2>}
                     subtitle={intl.formatMessage(messages.sectionImageSubtitle)}
                   />
                   <Card.Section>
@@ -680,6 +691,7 @@ const ProgramDetailPage: React.FC = () => {
                       <input
                         id="program-image-input"
                         type="file"
+                        aria-label={intl.formatMessage(messages.sectionImage)}
                         accept="image/jpeg,image/png,image/webp"
                         className="d-none"
                         onChange={handleImageChange}
@@ -694,7 +706,7 @@ const ProgramDetailPage: React.FC = () => {
               <Layout.Element>
                 <Card>
                   <Card.Header
-                    title={intl.formatMessage(messages.sectionSummary)}
+                    title={<h2 className="program-heading-plain">{intl.formatMessage(messages.sectionSummary)}</h2>}
                   />
                   <Card.Section>
 

@@ -4,6 +4,7 @@ import { Button } from '@openedx/paragon';
 import { isLeaveStartDatePast, REQUEST_STATUS } from '@edly-io/frontend-component-fbr';
 import type { AdminRequest } from './data/types';
 import messages from './messages';
+import rowActionMessages from '../common/messages';
 
 export interface RequestActionHandlers {
   onApprove: (request: AdminRequest) => void;
@@ -25,6 +26,9 @@ const RequestActions = ({
   const isWithdrawal = request.state === REQUEST_STATUS.WITHDRAWAL_PENDING;
   if (request.state !== REQUEST_STATUS.PENDING && !isWithdrawal) { return null; }
 
+  const submitter = request.submitter_name || request.submitter_email || '';
+  const approveText = intl.formatMessage(isWithdrawal ? messages.approveWithdrawalAction : messages.approve);
+  const rejectText = intl.formatMessage(isWithdrawal ? messages.rejectWithdrawalAction : messages.reject);
   const warning = isWithdrawal ? messages.pastLeaveShortWarning : messages.pastLeaveApproveWarning;
   return (
     <div>
@@ -34,16 +38,18 @@ const RequestActions = ({
           size="sm"
           onClick={() => (isWithdrawal ? onApproveWithdrawal(request) : onApprove(request))}
           disabled={isBusy}
+          aria-label={intl.formatMessage(rowActionMessages.rowAction, { action: approveText, name: submitter })}
         >
-          {intl.formatMessage(isWithdrawal ? messages.approveWithdrawalAction : messages.approve)}
+          {approveText}
         </Button>
         <Button
           variant="outline-danger"
           size="sm"
           onClick={() => (isWithdrawal ? onRejectWithdrawal(request) : onReject(request))}
           disabled={isBusy}
+          aria-label={intl.formatMessage(rowActionMessages.rowAction, { action: rejectText, name: submitter })}
         >
-          {intl.formatMessage(isWithdrawal ? messages.rejectWithdrawalAction : messages.reject)}
+          {rejectText}
         </Button>
       </div>
       {isLeaveStartDatePast(request) && (

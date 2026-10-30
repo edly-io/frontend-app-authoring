@@ -166,7 +166,7 @@ const CourseSummaryReport = ({ programId }: { programId: string }) => {
   return (
     <div className="py-3">
       <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-sm-between mb-4">
-        <h3 className="mb-2 mb-sm-0">{intl.formatMessage(messages.dashboardTitle)}</h3>
+        <h2 className="h3 mb-2 mb-sm-0">{intl.formatMessage(messages.dashboardTitle)}</h2>
         <Button
           variant="outline-primary"
           size="sm"
