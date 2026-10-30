@@ -54,7 +54,7 @@ describe('<RequestsTab />', () => {
   it('redirects /requests to the leaves sub-tab', async () => {
     renderTab('requests');
     await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent(`/programs/${PROGRAM_KEY}/requests/leaves`));
-    expect(await screen.findByRole('button', { name: /^approve$/i })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /^approve /i })).toBeInTheDocument();
   });
 
   it('renders the remote sessions sub-tab at its URL', async () => {
@@ -67,7 +67,7 @@ describe('<RequestsTab />', () => {
     axiosMock.onPatch(/\/requests\/leave\/1\/review\/$/).reply(200, makeRequest({ state: 'APPROVED' }));
     renderTab('requests/leaves');
     await screen.findByLabelText('1 awaiting action');
-    fireEvent.click(await screen.findByRole('button', { name: /^approve$/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /^approve /i }));
     await waitFor(() => expect(getCount(LEAVE_LIST_URL)).toBe(2));
     await waitFor(() => expect(getCount(COUNTS_URL)).toBe(2));
   });

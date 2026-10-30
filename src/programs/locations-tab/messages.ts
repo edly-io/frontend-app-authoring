@@ -13,6 +13,7 @@ const messages = defineMessages({
   },
   newLocation: { id: 'programs.locations.new', defaultMessage: 'New location' },
   searchPlaceholder: { id: 'programs.locations.search.placeholder', defaultMessage: 'Search locations…' },
+  searchLabel: { id: 'programs.locations.search.label', defaultMessage: 'Search locations' },
   loading: { id: 'programs.locations.loading', defaultMessage: 'Loading locations' },
   loadError: { id: 'programs.locations.loadError', defaultMessage: 'Failed to load locations' },
   empty: { id: 'programs.locations.empty', defaultMessage: 'No locations found.' },

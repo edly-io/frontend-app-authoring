@@ -119,7 +119,7 @@ const PerCourseView = ({ programId }: { programId: string }) => {
 
   return (
     <div className="py-3">
-      <h3 className="mb-1">{intl.formatMessage(messages.byCourseTitle)}</h3>
+      <h2 className="h3 mb-1">{intl.formatMessage(messages.byCourseTitle)}</h2>
       <p className="text-muted mb-3">{intl.formatMessage(messages.byCourseIntro)}</p>
 
       {coursesQuery.isError && (

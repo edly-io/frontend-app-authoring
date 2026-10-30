@@ -36,9 +36,14 @@ const AttendanceSettingRow = ({
       <div className="attendance-report__setting-label">
         <span>{label}</span>
         <OverlayTrigger trigger={['hover', 'focus']} placement="top" overlay={<Tooltip id={`tip-${field}`}>{tip}</Tooltip>}>
-          <span className="attendance-report__info-tip">
+          <Button
+            variant="link"
+            size="inline"
+            className="attendance-report__info-tip"
+            aria-label={tip}
+          >
             <Icon src={InfoOutline} className="attendance-report__info-icon" />
-          </span>
+          </Button>
         </OverlayTrigger>
       </div>
       <div className="attendance-report__setting-field">

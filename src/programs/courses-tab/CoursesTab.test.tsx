@@ -68,7 +68,7 @@ describe('<CoursesTab />', () => {
     const course = mockCourse({ displayName: 'Removable Course' });
     const program = mockProgram({ courses: [course] });
     render(<CoursesTab program={program} programId={programId} />);
-    fireEvent.click(screen.getByRole('button', { name: /^Remove$/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Removable Course' }));
     // Course name appears in both the row and the dialog description
     expect(screen.getAllByText('Removable Course').length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText(/unenroll all program learners/i)).toBeInTheDocument();
@@ -103,11 +103,11 @@ describe('<CoursesTab />', () => {
     ];
     const program = mockProgram({ courses });
     render(<CoursesTab program={program} programId={programId} />);
-    const removeButtons = screen.getAllByRole('button', { name: /^Remove$/ });
+    const removeButtons = screen.getAllByRole('button', { name: /^Remove Course [AB]$/ });
     fireEvent.click(removeButtons[0]);
     // After confirmation opens, Paragon hides background via aria-hidden so
     // we query with hidden:true to still find the now-disabled row buttons.
-    screen.getAllByRole('button', { name: /^Remove$/, hidden: true }).forEach((btn) => {
+    screen.getAllByRole('button', { name: /^Remove Course [AB]$/, hidden: true }).forEach((btn) => {
       expect(btn).toBeDisabled();
     });
   });

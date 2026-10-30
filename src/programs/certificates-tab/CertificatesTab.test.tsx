@@ -121,13 +121,13 @@ describe('<CertificatesTab />', () => {
 
   it('awards a certificate to a pending trainee', () => {
     renderTab();
-    fireEvent.click(screen.getByRole('button', { name: /^Award$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Award (?!selected|certificate)/i }));
     expect(mockAwardMutate.mock.calls[0][0]).toEqual(['jawad.ali']);
   });
 
   it('revokes an awarded certificate', () => {
     renderTab();
-    fireEvent.click(screen.getByRole('button', { name: /^Revoke$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Revoke (?!certificate)/i }));
     expect(mockRevokeMutate.mock.calls[0][0]).toBe('FBR-CERT-AYESHA');
   });
 
@@ -137,7 +137,7 @@ describe('<CertificatesTab />', () => {
       opts?.onSettled?.();
     });
     renderTab();
-    fireEvent.click(screen.getByRole('button', { name: /^Award$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Award (?!selected|certificate)/i }));
     expect(mockShowToast).toHaveBeenCalledWith('Could not award the certificate. Please try again.');
   });
 
@@ -147,7 +147,7 @@ describe('<CertificatesTab />', () => {
       opts?.onSettled?.();
     });
     renderTab();
-    fireEvent.click(screen.getByRole('button', { name: /^Award$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Award (?!selected|certificate)/i }));
     expect(mockShowToast).toHaveBeenCalledWith('Could not award the certificate. Please try again.');
   });
 
@@ -178,7 +178,7 @@ describe('<CertificatesTab />', () => {
       opts?.onError?.();
     });
     renderTab();
-    fireEvent.click(screen.getByRole('button', { name: /^Revoke$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Revoke (?!certificate)/i }));
     expect(mockShowToast).toHaveBeenCalledWith('Could not revoke the certificate. Please try again.');
   });
 
@@ -196,7 +196,7 @@ describe('<CertificatesTab />', () => {
       opts?.onSettled?.();
     });
     renderTab();
-    fireEvent.click(screen.getByRole('button', { name: /^Preview$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Preview /i }));
     expect(screen.getByRole('button', { name: /^Award certificate$/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /^Award certificate$/i }));
     expect(screen.getByRole('button', { name: /^Revoke certificate$/i })).toBeInTheDocument();
@@ -212,8 +212,8 @@ describe('<CertificatesTab />', () => {
     }));
     mockAwardMutate.mockImplementationOnce(() => { isPending = true; }); // left pending, no onSettled
     renderTab();
-    fireEvent.click(screen.getByRole('button', { name: /^Award$/i }));
-    expect(screen.getByRole('status')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Award (?!selected|certificate)/i }));
+    expect(document.querySelector('.spinner-border[role="status"]')).toBeInTheDocument();
   });
 
   it('spins the bulk award button and disables the row button too, for a bulk award', () => {
@@ -228,12 +228,12 @@ describe('<CertificatesTab />', () => {
     renderTab();
     fireEvent.click(screen.getByRole('checkbox', { name: /Select Jawad Ali/i }));
     fireEvent.click(screen.getByRole('button', { name: /Award selected/i }));
-    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(document.querySelector('.spinner-border[role="status"]')).toBeInTheDocument();
     // Award triggers (row and bulk) share one mutation instance, so the row
     // button is disabled too while a bulk award is in flight — this prevents
     // a second, overlapping award request from corrupting the shared pending
     // state (see MED-01 in the code review).
-    expect(screen.getByRole('button', { name: /^Award$/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^Award (?!selected|certificate)/i })).toBeDisabled();
   });
 
   it('shows a spinner on the revoke button while revoking', () => {
@@ -241,8 +241,8 @@ describe('<CertificatesTab />', () => {
       mutate: mockRevokeMutate, isPending: true, variables: 'FBR-CERT-AYESHA',
     });
     renderTab();
-    expect(screen.getByRole('button', { name: /^Revoke$/i })).toBeDisabled();
-    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Revoke (?!certificate)/i })).toBeDisabled();
+    expect(document.querySelector('.spinner-border[role="status"]')).toBeInTheDocument();
   });
 
   it('asks the server for the first page of everyone by default', () => {
@@ -318,7 +318,7 @@ describe('<CertificatesTab />', () => {
       opts?.onSettled?.();
     });
     const { rerender } = renderTab();
-    fireEvent.click(screen.getByRole('button', { name: /^Preview$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Preview /i }));
     fireEvent.click(screen.getByRole('button', { name: /^Award certificate$/i }));
     currentRoster = [];
     rerender(<CertificatesTab programId={programId} programName={programName} isActive />);

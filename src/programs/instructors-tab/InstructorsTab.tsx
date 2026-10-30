@@ -4,10 +4,8 @@ import {
   Button,
   ButtonGroup,
   Form,
-  OverlayTrigger,
   Spinner,
   Stack,
-  Tooltip,
   useToggle,
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
@@ -17,6 +15,8 @@ import type { Program } from '../data/types';
 import { useCourseTeam, useRemoveInstructorFromCourse } from '../data/apiHooks';
 import DeleteModal from '../../generic/delete-modal/DeleteModal';
 import AddInstructorModal from './AddInstructorModal';
+import DisabledReasonButton from '../common/DisabledReasonButton';
+import rowActionMessages from '../common/messages';
 import { getInitials } from '../feedback-tab/dashboard/feedbackDashboardUtils';
 
 const messages = defineMessages({
@@ -70,7 +70,7 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
     <div className="mt-4">
       <div className="program-page-header mb-4">
         <div>
-          <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
+          <h2 className="h3 mb-1">{intl.formatMessage(messages.sectionTitle)}</h2>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
         </div>
         <Stack direction="horizontal" gap={2} className="program-page-header__actions">
@@ -157,20 +157,9 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
                 } else if (instructor.hasScheduledSessions) {
                   blockedReason = intl.formatMessage(messages.removeBlockedHasSessions);
                 }
-                const removeDisabled = confirmInstructor !== null || blockedReason !== null;
-                const removeButton = (
-                  <Button
-                    variant="outline-danger"
-                    size="sm"
-                    onClick={() => {
-                      setRemoveError(null);
-                      setConfirmInstructor({ email: instructor.email, username: instructor.username });
-                    }}
-                    disabled={removeDisabled}
-                  >
-                    {intl.formatMessage(messages.removeBtn)}
-                  </Button>
-                );
+                const removeLabel = intl.formatMessage(rowActionMessages.rowAction, {
+                  action: intl.formatMessage(messages.removeBtn), name: instructor.name,
+                });
                 return (
                   <div
                     key={instructor.id}
@@ -194,18 +183,30 @@ const InstructorsTab: React.FC<InstructorsTabProps> = ({ program, programId, can
                     </div>
                     {canManage && (
                       blockedReason ? (
-                        <OverlayTrigger
+                        <DisabledReasonButton
+                          id={`remove-blocked-${instructor.username}`}
+                          reason={blockedReason}
                           placement="left"
-                          overlay={(
-                            <Tooltip id={`remove-blocked-${instructor.username}`}>
-                              {blockedReason}
-                            </Tooltip>
-                          )}
+                          variant="outline-danger"
+                          size="sm"
+                          aria-label={removeLabel}
                         >
-                          {/* span wrapper — Overlay needs a non-disabled child for hover events */}
-                          <span className="d-inline-block">{removeButton}</span>
-                        </OverlayTrigger>
-                      ) : removeButton
+                          {intl.formatMessage(messages.removeBtn)}
+                        </DisabledReasonButton>
+                      ) : (
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => {
+                            setRemoveError(null);
+                            setConfirmInstructor({ email: instructor.email, username: instructor.username });
+                          }}
+                          disabled={confirmInstructor !== null}
+                          aria-label={removeLabel}
+                        >
+                          {intl.formatMessage(messages.removeBtn)}
+                        </Button>
+                      )
                     )}
                   </div>
                 );

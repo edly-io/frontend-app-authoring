@@ -83,7 +83,7 @@ describe('<InstructorsTab />', () => {
     const program = mockProgram({ courses: [course] });
     render(<InstructorsTab program={program} />);
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'course-v1:Org+X+2025' } });
-    fireEvent.click(await screen.findByRole('button', { name: /^Remove$/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Remove / }));
     expect(screen.getByText('Remove Instructor?')).toBeInTheDocument();
     // Email appears in both the row badge and the dialog description
     expect(screen.getAllByText('smith@example.com').length).toBeGreaterThanOrEqual(2);
@@ -96,7 +96,7 @@ describe('<InstructorsTab />', () => {
     const program = mockProgram({ courses: [course] });
     render(<InstructorsTab program={program} />);
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'course-v1:Org+X+2025' } });
-    fireEvent.click(await screen.findByRole('button', { name: /^Remove$/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^Remove / }));
     fireEvent.click(screen.getByRole('button', { name: /Remove Instructor/i }));
     await waitFor(() => expect(mockRemoveMutate).toHaveBeenCalledWith({
       courseId: 'course-v1:Org+X+2025',
@@ -115,10 +115,11 @@ describe('<InstructorsTab />', () => {
     render(<InstructorsTab program={program} />);
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'course-v1:Org+X+2025' } });
 
-    const btn = await screen.findByRole('button', { name: /^Remove$/ });
-    expect(btn).toBeDisabled();
-    fireEvent.mouseOver(btn.parentElement!);
-    expect(await screen.findByText(/scheduled sessions for this course/i)).toBeInTheDocument();
+    const btn = await screen.findByRole('button', { name: /^Remove / });
+    expect(btn).toHaveAttribute('aria-disabled', 'true');
+    expect(btn).toHaveAccessibleDescription(/scheduled sessions for this course/i);
+    fireEvent.focus(btn);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(/scheduled sessions for this course/i);
   });
 
   it('disables Remove and shows a tooltip when the program has started', async () => {
@@ -132,10 +133,11 @@ describe('<InstructorsTab />', () => {
     render(<InstructorsTab program={program} />);
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'course-v1:Org+X+2025' } });
 
-    const btn = await screen.findByRole('button', { name: /^Remove$/ });
-    expect(btn).toBeDisabled();
-    fireEvent.mouseOver(btn.parentElement!);
-    expect(await screen.findByText(/program has started/i)).toBeInTheDocument();
+    const btn = await screen.findByRole('button', { name: /^Remove / });
+    expect(btn).toHaveAttribute('aria-disabled', 'true');
+    expect(btn).toHaveAccessibleDescription(/program has started/i);
+    fireEvent.focus(btn);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(/program has started/i);
   });
 
   it('keeps Remove enabled when there are no scheduled sessions and the program has not started', async () => {
@@ -149,7 +151,7 @@ describe('<InstructorsTab />', () => {
     render(<InstructorsTab program={program} />);
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'course-v1:Org+X+2025' } });
 
-    const btn = await screen.findByRole('button', { name: /^Remove$/ });
+    const btn = await screen.findByRole('button', { name: /^Remove / });
     expect(btn).not.toBeDisabled();
   });
 });

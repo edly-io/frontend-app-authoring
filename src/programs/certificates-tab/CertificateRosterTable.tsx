@@ -9,6 +9,7 @@ import type { CertificateRosterRow } from '../data/types';
 import { formatShortDate } from './dateFormat';
 import SpinnerButton from './SpinnerButton';
 import messages from './messages';
+import rowActionMessages from '../common/messages';
 
 interface CertificateRosterTableProps {
   rows: CertificateRosterRow[];
@@ -72,8 +73,9 @@ const CertificateRosterTable: React.FC<CertificateRosterTableProps> = ({
                   isIndeterminate={!allPageSelected && somePageSelected}
                   onChange={onToggleSelectAllPage}
                   disabled={!hasSelectableRows}
-                  aria-label={intl.formatMessage(messages.selectAll)}
-                />
+                >
+                  <span className="sr-only">{intl.formatMessage(messages.selectAll)}</span>
+                </Form.Checkbox>
               </th>
               <th scope="col">{intl.formatMessage(messages.colTrainee)}</th>
               <th scope="col" className="text-right">{intl.formatMessage(messages.colScore)}</th>
@@ -97,8 +99,11 @@ const CertificateRosterTable: React.FC<CertificateRosterTableProps> = ({
                     <Form.Checkbox
                       checked={selected.has(row.username)}
                       onChange={() => onToggleSelected(row.username)}
-                      aria-label={intl.formatMessage(messages.selectRow, { name: row.fullName })}
-                    />
+                    >
+                      <span className="sr-only">
+                        {intl.formatMessage(messages.selectRow, { name: row.fullName })}
+                      </span>
+                    </Form.Checkbox>
                     )}
                   </td>
                   <td>
@@ -131,7 +136,14 @@ const CertificateRosterTable: React.FC<CertificateRosterTableProps> = ({
                     )}
                   </td>
                   <td className="certificate-actions-cell">
-                    <Button variant="tertiary" size="sm" onClick={() => onOpenRow(row)}>
+                    <Button
+                      variant="tertiary"
+                      size="sm"
+                      onClick={() => onOpenRow(row)}
+                      aria-label={intl.formatMessage(rowActionMessages.rowAction, {
+                        action: intl.formatMessage(cert ? messages.view : messages.preview), name: row.fullName,
+                      })}
+                    >
                       {intl.formatMessage(cert ? messages.view : messages.preview)}
                     </Button>
                     {cert ? (
@@ -140,6 +152,10 @@ const CertificateRosterTable: React.FC<CertificateRosterTableProps> = ({
                         size="sm"
                         className="text-danger"
                         label={intl.formatMessage(messages.revoke)}
+                        ariaLabel={intl.formatMessage(rowActionMessages.rowAction, {
+                          action: intl.formatMessage(messages.revoke),
+                          name: row.fullName,
+                        })}
                         onClick={() => onRevoke(cert.certificateNumber)}
                         isPending={isRowRevoking(cert.certificateNumber)}
                         disabled={isRevokeDisabled}
@@ -149,6 +165,10 @@ const CertificateRosterTable: React.FC<CertificateRosterTableProps> = ({
                         variant="primary"
                         size="sm"
                         label={intl.formatMessage(messages.award)}
+                        ariaLabel={intl.formatMessage(rowActionMessages.rowAction, {
+                          action: intl.formatMessage(messages.award),
+                          name: row.fullName,
+                        })}
                         onClick={() => onAward(row.username)}
                         isPending={isRowAwarding(row.username)}
                         disabled={isAwardDisabled}
@@ -163,7 +183,7 @@ const CertificateRosterTable: React.FC<CertificateRosterTableProps> = ({
       </div>
 
       <div className="certificate-table-foot">
-        <span>
+        <span role="status">
           {intl.formatMessage(messages.footerShowing, {
             shown: rows.length,
             total: totalCount,

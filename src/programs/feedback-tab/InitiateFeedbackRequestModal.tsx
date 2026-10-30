@@ -146,6 +146,10 @@ const messages = defineMessages({
     id: 'programs.feedback.initiate.subject.empty-selection',
     defaultMessage: 'No one selected. Feedback requests will be general and not tied to a specific person.',
   },
+  userSelectLabel: {
+    id: 'programs.feedback.initiate.users.label',
+    defaultMessage: 'Select {role}',
+  },
   userSelectPlaceholder: {
     id: 'programs.feedback.initiate.users.placeholder',
     defaultMessage: 'Search and select emails...',
@@ -391,6 +395,7 @@ const FeedbackUserSelector: React.FC<FeedbackUserSelectorProps> = ({
               value={selectedOptions}
               onChange={handleSelectionChange}
               placeholder={intl.formatMessage(messages.userSelectPlaceholder)}
+              aria-label={intl.formatMessage(messages.userSelectLabel, { role: roleLabel })}
               noOptionsMessage={() => intl.formatMessage(messages.userNoOptions)}
               classNamePrefix="feedback-user-select"
               styles={{

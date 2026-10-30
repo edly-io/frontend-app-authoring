@@ -3,9 +3,7 @@ import {
   Badge,
   Button,
   ButtonGroup,
-  OverlayTrigger,
   Stack,
-  Tooltip,
   useToggle,
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
@@ -16,6 +14,8 @@ import { useRemoveCourseFromProgram } from '../data/apiHooks';
 import { useCourseAttribution } from '../../course-lifecycle/data/apiHooks';
 import DeleteModal from '../../generic/delete-modal/DeleteModal';
 import AddCourseModal from './AddCourseModal';
+import DisabledReasonButton from '../common/DisabledReasonButton';
+import rowActionMessages from '../common/messages';
 import './CoursesTab.scss';
 
 const messages = defineMessages({
@@ -67,7 +67,7 @@ const CoursesTab: React.FC<CoursesTabProps> = ({
       {/* Section header */}
       <div className="program-page-header mb-4">
         <div>
-          <h3 className="mb-1">{intl.formatMessage(messages.sectionTitle)}</h3>
+          <h2 className="h3 mb-1">{intl.formatMessage(messages.sectionTitle)}</h2>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.sectionSubtitle)}</p>
           {canManage && (
             <p className="text-muted small mb-0 mt-1">{intl.formatMessage(messages.oneCourseNote)}</p>
@@ -128,7 +128,7 @@ const CoursesTab: React.FC<CoursesTabProps> = ({
                 >
                   {/* Index badge */}
                   <span
-                    className="mr-3 font-weight-bold text-muted"
+                    className="mr-3 font-weight-bold text-gray-700"
                     style={{
                       width: '28px',
                       height: '28px',
@@ -146,7 +146,7 @@ const CoursesTab: React.FC<CoursesTabProps> = ({
 
                   {/* Course info */}
                   <div className="flex-grow-1">
-                    <p className="mb-1 font-weight-bold">{course.displayName}</p>
+                    <h3 className="program-heading-plain mb-1 font-weight-bold">{course.displayName}</h3>
                     <Stack direction="horizontal" gap={1} className="flex-wrap">
                       <Badge variant="light">{course.org}</Badge>
                       <Badge variant="light">{course.run}</Badge>
@@ -174,27 +174,26 @@ const CoursesTab: React.FC<CoursesTabProps> = ({
 
                   {canManage && (
                     hasStarted ? (
-                      <OverlayTrigger
-                        trigger={['hover', 'focus']}
-                        placement="top"
-                        overlay={(
-                          <Tooltip id={`remove-disabled-${course.id}`}>
-                            Courses cannot be removed after a program has started.
-                          </Tooltip>
-                        )}
+                      <DisabledReasonButton
+                        id={`remove-disabled-${course.id}`}
+                        reason="Courses cannot be removed after a program has started."
+                        variant="outline-danger"
+                        size="sm"
+                        aria-label={intl.formatMessage(rowActionMessages.rowAction, {
+                          action: intl.formatMessage(messages.removeBtn), name: course.displayName,
+                        })}
                       >
-                        <span>
-                          <Button variant="outline-danger" size="sm" disabled style={{ pointerEvents: 'none' }}>
-                            {intl.formatMessage(messages.removeBtn)}
-                          </Button>
-                        </span>
-                      </OverlayTrigger>
+                        {intl.formatMessage(messages.removeBtn)}
+                      </DisabledReasonButton>
                     ) : (
                       <Button
                         variant="outline-danger"
                         size="sm"
                         onClick={() => setConfirmCourseId(course.id)}
                         disabled={confirmCourseId !== null}
+                        aria-label={intl.formatMessage(rowActionMessages.rowAction, {
+                          action: intl.formatMessage(messages.removeBtn), name: course.displayName,
+                        })}
                       >
                         {intl.formatMessage(messages.removeBtn)}
                       </Button>

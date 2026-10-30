@@ -275,7 +275,7 @@ const CertificateConfigPanel: React.FC<CertificateConfigPanelProps> = ({
     <div className="certificate-config-grid">
       <Card>
         <Card.Header
-          title={intl.formatMessage(messages.heading)}
+          title={<h3 className="program-heading-plain">{intl.formatMessage(messages.heading)}</h3>}
           subtitle={intl.formatMessage(messages.subheading)}
         />
         <Card.Section>
@@ -340,6 +340,7 @@ const CertificateConfigPanel: React.FC<CertificateConfigPanelProps> = ({
                     type="file"
                     accept="image/png"
                     className="certificate-signatory-signature__input"
+                    aria-label={intl.formatMessage(messages.signatureUpload)}
                     disabled={uploadingIndex !== null}
                     aria-invalid={!!signatureError}
                     aria-describedby={signatureError ? signatureErrorId : signatureHintId}
@@ -403,7 +404,7 @@ const CertificateConfigPanel: React.FC<CertificateConfigPanelProps> = ({
       </AlertModal>
 
       <Card>
-        <Card.Header title={intl.formatMessage(messages.previewTitle)} />
+        <Card.Header title={<h3 className="program-heading-plain">{intl.formatMessage(messages.previewTitle)}</h3>} />
         <Card.Section>
           <CertificateHtmlView html={previewHtml ?? ''} />
           <p className="certificate-preview-hint">

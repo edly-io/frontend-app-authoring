@@ -134,3 +134,24 @@
     }
   }
 }
+
+.program-heading-plain {
+  margin: 0;
+  font: inherit;
+  color: inherit;
+}
+
+// The theme's success and warning scales stay too light at every step for text
+// (success-800 is 4.15:1 on white, warning-800 2.48:1), so the program pages
+// darken the steps they use for text and for badges with white text. Modals
+// and sheets render in a portal outside the page, so they get the same values.
+.program-detail-page,
+.pgn__modal-layer,
+.pgn__sheet-component {
+  --pgn-color-success-700: #0F7A6B;
+  --pgn-color-success-800: #0E6E60;
+  --pgn-color-success-900: #0C6255;
+  --pgn-color-warning-700: #8A6D00;
+  --pgn-color-warning-800: #7A6000;
+  --pgn-color-warning-900: #6B5400;
+}

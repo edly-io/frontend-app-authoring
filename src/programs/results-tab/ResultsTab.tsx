@@ -49,7 +49,7 @@ const ResultsTab: React.FC<ResultsTabProps> = ({
     <>
       <div className="trainee-page-sub-header program-page-header mb-3 pt-4">
         <div>
-          <h3 className="mb-1">{intl.formatMessage(messages.pageTitle)}</h3>
+          <h2 className="h3 mb-1">{intl.formatMessage(messages.pageTitle)}</h2>
           <p className="text-muted small mb-0">{intl.formatMessage(messages.pageSubtitle)}</p>
         </div>
       </div>

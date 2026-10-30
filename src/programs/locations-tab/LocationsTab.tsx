@@ -25,6 +25,7 @@ import LocationModal from './LocationModal';
 import { useLocationsPage } from './data/apiHooks';
 import type { Location, ProgramCity } from './data/types';
 import messages from './messages';
+import rowActionMessages from '../common/messages';
 import './locations-tab.scss';
 
 const PAGE_SIZE = 20;
@@ -59,7 +60,16 @@ const ActionsCell = ({ row, column }: LocationCellProps) => {
   const intl = useIntl();
   return (
     <Stack direction="horizontal" gap={1}>
-      <Button variant="tertiary" size="sm" iconBefore={EditOutline} onClick={() => column.onEdit(row.original)}>
+      <Button
+        variant="tertiary"
+        size="sm"
+        iconBefore={EditOutline}
+        onClick={() => column.onEdit(row.original)}
+        aria-label={intl.formatMessage(rowActionMessages.rowAction, {
+          action: intl.formatMessage(messages.edit),
+          name: row.original.name,
+        })}
+      >
         {intl.formatMessage(messages.edit)}
       </Button>
       <Button
@@ -68,10 +78,22 @@ const ActionsCell = ({ row, column }: LocationCellProps) => {
         iconBefore={DeleteOutline}
         className="text-danger"
         onClick={() => column.onDelete(row.original)}
+        aria-label={intl.formatMessage(rowActionMessages.rowAction, {
+          action: intl.formatMessage(messages.delete),
+          name: row.original.name,
+        })}
       >
         {intl.formatMessage(messages.delete)}
       </Button>
-      <Button variant="tertiary" size="sm" onClick={() => column.onAuditHistory(row.original)}>
+      <Button
+        variant="tertiary"
+        size="sm"
+        onClick={() => column.onAuditHistory(row.original)}
+        aria-label={intl.formatMessage(rowActionMessages.rowAction, {
+          action: intl.formatMessage(messages.history),
+          name: row.original.name,
+        })}
+      >
         {intl.formatMessage(messages.history)}
       </Button>
     </Stack>
@@ -101,7 +123,10 @@ const LocationCards = ({
                 iconAs={Icon}
                 size="sm"
                 variant="primary"
-                alt={intl.formatMessage(messages.edit)}
+                alt={intl.formatMessage(rowActionMessages.rowAction, {
+                  action: intl.formatMessage(messages.edit),
+                  name: location.name,
+                })}
                 onClick={() => onEdit(location)}
               />
               <IconButton
@@ -109,7 +134,10 @@ const LocationCards = ({
                 iconAs={Icon}
                 size="sm"
                 variant="primary"
-                alt={intl.formatMessage(messages.delete)}
+                alt={intl.formatMessage(rowActionMessages.rowAction, {
+                  action: intl.formatMessage(messages.delete),
+                  name: location.name,
+                })}
                 className="text-danger"
                 onClick={() => onDelete(location)}
               />
@@ -118,7 +146,10 @@ const LocationCards = ({
                 iconAs={Icon}
                 size="sm"
                 variant="primary"
-                alt={intl.formatMessage(messages.history)}
+                alt={intl.formatMessage(rowActionMessages.rowAction, {
+                  action: intl.formatMessage(messages.history),
+                  name: location.name,
+                })}
                 onClick={() => onAuditHistory(location)}
               />
             </>
@@ -313,7 +344,7 @@ const LocationsTab: React.FC<LocationsTabProps> = ({ programId }) => {
         <>
           <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-sm-between mb-3">
             <div className="mb-2 mb-sm-0">
-              <h2 className="mb-1">{intl.formatMessage(messages.title)}</h2>
+              <h2 className="h3 mb-1">{intl.formatMessage(messages.title)}</h2>
               <p className="text-muted mb-0 small">{intl.formatMessage(messages.description)}</p>
             </div>
             <Button variant="primary" size="sm" iconBefore={Add} className="flex-shrink-0" onClick={() => openModal(NEW_MODAL)}>
@@ -324,6 +355,7 @@ const LocationsTab: React.FC<LocationsTabProps> = ({ programId }) => {
           <Form.Control
             type="search"
             placeholder={intl.formatMessage(messages.searchPlaceholder)}
+            aria-label={intl.formatMessage(messages.searchLabel)}
             value={searchInput}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchInput(e.target.value)}
             className="locations-tab__search mb-3"

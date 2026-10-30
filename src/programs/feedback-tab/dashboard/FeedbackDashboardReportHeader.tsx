@@ -35,7 +35,7 @@ const FeedbackDashboardReportHeader: React.FC<FeedbackDashboardReportHeaderProps
       <div className="feedback-dashboard-heading">
         <div>
           <div className="d-flex align-items-center flex-wrap mb-1">
-            <h4 className="mb-0 mr-2">Feedback Summary</h4>
+            <h3 className="h4 mb-0 mr-2">Feedback Summary</h3>
           </div>
           <p className="text-muted small mb-0">
             Star-rated feedback summary for reviewed people in this program.

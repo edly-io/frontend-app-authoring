@@ -20,6 +20,7 @@ import HolidayModal from './HolidayModal';
 import { useHolidaysPage } from './data/apiHooks';
 import type { Holiday } from './data/types';
 import messages from './messages';
+import rowActionMessages from '../common/messages';
 import './holidays-tab.scss';
 
 const PAGE_SIZE = 20;
@@ -61,10 +62,29 @@ const ActionButtons = ({ holiday, onEdit, onDelete }: HolidayActions & { holiday
   const intl = useIntl();
   return (
     <>
-      <Button variant="tertiary" size="sm" iconBefore={EditOutline} onClick={() => onEdit(holiday)}>
+      <Button
+        variant="tertiary"
+        size="sm"
+        iconBefore={EditOutline}
+        onClick={() => onEdit(holiday)}
+        aria-label={intl.formatMessage(rowActionMessages.rowAction, {
+          action: intl.formatMessage(messages.edit),
+          name: holiday.name,
+        })}
+      >
         {intl.formatMessage(messages.edit)}
       </Button>
-      <Button variant="tertiary" size="sm" iconBefore={DeleteOutline} className="text-danger" onClick={() => onDelete(holiday)}>
+      <Button
+        variant="tertiary"
+        size="sm"
+        iconBefore={DeleteOutline}
+        className="text-danger"
+        onClick={() => onDelete(holiday)}
+        aria-label={intl.formatMessage(rowActionMessages.rowAction, {
+          action: intl.formatMessage(messages.delete),
+          name: holiday.name,
+        })}
+      >
         {intl.formatMessage(messages.delete)}
       </Button>
     </>
@@ -188,7 +208,7 @@ const HolidaysTab: React.FC = () => {
     <div className="holidays-tab">
       <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-sm-between mb-3">
         <div className="mb-2 mb-sm-0">
-          <h2 className="mb-1">{intl.formatMessage(messages.title)}</h2>
+          <h2 className="h3 mb-1">{intl.formatMessage(messages.title)}</h2>
           <p className="text-muted mb-0 small">{intl.formatMessage(messages.description)}</p>
         </div>
         <Button variant="primary" size="sm" iconBefore={Add} className="flex-shrink-0" onClick={() => openModal(NEW_MODAL)}>
@@ -199,6 +219,7 @@ const HolidaysTab: React.FC = () => {
       <Form.Control
         type="search"
         placeholder={intl.formatMessage(messages.searchPlaceholder)}
+        aria-label={intl.formatMessage(messages.searchLabel)}
         value={searchInput}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchInput(e.target.value)}
         className="holidays-tab__search mb-3"

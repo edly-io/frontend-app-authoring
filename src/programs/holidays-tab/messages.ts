@@ -9,6 +9,7 @@ const messages = defineMessages({
   },
   newHoliday: { id: 'programs.holidays.new', defaultMessage: 'New holiday' },
   searchPlaceholder: { id: 'programs.holidays.search.placeholder', defaultMessage: 'Search holidays…' },
+  searchLabel: { id: 'programs.holidays.search.label', defaultMessage: 'Search holidays' },
   loading: { id: 'programs.holidays.loading', defaultMessage: 'Loading holidays' },
   loadError: { id: 'programs.holidays.loadError', defaultMessage: 'Failed to load holidays' },
   empty: { id: 'programs.holidays.empty', defaultMessage: 'No holidays found.' },

@@ -169,7 +169,7 @@ const PerLearnerView = ({ programId }: { programId: string }) => {
 
   return (
     <div className="py-3">
-      <h3 className="mb-1">{intl.formatMessage(messages.byLearnerTitle)}</h3>
+      <h2 className="h3 mb-1">{intl.formatMessage(messages.byLearnerTitle)}</h2>
       <p className="text-muted mb-3">{intl.formatMessage(messages.byLearnerIntro)}</p>
 
       {loadError && <Alert variant="danger">{extractApiError(loadError, intl.formatMessage(messages.loadLearnersError))}</Alert>}

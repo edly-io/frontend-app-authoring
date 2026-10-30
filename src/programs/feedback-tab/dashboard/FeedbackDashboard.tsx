@@ -182,7 +182,7 @@ const FeedbackDashboard: React.FC<FeedbackDashboardProps> = ({ programId, isActi
                   <Card.Footer
                     orientation="horizontal"
                     textElement={(
-                      <span>
+                      <span role="status">
                         Showing <strong>{visibleSubjects.length}</strong> people - {selectedReport.feedbackName}
                       </span>
                     )}
