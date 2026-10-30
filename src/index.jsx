@@ -39,6 +39,7 @@ import { StudioHome } from './studio-home';
 import CourseRerun from './course-rerun';
 import { TaxonomyLayout, TaxonomyDetailPage, TaxonomyListPage } from './taxonomy';
 import { ManagementPageLayout, CurriculumsPage, BadgesPage } from './curriculum-management';
+import { ReportingPage } from './reporting';
 import { ContentTagsDrawer } from './content-tags-drawer';
 import AccessibilityPage from './accessibility-page';
 import { ToastProvider } from './generic/toast-context';
@@ -106,6 +107,7 @@ const App = () => {
         {getConfig().ENABLE_ACCESSIBILITY_PAGE === 'true' && (
           <Route path="/accessibility" element={<AccessibilityPage />} />
         )}
+        <Route path="/reporting" element={<ReportingPage />} />
         <Route path="/curriculum-management" element={<ManagementPageLayout />}>
           <Route index element={<CurriculumsPage />} />
           <Route path="badges" element={<BadgesPage />} />

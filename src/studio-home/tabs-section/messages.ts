@@ -50,6 +50,11 @@ const messages = defineMessages({
     defaultMessage: 'Taxonomies',
     description: 'Title of Taxonomies tab on the home page',
   },
+  reportingTabTitle: {
+    id: 'course-authoring.studio-home.reporting.tab.title',
+    defaultMessage: 'Reporting',
+    description: 'Title of Reporting tab on the home page',
+  },
   librariesV2TabLibrarySearchPlaceholder: {
     id: 'course-authoring.studio-home.libraries.tab.library.search-placeholder',
     defaultMessage: 'Search',
