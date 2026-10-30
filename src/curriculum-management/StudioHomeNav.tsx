@@ -8,6 +8,7 @@ import { Nav } from '@openedx/paragon';
 import { fetchOnlyStudioHomeData } from '@src/studio-home/data/thunks';
 import { getStudioHomeData } from '@src/studio-home/data/selectors';
 import homeTabMessages from '@src/studio-home/tabs-section/messages';
+import { useUberFlags } from '@src/reporting';
 import { CURRICULUM_MANAGEMENT_PATH } from './constants';
 import messages from './messages';
 
@@ -19,6 +20,7 @@ const StudioHomeNav = () => {
   const intl = useIntl();
   const dispatch = useDispatch();
   const { librariesV1Enabled, librariesV2Enabled } = useSelector(getStudioHomeData);
+  const { data: uberFlags } = useUberFlags();
 
   useEffect(() => {
     dispatch(fetchOnlyStudioHomeData());
@@ -40,6 +42,9 @@ const StudioHomeNav = () => {
     tabs.push(['/taxonomies', intl.formatMessage(homeTabMessages.taxonomiesTabTitle)]);
   }
   tabs.push([CURRICULUM_MANAGEMENT_PATH, intl.formatMessage(messages.homeTabTitle)]);
+  if (uberFlags?.enableReporting) {
+    tabs.push(['/reporting', intl.formatMessage(homeTabMessages.reportingTabTitle)]);
+  }
 
   return (
     <Nav as="nav" variant="tabs" className="studio-home-tabs" aria-label={intl.formatMessage(messages.homeNavLabel)}>
