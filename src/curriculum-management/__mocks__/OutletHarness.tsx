@@ -1,5 +1,6 @@
 /* istanbul ignore file */
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
 import type { CurriculumManagementOutletContext, FormTarget } from '../types';
 
@@ -11,16 +12,19 @@ import type { CurriculumManagementOutletContext, FormTarget } from '../types';
 const OutletHarness = ({ initialTarget = null }: { initialTarget?: FormTarget; }) => {
   const [formTarget, setFormTarget] = useState<FormTarget>(initialTarget);
   const [formDirty, setFormDirty] = useState(false);
+  const [sidebarExtra, setSidebarExtra] = useState<ReactNode>(null);
   const context: CurriculumManagementOutletContext = {
     formTarget,
     setFormTarget,
     closeForm: () => setFormTarget(null),
     setFormDirty,
+    setSidebarExtra,
   };
   return (
     <>
       <span data-testid="harness-form-dirty">{String(formDirty)}</span>
       <Outlet context={context} />
+      <aside data-testid="harness-sidebar">{sidebarExtra}</aside>
     </>
   );
 };

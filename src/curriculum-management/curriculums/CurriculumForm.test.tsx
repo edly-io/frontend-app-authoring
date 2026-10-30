@@ -97,6 +97,7 @@ describe('<CurriculumForm />', () => {
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     const postBody = axiosMock.history.post[0].data as FormData;
     expect(postBody.get('title')).toEqual('New driver essentials');
+    expect(postBody.get('slug')).toEqual('new-driver-essentials');
     expect(postBody.get('description')).toEqual('');
     expect(postBody.getAll('course_ids')).toEqual([
       'course-v1:Uber+DRV101+2026_Q4',
@@ -107,6 +108,29 @@ describe('<CurriculumForm />', () => {
     expect(postBody.has('badges.complete')).toBe(false);
     expect(postBody.get('badges.retained')).toEqual(rawBadges[1].uuid);
     expect(mockShowToast).toHaveBeenCalledWith('Curriculum created');
+  });
+
+  it('suggests the learning path ID from the title until it is edited, and refuses a bad one', async () => {
+    const { axiosMock, user } = setup();
+    await user.type(screen.getByLabelText('Title'), 'Road safety: night & day');
+    expect(screen.getByLabelText('Learning path ID')).toHaveValue('road-safety-night-day');
+    await user.clear(screen.getByLabelText('Learning path ID'));
+    await user.type(screen.getByLabelText('Learning path ID'), 'Road Safety');
+    await user.type(screen.getByLabelText('Title'), '!');
+    expect(screen.getByLabelText('Learning path ID')).toHaveValue('Road Safety');
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+    expect(await screen.findByText(/Use 1 to 64 lowercase letters/)).toBeInTheDocument();
+    expect(axiosMock.history.post).toHaveLength(0);
+  });
+
+  it('locks the learning path ID on the edit form and never sends it', async () => {
+    const { axiosMock, user } = setup({ curriculum });
+    axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(200, rawCurriculums[0]);
+    expect(screen.getByLabelText('Learning path ID')).toHaveValue('new-driver-essentials');
+    expect(screen.getByLabelText('Learning path ID')).toHaveAttribute('readonly');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(axiosMock.history.put).toHaveLength(1));
+    expect((axiosMock.history.put[0].data as FormData).get('slug')).toEqual('new-driver-essentials');
   });
 
   it('shows client-side errors (no title, no courses, no knowledge check) and sends nothing', async () => {

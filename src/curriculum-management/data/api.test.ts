@@ -3,9 +3,13 @@ import {
   page,
   rawBadges,
   rawCourseBadge,
+  rawCourseGroups,
   rawCourses,
   rawCurriculums,
+  rawDeepLinks,
+  rawDeepLinksConfig,
   rawStatus,
+  rawTestLink,
 } from '../__mocks__/fixtures';
 import * as api from './api';
 import { apiUrls } from './api';
@@ -74,6 +78,7 @@ describe('curriculum-management api', () => {
   });
 
   const curriculumData = {
+    slug: '',
     title: 'T',
     description: '',
     courseIds: ['course-v1:A+B+C'],
@@ -131,6 +136,7 @@ describe('curriculum-management api', () => {
   it('updateCurriculum PUTs to the detail URL', async () => {
     axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(200, rawCurriculums[0]);
     await api.updateCurriculum('cur-1', {
+      slug: '',
       title: 'T',
       description: '',
       courseIds: [],
@@ -200,5 +206,123 @@ describe('curriculum-management api', () => {
     await api.deleteCurriculum('cur-1');
     await api.deleteBadge('b1');
     expect(axiosMock.history.delete).toHaveLength(2);
+  });
+
+  it('builds the course groups and deep links URLs under their own prefixes', () => {
+    const base = 'http://localhost:18010/api/uber';
+    expect(apiUrls.courseGroups()).toEqual(`${base}/optional-courses/v1/course-groups/`);
+    expect(apiUrls.courseGroupsPage(2)).toEqual(`${base}/optional-courses/v1/course-groups/?page=2`);
+    expect(apiUrls.courseGroup('ev-drivers')).toEqual(`${base}/optional-courses/v1/course-groups/ev-drivers/`);
+    expect(apiUrls.deepLinksConfig()).toEqual(`${base}/deep-links/v1/config/`);
+    expect(apiUrls.testLinks()).toEqual(`${base}/deep-links/v1/test-links/`);
+    expect(apiUrls.deepLinks()).toEqual(`${base}/deep-links/v1/links/`);
+    expect(apiUrls.deepLinksPage(2)).toEqual(`${base}/deep-links/v1/links/?page=2`);
+    expect(apiUrls.deepLink('link-1')).toEqual(`${base}/deep-links/v1/links/link-1/`);
+  });
+
+  it('getAllCourseGroups pages and camelCases', async () => {
+    axiosMock.onGet(apiUrls.courseGroupsPage(1)).reply(200, page(rawCourseGroups));
+    const result = await api.getAllCourseGroups();
+    expect(result.map((group) => group.slug)).toEqual(['ev-drivers', 'nyc-new-drivers']);
+    expect(result[0].learnerCount).toEqual(12);
+    expect(result[0].courses[1]).toEqual({
+      courseId: 'course-v1:Uber+DRV102+2026_Q4',
+      displayName: null,
+      exists: false,
+      position: 2,
+    });
+  });
+
+  it('createCourseGroup and updateCourseGroup send snake_case JSON; deleteCourseGroup hits the slug URL', async () => {
+    axiosMock.onPost(apiUrls.courseGroups()).reply(201, rawCourseGroups[0]);
+    axiosMock.onPut(apiUrls.courseGroup('ev-drivers')).reply(200, rawCourseGroups[0]);
+    axiosMock.onDelete(apiUrls.courseGroup('ev-drivers')).reply(204);
+    const data = { slug: 'ev-drivers', title: 'EV drivers', description: 'd', courseIds: ['c1', 'c2'] };
+    const created = await api.createCourseGroup(data);
+    expect(created.slug).toEqual('ev-drivers');
+    expect(JSON.parse(axiosMock.history.post[0].data)).toEqual({
+      slug: 'ev-drivers',
+      title: 'EV drivers',
+      description: 'd',
+      course_ids: ['c1', 'c2'],
+    });
+    await api.updateCourseGroup('ev-drivers', data);
+    expect(JSON.parse(axiosMock.history.put[0].data).course_ids).toEqual(['c1', 'c2']);
+    await api.deleteCourseGroup('ev-drivers');
+    expect(axiosMock.history.delete[0].url).toEqual(apiUrls.courseGroup('ev-drivers'));
+  });
+
+  it('getAllDeepLinks pages and camelCases; the writes send snake_case JSON and the delete hits the uuid URL', async () => {
+    axiosMock.onGet(apiUrls.deepLinksPage(1)).reply(200, page(rawDeepLinks));
+    axiosMock.onPost(apiUrls.deepLinks()).reply(201, rawDeepLinks[0]);
+    axiosMock.onPut(apiUrls.deepLink('link-1')).reply(200, rawDeepLinks[0]);
+    axiosMock.onDelete(apiUrls.deepLink('link-1')).reply(204);
+    const links = await api.getAllDeepLinks();
+    expect(links.map((item) => item.uuid)).toEqual(['link-1', 'link-2']);
+    expect(links[0].course).toEqual({
+      courseId: 'course-v1:Uber+DRV101+2026_Q4',
+      displayName: 'Getting started',
+      exists: true,
+    });
+    expect(links[0].paths[1]).toEqual({ slug: 'gone', title: null, exists: false });
+    expect(links[0].appLink).toMatch(/^uber:\/\/learn\?target=home/);
+    const data = {
+      title: 'Lisbon',
+      description: 'd',
+      target: 'home' as const,
+      courseId: 'c1',
+      pathIds: ['p1', 'p2'],
+      groups: ['g1'],
+    };
+    const created = await api.createDeepLink(data);
+    expect(created.uuid).toEqual('link-1');
+    expect(JSON.parse(axiosMock.history.post[0].data)).toEqual({
+      title: 'Lisbon',
+      description: 'd',
+      target: 'home',
+      course_id: 'c1',
+      path_ids: ['p1', 'p2'],
+      groups: ['g1'],
+    });
+    await api.updateDeepLink('link-1', data);
+    expect(JSON.parse(axiosMock.history.put[0].data).path_ids).toEqual(['p1', 'p2']);
+    await api.deleteDeepLink('link-1');
+    expect(axiosMock.history.delete[0].url).toEqual(apiUrls.deepLink('link-1'));
+  });
+
+  it('getDeepLinksConfig camelCases the nested test_links block', async () => {
+    axiosMock.onGet(apiUrls.deepLinksConfig()).reply(
+      200,
+      rawDeepLinksConfig({
+        test_links: { enabled: false, unavailable_reason: 'off' },
+      }),
+    );
+    const config = await api.getDeepLinksConfig();
+    expect(config.appLinkBase).toEqual('uber://learn');
+    expect(config.testLinks).toEqual({ enabled: false, unavailableReason: 'off' });
+    expect(config.maxTtlSeconds).toEqual(300);
+  });
+
+  it('mintTestLink posts the request in snake_case, leaving ttl out unless given', async () => {
+    axiosMock.onPost(apiUrls.testLinks()).reply(201, rawTestLink());
+    const link = await api.mintTestLink({ target: 'home', courseId: '', pathId: '', externalId: '', groups: null });
+    expect(JSON.parse(axiosMock.history.post[0].data)).toEqual({
+      target: 'home',
+      course_id: '',
+      path_id: '',
+      external_id: '',
+      groups: null,
+    });
+    expect(link.externalId).toEqual('dev-1');
+    expect(link.launch).toEqual(rawTestLink().launch);
+    await api.mintTestLink({ target: 'course', courseId: 'c', pathId: '', externalId: 'x', groups: ['a'], ttl: 60 });
+    expect(JSON.parse(axiosMock.history.post[1].data)).toEqual({
+      target: 'course',
+      course_id: 'c',
+      path_id: '',
+      external_id: 'x',
+      groups: ['a'],
+      ttl: 60,
+    });
   });
 });

@@ -180,3 +180,86 @@
     }
   }
 }
+
+// The launch fields on the Deep links tab: a compact reference list in the help sidebar. Keys and values wrap
+// instead of widening the column.
+.curriculum-management .curriculum-management-app-link {
+  margin: var(--pgn-spacing-spacer-2) 0 0 calc(1.5rem + var(--pgn-spacing-spacer-1));
+}
+
+// The test link section sits under the details list, on the same left edge as the card body.
+.curriculum-management .curriculum-management-test-link {
+  margin: var(--pgn-spacing-spacer-3) 0 0 calc(1.5rem + var(--pgn-spacing-spacer-1));
+}
+
+.curriculum-management .curriculum-management-launch-fields {
+  code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .curriculum-management-launch-field {
+    padding: var(--pgn-spacing-spacer-2) 0;
+    border-top: 1px solid var(--pgn-color-light-400);
+
+    dt {
+      margin-bottom: var(--pgn-spacing-spacer-1);
+      font-weight: 400;
+    }
+
+    dd {
+      margin-bottom: 0;
+      font-size: .875rem;
+    }
+  }
+}
+
+// Searchable multi-select (react-select), dressed like a Paragon form control. Chips are the picked values.
+.curriculum-management .curriculum-management-multiselect {
+  .curriculum-management-multiselect__control {
+    min-height: var(--pgn-size-form-control-height-base, 2.75rem);
+    border: 1px solid var(--pgn-color-gray-500);
+    border-radius: var(--pgn-size-border-radius-base);
+    box-shadow: none;
+
+    &:hover {
+      border-color: var(--pgn-color-gray-700);
+    }
+
+    &--is-focused {
+      border-color: var(--pgn-color-primary-500);
+      box-shadow: 0 0 0 1px var(--pgn-color-primary-500);
+    }
+
+    &--is-disabled {
+      background-color: var(--pgn-color-light-200);
+    }
+  }
+
+  .curriculum-management-multiselect__multi-value {
+    border-radius: var(--pgn-size-border-radius-base);
+    background-color: var(--pgn-color-light-400);
+  }
+
+  .curriculum-management-multiselect__multi-value__label {
+    color: var(--pgn-color-gray-700);
+    font-size: .875rem;
+  }
+
+  .curriculum-management-multiselect__multi-value__remove:hover {
+    background-color: var(--pgn-color-gray-700);
+    color: var(--pgn-color-white);
+  }
+
+  .curriculum-management-multiselect__menu {
+    z-index: 3;
+  }
+
+  .curriculum-management-multiselect__option--is-focused {
+    background-color: var(--pgn-color-light-300);
+  }
+
+  .curriculum-management-multiselect__option--is-selected {
+    background-color: var(--pgn-color-primary-500);
+  }
+}

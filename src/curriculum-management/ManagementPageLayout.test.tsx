@@ -30,6 +30,8 @@ jest.mock('react-router', () => ({
 
 const CURRICULUMS = '/curriculum-management';
 const BADGES = '/curriculum-management/badges';
+const COURSE_GROUPS = '/curriculum-management/course-groups';
+const DEEP_LINKS = '/curriculum-management/deep-links';
 
 /** Every `formTarget` a ContextProbe has rendered with, in order, per testId. */
 const rendered: Record<string, string[]> = {};
@@ -54,6 +56,8 @@ const renderLayout = (path = CURRICULUMS) =>
       <Route path={CURRICULUMS} element={<ManagementPageLayout />}>
         <Route index element={<ContextProbe testId="curriculums-page" otherPath={BADGES} />} />
         <Route path="badges" element={<ContextProbe testId="badges-page" otherPath={CURRICULUMS} />} />
+        <Route path="course-groups" element={<ContextProbe testId="course-groups-page" otherPath={CURRICULUMS} />} />
+        <Route path="deep-links" element={<ContextProbe testId="deep-links-page" otherPath={CURRICULUMS} />} />
       </Route>
     </Routes>,
     { routerProps: { initialEntries: [path] } },
@@ -113,6 +117,37 @@ describe('<ManagementPageLayout />', () => {
     expect(screen.getByText('About curriculums')).toBeInTheDocument();
     expect(screen.queryByText('Course badges')).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'New curriculum' }));
+    expect(screen.getByTestId('form-target')).toHaveTextContent('new');
+  });
+
+  it('Course groups and Deep links tabs link from the tab bar', async () => {
+    axiosMock.onGet(apiUrls.status()).reply(200, rawStatus());
+    renderLayout(COURSE_GROUPS);
+    await screen.findByTestId('course-groups-page');
+    expect(screen.getByRole('link', { name: 'Course groups' })).toHaveAttribute('href', COURSE_GROUPS);
+    expect(screen.getByRole('link', { name: 'Course groups' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Deep links' })).toHaveAttribute('href', DEEP_LINKS);
+    expect(screen.getByRole('link', { name: 'Curriculum' })).not.toHaveAttribute('aria-current');
+  });
+
+  it('Course groups tab: New course group and the group help', async () => {
+    axiosMock.onGet(apiUrls.status()).reply(200, rawStatus());
+    renderLayout(COURSE_GROUPS);
+    await screen.findByTestId('course-groups-page');
+    expect(screen.getByText('About course groups')).toBeInTheDocument();
+    expect(screen.getByText('Group IDs')).toBeInTheDocument();
+    expect(screen.queryByText('About curriculums')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'New course group' }));
+    expect(screen.getByTestId('form-target')).toHaveTextContent('new');
+  });
+
+  it('Deep links tab: New deep link and the deep links help', async () => {
+    axiosMock.onGet(apiUrls.status()).reply(200, rawStatus());
+    renderLayout(DEEP_LINKS);
+    await screen.findByTestId('deep-links-page');
+    expect(screen.getByText('About deep links')).toBeInTheDocument();
+    expect(screen.getByText('Test links')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'New deep link' }));
     expect(screen.getByTestId('form-target')).toHaveTextContent('new');
   });
 
