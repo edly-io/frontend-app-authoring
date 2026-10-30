@@ -71,6 +71,22 @@ const useFormatters = () => {
   const percent = (value?: number | null) => (
     value === null || value === undefined ? dash : `${intl.formatNumber(value, { maximumFractionDigits: 1 })}%`
   );
+  // Three states, not two: a course or slot with no badge linked has nothing to earn, so showing
+  // it as "Not Awarded" would read as the learner having failed at something that does not exist.
+  const badge = (configured: boolean, awarded: boolean) => {
+    if (!configured) {
+      return (
+        <span className="reporting-badge reporting-badge--muted">
+          {intl.formatMessage(messages.badgeNone)}
+        </span>
+      );
+    }
+    return (
+      <span className={`reporting-badge reporting-badge--${awarded ? 'positive' : 'negative'}`}>
+        {intl.formatMessage(awarded ? messages.badgeYes : messages.badgeNo)}
+      </span>
+    );
+  };
   const status = (value: boolean | null | undefined, yes: string, no: string) => {
     if (value === null || value === undefined) { return dash; }
     return (
@@ -82,6 +98,7 @@ const useFormatters = () => {
   return {
     intl,
     dash,
+    badge,
     date,
     number,
     percent,
@@ -269,12 +286,7 @@ const EnrollmentsTable = ({ courseId }: { courseId: string; }) => {
     {
       Header: intl.formatMessage(messages.colBadge),
       accessor: 'badgeAwarded',
-      Cell: ({ row }) =>
-        f.status(
-          row.original.badgeAwarded,
-          intl.formatMessage(messages.badgeYes),
-          intl.formatMessage(messages.badgeNo),
-        ),
+      Cell: ({ row }) => f.badge(row.original.badgeConfigured, row.original.badgeAwarded),
     },
   ];
 
@@ -368,6 +380,14 @@ const AssignmentsTable = ({ curriculumUuid }: { curriculumUuid: string; }) => {
       Cell: ({ row }) => f.date(row.original.completeAt),
     },
     {
+      // The award date, where there is one, says more than a bare "Awarded".
+      Header: intl.formatMessage(messages.colCompleteBadge),
+      accessor: 'completeBadgeAwardedAt',
+      Cell: ({ row }) => (row.original.completeBadgeAwardedAt
+        ? f.date(row.original.completeBadgeAwardedAt)
+        : f.badge(row.original.completeBadgeConfigured, false)),
+    },
+    {
       Header: intl.formatMessage(messages.colKcUnlocks),
       accessor: 'kcUnlocksAt',
       Cell: ({ row }) => f.date(row.original.kcUnlocksAt),
@@ -382,6 +402,18 @@ const AssignmentsTable = ({ curriculumUuid }: { curriculumUuid: string; }) => {
       accessor: 'kcPassed',
       Cell: ({ row }) =>
         f.status(row.original.kcPassed, intl.formatMessage(messages.passed), intl.formatMessage(messages.failed)),
+    },
+    {
+      Header: intl.formatMessage(messages.colRetained),
+      accessor: 'retainedAt',
+      Cell: ({ row }) => f.date(row.original.retainedAt),
+    },
+    {
+      Header: intl.formatMessage(messages.colRetainedBadge),
+      accessor: 'retainedBadgeAwardedAt',
+      Cell: ({ row }) => (row.original.retainedBadgeAwardedAt
+        ? f.date(row.original.retainedBadgeAwardedAt)
+        : f.badge(row.original.retainedBadgeConfigured, false)),
     },
     {
       Header: intl.formatMessage(messages.colLastActivity),
