@@ -62,7 +62,7 @@ describe('<BadgeForm />', () => {
     expect(screen.getByRole('heading', { name: 'New badge' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Curriculum badge' })).toBeChecked();
     await user.type(screen.getByLabelText('Title'), 'Holiday rush ready');
-    expect(screen.getByText('18 / 100')).toBeInTheDocument();
+    expect(screen.getByText('18 / 50')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Description'), 'Seasonal.');
     const png = new File(['png'], 'badge.png', { type: 'image/png' });
     await user.upload(fileInput(), png);
