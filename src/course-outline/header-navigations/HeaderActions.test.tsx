@@ -161,11 +161,12 @@ describe('<HeaderActions />', () => {
       renderComponent();
 
       await screen.findByRole('button', { name: messages.viewLiveButton.defaultMessage });
-      expect(screen.queryByRole('link', { name: messages.instructorDashboardButton.defaultMessage })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: messages.instructorDashboardButton.defaultMessage })).not
+        .toBeInTheDocument();
     });
 
     it('renders with correct href when instructorDashboardLink is provided', async () => {
-      const instructorDashboardLink = 'http://localhost:2003/course/course-v1:org+code+run';
+      const instructorDashboardLink = 'http://localhost:2003/instructor-dashboard/course-v1:org+code+run';
       renderComponent({
         headerNavigationsActions: { ...headerNavigationsActions, instructorDashboardLink },
       });
@@ -174,6 +175,7 @@ describe('<HeaderActions />', () => {
       expect(link).toBeInTheDocument();
       expect(link).toHaveAttribute('href', instructorDashboardLink);
       expect(link).toHaveAttribute('target', '_blank');
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer');
     });
   });
 

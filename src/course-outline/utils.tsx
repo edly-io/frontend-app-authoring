@@ -1,4 +1,5 @@
 import type { IntlShape, MessageDescriptor } from 'react-intl';
+import { getConfig } from '@edx/frontend-platform';
 import {
   CheckCircle as CheckCircleIcon,
   Lock as LockIcon,
@@ -204,7 +205,22 @@ const getVideoSharingOptionText = (
   }
 };
 
+/**
+ * Build the instructor dashboard URL for a course.
+ * Mirrors the LMS, which links to `${INSTRUCTOR_MICROFRONTEND_URL}/${courseId}`.
+ * @param {string} courseId - course key
+ * @returns {string | undefined} - the URL, or undefined when INSTRUCTOR_MICROFRONTEND_URL is not configured
+ */
+const getInstructorDashboardLink = (courseId: string): string | undefined => {
+  const baseUrl: string | null | undefined = getConfig().INSTRUCTOR_MICROFRONTEND_URL;
+  if (!baseUrl) {
+    return undefined;
+  }
+  return `${baseUrl.replace(/\/+$/, '')}/${courseId}`;
+};
+
 export {
+  getInstructorDashboardLink,
   getItemStatus,
   getItemStatusBadgeContent,
   getItemStatusBorder,

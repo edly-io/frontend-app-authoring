@@ -20,7 +20,9 @@
 
 The slot is positioned in the `SubHeader` section of the Course Outline page, suitable for adding action buttons.
 
-The slot by default contains the action buttons such as `+ New Section`, `Reindex`, `View Live`.
+The slot by default contains the action buttons such as `+ New Section`, `Reindex`, `View Live`, and
+`Instructor dashboard` (only when `INSTRUCTOR_MICROFRONTEND_URL` is configured; its URL is passed as the
+optional `headerNavigationsActions.instructorDashboardLink`).
 
 ## Example
 

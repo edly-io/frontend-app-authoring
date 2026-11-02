@@ -133,7 +133,7 @@ const HeaderActions = ({
         <OverlayTrigger
           placement="bottom"
           overlay={
-            <Tooltip id={intl.formatMessage(messages.instructorDashboardButtonTooltip)}>
+            <Tooltip id="instructor-dashboard-button-tooltip">
               {intl.formatMessage(messages.instructorDashboardButtonTooltip)}
             </Tooltip>
           }
@@ -142,6 +142,7 @@ const HeaderActions = ({
             iconBefore={BarChart}
             href={instructorDashboardLink}
             target="_blank"
+            rel="noopener noreferrer"
             variant="outline-primary"
           >
             {intl.formatMessage(messages.instructorDashboardButton)}
