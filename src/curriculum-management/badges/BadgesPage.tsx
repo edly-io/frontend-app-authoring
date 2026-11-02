@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { Button, SearchField, Stack } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
 
 import { LoadingSpinner } from '../../generic/Loading';
+import { OPEN_PARAM } from '../constants';
 import { useBadges } from '../data/apiHooks';
 import type { CurriculumManagementOutletContext } from '../types';
 import messages from '../messages';
@@ -21,6 +22,7 @@ const BadgesPage = () => {
   } = useOutletContext<CurriculumManagementOutletContext>();
   const { data: badges, isPending } = useBadges();
   const [search, setSearch] = useState('');
+  const openUuid = useSearchParams()[0].get(OPEN_PARAM);
 
   if (isPending) {
     return <LoadingSpinner />;
@@ -63,7 +65,8 @@ const BadgesPage = () => {
               <BadgeCard
                 key={badge.uuid}
                 badge={badge}
-                defaultExpanded={visible.length === 1}
+                defaultExpanded={visible.length === 1 || badge.uuid === openUuid}
+                scrollIntoView={badge.uuid === openUuid}
                 onEdit={() => setFormTarget(badge.uuid)}
               />
             ))}

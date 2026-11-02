@@ -1,9 +1,10 @@
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { Button, Stack } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
 
 import { LoadingSpinner } from '../../generic/Loading';
+import { OPEN_PARAM } from '../constants';
 import { useCurriculums } from '../data/apiHooks';
 import type { CurriculumManagementOutletContext } from '../types';
 import messages from '../messages';
@@ -19,6 +20,7 @@ const CurriculumsPage = () => {
     setFormDirty,
   } = useOutletContext<CurriculumManagementOutletContext>();
   const { data: curriculums, isPending } = useCurriculums();
+  const openUuid = useSearchParams()[0].get(OPEN_PARAM);
 
   if (isPending) {
     return <LoadingSpinner />;
@@ -43,6 +45,8 @@ const CurriculumsPage = () => {
         <CurriculumCard
           key={curriculum.uuid}
           curriculum={curriculum}
+          defaultExpanded={curriculum.uuid === openUuid}
+          scrollIntoView={curriculum.uuid === openUuid}
           onEdit={() => setFormTarget(curriculum.uuid)}
         />
       ))}

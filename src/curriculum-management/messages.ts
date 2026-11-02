@@ -151,6 +151,10 @@ const messages = defineMessages({
   badgeIdLabel: { id: `${p}.form.badge-id`, defaultMessage: 'Badge ID', description: 'Label of the read-only badge UUID.' },
   badgeCreated: { id: `${p}.badges.created`, defaultMessage: 'Badge created', description: 'Toast after creating a badge.' },
   badgeSaved: { id: `${p}.badges.saved`, defaultMessage: 'Badge saved', description: 'Toast after editing a badge.' },
+  courseBadgeLink: { id: `${p}.course-card.badge`, defaultMessage: 'Badge: {title}', description: 'Link on a Studio home course card to the course badge the course awards.' },
+  courseNoBadge: { id: `${p}.course-card.no-badge`, defaultMessage: 'No badge', description: 'Shown on a Studio home course card when no course badge covers the course.' },
+  courseCurriculumLink: { id: `${p}.course-card.curriculum`, defaultMessage: 'Curriculum: {title}', description: 'Link on a Studio home course card to a curriculum that includes the course.' },
+  courseKnowledgeCheckLink: { id: `${p}.course-card.knowledge-check`, defaultMessage: 'Knowledge check: {title}', description: 'Link on a Studio home course card to a curriculum that uses the course as its knowledge check.' },
 });
 
 export default messages;

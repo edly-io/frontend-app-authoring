@@ -21,13 +21,14 @@ jest.mock('./CurriculumForm', () => ({
   ),
 }));
 
-const renderPage = () =>
+const renderPage = (url = '/') =>
   render(
     <Routes>
       <Route element={<OutletHarness />}>
         <Route path="*" element={<CurriculumsPage />} />
       </Route>
     </Routes>,
+    { routerProps: { initialEntries: [url] } },
   );
 
 describe('<CurriculumsPage />', () => {
@@ -55,6 +56,16 @@ describe('<CurriculumsPage />', () => {
     expect(screen.getByTestId('curriculum-card')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'close form' }));
     expect(screen.queryByTestId('curriculum-form')).not.toBeInTheDocument();
+  });
+
+  it('expands the curriculum named in the open param', async () => {
+    const { axiosMock } = initializeMocks();
+    axiosMock.onGet(apiUrls.curriculumsPage(1)).reply(200, page(rawCurriculums));
+    renderPage('/?open=cur-1');
+    expect(await screen.findByRole('button', { name: /^new driver essentials/i })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
   });
 
   it('closes the form when it asks to cancel', async () => {

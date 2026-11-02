@@ -27,13 +27,14 @@ jest.mock('./BadgeForm', () => ({
   ),
 }));
 
-const renderPage = () =>
+const renderPage = (url = '/') =>
   render(
     <Routes>
       <Route element={<OutletHarness />}>
         <Route path="*" element={<BadgesPage />} />
       </Route>
     </Routes>,
+    { routerProps: { initialEntries: [url] } },
   );
 
 const cardFor = (title: string) =>
@@ -58,11 +59,20 @@ describe('<BadgesPage />', () => {
     await expand(user, 'Road ready');
     expect(within(roadReady).getByRole('link', { name: 'New driver essentials · Complete' })).toHaveAttribute(
       'href',
-      '/curriculum-management',
+      '/curriculum-management?open=cur-1',
     );
     expect(within(roadReady).getByRole('img', { name: 'Road ready' })).toHaveAttribute('src', rawBadges[0].image_url);
     await expand(user, 'Holiday rush ready');
     expect(within(cardFor('Holiday rush ready')).getByText('Not linked to a curriculum')).toBeInTheDocument();
+  });
+
+  it('expands the badge named in the open param', async () => {
+    const { axiosMock } = initializeMocks();
+    axiosMock.onGet(apiUrls.badgesPage(1)).reply(200, page(rawBadges));
+    renderPage(`/?open=${rawBadges[3].uuid}`);
+    await screen.findByText('4 badges');
+    expect(within(cardFor('Holiday rush ready')).getByText('Not linked to a curriculum')).toBeInTheDocument();
+    expect(within(cardFor('Road ready')).queryByRole('link')).not.toBeInTheDocument();
   });
 
   it('expands the only badge left by default', async () => {
