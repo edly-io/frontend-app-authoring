@@ -1,5 +1,28 @@
+// Uber Move is served by the MFE host at /uber-fonts/ (tutor-contrib-uber). The URL must be absolute:
+// the editor iframe's document_base_url is the LMS, which would resolve a root-relative path there.
+const fontsUrl = `${window.location.origin}/uber-fonts`;
+
 const getStyles = () => (
-  `.mce-content-body *[contentEditable=false] {
+  `@font-face {
+    font-family: 'Uber Move Text';
+    src: url('${fontsUrl}/UberMoveText-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Uber Move Text';
+    src: url('${fontsUrl}/UberMoveText-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Uber Move';
+    src: url('${fontsUrl}/UberMove-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+  }
+
+  .mce-content-body *[contentEditable=false] {
     cursor: default;
   }
   .mce-content-body *[contentEditable=true] {
