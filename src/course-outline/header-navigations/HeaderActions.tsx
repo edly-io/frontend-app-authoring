@@ -7,6 +7,7 @@ import {
 } from '@openedx/paragon';
 import {
   Add as IconAdd,
+  BarChart,
   FindInPage,
   InfoOutline,
 } from '@openedx/paragon/icons';
@@ -26,6 +27,7 @@ export interface HeaderActionsProps {
     handleReIndex: () => void;
     handleExpandAll: () => void;
     lmsLink: string;
+    instructorDashboardLink?: string;
   };
   isReIndexShow: boolean;
   isDisabledReindexButton: boolean;
@@ -42,7 +44,7 @@ const HeaderActions = ({
   const intl = useIntl();
 
   const { clearSelection, open, setCurrentPageKey } = useOutlineSidebarContext();
-  const { handleReIndex, lmsLink } = headerNavigationsActions;
+  const { handleReIndex, lmsLink, instructorDashboardLink } = headerNavigationsActions;
 
   const handleCourseInfoClick = () => {
     clearSelection();
@@ -127,6 +129,25 @@ const HeaderActions = ({
           {intl.formatMessage(messages.viewLiveButton)}
         </Button>
       </OverlayTrigger>
+      {instructorDashboardLink && (
+        <OverlayTrigger
+          placement="bottom"
+          overlay={
+            <Tooltip id={intl.formatMessage(messages.instructorDashboardButtonTooltip)}>
+              {intl.formatMessage(messages.instructorDashboardButtonTooltip)}
+            </Tooltip>
+          }
+        >
+          <Button
+            iconBefore={BarChart}
+            href={instructorDashboardLink}
+            target="_blank"
+            variant="outline-primary"
+          >
+            {intl.formatMessage(messages.instructorDashboardButton)}
+          </Button>
+        </OverlayTrigger>
+      )}
     </Stack>
   );
 };

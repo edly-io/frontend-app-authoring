@@ -111,6 +111,11 @@ const useCourseOutline = ({ courseId }) => {
     });
   };
 
+  const instructorMicrofrontendUrl = getConfig().INSTRUCTOR_MICROFRONTEND_URL;
+  const instructorDashboardLink = instructorMicrofrontendUrl
+    ? `${instructorMicrofrontendUrl}/course/${courseId}`
+    : '';
+
   const headerNavigationsActions = {
     handleNewSection: async () => {
       // istanbul ignore next - we are using this for back compability with the plugin slot. we don't call it anymore.
@@ -132,6 +137,7 @@ const useCourseOutline = ({ courseId }) => {
       setSectionsExpanded((prevState) => !prevState);
     },
     lmsLink,
+    instructorDashboardLink,
   };
 
   const handleEnableHighlightsSubmit = () => {
