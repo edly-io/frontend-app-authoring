@@ -1,6 +1,12 @@
 .courses-tab-container {
   min-height: 80vh;
 
+  // Paragon's status message box is a flex item, so it grows to fit its widest child. Without this, a
+  // long badge or curriculum link (CourseBadgeLinks) runs past the card instead of ending in an ellipsis.
+  .card-item .pgn__card-status__message-content {
+    min-width: 0;
+  }
+
   .previously-migrated-chip {
     .pgn__chip {
       border: 0;

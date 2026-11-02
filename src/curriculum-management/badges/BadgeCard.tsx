@@ -213,7 +213,7 @@ const BadgeCard = ({
                           to={curriculumUrl(link.uuid)}
                           variant="light"
                           // The chip label ends in an ellipsis; the full text stays in the tooltip.
-                          className="mw-100"
+                          className="mw-100 text-truncate"
                           title={linkLabel(link)}
                         >
                           {linkLabel(link)}

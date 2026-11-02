@@ -26,7 +26,7 @@ const CourseBadgeLinks = ({ courseId }: { courseId: string; }) => {
 
   const chip = (key: string, to: string, label: string) => (
     // The chip label ends in an ellipsis; the full text stays in the tooltip.
-    <Chip key={key} as={Link} to={to} variant="light" className="mw-100" title={label}>{label}</Chip>
+    <Chip key={key} as={Link} to={to} variant="light" className="mw-100 text-truncate" title={label}>{label}</Chip>
   );
 
   return (
