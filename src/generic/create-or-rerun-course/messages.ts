@@ -134,13 +134,25 @@ const messages = defineMessages({
     id: 'course-authoring.create-or-rerun-course.slug.help-text',
     defaultMessage: 'This slug will be used in WordPress URLs for this course. If left blank, the course ID will be used instead.',
   },
+  courseSlugDefaultHelpText: {
+    id: 'course-authoring.create-or-rerun-course.slug.default-help-text',
+    defaultMessage: 'Leave blank to use {slug}.',
+  },
+  courseSlugCustomHelpText: {
+    id: 'course-authoring.create-or-rerun-course.slug.custom-help-text',
+    defaultMessage: 'This slug will be used in WordPress URLs for this course: {slug}',
+  },
   slugInvalidCharsError: {
     id: 'course-authoring.create-or-rerun-course.slug.invalid-chars.error',
     defaultMessage: 'Please use only lowercase letters, numbers and hyphens in this field.',
   },
   slugDuplicateError: {
     id: 'course-authoring.create-or-rerun-course.slug.duplicate.error',
-    defaultMessage: 'This slug is already in use by another course. Please choose a different one.',
+    defaultMessage: 'The slug {slug} is already in use by another course. Please choose a different one.',
+  },
+  slugDuplicateDefaultError: {
+    id: 'course-authoring.create-or-rerun-course.slug.duplicate-default.error',
+    defaultMessage: 'The default slug {slug} is already used by another course. Enter a custom slug.',
   },
   slugSaveError: {
     id: 'course-authoring.create-or-rerun-course.slug.save.error',
