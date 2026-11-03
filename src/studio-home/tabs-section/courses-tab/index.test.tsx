@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   initializeMocks,
   render,
@@ -9,6 +10,8 @@ import { type DeprecatedReduxState } from '@src/store';
 import studioHomeMock from '@src/studio-home/__mocks__/studioHomeMock';
 import { RequestStatus } from '@src/data/constants';
 import { initialState } from '../../factories/mockApiResponses';
+import { page, rawCourseBadge, rawStatus } from '@src/curriculum-management/__mocks__/fixtures';
+import { apiUrls as curriculumApiUrls } from '@src/curriculum-management/data/api';
 
 import { CoursesList } from '.';
 import { studioHomeCoursesRequestParamsDefault } from '../../data/slice';
@@ -21,7 +24,11 @@ const numPages = 1;
 const coursesCount = studioHomeMock.courses.length;
 const showNewCourseContainer = true;
 
-const renderComponent = (overrideProps = {}, studioHomeState: Partial<StudioHomeState> = {}) => {
+const renderComponent = (
+  overrideProps = {},
+  studioHomeState: Partial<StudioHomeState> = {},
+  curriculumManagementEnabled = false,
+) => {
   // Generate a custom initial state based on studioHomeCoursesRequestParams
   const customInitialState: Partial<DeprecatedReduxState> = {
     ...initialState,
@@ -41,7 +48,18 @@ const renderComponent = (overrideProps = {}, studioHomeState: Partial<StudioHome
   };
 
   // Initialize the store with the custom initial state
-  const { reduxStore: store } = initializeMocks({ initialState: customInitialState });
+  const { reduxStore: store, axiosMock } = initializeMocks({ initialState: customInitialState });
+  axiosMock.onGet(curriculumApiUrls.status()).reply(200, rawStatus(curriculumManagementEnabled));
+  axiosMock.onGet(curriculumApiUrls.badgesPage(1)).reply(
+    200,
+    page([
+      {
+        ...rawCourseBadge,
+        courses: [{ course_id: studioHomeMock.courses[0].courseKey, display_name: null, exists: true }],
+      },
+    ]),
+  );
+  axiosMock.onGet(curriculumApiUrls.curriculumsPage(1)).reply(200, page([]));
 
   return {
     ...render(
@@ -53,8 +71,19 @@ const renderComponent = (overrideProps = {}, studioHomeState: Partial<StudioHome
       />,
     ),
     store,
+    axiosMock,
   };
 };
+
+/** Lets the status request resolve and any list requests it triggers go out. */
+const settle = () =>
+  act(() =>
+    new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    })
+  );
+const requested = (axiosMock: ReturnType<typeof initializeMocks>['axiosMock'], url: string) =>
+  axiosMock.history.get.some((request) => request.url === url);
 
 describe('<CoursesTab />', () => {
   it('should render correctly', async () => {
@@ -225,5 +254,29 @@ describe('<CoursesTab />', () => {
     };
     renderComponent({}, customStoreData);
     expect(screen.getByText(/HarvardX \//)).toBeInTheDocument();
+  });
+
+  describe('badge and curriculum links', () => {
+    it('shows a course\'s badge, or "No badge", when curriculum management is on', async () => {
+      renderComponent({}, {}, true);
+      expect(await screen.findByRole('link', { name: `Badge: ${rawCourseBadge.title}` })).toBeInTheDocument();
+      expect(screen.getAllByText('No badge')).toHaveLength(studioHomeMock.courses.length - 1);
+    });
+
+    it('shows nothing and loads no badges when curriculum management is off', async () => {
+      const { axiosMock } = renderComponent({}, {}, false);
+      await settle();
+      expect(requested(axiosMock, curriculumApiUrls.status())).toBe(true);
+      expect(requested(axiosMock, curriculumApiUrls.badgesPage(1))).toBe(false);
+      expect(screen.queryByText('No badge')).not.toBeInTheDocument();
+    });
+
+    it('shows nothing in the course picker', async () => {
+      const { axiosMock } = renderComponent({ handleSelect: jest.fn() }, {}, true);
+      await settle();
+      expect(requested(axiosMock, curriculumApiUrls.status())).toBe(true);
+      expect(requested(axiosMock, curriculumApiUrls.badgesPage(1))).toBe(false);
+      expect(screen.queryByText('No badge')).not.toBeInTheDocument();
+    });
   });
 });

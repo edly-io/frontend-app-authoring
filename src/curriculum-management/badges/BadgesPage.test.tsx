@@ -66,13 +66,18 @@ describe('<BadgesPage />', () => {
     expect(within(cardFor('Holiday rush ready')).getByText('Not linked to a curriculum')).toBeInTheDocument();
   });
 
-  it('expands the badge named in the open param', async () => {
+  it('expands and scrolls to the badge named in the open param', async () => {
     const { axiosMock } = initializeMocks();
     axiosMock.onGet(apiUrls.badgesPage(1)).reply(200, page(rawBadges));
+    // jsdom has no scrollIntoView.
+    const scrollIntoView = jest.fn();
+    HTMLElement.prototype.scrollIntoView = scrollIntoView;
     renderPage(`/?open=${rawBadges[3].uuid}`);
     await screen.findByText('4 badges');
     expect(within(cardFor('Holiday rush ready')).getByText('Not linked to a curriculum')).toBeInTheDocument();
     expect(within(cardFor('Road ready')).queryByRole('link')).not.toBeInTheDocument();
+    expect(scrollIntoView.mock.contexts).toEqual([cardFor('Holiday rush ready')]);
+    delete (HTMLElement.prototype as Partial<HTMLElement>).scrollIntoView;
   });
 
   it('expands the only badge left by default', async () => {
