@@ -166,7 +166,7 @@ describe('<HeaderActions />', () => {
     });
 
     it('renders with correct href when instructorDashboardLink is provided', async () => {
-      const instructorDashboardLink = 'http://localhost:2003/instructor-dashboard/course-v1:org+code+run';
+      const instructorDashboardLink = 'http://localhost:2003/instructor-dashboard/course-v1:org+code+run/course_info';
       renderComponent({
         headerNavigationsActions: { ...headerNavigationsActions, instructorDashboardLink },
       });

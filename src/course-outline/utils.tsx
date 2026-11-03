@@ -216,7 +216,7 @@ const getInstructorDashboardLink = (courseId: string): string | undefined => {
   if (!baseUrl) {
     return undefined;
   }
-  return `${baseUrl.replace(/\/+$/, '')}/${courseId}`;
+  return `${baseUrl.replace(/\/+$/, '')}/${courseId}/course_info`;
 };
 
 export {
