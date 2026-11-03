@@ -206,8 +206,8 @@ const getVideoSharingOptionText = (
 };
 
 /**
- * Build the instructor dashboard URL for a course.
- * Mirrors the LMS, which links to `${INSTRUCTOR_MICROFRONTEND_URL}/${courseId}`.
+ * Build the instructor dashboard URL for a course, opening on its Course Info tab:
+ * `${INSTRUCTOR_MICROFRONTEND_URL}/${courseId}/course_info`.
  * @param {string} courseId - course key
  * @returns {string | undefined} - the URL, or undefined when INSTRUCTOR_MICROFRONTEND_URL is not configured
  */

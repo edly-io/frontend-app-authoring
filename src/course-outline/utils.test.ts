@@ -10,8 +10,8 @@ describe('getInstructorDashboardLink', () => {
     setConfig(originalConfig);
   });
 
-  it('returns undefined when INSTRUCTOR_MICROFRONTEND_URL is not configured', () => {
-    setConfig({ ...originalConfig, INSTRUCTOR_MICROFRONTEND_URL: null });
+  it.each([null, undefined, ''])('returns undefined when INSTRUCTOR_MICROFRONTEND_URL is %p', (value) => {
+    setConfig({ ...originalConfig, INSTRUCTOR_MICROFRONTEND_URL: value });
 
     expect(getInstructorDashboardLink(courseId)).toBeUndefined();
   });
