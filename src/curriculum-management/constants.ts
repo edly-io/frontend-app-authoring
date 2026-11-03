@@ -20,3 +20,7 @@ export const KC_PASS_THRESHOLD_DEFAULT = 80;
 export const KC_MAX_ATTEMPTS_DEFAULT = 1;
 export const CURRICULUM_MANAGEMENT_PATH = '/curriculum-management';
 export const BADGES_PATH = '/curriculum-management/badges';
+/** Query param that expands and scrolls to one item on the Badges or Curriculums page. */
+export const OPEN_PARAM = 'open';
+export const badgeUrl = (uuid: string) => `${BADGES_PATH}?${OPEN_PARAM}=${uuid}`;
+export const curriculumUrl = (uuid: string) => `${CURRICULUM_MANAGEMENT_PATH}?${OPEN_PARAM}=${uuid}`;

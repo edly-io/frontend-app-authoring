@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AxiosError } from 'axios';
 import { Link } from 'react-router-dom';
 import { useIntl } from '@edx/frontend-platform/i18n';
@@ -22,7 +22,7 @@ import {
 
 import DeleteModal from '../../generic/delete-modal/DeleteModal';
 import { useToastContext } from '../../generic/toast-context';
-import { CURRICULUM_MANAGEMENT_PATH } from '../constants';
+import { curriculumUrl } from '../constants';
 import { useDeleteBadge } from '../data/apiHooks';
 import type { Badge, CourseRef, SlotKey } from '../types';
 import { kindMessages, slotMessages } from '../utils';
@@ -33,16 +33,30 @@ import { CardDetails, CourseLine, DetailRow, EmptyValue } from '../CardDetails';
 interface BadgeCardProps {
   badge: Badge;
   defaultExpanded: boolean;
+  /** Opened from a link (`?open=`): scroll the card into view on mount. */
+  scrollIntoView?: boolean;
   onEdit: () => void;
 }
 
-const BadgeCard = ({ badge, defaultExpanded, onEdit }: BadgeCardProps) => {
+const BadgeCard = ({
+  badge,
+  defaultExpanded,
+  scrollIntoView = false,
+  onEdit,
+}: BadgeCardProps) => {
   const intl = useIntl();
   const { showToast } = useToastContext();
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isDeleteOpen, openDelete, closeDelete] = useToggle(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const deleteBadge = useDeleteBadge();
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollIntoView) {
+      cardRef.current?.scrollIntoView?.({ block: 'center' });
+    }
+  }, [scrollIntoView]);
   const isCourseBadge = badge.kind === 'course';
   const isLinked = badge.linkedCurriculums.length > 0;
   const linkLabel = (link: { title: string; slot: SlotKey; }) =>
@@ -95,7 +109,7 @@ const BadgeCard = ({ badge, defaultExpanded, onEdit }: BadgeCardProps) => {
   };
 
   return (
-    <div className="configuration-card" data-testid="badge-card">
+    <div ref={cardRef} className="configuration-card" data-testid="badge-card">
       {deleteError && (
         <Alert
           variant="danger"
@@ -196,10 +210,10 @@ const BadgeCard = ({ badge, defaultExpanded, onEdit }: BadgeCardProps) => {
                         <Chip
                           key={`${link.uuid}-${link.slot}`}
                           as={Link}
-                          to={CURRICULUM_MANAGEMENT_PATH}
+                          to={curriculumUrl(link.uuid)}
                           variant="light"
                           // The chip label ends in an ellipsis; the full text stays in the tooltip.
-                          className="mw-100"
+                          className="mw-100 text-truncate"
                           title={linkLabel(link)}
                         >
                           {linkLabel(link)}

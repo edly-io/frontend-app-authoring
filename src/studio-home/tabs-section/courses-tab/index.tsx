@@ -17,6 +17,8 @@ import { getStudioHomeData, getStudioHomeCoursesParams, getLoadingStatuses } fro
 import { resetStudioHomeCoursesCustomParams, updateStudioHomeCoursesCustomParams } from '@src/studio-home/data/slice';
 import { fetchStudioHomeData } from '@src/studio-home/data/thunks';
 import { CardItem } from '@src/studio-home/card-item';
+import CourseBadgeLinks from '@src/curriculum-management/CourseBadgeLinks';
+import { useCurriculumManagementStatus } from '@src/curriculum-management/data/apiHooks';
 import CollapsibleStateWithAction from '@src/studio-home/collapsible-state-with-action';
 import ProcessingCourses from '@src/studio-home/processing-courses';
 import { LoadingSpinner } from '@src/generic/Loading';
@@ -71,6 +73,8 @@ const CardList = ({
   const isNotFilteringCourses = !isFiltered && !isLoading;
   const hasCourses = courses?.length > 0;
   const MigrationStatusWidget = migrationStatusWidget;
+  // Cached from Studio home's tab check; not in the migration course picker.
+  const showBadgeLinks = useCurriculumManagementStatus().enabled && !inSelectMode;
 
   return (
     <>
@@ -106,6 +110,7 @@ const CardList = ({
                   selectPosition={inSelectMode ? 'card' : undefined}
                   isSelected={inSelectMode && selectedCourseId === courseKey}
                   subtitleBeforeWidget={MigrationStatusWidget && <MigrationStatusWidget courseId={courseKey} />}
+                  cardStatusWidget={showBadgeLinks ? <CourseBadgeLinks courseId={courseKey} /> : null}
                 />
               ),
             )}

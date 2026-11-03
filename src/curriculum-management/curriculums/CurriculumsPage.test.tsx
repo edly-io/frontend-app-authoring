@@ -21,13 +21,14 @@ jest.mock('./CurriculumForm', () => ({
   ),
 }));
 
-const renderPage = () =>
+const renderPage = (url = '/') =>
   render(
     <Routes>
       <Route element={<OutletHarness />}>
         <Route path="*" element={<CurriculumsPage />} />
       </Route>
     </Routes>,
+    { routerProps: { initialEntries: [url] } },
   );
 
 describe('<CurriculumsPage />', () => {
@@ -55,6 +56,26 @@ describe('<CurriculumsPage />', () => {
     expect(screen.getByTestId('curriculum-card')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'close form' }));
     expect(screen.queryByTestId('curriculum-form')).not.toBeInTheDocument();
+  });
+
+  it('expands and scrolls to the curriculum named in the open param', async () => {
+    const { axiosMock } = initializeMocks();
+    axiosMock.onGet(apiUrls.curriculumsPage(1)).reply(
+      200,
+      page([
+        ...rawCurriculums,
+        { ...rawCurriculums[0], uuid: 'cur-3', title: 'Holiday rush' },
+      ]),
+    );
+    // jsdom has no scrollIntoView.
+    const scrollIntoView = jest.fn();
+    HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    renderPage('/?open=cur-1');
+    const opened = await screen.findByRole('button', { name: /^new driver essentials/i });
+    expect(opened).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('button', { name: /^holiday rush/i })).toHaveAttribute('aria-expanded', 'false');
+    expect(scrollIntoView.mock.contexts).toEqual([opened.closest('[data-testid="curriculum-card"]')]);
+    delete (HTMLElement.prototype as Partial<HTMLElement>).scrollIntoView;
   });
 
   it('closes the form when it asks to cancel', async () => {

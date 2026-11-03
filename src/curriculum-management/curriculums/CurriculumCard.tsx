@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AxiosError } from 'axios';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import {
@@ -31,16 +31,30 @@ import { CardDetails, CourseLine, DetailRow, EmptyValue } from '../CardDetails';
 interface CurriculumCardProps {
   curriculum: Curriculum;
   defaultExpanded?: boolean;
+  /** Opened from a link (`?open=`): scroll the card into view on mount. */
+  scrollIntoView?: boolean;
   onEdit: () => void;
 }
 
-const CurriculumCard = ({ curriculum, defaultExpanded = false, onEdit }: CurriculumCardProps) => {
+const CurriculumCard = ({
+  curriculum,
+  defaultExpanded = false,
+  scrollIntoView = false,
+  onEdit,
+}: CurriculumCardProps) => {
   const intl = useIntl();
   const { showToast } = useToastContext();
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isDeleteOpen, openDelete, closeDelete] = useToggle(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const deleteCurriculum = useDeleteCurriculum();
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollIntoView) {
+      cardRef.current?.scrollIntoView?.({ block: 'center' });
+    }
+  }, [scrollIntoView]);
   const filledSlots = SLOT_KEYS.filter((slot) => curriculum.badges[slot]).length;
 
   const handleDelete = async () => {
@@ -61,7 +75,7 @@ const CurriculumCard = ({ curriculum, defaultExpanded = false, onEdit }: Curricu
   };
 
   return (
-    <div className="configuration-card" data-testid="curriculum-card">
+    <div ref={cardRef} className="configuration-card" data-testid="curriculum-card">
       {deleteError && (
         <Alert
           variant="danger"
