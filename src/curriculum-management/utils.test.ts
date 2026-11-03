@@ -268,11 +268,11 @@ describe('deep links helpers', () => {
   it('mapTestLinkErrors maps API fields onto the form fields', () => {
     expect(
       mapTestLinkErrors(
-        axiosError(400, { external_id: ['Bad.'], course_id: ['Pick one.'], ttl: ['No.'], path_id: ['P.'] }),
+        axiosError(400, { groups: ['Bad.'], course_id: ['Pick one.'], ttl: ['No.'], path_id: ['P.'] }),
       ),
     )
       .toEqual({
-        fieldErrors: { externalId: 'Bad.', courseId: 'Pick one.', ttl: 'No.', pathId: 'P.' },
+        fieldErrors: { groups: 'Bad.', courseId: 'Pick one.', ttl: 'No.', pathId: 'P.' },
         formError: null,
       });
     expect(mapTestLinkErrors(axiosError(400, { detail: 'CSRF failed.' })))

@@ -92,7 +92,7 @@ describe('<DeepLinkCard />', () => {
     axiosMock.onPost(apiUrls.testLinks()).reply(
       201,
       rawTestLink({
-        external_id: 'driver-42',
+        external_id: 'dev-42',
         course_id: 'course-v1:Uber+DRV101+2026_Q4',
         path_id: 'new-driver-essentials,gone',
         groups: ['ev-drivers', 'porto'],
@@ -103,7 +103,8 @@ describe('<DeepLinkCard />', () => {
     render(<DeepLinkCard link={link} config={config()} onEdit={jest.fn()} />);
     await expandTestLink(user, /^lisbon onboarding/i);
     expect(screen.getByText(/works once, for 300 seconds/)).toBeInTheDocument();
-    await user.type(screen.getByLabelText('External ID'), 'driver-42');
+    // A test link always signs in a new test driver: there is no External ID to type.
+    expect(screen.queryByLabelText('External ID')).not.toBeInTheDocument();
     // The link's own groups go into the test link, so clearing them is not an option.
     expect(screen.getByRole('checkbox', { name: 'Remove the driver from every group' })).toBeDisabled();
     await user.click(screen.getByRole('button', { name: 'Generate test link' }));
@@ -115,7 +116,6 @@ describe('<DeepLinkCard />', () => {
       target: 'home',
       course_id: 'course-v1:Uber+DRV101+2026_Q4',
       path_id: 'new-driver-essentials,gone',
-      external_id: 'driver-42',
       groups: ['ev-drivers', 'porto'],
     });
     expect(screen.getByRole('link', { name: 'Open the test link in a new tab' })).toHaveAttribute(
@@ -123,7 +123,7 @@ describe('<DeepLinkCard />', () => {
       'http://apps.local.openedx.io:2011/uber-learn/launch#x',
     );
     const summary = screen.getByText('What this link does').nextElementSibling as HTMLElement;
-    expect(within(summary).getByText('Signs in as External ID driver-42')).toBeInTheDocument();
+    expect(within(summary).getByText('Signs in as a new test driver, External ID dev-42')).toBeInTheDocument();
     expect(within(summary).getByText('Assigns the learning paths: New driver essentials, gone')).toBeInTheDocument();
     expect(within(summary).getByText('Enrolls in Getting started')).toBeInTheDocument();
     expect(within(summary).getByText('Opens the home page')).toBeInTheDocument();
@@ -151,7 +151,6 @@ describe('<DeepLinkCard />', () => {
       target: 'path',
       course_id: '',
       path_id: 'new-driver-essentials,gone',
-      external_id: '',
       groups: null,
     });
     expect(screen.getByText('Assigns and opens the learning path New driver essentials')).toBeInTheDocument();
@@ -172,23 +171,16 @@ describe('<DeepLinkCard />', () => {
     expect(screen.getByText('Removes the driver from every group')).toBeInTheDocument();
   });
 
-  it('refuses a bad External ID client-side and shows the server\'s field error', async () => {
+  it('shows the server\'s groups error on the groups field and other errors in the alert', async () => {
     const { axiosMock } = initializeMocks();
-    axiosMock.onPost(apiUrls.testLinks()).reply(400, { external_id: ['Server says no.'] });
+    axiosMock.onPost(apiUrls.testLinks()).reply(400, { groups: ['Server says no.'], ttl: ['Too long.'] });
     const user = userEvent.setup();
     render(<DeepLinkCard link={bareLink} config={config()} onEdit={jest.fn()} />);
     await expandTestLink(user, /^optional courses reminder/i);
-    await user.type(screen.getByLabelText('External ID'), 'driver@example.com');
-    await user.click(screen.getByRole('button', { name: 'Generate test link' }));
-    expect(await screen.findByText(/Use 1 to 128 letters/)).toBeInTheDocument();
-    expect(axiosMock.history.post).toHaveLength(0);
-
-    await user.clear(screen.getByLabelText('External ID'));
-    await user.type(screen.getByLabelText('External ID'), 'driver-42');
     await user.click(screen.getByRole('button', { name: 'Generate test link' }));
     expect(await screen.findByText('Server says no.')).toBeInTheDocument();
-    // Shown on the field only, not repeated in the alert.
-    expect(screen.queryByText('Couldn\'t generate the link')).not.toBeInTheDocument();
+    expect(screen.getByText('Couldn\'t generate the link')).toBeInTheDocument();
+    expect(screen.getByText('Too long.')).toBeInTheDocument();
   });
 
   it('shows only the launch string when Studio has no Uber Learn URL', async () => {

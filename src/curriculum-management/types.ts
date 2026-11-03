@@ -171,8 +171,6 @@ export interface TestLinkRequest {
   courseId: string;
   /** The learning path IDs the link assigns, comma-separated; empty for none (a path link needs one). */
   pathId: string;
-  /** Empty for a new dev-<hex> ID. */
-  externalId: string;
   /** null: the link carries no groups (the learner keeps theirs); []: it removes them all. */
   groups: string[] | null;
   ttl?: number;

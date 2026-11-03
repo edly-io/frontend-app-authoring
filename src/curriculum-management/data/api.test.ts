@@ -305,22 +305,20 @@ describe('curriculum-management api', () => {
 
   it('mintTestLink posts the request in snake_case, leaving ttl out unless given', async () => {
     axiosMock.onPost(apiUrls.testLinks()).reply(201, rawTestLink());
-    const link = await api.mintTestLink({ target: 'home', courseId: '', pathId: '', externalId: '', groups: null });
+    const link = await api.mintTestLink({ target: 'home', courseId: '', pathId: '', groups: null });
     expect(JSON.parse(axiosMock.history.post[0].data)).toEqual({
       target: 'home',
       course_id: '',
       path_id: '',
-      external_id: '',
       groups: null,
     });
     expect(link.externalId).toEqual('dev-1');
     expect(link.launch).toEqual(rawTestLink().launch);
-    await api.mintTestLink({ target: 'course', courseId: 'c', pathId: '', externalId: 'x', groups: ['a'], ttl: 60 });
+    await api.mintTestLink({ target: 'course', courseId: 'c', pathId: '', groups: ['a'], ttl: 60 });
     expect(JSON.parse(axiosMock.history.post[1].data)).toEqual({
       target: 'course',
       course_id: 'c',
       path_id: '',
-      external_id: 'x',
       groups: ['a'],
       ttl: 60,
     });

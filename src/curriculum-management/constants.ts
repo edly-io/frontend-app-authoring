@@ -33,7 +33,4 @@ export const GROUP_TITLE_MAX = 255;
 /** A group ID as Uber signs it into a launch link (the launch scheme's `groups` rule). */
 export const GROUP_SLUG_MAX = 64;
 export const GROUP_SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
-/** A driver's External ID as the launch scheme allows it: never an email. */
-export const EXTERNAL_ID_MAX = 128;
-export const EXTERNAL_ID_PATTERN = /^[A-Za-z0-9._~-]{1,128}$/;
 export const LAUNCH_TARGETS = ['home', 'course', 'optional'] as const;

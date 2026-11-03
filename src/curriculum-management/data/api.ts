@@ -221,7 +221,6 @@ export async function mintTestLink(request: TestLinkRequest): Promise<TestLink> 
     target: request.target,
     course_id: request.courseId,
     path_id: request.pathId,
-    external_id: request.externalId,
     groups: request.groups,
     ...(request.ttl !== undefined ? { ttl: request.ttl } : {}),
   };

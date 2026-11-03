@@ -200,6 +200,23 @@ describe('<DeepLinkForm />', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it('shows a deleted path or group as a "not found" chip, kept until the author removes it', async () => {
+    const { axiosMock, onClose, user } = setup({ link });
+    axiosMock.onPut(apiUrls.deepLink('link-1')).reply(200, rawDeepLinks[0]);
+    expect(screen.getByText('gone (not found)')).toBeInTheDocument();
+    expect(screen.getByText('porto (not found)')).toBeInTheDocument();
+    // Adding a path keeps the missing one: before, the picker dropped every value it couldn't show.
+    await pick(user, 'Learning paths', 'Road');
+    expect(preview()).toHaveTextContent('path_id=new-driver-essentials%2Cgone%2Croad-safety');
+    // Removing it is the author's choice.
+    await user.click(screen.getByRole('button', { name: 'Remove porto (not found)' }));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    const body = JSON.parse(axiosMock.history.put[0].data);
+    expect(body.path_ids).toEqual(['new-driver-essentials', 'gone', 'road-safety']);
+    expect(body.groups).toEqual(['ev-drivers']);
+  });
+
   it('keeps the opened path first when editing a path link', async () => {
     const { axiosMock, onClose, user } = setup({
       link: {

@@ -8,7 +8,6 @@ import {
 } from '@openedx/paragon';
 
 import AlertMessage from '../../generic/alert-message';
-import { EXTERNAL_ID_PATTERN } from '../constants';
 import { useMintTestLink } from '../data/apiHooks';
 import type {
   LaunchTarget,
@@ -33,13 +32,12 @@ interface TestLinkFormProps {
 }
 
 /**
- * Mints a signed test link for a saved deep link: an External ID (or a new one), the link with Copy and Open, and
- * a plain-words summary of what it does.
+ * Mints a signed test link for a saved deep link: the link with Copy and Open, and a plain-words summary of what it
+ * does. The link always signs in a new test driver (the API picks its External ID), never an existing one.
  */
 const TestLinkForm = ({ target, course, path, assignedPaths, groupSlugs }: TestLinkFormProps) => {
   const intl = useIntl();
   const mint = useMintTestLink();
-  const [externalId, setExternalId] = useState('');
   const [clearGroups, setClearGroups] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -49,17 +47,10 @@ const TestLinkForm = ({ target, course, path, assignedPaths, groupSlugs }: TestL
   >(null);
 
   const needsCourse = (target === 'course' && !course) || (target === 'path' && !path);
-  const trimmedId = externalId.trim();
-  const externalIdError = fieldErrors.externalId
-    ?? (trimmedId && !EXTERNAL_ID_PATTERN.test(trimmedId) ? intl.formatMessage(messages.externalIdInvalid) : undefined);
 
   const handleGenerate = async () => {
     setFieldErrors({});
     setFormError(null);
-    if (externalIdError) {
-      setFieldErrors({ externalId: externalIdError });
-      return;
-    }
     let requestGroups: string[] | null = null;
     if (clearGroups) {
       requestGroups = [];
@@ -71,7 +62,6 @@ const TestLinkForm = ({ target, course, path, assignedPaths, groupSlugs }: TestL
         target,
         courseId: course?.id ?? '',
         pathId: assignedPaths.map((item) => item.id).join(','),
-        externalId: trimmedId,
         groups: requestGroups,
       });
       setResult({
@@ -87,9 +77,8 @@ const TestLinkForm = ({ target, course, path, assignedPaths, groupSlugs }: TestL
         return;
       }
       setFieldErrors(mapped.fieldErrors);
-      // External ID and groups errors show on their fields; the others have no field here, so they go to the alert.
-      const inline = ['externalId', 'groups'];
-      const elsewhere = Object.entries(mapped.fieldErrors).filter(([key]) => !inline.includes(key)).map(([, v]) => v);
+      // Groups errors show on their field; the others have no field here, so they go to the alert.
+      const elsewhere = Object.entries(mapped.fieldErrors).filter(([key]) => key !== 'groups').map(([, v]) => v);
       setFormError(mapped.formError ?? elsewhere[0] ?? null);
     }
   };
@@ -131,22 +120,6 @@ const TestLinkForm = ({ target, course, path, assignedPaths, groupSlugs }: TestL
       {formError && (
         <AlertMessage variant="danger" title={intl.formatMessage(messages.testLinkError)} description={formError} />
       )}
-      <Form.Group controlId="deep-links-external-id" isInvalid={!!externalIdError}>
-        <Form.Label>{intl.formatMessage(messages.externalIdLabel)}</Form.Label>
-        <Form.Control
-          value={externalId}
-          autoComplete="off"
-          spellCheck={false}
-          onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-            setExternalId(event.target.value);
-            setFieldErrors(({ externalId: _dropped, ...rest }) => rest);
-          }}
-        />
-        <Form.Text>{intl.formatMessage(messages.externalIdHelp)}</Form.Text>
-        {externalIdError && (
-          <Form.Control.Feedback type="invalid" hasIcon={false}>{externalIdError}</Form.Control.Feedback>
-        )}
-      </Form.Group>
       <Form.Group controlId="deep-links-clear-groups">
         <Form.Checkbox
           checked={clearGroups}

@@ -55,10 +55,15 @@ const MultiSelect = ({
   disabled = false,
 }: MultiSelectProps) => {
   const intl = useIntl();
-  // Keep the picked order (react-select hands the selection back in that order), not the options' order.
-  const selected = value
-    .map((item) => options.find((option) => option.value === item))
-    .filter((option): option is MultiSelectOption => option !== undefined);
+  // Keep the picked order (react-select hands the selection back in that order), not the options' order. A value
+  // with no option (a path or group deleted since the link was saved) stays as a "not found" chip, so the author
+  // sees it and removes it on purpose; hiding it would drop it silently on the next change.
+  const selected = value.map((item) =>
+    options.find((option) => option.value === item) ?? {
+      value: item,
+      label: intl.formatMessage(messages.notFoundOption, { id: item }),
+    }
+  );
   // react-select handles Enter only when an option is focused; otherwise (no match, menu closed) the key would
   // reach the form and submit it. Its own handler runs first, so a selection still happens.
   const stopEnterSubmit = (event: KeyboardEvent<HTMLDivElement>) => {

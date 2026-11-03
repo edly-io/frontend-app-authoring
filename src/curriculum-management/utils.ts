@@ -333,7 +333,7 @@ export const mapCourseGroupErrors = (error: unknown, courseIds: string[]): Mappe
 };
 
 export interface MappedTestLinkErrors {
-  /** Keyed by form field: target, courseId, externalId, groups, ttl. */
+  /** Keyed by form field: target, courseId, pathId, groups, ttl. */
   fieldErrors: Record<string, string>;
   formError: string | null;
 }
@@ -342,7 +342,6 @@ const TEST_LINK_FIELDS: Record<string, string> = {
   target: 'target',
   course_id: 'courseId',
   path_id: 'pathId',
-  external_id: 'externalId',
   groups: 'groups',
   ttl: 'ttl',
 };
