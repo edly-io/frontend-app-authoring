@@ -171,6 +171,24 @@ describe('<CurriculumForm />', () => {
     expect(putBody.get('knowledge_check_time_limit')).toEqual('');
   });
 
+  it('counts title and description characters and caps them at 50 and 500', async () => {
+    const { user } = setup();
+    expect(screen.getByLabelText('Title')).toHaveAttribute('maxlength', '50');
+    expect(screen.getByLabelText('Description (optional)')).toHaveAttribute('maxlength', '500');
+    await user.type(screen.getByLabelText('Title'), 'Driver basics');
+    expect(screen.getByText('13 / 50')).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Description (optional)'), 'Short.');
+    expect(screen.getByText('6 / 500')).toBeInTheDocument();
+  });
+
+  it('blocks saving a saved description over 500 characters', async () => {
+    const { axiosMock, user } = setup({ curriculum: { ...curriculum, description: 'y'.repeat(501) } });
+    expect(screen.getByText('501 / 500')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('Use 500 characters or fewer.')).toBeInTheDocument();
+    expect(axiosMock.history.put).toHaveLength(0);
+  });
+
   it('moves focus to the first invalid field after a failed save', async () => {
     const { user } = setup();
     await user.click(screen.getByRole('button', { name: 'Create' }));
@@ -180,7 +198,7 @@ describe('<CurriculumForm />', () => {
   it('edits: keeps a deleted course row, PUTs, and maps a server 400 onto fields, rows and the form', async () => {
     const { axiosMock, onClose, user } = setup({ curriculum });
     axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(400, {
-      title: ['Ensure this field has no more than 255 characters.'],
+      title: ['Ensure this field has no more than 50 characters.'],
       course_ids: { 1: ['Course not found.'] },
       non_field_errors: ['Something general.'],
     });
@@ -189,7 +207,7 @@ describe('<CurriculumForm />', () => {
     expect(screen.getByText('Essentials check')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Save' }));
-    expect(await screen.findByText('Ensure this field has no more than 255 characters.')).toBeInTheDocument();
+    expect(await screen.findByText('Ensure this field has no more than 50 characters.')).toBeInTheDocument();
     expect(screen.getByText('Course not found.')).toBeInTheDocument();
     expect(screen.getByText('Something general.')).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();

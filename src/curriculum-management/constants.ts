@@ -5,8 +5,9 @@ export const BADGE_KINDS: readonly BadgeKind[] = ['curriculum', 'course'];
 /** Must match the backend's list page size (spec §6.4). */
 export const PAGE_SIZE = 50;
 export const COURSE_SEARCH_DEBOUNCE_MS = 400;
-export const CURRICULUM_TITLE_MAX = 255;
-export const BADGE_TITLE_MAX = 100;
+export const CURRICULUM_TITLE_MAX = 50;
+export const CURRICULUM_DESCRIPTION_MAX = 500;
+export const BADGE_TITLE_MAX = 50;
 export const BADGE_DESCRIPTION_MAX = 500;
 /** Must match UBER_BADGE_IMAGE_MAX_BYTES on the backend. */
 export const BADGE_IMAGE_MAX_BYTES = 1048576;

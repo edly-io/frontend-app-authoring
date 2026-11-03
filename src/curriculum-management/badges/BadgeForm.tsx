@@ -251,6 +251,12 @@ const BadgeForm = ({
                         onChange={handleChange}
                         onBlur={handleBlur}
                       />
+                      <Form.Text className="text-right">
+                        {intl.formatMessage(messages.characterCount, {
+                          count: values.description.length,
+                          max: BADGE_DESCRIPTION_MAX,
+                        })}
+                      </Form.Text>
                       <Form.Text>{intl.formatMessage(messages.badgeDescriptionHelp)}</Form.Text>
                       {errorFor('description') && (
                         <Form.Control.Feedback type="invalid" hasIcon={false}>

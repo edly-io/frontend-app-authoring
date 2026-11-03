@@ -15,6 +15,7 @@ import AlertMessage from '../../generic/alert-message';
 import { useToastContext } from '../../generic/toast-context';
 import {
   BADGES_PATH,
+  CURRICULUM_DESCRIPTION_MAX,
   CURRICULUM_IMAGE_ACCEPT,
   CURRICULUM_IMAGE_MAX_BYTES,
   CURRICULUM_TITLE_MAX,
@@ -84,7 +85,8 @@ const CurriculumForm = ({
     title: Yup.string().trim()
       .required(intl.formatMessage(messages.titleRequired))
       .max(CURRICULUM_TITLE_MAX, intl.formatMessage(messages.tooLong, { max: CURRICULUM_TITLE_MAX })),
-    description: Yup.string(),
+    description: Yup.string()
+      .max(CURRICULUM_DESCRIPTION_MAX, intl.formatMessage(messages.tooLong, { max: CURRICULUM_DESCRIPTION_MAX })),
     courses: Yup.array().min(1, intl.formatMessage(messages.coursesRequired)),
     knowledgeCheck: Yup.object()
       .nullable()
@@ -197,7 +199,19 @@ const CurriculumForm = ({
                   <FormSection>
                     <Form.Group controlId="curriculum-title" isInvalid={!!errorFor('title')}>
                       <Form.Label>{intl.formatMessage(messages.titleLabel)}</Form.Label>
-                      <Form.Control name="title" value={values.title} onChange={handleChange} onBlur={handleBlur} />
+                      <Form.Control
+                        name="title"
+                        value={values.title}
+                        maxLength={CURRICULUM_TITLE_MAX}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                      />
+                      <Form.Text className="text-right">
+                        {intl.formatMessage(messages.characterCount, {
+                          count: values.title.length,
+                          max: CURRICULUM_TITLE_MAX,
+                        })}
+                      </Form.Text>
                       {errorFor('title') && (
                         <Form.Control.Feedback type="invalid" hasIcon={false}>
                           {errorFor('title')}
@@ -211,9 +225,16 @@ const CurriculumForm = ({
                         rows={3}
                         name="description"
                         value={values.description}
+                        maxLength={CURRICULUM_DESCRIPTION_MAX}
                         onChange={handleChange}
                         onBlur={handleBlur}
                       />
+                      <Form.Text className="text-right">
+                        {intl.formatMessage(messages.characterCount, {
+                          count: values.description.length,
+                          max: CURRICULUM_DESCRIPTION_MAX,
+                        })}
+                      </Form.Text>
                       {errorFor('description') && (
                         <Form.Control.Feedback type="invalid" hasIcon={false}>
                           {errorFor('description')}
