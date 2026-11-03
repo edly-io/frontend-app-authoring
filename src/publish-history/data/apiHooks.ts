@@ -1,6 +1,6 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
-import { isClientError } from '@src/course-categories/utils';
+import { retryUnlessClientError } from '@src/course-categories/utils';
 import { DRAFT, PUBLISHED } from '@src/publish-history/types';
 import * as api from './api';
 
@@ -16,9 +16,6 @@ export const publishHistoryQueryKeys = {
     against,
   ],
 };
-
-/** Retry network/5xx failures up to 3 times, but never 4xx responses. */
-const retryUnlessClientError = (failureCount: number, error: unknown) => !isClientError(error) && failureCount < 3;
 
 /**
  * What the current user may do with this course's publish history. Runs on every outline render, so it is fetched
