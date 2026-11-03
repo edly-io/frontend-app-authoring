@@ -64,6 +64,7 @@ describe('<BadgeForm />', () => {
     await user.type(screen.getByLabelText('Title'), 'Holiday rush ready');
     expect(screen.getByText('18 / 50')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Description'), 'Seasonal.');
+    expect(screen.getByText('9 / 500')).toBeInTheDocument();
     const png = new File(['png'], 'badge.png', { type: 'image/png' });
     await user.upload(fileInput(), png);
     expect(await screen.findByRole('img', { name: 'Holiday rush ready' })).toHaveAttribute('src', 'blob:preview');
