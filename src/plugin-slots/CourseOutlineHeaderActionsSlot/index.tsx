@@ -12,6 +12,7 @@ interface CourseOutlineHeaderActionsSlotProps {
     handleReIndex: () => void;
     handleExpandAll: () => void;
     lmsLink: string;
+    instructorDashboardLink?: string;
   };
   hasSections: boolean;
   courseActions: XBlockActions;

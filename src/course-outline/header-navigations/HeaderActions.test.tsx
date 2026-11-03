@@ -156,6 +156,29 @@ describe('<HeaderActions />', () => {
     });
   });
 
+  describe('instructor dashboard button', () => {
+    it('is not rendered when instructorDashboardLink is not set', async () => {
+      renderComponent();
+
+      await screen.findByRole('button', { name: messages.viewLiveButton.defaultMessage });
+      expect(screen.queryByRole('link', { name: messages.instructorDashboardButton.defaultMessage })).not
+        .toBeInTheDocument();
+    });
+
+    it('renders with correct href when instructorDashboardLink is provided', async () => {
+      const instructorDashboardLink = 'http://localhost:2003/instructor-dashboard/course-v1:org+code+run/course_info';
+      renderComponent({
+        headerNavigationsActions: { ...headerNavigationsActions, instructorDashboardLink },
+      });
+
+      const link = await screen.findByRole('link', { name: messages.instructorDashboardButton.defaultMessage });
+      expect(link).toBeInTheDocument();
+      expect(link).toHaveAttribute('href', instructorDashboardLink);
+      expect(link).toHaveAttribute('target', '_blank');
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    });
+  });
+
   describe('publish history button', () => {
     const publishHistoryName = 'Publish History';
 

@@ -21,6 +21,7 @@ import {
 } from '@src/course-outline/data/apiHooks';
 import { PUBLISH_TYPES } from '@src/course-unit/constants';
 import { COURSE_BLOCK_NAMES } from './constants';
+import { getInstructorDashboardLink } from './utils';
 import {
   updateSavingStatus,
 } from './data/slice';
@@ -132,6 +133,7 @@ const useCourseOutline = ({ courseId }) => {
       setSectionsExpanded((prevState) => !prevState);
     },
     lmsLink,
+    instructorDashboardLink: getInstructorDashboardLink(courseId),
   };
 
   const handleEnableHighlightsSubmit = () => {

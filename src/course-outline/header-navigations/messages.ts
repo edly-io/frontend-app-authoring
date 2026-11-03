@@ -49,6 +49,16 @@ const messages = defineMessages({
     defaultMessage: 'Click to open the courseware in the LMS in a new tab',
     description: 'Tooltip text of view live button',
   },
+  instructorDashboardButton: {
+    id: 'course-authoring.course-outline.header-navigations.button.instructor-dashboard',
+    defaultMessage: 'Instructor dashboard',
+    description: 'Button to open the instructor dashboard for this course',
+  },
+  instructorDashboardButtonTooltip: {
+    id: 'course-authoring.course-outline.header-navigations.button.instructor-dashboard.tooltip',
+    defaultMessage: 'Click to open the instructor dashboard in a new tab',
+    description: 'Tooltip text of instructor dashboard button',
+  },
 });
 
 export default messages;
