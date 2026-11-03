@@ -124,6 +124,7 @@ const HeaderActions = ({
           iconBefore={FindInPage}
           href={lmsLink}
           target="_blank"
+          rel="noopener noreferrer"
           variant="outline-primary"
         >
           {intl.formatMessage(messages.viewLiveButton)}
