@@ -24,6 +24,10 @@ export const isClientError = (error: unknown) => {
   return status !== undefined && status >= 400 && status < 500;
 };
 
+/** react-query `retry`: retry network/5xx failures up to 3 times, but never 4xx responses. */
+export const retryUnlessClientError = (failureCount: number, error: unknown) =>
+  !isClientError(error) && failureCount < 3;
+
 /** The first message the API returned for `field` in a 400 (`{"field": ["message"]}`), if any. */
 export const getFieldError = (error: unknown, field: string): string | undefined => {
   if (getErrorStatus(error) !== 400) {

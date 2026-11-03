@@ -63,10 +63,6 @@ const TabsSection = ({
         : TABS_LIST.legacyLibraries;
     }
 
-    if (pname.includes('/reporting')) {
-      return TABS_LIST.reporting;
-    }
-
     // Default to courses tab
     return TABS_LIST.courses;
   };

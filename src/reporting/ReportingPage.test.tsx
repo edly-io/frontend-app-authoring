@@ -92,7 +92,7 @@ describe('<ReportingPage />', () => {
 
     // The page heading carries the subtitle alongside the title.
     expect(await screen.findByRole('heading', { name: /Reporting/ })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Select a course' })).toBeInTheDocument();
+    expect(await screen.findByRole('option', { name: 'Select a course' })).toBeInTheDocument();
     expect(screen.queryByText('learner1')).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Download CSV/ })).not.toBeInTheDocument();
   });
@@ -117,11 +117,37 @@ describe('<ReportingPage />', () => {
   });
 
   it('shows an alert on error', async () => {
-    axiosMock.onGet(getCourseEnrollmentsUrl(courseId)).reply(500);
+    // A 4xx is not retried, so the alert shows at once.
+    axiosMock.onGet(getCourseEnrollmentsUrl(courseId)).reply(403);
     render(<ReportingPage />, { path: '/reporting' });
     await selectCourse();
 
     expect(await screen.findByText(/could not be loaded/)).toBeInTheDocument();
+  });
+
+  it('shows NotFoundAlert and no tabs when reporting is off', async () => {
+    axiosMock.onGet(getUberFlagsUrl()).reply(200, { enable_reporting: false });
+    render(<ReportingPage />, { path: '/reporting' });
+
+    expect(await screen.findByTestId('notFoundAlert')).toBeInTheDocument();
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
+  });
+
+  it('shows an alert when the course list fails', async () => {
+    axiosMock.onGet(getStaffCoursesUrl()).reply(403);
+    render(<ReportingPage />, { path: '/reporting' });
+
+    expect(await screen.findByText(/could not be loaded/)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Course')).not.toBeInTheDocument();
+  });
+
+  it('shows an alert when the curriculum list fails', async () => {
+    axiosMock.onGet(getAllCurriculumsUrl()).reply(403);
+    render(<ReportingPage />, { path: '/reporting' });
+    await userEvent.click(await screen.findByRole('tab', { name: 'Curriculums' }));
+
+    expect(await screen.findByText(/could not be loaded/)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Curriculum')).not.toBeInTheDocument();
   });
 
   it('searches server-side', async () => {

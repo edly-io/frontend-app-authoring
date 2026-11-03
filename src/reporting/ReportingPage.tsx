@@ -1,4 +1,4 @@
-import { ReactNode, useMemo, useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import type { MessageDescriptor } from 'react-intl';
 import { StudioFooterSlot } from '@edx/frontend-component-footer';
@@ -11,13 +11,18 @@ import {
   Pagination,
   ProgressBar,
   SearchField,
+  Skeleton,
   Tab,
   Tabs,
 } from '@openedx/paragon';
 import { Download } from '@openedx/paragon/icons';
 
+import { isClientError } from '@src/course-categories/utils';
 import Header from '../header';
 import SubHeader from '../generic/sub-header/SubHeader';
+import Loading from '../generic/Loading';
+import NotFoundAlert from '../generic/NotFoundAlert';
+import ConnectionErrorAlert from '../generic/ConnectionErrorAlert';
 import StudioHomeNav from '../curriculum-management/StudioHomeNav';
 
 import {
@@ -25,6 +30,7 @@ import {
   useCourseEnrollments,
   useCurriculumAssignments,
   useStaffCourses,
+  useUberFlags,
 } from './data/apiHooks';
 import { getCourseEnrollmentsCsvUrl, getCurriculumAssignmentsCsvUrl } from './data/api';
 import type { CourseEnrollmentRow, CourseProgressStatus, CurriculumAssignmentRow } from './data/api';
@@ -33,18 +39,11 @@ import './ReportingPage.scss';
 
 const PAGE_SIZE = 10;
 
-const COURSE_STATUS_MESSAGE: Record<CourseProgressStatus, MessageDescriptor> = {
-  completed: messages.courseCompleted,
-  in_progress: messages.courseInProgress,
-  not_started: messages.courseNotStarted,
-  locked: messages.courseLocked,
-};
-
-const COURSE_STATUS_VARIANT: Record<CourseProgressStatus, string> = {
-  completed: 'positive',
-  in_progress: 'accent',
-  not_started: 'neutral',
-  locked: 'muted',
+const COURSE_STATUS: Record<CourseProgressStatus, { message: MessageDescriptor; variant: string; }> = {
+  completed: { message: messages.courseCompleted, variant: 'positive' },
+  in_progress: { message: messages.courseInProgress, variant: 'accent' },
+  not_started: { message: messages.courseNotStarted, variant: 'neutral' },
+  locked: { message: messages.courseLocked, variant: 'muted' },
 };
 
 type Column<T> = {
@@ -87,14 +86,6 @@ const useFormatters = () => {
       </span>
     );
   };
-  const status = (value: boolean | null | undefined, yes: string, no: string) => {
-    if (value === null || value === undefined) { return dash; }
-    return (
-      <span className={`reporting-badge reporting-badge--${value ? 'positive' : 'negative'}`}>
-        {value ? yes : no}
-      </span>
-    );
-  };
   return {
     intl,
     dash,
@@ -102,18 +93,14 @@ const useFormatters = () => {
     date,
     number,
     percent,
-    status,
   };
 };
 
 const LoadingSkeleton = () => {
   const intl = useIntl();
   return (
-    <div className="reporting-skeleton" role="status" aria-label={intl.formatMessage(messages.loading)}>
-      {Array.from({ length: 6 }, (_, i) => (
-        // eslint-disable-next-line react/no-array-index-key
-        <div key={i} className="reporting-skeleton__row" />
-      ))}
+    <div role="status" aria-label={intl.formatMessage(messages.loading)}>
+      <Skeleton height={40} count={6} className="mb-2" />
     </div>
   );
 };
@@ -143,7 +130,7 @@ const ReportTable = <T extends object>({
 }: ReportTableProps<T>) => {
   const intl = useIntl();
   const pageCount = Math.max(1, Math.ceil((data?.count ?? 0) / PAGE_SIZE));
-  const rows = useMemo(() => data?.results ?? [], [data]);
+  const rows = data?.results ?? [];
 
   let body: ReactNode;
   if (isError) {
@@ -222,30 +209,51 @@ const CsvDownloadButton = ({ csvUrl }: { csvUrl: string; }) => {
   );
 };
 
+/** Username, email and name lead both reports. */
+const personColumns = <T extends { username: string; email: string; name: string; }>(
+  f: ReturnType<typeof useFormatters>,
+): Column<T>[] => [
+  {
+    Header: f.intl.formatMessage(messages.colUsername),
+    accessor: 'username',
+    // Free text of wildly varying length: centring it makes the column look ragged.
+    headerClassName: 'reporting-cell--start',
+    cellClassName: 'reporting-cell--start',
+    Cell: ({ row }) => row.original.username,
+  },
+  {
+    Header: f.intl.formatMessage(messages.colEmail),
+    accessor: 'email',
+    headerClassName: 'reporting-cell--start',
+    cellClassName: 'reporting-cell--start',
+    Cell: ({ row }) => row.original.email,
+  },
+  { Header: f.intl.formatMessage(messages.colName), accessor: 'name', Cell: ({ row }) => row.original.name || f.dash },
+];
+
+/** Page and search state for a ReportTable; a new search starts again at page 1. */
+const useSearchPaging = () => {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  return {
+    page,
+    search,
+    onPageChange: setPage,
+    onSearch: (value: string) => {
+      setSearch(value);
+      setPage(1);
+    },
+  };
+};
+
 const EnrollmentsTable = ({ courseId }: { courseId: string; }) => {
   const f = useFormatters();
   const { intl } = f;
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const { data, isPending, isError } = useCourseEnrollments(courseId, page, PAGE_SIZE, search);
+  const paging = useSearchPaging();
+  const { data, isPending, isError } = useCourseEnrollments(courseId, paging.page, PAGE_SIZE, paging.search);
 
   const columns: Column<CourseEnrollmentRow>[] = [
-    {
-      Header: intl.formatMessage(messages.colUsername),
-      accessor: 'username',
-      // Free text of wildly varying length: centring it makes the column look ragged.
-      headerClassName: 'reporting-cell--start',
-      cellClassName: 'reporting-cell--start',
-      Cell: ({ row }) => row.original.username,
-    },
-    {
-      Header: intl.formatMessage(messages.colEmail),
-      accessor: 'email',
-      headerClassName: 'reporting-cell--start',
-      cellClassName: 'reporting-cell--start',
-      Cell: ({ row }) => row.original.email,
-    },
-    { Header: intl.formatMessage(messages.colName), accessor: 'name', Cell: ({ row }) => row.original.name || f.dash },
+    ...personColumns(f),
     {
       Header: intl.formatMessage(messages.colEnrolled),
       accessor: 'enrolledAt',
@@ -296,13 +304,7 @@ const EnrollmentsTable = ({ courseId }: { courseId: string; }) => {
       data={data}
       isPending={isPending}
       isError={isError}
-      search={search}
-      page={page}
-      onSearch={(value) => {
-        setSearch(value);
-        setPage(1);
-      }}
-      onPageChange={setPage}
+      {...paging}
       emptyMessage={intl.formatMessage(messages.emptyEnrollments)}
     />
   );
@@ -311,27 +313,11 @@ const EnrollmentsTable = ({ courseId }: { courseId: string; }) => {
 const AssignmentsTable = ({ curriculumUuid }: { curriculumUuid: string; }) => {
   const f = useFormatters();
   const { intl } = f;
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const { data, isPending, isError } = useCurriculumAssignments(curriculumUuid, page, PAGE_SIZE, search);
+  const paging = useSearchPaging();
+  const { data, isPending, isError } = useCurriculumAssignments(curriculumUuid, paging.page, PAGE_SIZE, paging.search);
 
   const columns: Column<CurriculumAssignmentRow>[] = [
-    {
-      Header: intl.formatMessage(messages.colUsername),
-      accessor: 'username',
-      // Free text of wildly varying length: centring it makes the column look ragged.
-      headerClassName: 'reporting-cell--start',
-      cellClassName: 'reporting-cell--start',
-      Cell: ({ row }) => row.original.username,
-    },
-    {
-      Header: intl.formatMessage(messages.colEmail),
-      accessor: 'email',
-      headerClassName: 'reporting-cell--start',
-      cellClassName: 'reporting-cell--start',
-      Cell: ({ row }) => row.original.email,
-    },
-    { Header: intl.formatMessage(messages.colName), accessor: 'name', Cell: ({ row }) => row.original.name || f.dash },
+    ...personColumns(f),
     {
       Header: intl.formatMessage(messages.colAssigned),
       accessor: 'assignedAt',
@@ -362,8 +348,8 @@ const AssignmentsTable = ({ curriculumUuid }: { curriculumUuid: string; }) => {
         <ul className="reporting-stacked">
           {row.original.courseProgress.map((cp) => (
             <li key={cp.courseId}>
-              <span className={`reporting-badge reporting-badge--${COURSE_STATUS_VARIANT[cp.status]}`}>
-                {intl.formatMessage(COURSE_STATUS_MESSAGE[cp.status])}
+              <span className={`reporting-badge reporting-badge--${COURSE_STATUS[cp.status].variant}`}>
+                {intl.formatMessage(COURSE_STATUS[cp.status].message)}
               </span>
               <span className="reporting-stacked__label">{cp.displayName}</span>
               {cp.status === 'in_progress' && (
@@ -400,8 +386,13 @@ const AssignmentsTable = ({ curriculumUuid }: { curriculumUuid: string; }) => {
     {
       Header: intl.formatMessage(messages.colKcPassed),
       accessor: 'kcPassed',
-      Cell: ({ row }) =>
-        f.status(row.original.kcPassed, intl.formatMessage(messages.passed), intl.formatMessage(messages.failed)),
+      Cell: ({ row }) => (row.original.kcPassed === null || row.original.kcPassed === undefined
+        ? f.dash
+        : (
+          <span className={`reporting-badge reporting-badge--${row.original.kcPassed ? 'positive' : 'negative'}`}>
+            {intl.formatMessage(row.original.kcPassed ? messages.passed : messages.failed)}
+          </span>
+        )),
     },
     {
       Header: intl.formatMessage(messages.colRetained),
@@ -428,13 +419,7 @@ const AssignmentsTable = ({ curriculumUuid }: { curriculumUuid: string; }) => {
       data={data}
       isPending={isPending}
       isError={isError}
-      search={search}
-      page={page}
-      onSearch={(value) => {
-        setSearch(value);
-        setPage(1);
-      }}
-      onPageChange={setPage}
+      {...paging}
       emptyMessage={intl.formatMessage(messages.emptyAssignments)}
     />
   );
@@ -442,8 +427,12 @@ const AssignmentsTable = ({ curriculumUuid }: { curriculumUuid: string; }) => {
 
 const CoursesTab = () => {
   const intl = useIntl();
-  const { data: courses } = useStaffCourses();
+  const { data: courses, isError } = useStaffCourses();
   const [selectedCourse, setSelectedCourse] = useState('');
+
+  if (isError) {
+    return <Alert variant="danger">{intl.formatMessage(messages.error)}</Alert>;
+  }
 
   return (
     <>
@@ -469,9 +458,12 @@ const CoursesTab = () => {
 
 const CurriculumsTab = () => {
   const intl = useIntl();
-  const { data: curriculums } = useAllCurriculums();
+  const { data: curriculums, isError } = useAllCurriculums();
   const [selectedCurriculum, setSelectedCurriculum] = useState('');
 
+  if (isError) {
+    return <Alert variant="danger">{intl.formatMessage(messages.error)}</Alert>;
+  }
   if (curriculums && curriculums.length === 0) {
     return (
       <div className="reporting-empty">
@@ -504,16 +496,21 @@ const CurriculumsTab = () => {
 const ReportingPage = () => {
   const intl = useIntl();
   const [activeTab, setActiveTab] = useState('courses');
+  const flags = useUberFlags();
 
-  return (
-    <>
-      <Header isHiddenMainMenu />
-      <Container size="xl" className="px-4 py-5">
-        <SubHeader
-          title={intl.formatMessage(messages.pageTitle)}
-          subtitle={intl.formatMessage(messages.pageSubtitle)}
-          hideBorder
-        />
+  // Gated like ManagementPageLayout: a 4xx (flag endpoint missing) counts as disabled.
+  const renderBody = () => {
+    if (flags.isPending) {
+      return <Loading />;
+    }
+    if (flags.isError && !isClientError(flags.error)) {
+      return <ConnectionErrorAlert />;
+    }
+    if (!flags.data?.enableReporting) {
+      return <NotFoundAlert />;
+    }
+    return (
+      <>
         <StudioHomeNav />
         <div className="reporting-page">
           <Tabs
@@ -529,6 +526,20 @@ const ReportingPage = () => {
             </Tab>
           </Tabs>
         </div>
+      </>
+    );
+  };
+
+  return (
+    <>
+      <Header isHiddenMainMenu />
+      <Container size="xl" className="px-4 py-5">
+        <SubHeader
+          title={intl.formatMessage(messages.pageTitle)}
+          subtitle={intl.formatMessage(messages.pageSubtitle)}
+          hideBorder
+        />
+        {renderBody()}
       </Container>
       <StudioFooterSlot />
     </>

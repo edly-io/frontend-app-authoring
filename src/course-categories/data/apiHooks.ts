@@ -5,7 +5,7 @@ import {
 } from '@tanstack/react-query';
 
 import type { CategorySummary } from '@src/course-categories/types';
-import { isClientError } from '@src/course-categories/utils';
+import { retryUnlessClientError } from '@src/course-categories/utils';
 import * as api from './api';
 
 export const courseCategoryQueryKeys = {
@@ -15,9 +15,6 @@ export const courseCategoryQueryKeys = {
   allCourseCategories: () => [...courseCategoryQueryKeys.all, 'courseCategories'],
   courseCategories: (courseId: string) => [...courseCategoryQueryKeys.allCourseCategories(), courseId],
 };
-
-/** Retry network/5xx failures up to 3 times, but never 4xx responses. */
-const retryUnlessClientError = (failureCount: number, error: unknown) => !isClientError(error) && failureCount < 3;
 
 /**
  * What the current user may do with this course's categories. Runs on every outline render, so it is fetched

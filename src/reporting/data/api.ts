@@ -79,9 +79,6 @@ export async function getUberFlags(): Promise<UberFlags> {
 export const getCourseEnrollmentsUrl = (courseId: string) => (
   `${getReportingApiUrl()}/courses/${encodeURIComponent(courseId)}/enrollments/`
 );
-export const getCourseCurriculumsUrl = (courseId: string) => (
-  `${getReportingApiUrl()}/courses/${encodeURIComponent(courseId)}/curriculums/`
-);
 export const getCurriculumAssignmentsUrl = (curriculumUuid: string) => (
   `${getReportingApiUrl()}/curriculums/${encodeURIComponent(curriculumUuid)}/assignments/`
 );
@@ -102,11 +99,6 @@ export async function getCourseEnrollments(
 export const getCourseEnrollmentsCsvUrl = (courseId: string) => (
   `${getCourseEnrollmentsUrl(courseId)}?format=csv`
 );
-
-export async function getCourseCurriculums(courseId: string): Promise<CourseCurriculum[]> {
-  const { data } = await getAuthenticatedHttpClient().get(getCourseCurriculumsUrl(courseId));
-  return camelCaseObject(data);
-}
 
 export interface StaffCourse {
   courseId: string;

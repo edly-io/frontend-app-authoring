@@ -16,38 +16,6 @@ $uber-negative: #DE1135;
   padding: 2rem 0 3rem;
   min-height: 60vh;
 
-  .reporting-container {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .reporting-header {
-    margin-bottom: 1.5rem;
-  }
-
-  .reporting-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .reporting-title {
-    font-family: "Uber Move", UberMove, "Uber Move Text", system-ui, sans-serif;
-    font-size: 2.5rem;
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: -.02em;
-    margin: 0 0 .5rem;
-    color: $uber-content-primary;
-  }
-
-  .reporting-subtitle {
-    color: $uber-content-secondary;
-    font-size: 1rem;
-    margin: 0;
-  }
-
   .nav-tabs {
     border-bottom: 1px solid $uber-border;
 
@@ -280,18 +248,4 @@ $uber-negative: #DE1135;
     background: $uber-bg-secondary;
     border-radius: 12px;
   }
-
-  .reporting-skeleton__row {
-    height: 2.5rem;
-    margin-bottom: .5rem;
-    border-radius: 8px;
-    background: linear-gradient(90deg, $uber-bg-secondary 25%, $uber-border 50%, $uber-bg-secondary 75%);
-    background-size: 200% 100%;
-    animation: reporting-shimmer 1.4s infinite;
-  }
-}
-
-@keyframes reporting-shimmer {
-  from { background-position: 200% 0; }
-  to { background-position: -200% 0; }
 }

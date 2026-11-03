@@ -4,7 +4,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { AxiosError } from 'axios';
+import { isClientError, retryUnlessClientError } from '@src/course-categories/utils';
 
 import type { BadgeWriteData, CurriculumWriteData } from '../types';
 import * as api from './api';
@@ -17,14 +17,6 @@ export const curriculumQueryKeys = {
   badges: () => [...curriculumQueryKeys.all, 'badges'],
   courseSearch: (term: string) => [...curriculumQueryKeys.all, 'courseSearch', term],
 };
-
-const isClientError = (error: unknown) => {
-  const status = (error as AxiosError | undefined)?.response?.status;
-  return status !== undefined && status >= 400 && status < 500;
-};
-
-/** Retry network/5xx failures up to 3 times, but never 4xx responses. */
-const retryUnlessClientError = (failureCount: number, error: unknown) => !isClientError(error) && failureCount < 3;
 
 /**
  * Whether `uber_features.curriculum_management` is on for this user (spec §6.3). Runs on Studio home
