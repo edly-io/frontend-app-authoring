@@ -2,11 +2,12 @@
   min-height: 60vh;
 }
 
-// The clear button of the End date picker. Even padding keeps it inside the
-// field's border in both LTR and RTL, and the input leaves room for it.
-.program-end-date {
-  .react-datepicker__close-icon {
-    padding: 0 .5rem;
+// The clear button of the End date picker. Paragon puts an 8px margin on the
+// input's group, which pushed the button's anchor past the input's border, so
+// the margin goes and the input leaves room for the button in LTR and RTL.
+.program-end-date .react-datepicker__input-container {
+  .pgn__form-control-decorator-group {
+    margin: 0;
   }
 
   .form-control {
