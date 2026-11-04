@@ -195,6 +195,7 @@ export interface EditorState {
         value: number | null;
         type: 'Percent' | 'Number' | 'None';
       };
+      placeholder: string;
     };
   };
   game: {

@@ -433,6 +433,13 @@ export const GradingMethod = StrictDict({
 
 export const RichTextProblems = [ProblemTypeKeys.SINGLESELECT, ProblemTypeKeys.MULTISELECT] as const;
 
+// Uber: problem types whose input takes a placeholder (optioninput, textline, formulaequationinput).
+export const PlaceholderProblemTypes = [
+  ProblemTypeKeys.DROPDOWN,
+  ProblemTypeKeys.TEXTINPUT,
+  ProblemTypeKeys.NUMERIC,
+] as const;
+
 export const settingsOlxAttributes = [
   '@_display_name',
   '@_weight',

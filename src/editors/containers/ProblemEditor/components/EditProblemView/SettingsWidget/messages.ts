@@ -171,6 +171,26 @@ const messages = defineMessages({
     defaultMessage: 'Seconds',
     description: 'Timer text input label',
   },
+  placeholderSettingsTitle: {
+    id: 'authoring.problemeditor.settings.placeholder.title',
+    defaultMessage: 'Placeholder',
+    description: 'Placeholder settings card title',
+  },
+  placeholderNoneSummary: {
+    id: 'authoring.problemeditor.settings.placeholder.summary.none',
+    defaultMessage: 'None',
+    description: 'Summary text for placeholder settings when no placeholder is set',
+  },
+  placeholderSettingText: {
+    id: 'authoring.problemeditor.settings.placeholder.text',
+    defaultMessage: 'Text shown in the empty field before the learner answers.',
+    description: 'Placeholder settings card text',
+  },
+  placeholderInputLabel: {
+    id: 'authoring.problemeditor.settings.placeholder.inputLabel',
+    defaultMessage: 'Placeholder text',
+    description: 'Placeholder text input label',
+  },
   typeSettingTitle: {
     id: 'authoring.problemeditor.settings.type.title',
     defaultMessage: 'Type',
