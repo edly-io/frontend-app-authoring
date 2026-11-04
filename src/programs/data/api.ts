@@ -3,6 +3,7 @@
 
 import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
+import { getLocale } from '@edx/frontend-platform/i18n';
 import type {
   Course,
   Instructor,
@@ -140,7 +141,10 @@ export const createProgram = async (input: Omit<Program, 'id'>): Promise<Program
     program_type: input.programType,
     batch: input.run,
   };
-  const { data } = await getAuthenticatedHttpClient().post(`${getProgramsBaseUrl()}/`, payload);
+  // The backend returns its validation messages in this language.
+  const { data } = await getAuthenticatedHttpClient().post(`${getProgramsBaseUrl()}/`, payload, {
+    headers: { 'Accept-Language': getLocale() },
+  });
   return toProgram(data);
 };
 
