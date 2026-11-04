@@ -493,7 +493,7 @@ const ProgramDetailPage: React.FC = () => {
                               showMonthDropdown
                               showYearDropdown
                               dropdownMode="select"
-                              wrapperClassName="d-block mt-1"
+                              wrapperClassName="d-block mt-1 program-end-date"
                             />
                           </Form.Group>
                         </Col>
