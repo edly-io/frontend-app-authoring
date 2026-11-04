@@ -71,7 +71,15 @@ const messages = defineMessages({
   },
   nonEditableNote: {
     id: 'course-authoring.studio-home.new-program.non-editable.note',
-    defaultMessage: 'Organization, Program Type, and Program Run are used to build the program\'s unique identifier and <strong>cannot be changed after creation</strong>. Please make sure to input them correctly.',
+    defaultMessage: '<strong>⚠ Please read before creating:</strong> Organization, Program Type, and Program Run are used to build the program\'s unique identifier and <strong>cannot be changed after creation</strong>. Make sure to input them correctly.',
+  },
+  nonEditableHint: {
+    id: 'course-authoring.studio-home.new-program.non-editable.hint',
+    defaultMessage: '(non-editable after creation)',
+  },
+  createFailed: {
+    id: 'course-authoring.studio-home.new-program.create.failed',
+    defaultMessage: 'Failed to create program.',
   },
 });
 

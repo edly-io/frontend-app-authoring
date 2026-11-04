@@ -487,6 +487,7 @@ const ProgramDetailPage: React.FC = () => {
                               onChange={(date) => formik.setFieldValue('endDate', date ? date.toISOString().split('T')[0] : '')}
                               customInput={<DateInput placeholder="Select end date" />}
                               dateFormat="MMMM d, yyyy"
+                              isClearable
                               minDate={formik.values.startDate ? new Date(formik.values.startDate) : undefined}
                               popperPlacement="bottom-start"
                               showMonthDropdown
