@@ -1,3 +1,15 @@
 .tab-content {
   min-height: 60vh;
 }
+
+// The clear button of the End date picker. Even padding keeps it inside the
+// field's border in both LTR and RTL, and the input leaves room for it.
+.program-end-date {
+  .react-datepicker__close-icon {
+    padding: 0 .5rem;
+  }
+
+  .form-control {
+    padding-inline-end: 2rem;
+  }
+}
