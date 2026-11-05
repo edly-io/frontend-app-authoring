@@ -31,7 +31,9 @@ import CoursesTab from './courses-tab/CoursesTab';
 import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
 import RichTextEditor from '../generic/RichTextEditor';
-import { getDiscountPercent, isPriceValid, isSalePriceValid } from '../schedule-and-details/pricing-section/validation';
+import {
+  getDiscountPercent, getPriceWithVat, isPriceValid, isSalePriceValid,
+} from '../schedule-and-details/pricing-section/validation';
 import './index.scss';
 
 const messages = defineMessages({
@@ -75,10 +77,11 @@ const messages = defineMessages({
   pricingPaidDescription: { id: 'programs.detail.field.pricing.paid.description', defaultMessage: 'Sold at the price set below.' },
   pricingSubscription: { id: 'programs.detail.field.pricing.subscription', defaultMessage: 'Part of Subscription' },
   pricingSubscriptionDescription: { id: 'programs.detail.field.pricing.subscription.description', defaultMessage: 'Learners reach this program through the Rwaq subscription. It has no price of its own.' },
-  fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price ({currency})' },
+  fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price before VAT ({currency})' },
   fieldPriceHint: { id: 'programs.detail.field.price.hint', defaultMessage: 'Regular price shown on the marketing site.' },
-  fieldSalePrice: { id: 'programs.detail.field.sale-price', defaultMessage: 'Discounted Price / Sale Price ({currency})' },
+  fieldSalePrice: { id: 'programs.detail.field.sale-price', defaultMessage: 'Discounted Price / Sale Price before VAT ({currency})' },
   fieldDiscountPercentage: { id: 'programs.detail.field.discount-percentage', defaultMessage: '{percentage}% off' },
+  fieldPriceWithVat: { id: 'programs.detail.field.price-with-vat', defaultMessage: 'Learner pays {amount} {currency} including {rate}% VAT' },
   fieldSalePriceHint: { id: 'programs.detail.field.sale-price.hint', defaultMessage: 'Optional. Leave empty when the program is not on sale.' },
   pricingCoursesNote: { id: 'programs.detail.field.pricing.courses-note', defaultMessage: 'Courses inside a paid program are not priced separately. The program is the sellable unit.' },
   errorPriceNotPositive: { id: 'programs.detail.field.price.error-not-positive', defaultMessage: 'Price must be greater than 0.' },
@@ -267,6 +270,7 @@ const ProgramDetailPage: React.FC = () => {
   };
 
   const discountPercent = getDiscountPercent(formik.values.regularPrice, formik.values.salePrice);
+  const priceWithVat = getPriceWithVat(formik.values.regularPrice, formik.values.salePrice, program?.vatRate);
   const statusBadgeVariant = STATUS_BADGE_VARIANT[formik.values.status ?? 'draft'] ?? 'secondary';
   const statusLabel = STATUS_OPTIONS.find((o) => o.value === formik.values.status)?.label ?? 'Draft';
 
@@ -641,6 +645,13 @@ const ProgramDetailPage: React.FC = () => {
                               <Form.Text muted>
                                 {intl.formatMessage(messages.fieldDiscountPercentage, { percentage: discountPercent })}
                               </Form.Text>
+                            )}
+                            {priceWithVat && (
+                              <p className="font-weight-bold mt-2 mb-0" data-testid="price-with-vat">
+                                {intl.formatMessage(messages.fieldPriceWithVat, {
+                                  amount: priceWithVat.amount, currency: program?.currency ?? 'SAR', rate: priceWithVat.rate,
+                                })}
+                              </p>
                             )}
                           </Form.Group>
 
