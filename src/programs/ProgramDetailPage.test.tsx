@@ -124,6 +124,14 @@ describe('<ProgramDetailPage /> pricing', () => {
     });
   });
 
+  it('clears the end date so the program is open-ended', async () => {
+    renderPage({ startDate: '2026-09-19', endDate: '2027-01-01' });
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    saveProgram();
+    await waitFor(() => expect(mockUpdateProgram).toHaveBeenCalledTimes(1));
+    expect(mockUpdateProgram.mock.calls[0][0].data).toMatchObject({ startDate: '2026-09-19', endDate: '' });
+  });
+
   describe('activating a free program', () => {
     const activate = () => {
       fireEvent.change(screen.getByLabelText('Program Status'), { target: { value: 'active' } });
