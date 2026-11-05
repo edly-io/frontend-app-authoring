@@ -13,6 +13,21 @@ import { useNavigate } from 'react-router-dom';
 import { useProgramsConfig, useCreateProgram } from '../../programs/data/apiHooks';
 import messages from './messages';
 
+/**
+ * First readable message in a DRF validation response, e.g.
+ * {"non_field_errors": ["..."]} or {"name": ["..."]}. Empty when the
+ * response carries none, so the caller shows its own text.
+ */
+const getErrorMessage = (error) => {
+  const data = error?.response?.data;
+  if (typeof data === 'string') { return data; }
+  if (!data || typeof data !== 'object') { return ''; }
+  const first = Object.values(data).flat().find((value) => typeof value === 'string');
+  return first || '';
+};
+
+const renderStrong = (chunks) => <strong>{chunks}</strong>;
+
 const CreateNewProgramForm = ({ handleOnClickCancel }) => {
   const intl = useIntl();
   const navigate = useNavigate();
@@ -36,7 +51,7 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
       });
       navigate(`/programs/${created.id}`);
     } catch (e) {
-      setStatus({ error: e.message || 'Failed to create program.' });
+      setStatus({ error: getErrorMessage(e) || intl.formatMessage(messages.createFailed) });
     }
   };
 
@@ -45,9 +60,7 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
       <h3 className="mb-3">{intl.formatMessage(messages.createNewProgram)}</h3>
 
       <Alert variant="warning" className="mb-4">
-        <strong>⚠ Please read before creating: </strong>
-        Organization, Program Type, and Program Run are used to build the program&apos;s unique identifier
-        and <strong>cannot be changed after creation</strong>. Make sure to input them correctly.
+        {intl.formatMessage(messages.nonEditableNote, { strong: renderStrong })}
       </Alert>
 
       <Formik
@@ -93,7 +106,7 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
             <Form.Group isInvalid={touched.org && !!errors.org}>
               <Form.Label>
                 {intl.formatMessage(messages.orgLabel)}
-                <span className="text-muted small ml-1">(non-editable after creation)</span>
+                <span className="text-muted small ml-1">{intl.formatMessage(messages.nonEditableHint)}</span>
               </Form.Label>
               <Form.Control
                 as="select"
@@ -114,7 +127,7 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
             <Form.Group isInvalid={touched.programType && !!errors.programType}>
               <Form.Label>
                 {intl.formatMessage(messages.programTypeLabel)}
-                <span className="text-muted small ml-1">(non-editable after creation)</span>
+                <span className="text-muted small ml-1">{intl.formatMessage(messages.nonEditableHint)}</span>
               </Form.Label>
               <Form.Control
                 as="select"
@@ -135,7 +148,7 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
             <Form.Group isInvalid={touched.run && !!errors.run}>
               <Form.Label>
                 {intl.formatMessage(messages.programRunLabel)}
-                <span className="text-muted small ml-1">(non-editable after creation)</span>
+                <span className="text-muted small ml-1">{intl.formatMessage(messages.nonEditableHint)}</span>
               </Form.Label>
               <Form.Control
                 name="run"
