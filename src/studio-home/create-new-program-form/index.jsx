@@ -26,6 +26,8 @@ const getErrorMessage = (error) => {
   return first || '';
 };
 
+const renderStrong = (chunks) => <strong>{chunks}</strong>;
+
 const CreateNewProgramForm = ({ handleOnClickCancel }) => {
   const intl = useIntl();
   const navigate = useNavigate();
@@ -58,7 +60,7 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
       <h3 className="mb-3">{intl.formatMessage(messages.createNewProgram)}</h3>
 
       <Alert variant="warning" className="mb-4">
-        {intl.formatMessage(messages.nonEditableNote, { strong: (chunks) => <strong>{chunks}</strong> })}
+        {intl.formatMessage(messages.nonEditableNote, { strong: renderStrong })}
       </Alert>
 
       <Formik
