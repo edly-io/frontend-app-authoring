@@ -35,6 +35,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
   const [salePrice, setSalePrice] = useState('');
   const [currency, setCurrency] = useState('SAR');
   const [vatRate, setVatRate] = useState<string | null>(null);
+  const [vatLabel, setVatLabel] = useState('');
   const [canEdit, setCanEdit] = useState(false);
   const [managedByAdmin, setManagedByAdmin] = useState(false);
   const [programName, setProgramName] = useState<string | null>(null);
@@ -51,6 +52,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
     setSalePrice(pricing.salePrice ?? '');
     setCurrency(pricing.currency ?? 'SAR');
     setVatRate(pricing.vatRate);
+    setVatLabel(pricing.vatLabel);
     setCanEdit(pricing.canEdit);
     setManagedByAdmin(pricing.pricingManagedByAdmin);
     setProgramName(pricing.partOfProgram ? (pricing.partOfProgramName ?? pricing.partOfProgram) : null);
@@ -265,7 +267,10 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
             {priceWithVat && (
               <p className="font-weight-bold mt-2 mb-0" data-testid="price-with-vat">
                 {intl.formatMessage(messages.priceWithVat, {
-                  amount: priceWithVat.amount, currency, rate: priceWithVat.rate,
+                  amount: priceWithVat.amount,
+                  currency,
+                  rate: priceWithVat.rate,
+                  label: vatLabel.trim() || intl.formatMessage(messages.vatLabelFallback),
                 })}
               </p>
             )}

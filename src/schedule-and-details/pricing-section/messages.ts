@@ -63,8 +63,13 @@ const messages = defineMessages({
   },
   priceWithVat: {
     id: 'course-authoring.schedule-section.pricing.price-with-vat',
-    defaultMessage: 'Learner pays {amount} {currency} including {rate}% VAT',
-    description: 'Preview of the final price. The amount has 2 decimals and the rate is a plain number.',
+    defaultMessage: 'Learner pays {amount} {currency} including {rate}% {label}',
+    description: 'Preview of the final price. The amount has 2 decimals, the rate is a plain number and the label is the tax name.',
+  },
+  vatLabelFallback: {
+    id: 'course-authoring.schedule-section.pricing.vat-label-fallback',
+    defaultMessage: 'VAT',
+    description: 'Tax name used in the price preview when the API sends no label.',
   },
   discountPercentage: {
     id: 'course-authoring.schedule-section.pricing.discount-percentage',

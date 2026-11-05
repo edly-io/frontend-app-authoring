@@ -16,6 +16,8 @@ export interface CoursePricing {
   currency: string | null;
   /** VAT rate in percent as a 2-decimal string (e.g. "15.00"), used for the price preview only. */
   vatRate: string | null;
+  /** Tax name from the API (e.g. "VAT"), "" when none. */
+  vatLabel: string;
   pricingManagedByAdmin: boolean;
   /** program_key of the program the course is in, or null. */
   partOfProgram: string | null;
@@ -42,6 +44,7 @@ const toCoursePricing = (data: any): CoursePricing => ({
   discountPercentage: data.discount_percentage ?? null,
   currency: data.currency ?? null,
   vatRate: data.vat_rate ?? null,
+  vatLabel: data.vat_label ?? '',
   pricingManagedByAdmin: data.pricing_managed_by_admin ?? false,
   partOfProgram: data.part_of_program ?? null,
   partOfProgramName: data.part_of_program_name ?? null,
