@@ -130,6 +130,16 @@ describe('<ProgramDetailPage /> pricing', () => {
     expect(mockUpdateProgram.mock.calls[0][0].data).toMatchObject({ startDate: '2026-09-19', endDate: '' });
   });
 
+  it('saves the day picked for a new end date, whatever the time zone', async () => {
+    renderPage({ startDate: '2030-03-01', endDate: '2030-06-01' });
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(screen.getByLabelText('End Date'));
+    fireEvent.click(screen.getByRole('option', { name: /March 20th, 2030/ }));
+    saveProgram();
+    await waitFor(() => expect(mockUpdateProgram).toHaveBeenCalledTimes(1));
+    expect(mockUpdateProgram.mock.calls[0][0].data).toMatchObject({ startDate: '2030-03-01', endDate: '2030-03-20' });
+  });
+
   describe('activating a free program', () => {
     const activate = () => {
       fireEvent.change(screen.getByLabelText('Program Status'), { target: { value: 'active' } });
