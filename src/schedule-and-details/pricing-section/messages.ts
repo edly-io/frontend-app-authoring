@@ -47,7 +47,7 @@ const messages = defineMessages({
   },
   priceLabel: {
     id: 'course-authoring.schedule-section.pricing.price-label',
-    defaultMessage: 'Price ({currency})',
+    defaultMessage: 'Price before VAT ({currency})',
   },
   priceHint: {
     id: 'course-authoring.schedule-section.pricing.price-hint',
@@ -55,11 +55,21 @@ const messages = defineMessages({
   },
   discountLabel: {
     id: 'course-authoring.schedule-section.pricing.discount-label',
-    defaultMessage: 'Discounted Price / Sale Price ({currency})',
+    defaultMessage: 'Discounted Price / Sale Price before VAT ({currency})',
   },
   discountHint: {
     id: 'course-authoring.schedule-section.pricing.discount-hint',
     defaultMessage: 'Optional. Leave empty when the course is not on sale.',
+  },
+  priceWithVat: {
+    id: 'course-authoring.schedule-section.pricing.price-with-vat',
+    defaultMessage: 'Learner pays {amount} {currency} including {rate}% {label}',
+    description: 'Preview of the final price. The amount has 2 decimals, the rate is a plain number and the label is the tax name.',
+  },
+  vatLabelFallback: {
+    id: 'course-authoring.schedule-section.pricing.vat-label-fallback',
+    defaultMessage: 'VAT',
+    description: 'Tax name used in the price preview when the API sends no label.',
   },
   discountPercentage: {
     id: 'course-authoring.schedule-section.pricing.discount-percentage',
