@@ -56,6 +56,7 @@ const toProgram = (d: any): Program => ({
   discountPercentage: d.discount_percentage ?? null,
   currency: d.currency ?? 'SAR',
   vatRate: d.vat_rate ?? null,
+  vatLabel: d.vat_label ?? '',
   canEnrollLearners: d.can_enroll_learners ?? true,
 });
 
