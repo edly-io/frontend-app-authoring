@@ -82,7 +82,8 @@ const messages = defineMessages({
   fieldPriceHint: { id: 'programs.detail.field.price.hint', defaultMessage: 'Regular price shown on the marketing site.' },
   fieldSalePrice: { id: 'programs.detail.field.sale-price', defaultMessage: 'Discounted Price / Sale Price before VAT ({currency})' },
   fieldDiscountPercentage: { id: 'programs.detail.field.discount-percentage', defaultMessage: '{percentage}% off' },
-  fieldPriceWithVat: { id: 'programs.detail.field.price-with-vat', defaultMessage: 'Learner pays {amount} {currency} including {rate}% VAT' },
+  fieldPriceWithVat: { id: 'programs.detail.field.price-with-vat', defaultMessage: 'Learner pays {amount} {currency} including {rate}% {label}' },
+  fieldVatLabelFallback: { id: 'programs.detail.field.vat-label-fallback', defaultMessage: 'VAT' },
   fieldSalePriceHint: { id: 'programs.detail.field.sale-price.hint', defaultMessage: 'Optional. Leave empty when the program is not on sale.' },
   pricingCoursesNote: { id: 'programs.detail.field.pricing.courses-note', defaultMessage: 'Courses inside a paid program are not priced separately. The program is the sellable unit.' },
   errorPriceNotPositive: { id: 'programs.detail.field.price.error-not-positive', defaultMessage: 'Price must be greater than 0.' },
@@ -634,7 +635,11 @@ const ProgramDetailPage: React.FC = () => {
                             {priceWithVat && (
                               <p className="font-weight-bold mt-2 mb-0" data-testid="price-with-vat">
                                 {intl.formatMessage(messages.fieldPriceWithVat, {
-                                  amount: priceWithVat.amount, currency: program?.currency ?? 'SAR', rate: priceWithVat.rate,
+                                  amount: priceWithVat.amount,
+                                  currency: program?.currency ?? 'SAR',
+                                  rate: priceWithVat.rate,
+                                  label: program?.vatLabel?.trim()
+                                    || intl.formatMessage(messages.fieldVatLabelFallback),
                                 })}
                               </p>
                             )}

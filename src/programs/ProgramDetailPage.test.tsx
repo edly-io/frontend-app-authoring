@@ -110,6 +110,20 @@ describe('<ProgramDetailPage /> pricing', () => {
       expect(line()).not.toBeInTheDocument();
     });
 
+    it('uses the label from the API', () => {
+      renderPage({
+        pricingCategory: 'is_paid', regularPrice: '30.00', vatRate: '15.00', vatLabel: 'GST',
+      });
+      expect(line()).toHaveTextContent('Learner pays 34.50 SAR including 15% GST');
+    });
+
+    it('falls back to the word VAT when the label is empty', () => {
+      renderPage({
+        pricingCategory: 'is_paid', regularPrice: '30.00', vatRate: '15.00', vatLabel: '',
+      });
+      expect(line()).toHaveTextContent('Learner pays 34.50 SAR including 15% VAT');
+    });
+
     it('is hidden when the VAT rate is 0', () => {
       renderPage({ pricingCategory: 'is_paid', regularPrice: '100.00', vatRate: '0.00' });
       expect(line()).not.toBeInTheDocument();

@@ -90,6 +90,20 @@ describe('<PricingSection />', () => {
       expect(line()).not.toBeInTheDocument();
     });
 
+    it('uses the label from the API', async () => {
+      await renderSection({
+        pricing_category: 'is_paid', regular_price: '30.00', vat_rate: '15.00', vat_label: 'GST',
+      });
+      expect(line()).toHaveTextContent('Learner pays 34.50 SAR including 15% GST');
+    });
+
+    it('falls back to the word VAT when the label is empty', async () => {
+      await renderSection({
+        pricing_category: 'is_paid', regular_price: '30.00', vat_rate: '15.00', vat_label: '',
+      });
+      expect(line()).toHaveTextContent('Learner pays 34.50 SAR including 15% VAT');
+    });
+
     it('is hidden when the VAT rate is 0', async () => {
       await renderSection({ pricing_category: 'is_paid', regular_price: '100.00', vat_rate: '0.00' });
       expect(line()).not.toBeInTheDocument();
