@@ -45,12 +45,12 @@ describe('<PricingSection />', () => {
 
   it('shows the price fields only for Paid', async () => {
     await renderSection();
-    expect(screen.queryByLabelText('Price (SAR)')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Price before VAT (SAR)')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('radio', { name: 'Paid' }));
-    expect(screen.getByLabelText('Price (SAR)')).toBeInTheDocument();
-    expect(screen.getByLabelText('Discounted Price / Sale Price (SAR)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Price before VAT (SAR)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Discounted Price / Sale Price before VAT (SAR)')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('radio', { name: 'Program-only course' }));
-    expect(screen.queryByLabelText('Price (SAR)')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Price before VAT (SAR)')).not.toBeInTheDocument();
   });
 
   it('selects no type when the course has none yet', async () => {
@@ -59,10 +59,65 @@ describe('<PricingSection />', () => {
     expect(screen.getByText(/This course has no type yet/)).toBeInTheDocument();
   });
 
+  describe('price with VAT line', () => {
+    const line = () => screen.queryByTestId('price-with-vat');
+    const price = () => screen.getByLabelText('Price before VAT (SAR)');
+    const sale = () => screen.getByLabelText('Discounted Price / Sale Price before VAT (SAR)');
+
+    it('shows the regular price with VAT', async () => {
+      await renderSection({ pricing_category: 'is_paid', regular_price: '30.00', vat_rate: '15.00' });
+      expect(line()).toHaveTextContent('Learner pays 34.50 SAR including 15% VAT');
+      expect(line()).toHaveClass('font-weight-bold');
+    });
+
+    it('uses the sale price when it is set and valid', async () => {
+      await renderSection({
+        pricing_category: 'is_paid', regular_price: '100.00', sale_price: '30.00', vat_rate: '15.00',
+      });
+      expect(line()).toHaveTextContent('Learner pays 34.50 SAR including 15% VAT');
+    });
+
+    it('updates live while typing and hides when the price is invalid or empty', async () => {
+      await renderSection({ pricing_category: 'is_paid', regular_price: '100.00', vat_rate: '15.00' });
+      fireEvent.change(sale(), { target: { value: '30' } });
+      expect(line()).toHaveTextContent('Learner pays 34.50 SAR including 15% VAT');
+      fireEvent.change(sale(), { target: { value: '' } });
+      expect(line()).toHaveTextContent('Learner pays 115.00 SAR including 15% VAT');
+      fireEvent.change(price(), { target: { value: 'abc' } });
+      expect(line()).not.toBeInTheDocument();
+      fireEvent.change(price(), { target: { value: '' } });
+      expect(line()).not.toBeInTheDocument();
+    });
+
+    it('uses the label from the API', async () => {
+      await renderSection({
+        pricing_category: 'is_paid', regular_price: '30.00', vat_rate: '15.00', vat_label: 'GST',
+      });
+      expect(line()).toHaveTextContent('Learner pays 34.50 SAR including 15% GST');
+    });
+
+    it('falls back to the word VAT when the label is empty', async () => {
+      await renderSection({
+        pricing_category: 'is_paid', regular_price: '30.00', vat_rate: '15.00', vat_label: '',
+      });
+      expect(line()).toHaveTextContent('Learner pays 34.50 SAR including 15% VAT');
+    });
+
+    it('is hidden when the VAT rate is 0', async () => {
+      await renderSection({ pricing_category: 'is_paid', regular_price: '100.00', vat_rate: '0.00' });
+      expect(line()).not.toBeInTheDocument();
+    });
+
+    it('is hidden when the VAT rate is missing', async () => {
+      await renderSection({ pricing_category: 'is_paid', regular_price: '100.00' });
+      expect(line()).not.toBeInTheDocument();
+    });
+  });
+
   it('validates the price and sale price on blur', async () => {
     await renderSection({ pricing_category: 'is_paid', regular_price: '100.00' });
-    const price = screen.getByLabelText('Price (SAR)');
-    const salePrice = screen.getByLabelText('Discounted Price / Sale Price (SAR)');
+    const price = screen.getByLabelText('Price before VAT (SAR)');
+    const salePrice = screen.getByLabelText('Discounted Price / Sale Price before VAT (SAR)');
 
     fireEvent.change(price, { target: { value: '0' } });
     fireEvent.blur(price);
@@ -107,8 +162,8 @@ describe('<PricingSection />', () => {
       pricing_category: 'is_paid', regular_price: '100.00', sale_price: '80.00',
     }));
     fireEvent.click(screen.getByRole('radio', { name: 'Paid' }));
-    fireEvent.change(screen.getByLabelText('Price (SAR)'), { target: { value: '100' } });
-    fireEvent.change(screen.getByLabelText('Discounted Price / Sale Price (SAR)'), { target: { value: '80' } });
+    fireEvent.change(screen.getByLabelText('Price before VAT (SAR)'), { target: { value: '100' } });
+    fireEvent.change(screen.getByLabelText('Discounted Price / Sale Price before VAT (SAR)'), { target: { value: '80' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save course type' }));
     await waitFor(() => expect(axiosMock.history.put).toHaveLength(1));
     expect(JSON.parse(axiosMock.history.put[0].data)).toEqual({
@@ -118,8 +173,8 @@ describe('<PricingSection />', () => {
 
   it('computes the discount percentage live from the inputs', async () => {
     await renderSection({ pricing_category: 'is_paid', regular_price: '100.00' });
-    const price = screen.getByLabelText('Price (SAR)');
-    const sale = screen.getByLabelText('Discounted Price / Sale Price (SAR)');
+    const price = screen.getByLabelText('Price before VAT (SAR)');
+    const sale = screen.getByLabelText('Discounted Price / Sale Price before VAT (SAR)');
     expect(screen.queryByText(/% off/)).not.toBeInTheDocument();
     fireEvent.change(price, { target: { value: '200' } });
     fireEvent.change(sale, { target: { value: '150' } });
@@ -150,11 +205,11 @@ describe('<PricingSection />', () => {
     const detail = 'Learners have already enrolled in this free course. Create a rerun to change its type.';
     axiosMock.onPut(pricingUrl()).reply(409, { detail });
     fireEvent.click(screen.getByRole('radio', { name: 'Paid' }));
-    fireEvent.change(screen.getByLabelText('Price (SAR)'), { target: { value: '100' } });
+    fireEvent.change(screen.getByLabelText('Price before VAT (SAR)'), { target: { value: '100' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save course type' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(detail);
     expect(screen.getByRole('radio', { name: 'Free' })).toBeChecked();
-    expect(screen.queryByLabelText('Price (SAR)')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Price before VAT (SAR)')).not.toBeInTheDocument();
   });
 
   it('renders read-only when the course team cannot edit', async () => {
@@ -163,7 +218,7 @@ describe('<PricingSection />', () => {
     });
     expect(screen.getByText(/managed by the Rwaq admin/)).toBeInTheDocument();
     screen.getAllByRole('radio').forEach((radio) => expect(radio).toBeDisabled());
-    expect(screen.getByLabelText('Price (SAR)')).toBeDisabled();
+    expect(screen.getByLabelText('Price before VAT (SAR)')).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Save course type' })).not.toBeInTheDocument();
   });
 
