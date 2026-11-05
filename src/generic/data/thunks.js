@@ -14,6 +14,7 @@ import {
   updateCourseSlug,
 } from './api';
 import createOrRerunCourseMessages from '../create-or-rerun-course/messages';
+import { computeDefaultSlug } from '../create-or-rerun-course/slug';
 
 export function fetchOrganizationsQuery() {
   return async (dispatch) => {
@@ -60,22 +61,27 @@ export function updateCreateOrRerunCourseQuery(courseData, intl) {
     // rerun (a rerun keeps org+number, and the user types a new run), so this
     // is reconstructible before the course actually exists.
     const newCourseKey = `course-v1:${courseData.org}+${courseData.number}+${courseData.run}`;
+    const slug = courseData.slug || computeDefaultSlug(courseData.org, courseData.number, courseData.run);
 
-    if (courseData.slug) {
-      // Validate/reserve the slug BEFORE creating the course. CourseSlugView.PUT
-      // works even though the course doesn't exist yet (by design — see its own
-      // docstring), so a duplicate slug can block course creation entirely
-      // instead of silently creating the course with its fallback slug.
-      try {
-        await updateCourseSlug(newCourseKey, courseData.slug);
-      } catch (slugError) {
-        dispatch(updatePostErrors({
-          errMsg: intl.formatMessage(
-            isSlugConflictError(slugError)
-              ? createOrRerunCourseMessages.slugDuplicateError
-              : createOrRerunCourseMessages.slugSaveError,
-          ),
-        }));
+    // Validate/reserve the slug BEFORE creating the course, including the default one
+    // derived from the course key. CourseSlugView.PUT works even though the course
+    // doesn't exist yet (by design, see its own docstring), so a duplicate slug blocks
+    // course creation instead of silently creating a course with a colliding slug.
+    // With the slug left blank only a conflict blocks: on any other failure (for example
+    // a 403 for a course creator who is not an org admin) the course is still created
+    // and the backend stores the default slug itself (rwaq_features course_signals).
+    try {
+      await updateCourseSlug(newCourseKey, slug);
+    } catch (slugError) {
+      const isConflict = isSlugConflictError(slugError);
+      if (courseData.slug || isConflict) {
+        let errorMessage = createOrRerunCourseMessages.slugSaveError;
+        if (isConflict) {
+          errorMessage = courseData.slug
+            ? createOrRerunCourseMessages.slugDuplicateError
+            : createOrRerunCourseMessages.slugDuplicateDefaultError;
+        }
+        dispatch(updatePostErrors({ errMsg: intl.formatMessage(errorMessage, { slug }) }));
         dispatch(updateSavingStatus({ status: RequestStatus.FAILED }));
         return false;
       }
@@ -90,13 +96,14 @@ export function updateCreateOrRerunCourseQuery(courseData, intl) {
       // reconstruction. Re-point the already-reserved slug rather than
       // leaving it attached to the wrong key. Best-effort — the course itself
       // is already created successfully by this point, so a failure here
-      // isn't worth blocking on.
+      // isn't worth blocking on. A blank slug is not re-pointed: the default is
+      // derived from the key, and the backend stores the real key's default itself.
       if (
         courseData.slug && !('errMsg' in response)
         && response.destinationCourseKey && response.destinationCourseKey !== newCourseKey
       ) {
         try {
-          await updateCourseSlug(response.destinationCourseKey, courseData.slug);
+          await updateCourseSlug(response.destinationCourseKey, slug);
         } catch (slugError) {
           // eslint-disable-next-line no-console
           console.error('Failed to re-point course slug to', response.destinationCourseKey, slugError);
