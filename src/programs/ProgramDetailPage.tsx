@@ -97,6 +97,22 @@ const messages = defineMessages({
   imageChange: { id: 'programs.detail.image.change', defaultMessage: 'Change Image' },
 });
 
+/**
+ * The form keeps dates as YYYY-MM-DD strings. They are read and written as local calendar days:
+ * `new Date('2027-10-01')` is UTC midnight and `toISOString()` converts back to UTC, so in a time zone
+ * ahead of UTC (Saudi Arabia, Pakistan) the picked day was saved as the day before.
+ */
+const fromDateString = (value: string): Date => {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const toDateString = (date: Date): string => {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+};
+
 const STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft' },
   { value: 'active', label: 'Active' },
@@ -467,8 +483,8 @@ const ProgramDetailPage: React.FC = () => {
                           <Form.Group>
                             <Form.Label>{intl.formatMessage(messages.fieldStartDate)}</Form.Label>
                             <DatePicker
-                              selected={formik.values.startDate ? new Date(formik.values.startDate) : null}
-                              onChange={(date) => formik.setFieldValue('startDate', date ? date.toISOString().split('T')[0] : '')}
+                              selected={formik.values.startDate ? fromDateString(formik.values.startDate) : null}
+                              onChange={(date) => formik.setFieldValue('startDate', date ? toDateString(date) : '')}
                               customInput={<DateInput placeholder="Select start date" />}
                               dateFormat="MMMM d, yyyy"
                               popperPlacement="bottom-start"
@@ -483,16 +499,17 @@ const ProgramDetailPage: React.FC = () => {
                           <Form.Group>
                             <Form.Label>{intl.formatMessage(messages.fieldEndDate)}</Form.Label>
                             <DatePicker
-                              selected={formik.values.endDate ? new Date(formik.values.endDate) : null}
-                              onChange={(date) => formik.setFieldValue('endDate', date ? date.toISOString().split('T')[0] : '')}
+                              selected={formik.values.endDate ? fromDateString(formik.values.endDate) : null}
+                              onChange={(date) => formik.setFieldValue('endDate', date ? toDateString(date) : '')}
                               customInput={<DateInput placeholder="Select end date" />}
                               dateFormat="MMMM d, yyyy"
-                              minDate={formik.values.startDate ? new Date(formik.values.startDate) : undefined}
+                              isClearable
+                              minDate={formik.values.startDate ? fromDateString(formik.values.startDate) : undefined}
                               popperPlacement="bottom-start"
                               showMonthDropdown
                               showYearDropdown
                               dropdownMode="select"
-                              wrapperClassName="d-block mt-1"
+                              wrapperClassName="d-block mt-1 program-end-date"
                             />
                           </Form.Group>
                         </Col>
