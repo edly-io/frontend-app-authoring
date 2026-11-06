@@ -1,6 +1,8 @@
 import { getConfig } from '@edx/frontend-platform';
 import { initializeMocks } from '@src/testUtils';
-import { getCertificateRoster, getPlatformUsers } from './api';
+import {
+  getCertificateRoster, getPlatformUsers, getProgramDetail, updateProgram,
+} from './api';
 
 const usersUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/programs/users/`;
 const emptyPage = { results: [], pagination: { count: 0, num_pages: 1 } };
@@ -88,5 +90,42 @@ describe('getCertificateRoster', () => {
         certificate: null,
       }],
     });
+  });
+});
+
+describe('program city editing', () => {
+  const programUrl = () => `${getConfig().STUDIO_BASE_URL}/fbr/api/programs/prog-1/`;
+  let axiosMock: ReturnType<typeof initializeMocks>['axiosMock'];
+  const response = {
+    program_key: 'prog-1',
+    name: 'Programme One',
+    organization: 'FBR',
+    program_type: 'stp',
+    batch: '2026',
+    city: { id: 2, name: 'Lahore' },
+    target_audience: { id: 1, name: 'Officers' },
+    target_audiences: [],
+    cities: [{ id: 1, name: 'Karachi' }, { id: 2, name: 'Lahore' }],
+  };
+
+  beforeEach(() => {
+    ({ axiosMock } = initializeMocks());
+  });
+
+  it('maps both the city id and name from program detail', async () => {
+    axiosMock.onGet(programUrl()).reply(200, response);
+
+    const result = await getProgramDetail('prog-1');
+
+    expect(result.program).toMatchObject({ city: '2', cityName: 'Lahore' });
+  });
+
+  it('includes the selected city in the update request', async () => {
+    axiosMock.onPatch(programUrl()).reply(200, response);
+
+    await updateProgram('prog-1', { city: '2' });
+
+    const payload = axiosMock.history.patch[0].data as FormData;
+    expect(payload.get('city')).toBe('2');
   });
 });
