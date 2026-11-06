@@ -256,6 +256,15 @@ describe('placeholder attribute', () => {
     expect(built).toContain('placeholder="Choose &amp; pick"');
   });
 
+  test.each(cases)('%s decodes numeric references instead of encoding them twice', (name, olx, editorObject, tag) => {
+    const withRefs = tag.replace(/(\/?>)$/, ' placeholder="caf&#233; &#x2014;"$1');
+    const problem = new OLXParser(olx.rawOLX.replace(tag, withRefs)).getParsedOLXData();
+    expect(problem.settings.placeholder).toBe('café —');
+    const built = new ReactStateOLXParser({ problem, editorObject }).buildOLX();
+    expect(built).toContain('placeholder="café —"');
+    expect(built).not.toContain('&amp;#');
+  });
+
   test.each(cases)('%s writes no placeholder when it is blank', (name, olx, editorObject) => {
     const problem = new OLXParser(olx.rawOLX).getParsedOLXData();
     expect(problem.settings.placeholder).toBe('');

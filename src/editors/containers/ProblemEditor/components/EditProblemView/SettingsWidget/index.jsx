@@ -90,7 +90,9 @@ const SettingsWidget = ({
             />
           </div>
         )}
-      {PlaceholderProblemTypes.includes(problemType) && (
+      {/* The markdown editor's save path never writes the placeholder, so the card would be a no-op there. */}
+      {PlaceholderProblemTypes.includes(problemType)
+        && !(isMarkdownEditorEnabled && isMarkdownEditorEnabledForContext) && (
         <div className="my-3">
           <PlaceholderCard placeholder={settings.placeholder} updateSettings={updateSettings} />
         </div>

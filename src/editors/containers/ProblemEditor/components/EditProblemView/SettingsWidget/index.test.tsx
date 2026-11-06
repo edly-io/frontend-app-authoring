@@ -13,6 +13,8 @@ jest.mock('./settingsComponents/GeneralFeedback', () => 'GeneralFeedback');
 jest.mock('./settingsComponents/GroupFeedback', () => 'GroupFeedback');
 jest.mock('./settingsComponents/Randomization', () => 'Randomization');
 jest.mock('./settingsComponents/HintsCard', () => 'HintsCard');
+jest.mock('./settingsComponents/PlaceholderCard', () => 'PlaceholderCard');
+jest.mock('./settingsComponents/Tolerance', () => ({ ToleranceCard: 'ToleranceCard' }));
 jest.mock('./settingsComponents/ResetCard', () => 'ResetCard');
 jest.mock('./settingsComponents/ScoringCard', () => 'ScoringCard');
 jest.mock('./settingsComponents/ShowAnswerCard', () => 'ShowAnswerCard');
@@ -141,6 +143,33 @@ describe('SettingsWidget', () => {
       };
       const { container } = renderSettingsWidget({}, { initialState: modifiedInitialState });
       expect(container.querySelectorAll('switcheditorcard')).toHaveLength(1);
+    });
+  });
+
+  describe('PlaceholderCard', () => {
+    beforeEach(() => {
+      jest.spyOn(hooks, 'showAdvancedSettingsCards').mockReturnValue(showAdvancedSettingsCardsBaseProps);
+    });
+
+    test.each([ProblemTypeKeys.DROPDOWN, ProblemTypeKeys.TEXTINPUT, ProblemTypeKeys.NUMERIC])(
+      'is shown for %s problems',
+      (problemType) => {
+        const { container } = renderSettingsWidget({ problemType });
+        expect(container.querySelector('placeholdercard')).toBeInTheDocument();
+      },
+    );
+
+    test('is hidden for single select problems', () => {
+      const { container } = renderSettingsWidget({ problemType: ProblemTypeKeys.SINGLESELECT });
+      expect(container.querySelector('placeholdercard')).not.toBeInTheDocument();
+    });
+
+    test('is hidden in the markdown editor, which does not save it', () => {
+      const { container } = renderSettingsWidget(
+        { problemType: ProblemTypeKeys.TEXTINPUT },
+        { initialState: { problem: { isMarkdownEditorEnabled: true, rawMarkdown: '## Problem' } } },
+      );
+      expect(container.querySelector('placeholdercard')).not.toBeInTheDocument();
     });
   });
 
