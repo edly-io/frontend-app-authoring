@@ -1,6 +1,6 @@
 import { get, has } from 'lodash';
 import { XMLParser, XMLBuilder } from 'fast-xml-parser';
-import { ProblemTypeKeys } from '../../../data/constants/problem';
+import { PlaceholderProblemTypes, ProblemTypeKeys } from '../../../data/constants/problem';
 import { ToleranceTypes } from '../components/EditProblemView/SettingsWidget/settingsComponents/Tolerance/constants';
 import { findNodesAndRemoveTheirParentNodes } from './reactStateOLXHelpers';
 
@@ -267,7 +267,7 @@ class ReactStateOLXParser {
 
     const problemBodyArr = [{
       [problemType]: [
-        { [widget]: widgetObject },
+        { [widget]: widgetObject, ...this.placeholderAttribute() },
         ...solution,
       ],
     }];
@@ -378,7 +378,10 @@ class ReactStateOLXParser {
     });
     answerObject[problemType].push({
       textline: { '#text': '' },
-      ':@': { '@_size': get(this.problemState, 'additionalAttributes.textline.size', 20) },
+      ':@': {
+        '@_size': get(this.problemState, 'additionalAttributes.textline.size', 20),
+        ...this.placeholderAttribute()[':@'],
+      },
     });
     return answerObject;
   }
@@ -489,7 +492,7 @@ class ReactStateOLXParser {
         }
       }
     });
-    answerObject[problemType].push({ formulaequationinput: { '#text': '' } });
+    answerObject[problemType].push({ formulaequationinput: { '#text': '' }, ...this.placeholderAttribute() });
     return answerObject;
   }
 
@@ -508,6 +511,20 @@ class ReactStateOLXParser {
       correcthint.push({ correcthint: parsedFeedback });
     }
     return correcthint;
+  }
+
+  /** placeholderAttribute()
+   * Uber: the input's placeholder attribute from the problemState settings, as the
+   * attribute part (':@') of an element, or nothing when no placeholder is set or the
+   * problem type's input takes none (e.g. after switching from dropdown to single select).
+   * @return {object} object representation of the placeholder attribute
+   */
+  placeholderAttribute() {
+    if (!PlaceholderProblemTypes.includes(this.problemState.problemType)) {
+      return {};
+    }
+    const placeholder = (get(this.problemState, 'settings.placeholder') || '').trim();
+    return placeholder ? { ':@': { '@_placeholder': placeholder } } : {};
   }
 
   /** hasAttributeWithValue(obj, attr)

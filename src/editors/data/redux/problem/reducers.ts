@@ -43,6 +43,7 @@ const initialState: EditorState['problem'] = {
       value: null,
       type: ToleranceTypes.none.type,
     },
+    placeholder: '',
   },
 };
 
