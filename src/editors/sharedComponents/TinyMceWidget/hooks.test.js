@@ -626,3 +626,15 @@ describe('TinyMceEditor hooks', () => {
     });
   });
 });
+
+describe('Figma clipboard filter', () => {
+  it('unwraps Figma clipboard spans and keeps their text', () => {
+    // eslint-disable-next-line global-require
+    const tinymce = require('tinymce');
+    const parser = tinymce.html.DomParser({ validate: false });
+    parser.addAttributeFilter(module.FIGMA_CLIPBOARD_ATTRS, module.unwrapNodes);
+    const html = '<h2><span data-metadata="&lt;!--(figmeta)x--&gt;"></span>'
+      + '<span data-buffer="&lt;!--(figma)y--&gt;"></span>Title</h2><p><span data-metadata="z">Lead</span></p>';
+    expect(tinymce.html.Serializer().serialize(parser.parse(html))).toEqual('<h2>Title</h2><p>Lead</p>');
+  });
+});

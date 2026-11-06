@@ -295,6 +295,11 @@ export const openModalWithSelectedImage = ({
   openImgModal();
 };
 
+// Figma puts base64 blobs on these attributes when copying text to the clipboard.
+export const FIGMA_CLIPBOARD_ATTRS = 'data-metadata,data-buffer';
+
+export const unwrapNodes = (nodes) => nodes.forEach((node) => node.unwrap());
+
 export const setupCustomBehavior = ({
   updateContent,
   openImgModal,
@@ -411,6 +416,11 @@ export const setupCustomBehavior = ({
   });
   // after resizing an image in the editor, synchronize React state and ref
   editor.on('ObjectResized', getImageResizeHandler({ editor, imagesRef: images, setImage }));
+  // drop Figma's clipboard spans from pasted, loaded and saved HTML
+  editor.on('PreInit', () => {
+    editor.parser.addAttributeFilter(FIGMA_CLIPBOARD_ATTRS, unwrapNodes);
+    editor.serializer.addAttributeFilter(FIGMA_CLIPBOARD_ATTRS, unwrapNodes);
+  });
 };
 
 // imagetools_cors_hosts needs a protocol-sanatized url

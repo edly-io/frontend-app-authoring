@@ -26,6 +26,23 @@ const uberColorMap = [
 
 const mapToolbars = toolbars => toolbars.map(toolbar => toolbar.join(' ')).join(' | ');
 
+const PASTE_KEPT_ATTRS = ['href', 'target', 'src', 'alt', 'title', 'width', 'height', 'colspan', 'rowspan'];
+
+// Pasted HTML (Figma, Word, Google Docs, web pages) keeps its structure but loses the source's
+// styling: inline styles, ids, data-* blobs, foreign classes and wrapper spans. Uber author classes stay.
+export const cleanPastedHtml = (root) => {
+  root.querySelectorAll('*').forEach((el) => {
+    const uberClasses = [...el.classList].filter(name => name.startsWith('uber-'));
+    [...el.attributes].forEach(({ name }) => {
+      if (!PASTE_KEPT_ATTRS.includes(name)) { el.removeAttribute(name); }
+    });
+    if (uberClasses.length) { el.className = uberClasses.join(' '); }
+  });
+  root.querySelectorAll('span').forEach(span => span.replaceWith(...span.childNodes));
+};
+
+const pastePostprocess = (_editor, args) => cleanPastedHtml(args.node);
+
 const pluginConfig = ({ placeholder, editorType, enableImageUpload }) => {
   const image = enableImageUpload ? plugins.image : '';
   const imageTools = enableImageUpload ? plugins.imagetools : '';
@@ -58,6 +75,7 @@ const pluginConfig = ({ placeholder, editorType, enableImageUpload }) => {
         quickToolbar,
         plugins.a11ychecker,
         plugins.powerpaste,
+        plugins.paste,
         plugins.embediframe,
       ].join(' '),
       menubar: false,
@@ -124,6 +142,9 @@ const pluginConfig = ({ placeholder, editorType, enableImageUpload }) => {
         powerpaste_word_import: 'prompt',
         powerpaste_html_import: 'prompt',
         powerpaste_googledoc_import: 'prompt',
+        // powerpaste is an open-source stub, so the core paste plugin does the cleanup
+        paste_data_images: true,
+        paste_postprocess: pastePostprocess,
         autoresize_bottom_margin: autoresizeBottomMargin,
         color_map: uberColorMap,
         // Keep content in the Uber font: drop inline font-family from pasted, loaded and saved HTML.

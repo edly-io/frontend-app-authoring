@@ -71,6 +71,7 @@ export const plugins = listKeyStore([
   'quickbars',
   'a11ychecker',
   'powerpaste',
+  'paste',
   'embediframe',
 ]);
 
