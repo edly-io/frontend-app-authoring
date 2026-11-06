@@ -154,10 +154,7 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
 
             {isSuperAdmin && (
               <Form.Group isInvalid={touched.cityId && !!errors.cityId}>
-                <Form.Label>
-                  {intl.formatMessage(messages.cityLabel)}
-                  <span className="text-muted small ml-1">(non-editable after creation)</span>
-                </Form.Label>
+                <Form.Label>{intl.formatMessage(messages.cityLabel)}</Form.Label>
                 <Form.Control
                   as="select"
                   name="cityId"

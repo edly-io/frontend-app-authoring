@@ -26,7 +26,9 @@ import Header from '../header';
 import { LoadingSpinner } from '../generic/Loading';
 import PermissionDeniedAlert from '../generic/PermissionDeniedAlert';
 import { ToastContext } from '../generic/toast-context';
-import { useProgramAccess, useProgramDetail, useUpdateProgram } from './data/apiHooks';
+import {
+  useFbrCities, useProgramAccess, useProgramDetail, useUpdateProgram,
+} from './data/apiHooks';
 import CoursesTab from './courses-tab/CoursesTab';
 import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
@@ -79,6 +81,9 @@ const messages = defineMessages({
   fieldDetailedDescHint: { id: 'programs.detail.field.long-desc.hint', defaultMessage: 'Appears on the program detail page. Provide comprehensive information.' },
   fieldCity: { id: 'programs.detail.field.city', defaultMessage: 'City' },
   fieldCityRequired: { id: 'programs.detail.field.city.required', defaultMessage: 'City is required.' },
+  fieldCityLoading: { id: 'programs.detail.field.city.loading', defaultMessage: 'Loading cities...' },
+  fieldCityError: { id: 'programs.detail.field.city.error', defaultMessage: 'Unable to load cities.' },
+  fieldCityReadOnly: { id: 'programs.detail.field.city.read-only', defaultMessage: 'Only Super Admins can change a program’s city.' },
   fieldAudience: { id: 'programs.detail.field.audience', defaultMessage: 'Target Audience' },
   fieldAudienceRequired: { id: 'programs.detail.field.audience.required', defaultMessage: 'Target audience is required.' },
   fieldAudienceHint: { id: 'programs.detail.field.audience.hint', defaultMessage: 'Choose an existing type or type a new one to create it.' },
@@ -196,7 +201,13 @@ const ProgramDetailPage: React.FC = () => {
     !isAccessLoading && capabilities.canAccessPrograms,
   );
   const { mutateAsync: updateProgram, isPending: isSaving } = useUpdateProgram();
-  const cities = data?.availableCities ?? [];
+  const {
+    data: fetchedCities = [],
+    isLoading: isCitiesLoading,
+    isError: isCitiesError,
+  } = useFbrCities(isSuperAdmin && capabilities.canEditProgram);
+  const detailCities = data?.availableCities ?? [];
+  const cities = fetchedCities.length ? fetchedCities : detailCities;
 
   const program = data?.program;
   const hasStarted = program?.status === 'active'
@@ -271,6 +282,9 @@ const ProgramDetailPage: React.FC = () => {
 
   const statusBadgeVariant = STATUS_BADGE_VARIANT[formik.values.status ?? 'draft'] ?? 'secondary';
   const statusLabel = STATUS_OPTIONS.find((o) => o.value === formik.values.status)?.label ?? 'Draft';
+  const cityName = program?.cityName
+    || detailCities.find(city => String(city.id) === String(formik.values.city))?.name
+    || '';
 
   if (isAccessLoading || isLoading) {
     return (
@@ -499,6 +513,7 @@ const ProgramDetailPage: React.FC = () => {
 
                       {/* City */}
                       <Form.Group
+                        controlId="program-city"
                         isInvalid={formik.touched.city && !!formik.errors.city}
                         className="mb-4"
                       >
@@ -506,23 +521,40 @@ const ProgramDetailPage: React.FC = () => {
                           {intl.formatMessage(messages.fieldCity)}
                           {isSuperAdmin && <RequiredMark />}
                         </Form.Label>
-                        <Form.Control
-                          as="select"
-                          name="city"
-                          aria-required={isSuperAdmin || undefined}
-                          value={formik.values.city ?? ''}
-                          onChange={formik.handleChange}
-                          onBlur={formik.handleBlur}
-                        >
-                          <option value="">— Select city —</option>
-                          {cities.map((c) => (
-                            <option key={c.id} value={String(c.id)}>{c.name}</option>
-                          ))}
-                        </Form.Control>
+                        {isSuperAdmin ? (
+                          <Form.Control
+                            as="select"
+                            name="city"
+                            required
+                            aria-required="true"
+                            value={formik.values.city ?? ''}
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                            disabled={!capabilities.canEditProgram || isCitiesLoading}
+                          >
+                            <option value="">— Select city —</option>
+                            {cities.map((c) => (
+                              <option key={c.id} value={String(c.id)}>{c.name}</option>
+                            ))}
+                          </Form.Control>
+                        ) : (
+                          <Form.Control value={cityName} readOnly />
+                        )}
                         {formik.touched.city && formik.errors.city && (
                           <Form.Control.Feedback type="invalid">
                             {formik.errors.city}
                           </Form.Control.Feedback>
+                        )}
+                        {isSuperAdmin && isCitiesLoading && (
+                          <Form.Text muted>{intl.formatMessage(messages.fieldCityLoading)}</Form.Text>
+                        )}
+                        {isSuperAdmin && isCitiesError && cities.length === 0 && (
+                          <Form.Text className="text-danger">
+                            {intl.formatMessage(messages.fieldCityError)}
+                          </Form.Text>
+                        )}
+                        {!isSuperAdmin && (
+                          <Form.Text muted>{intl.formatMessage(messages.fieldCityReadOnly)}</Form.Text>
                         )}
                       </Form.Group>
 

@@ -1,6 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import {
-  fireEvent, initializeMocks, render, screen,
+  fireEvent, initializeMocks, render, screen, waitFor,
 } from '@src/testUtils';
 import ProgramDetailPage from './ProgramDetailPage';
 import { mockProgram } from './data/api.mock';
@@ -8,6 +8,7 @@ import { getProgramCapabilities } from './data/permissions';
 
 const mockUpdateProgram = jest.fn();
 const mockUseProgramAccess = jest.fn();
+const mockUseFbrCities = jest.fn();
 const mockInitiateFeedbackRequests = jest.fn();
 const mockCreateFeedbackForm = jest.fn();
 
@@ -22,6 +23,12 @@ jest.mock('./instructors-tab/InstructorsTab', () => function MockInstructorsTab(
 });
 jest.mock('./enrollment-tab/EnrollmentTab', () => function MockEnrollmentTab() {
   return <div>Enrollment content</div>;
+});
+jest.mock('./feedback-tab/FeedbackTab', () => function MockFeedbackTab() {
+  return <div>Feedback content</div>;
+});
+jest.mock('./results-tab/ResultsTab', () => function MockResultsTab() {
+  return <div>Results content</div>;
 });
 jest.mock('./certificates-tab/CertificatesTab', () => function MockCertificatesTab() {
   return <div>Certificates content</div>;
@@ -48,8 +55,12 @@ jest.mock('./data/apiHooks', () => ({
       program: mockProgram({
         displayName: 'Permission Test Program',
         status: 'active',
+        targetAudience: 'Officers',
+        city: '1',
+        cityName: 'Karachi',
       }),
       availableAudiences: [],
+      availableCities: [],
     },
     isLoading: false,
     isError: false,
@@ -58,6 +69,7 @@ jest.mock('./data/apiHooks', () => ({
     mutateAsync: mockUpdateProgram,
     isPending: false,
   }),
+  useFbrCities: (...args: unknown[]) => mockUseFbrCities(...args),
   useFeedbackRequests: () => ({
     data: [],
     isLoading: false,
@@ -121,6 +133,20 @@ const renderPage = (url = '/programs/prog-key-1') => render(
 // Some tabs (Feedback) nest their own tabs, so the page-level tab is the first selected one.
 const activeTabName = () => screen.getAllByRole('tab', { selected: true })[0].textContent;
 
+beforeEach(() => {
+  mockUpdateProgram.mockReset();
+  mockUpdateProgram.mockResolvedValue(undefined);
+  mockUseFbrCities.mockReset();
+  mockUseFbrCities.mockReturnValue({
+    data: [
+      { id: 1, name: 'Karachi' },
+      { id: 2, name: 'Lahore' },
+    ],
+    isLoading: false,
+    isError: false,
+  });
+});
+
 describe('<ProgramDetailPage /> permissions', () => {
   beforeEach(() => {
     initializeMocks();
@@ -128,6 +154,7 @@ describe('<ProgramDetailPage /> permissions', () => {
     mockCreateFeedbackForm.mockReset();
     mockUseProgramAccess.mockReturnValue({
       capabilities: getProgramCapabilities(['super_admin']),
+      profile: { roles: ['super_admin'] },
       isLoading: false,
     });
   });
@@ -138,6 +165,23 @@ describe('<ProgramDetailPage /> permissions', () => {
     expect(screen.getByRole('button', { name: 'Save Program' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Program Status' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Certificates' })).toBeInTheDocument();
+  });
+
+  it('lets a Super Admin select and save a different city after creation', async () => {
+    renderPage();
+
+    const citySelect = screen.getByRole('combobox', { name: 'City (required)' });
+    expect(citySelect).toHaveValue('1');
+    expect(screen.getByRole('option', { name: 'Lahore' })).toBeInTheDocument();
+    expect(mockUseFbrCities).toHaveBeenCalledWith(true);
+
+    fireEvent.change(citySelect, { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Program' }));
+
+    await waitFor(() => expect(mockUpdateProgram).toHaveBeenCalledWith(expect.objectContaining({
+      programId: 'prog-key-1',
+      data: expect.objectContaining({ city: '2' }),
+    })));
   });
 
   it('hides the Certificates tab from instructors', () => {
@@ -153,7 +197,10 @@ describe('<ProgramDetailPage /> permissions', () => {
 
   it('lets Data Admins edit metadata without exposing archive status controls', () => {
     mockUseProgramAccess.mockReturnValue({
-      capabilities: getProgramCapabilities(['data_admin']),
+      capabilities: {
+        ...getProgramCapabilities(['data_admin']),
+        canArchiveProgram: false,
+      },
       isLoading: false,
     });
 
@@ -162,6 +209,9 @@ describe('<ProgramDetailPage /> permissions', () => {
     expect(screen.getByRole('button', { name: 'Save Program' })).toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: 'Program Status' })).not.toBeInTheDocument();
     expect(screen.getByDisplayValue('Active')).toHaveAttribute('readonly');
+    expect(screen.getByLabelText('City')).toHaveAttribute('readonly');
+    expect(screen.getByLabelText('City')).toHaveValue('Karachi');
+    expect(mockUseFbrCities).toHaveBeenCalledWith(false);
   });
 
   it('renders instructor access as read-only', () => {
@@ -194,6 +244,7 @@ describe('<ProgramDetailPage /> tab URLs', () => {
     initializeMocks();
     mockUseProgramAccess.mockReturnValue({
       capabilities: getProgramCapabilities(['super_admin']),
+      profile: { roles: ['super_admin'] },
       isLoading: false,
     });
   });

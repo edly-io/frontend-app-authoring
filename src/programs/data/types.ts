@@ -41,6 +41,7 @@ export interface Program {
   run: string;
   targetAudience: string;
   city?: string;
+  cityName?: string;
   shortDescription?: string;
   longDescription?: string;
   status?: string;

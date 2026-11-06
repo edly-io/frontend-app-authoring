@@ -81,6 +81,7 @@ const toProgram = (d: any): Program => ({
   run: d.batch,
   targetAudience: d.target_audience?.name ?? '',
   city: d.city?.id !== undefined ? String(d.city.id) : '',
+  cityName: d.city?.name ?? '',
   shortDescription: d.description ?? '',
   longDescription: d.long_description ?? '',
   status: d.status ?? 'draft',
