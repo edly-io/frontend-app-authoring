@@ -222,3 +222,65 @@ describe('Check React State OLXParser problem', () => {
     });
   });
 });
+
+// Uber: the placeholder setting round-trips through the input's placeholder attribute.
+describe('placeholder attribute', () => {
+  const cases = [
+    [
+      'dropdown',
+      dropdownOLXWithFeedbackAndHintsOLX,
+      dropdownWithFeedbackAndHints,
+      '<optioninput>',
+      '<optioninput placeholder="Choose &amp; pick">',
+    ],
+    [
+      'text input',
+      textInputWithFeedbackAndHintsOLX,
+      textInputWithFeedbackAndHints,
+      '<textline size="20"/>',
+      '<textline size="20" placeholder="Choose &amp; pick"/>',
+    ],
+    [
+      'numeric input',
+      numericInputWithFeedbackAndHintsOLX,
+      numericInputWithFeedbackAndHints,
+      '<formulaequationinput/>',
+      '<formulaequationinput placeholder="Choose &amp; pick"/>',
+    ],
+  ];
+
+  test.each(cases)('%s keeps the placeholder', (name, olx, editorObject, tag, tagWithPlaceholder) => {
+    const problem = new OLXParser(olx.rawOLX.replace(tag, tagWithPlaceholder)).getParsedOLXData();
+    expect(problem.settings.placeholder).toBe('Choose & pick');
+    const built = new ReactStateOLXParser({ problem, editorObject }).buildOLX();
+    expect(built).toContain('placeholder="Choose &amp; pick"');
+  });
+
+  test.each(cases)('%s decodes numeric references instead of encoding them twice', (name, olx, editorObject, tag) => {
+    const withRefs = tag.replace(/(\/?>)$/, ' placeholder="caf&#233; &#x2014;"$1');
+    const problem = new OLXParser(olx.rawOLX.replace(tag, withRefs)).getParsedOLXData();
+    expect(problem.settings.placeholder).toBe('café —');
+    const built = new ReactStateOLXParser({ problem, editorObject }).buildOLX();
+    expect(built).toContain('placeholder="café —"');
+    expect(built).not.toContain('&amp;#');
+  });
+
+  test.each(cases)('%s writes no placeholder when it is blank', (name, olx, editorObject) => {
+    const problem = new OLXParser(olx.rawOLX).getParsedOLXData();
+    expect(problem.settings.placeholder).toBe('');
+    const built = new ReactStateOLXParser({
+      problem: { ...problem, settings: { ...problem.settings, placeholder: '  ' } },
+      editorObject,
+    }).buildOLX();
+    expect(built).not.toContain('placeholder=');
+  });
+
+  test('a single select problem writes no placeholder', () => {
+    const problem = new OLXParser(multipleChoiceWithFeedbackAndHintsOLX.rawOLX).getParsedOLXData();
+    const built = new ReactStateOLXParser({
+      problem: { ...problem, settings: { ...problem.settings, placeholder: 'Left over from a dropdown' } },
+      editorObject: multipleChoiceWithFeedbackAndHints,
+    }).buildOLX();
+    expect(built).not.toContain('placeholder=');
+  });
+});

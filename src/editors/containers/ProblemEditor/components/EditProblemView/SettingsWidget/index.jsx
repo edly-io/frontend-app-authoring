@@ -13,6 +13,7 @@ import ShowAnswerCard from './settingsComponents/ShowAnswerCard';
 import HintsCard from './settingsComponents/HintsCard';
 import ResetCard from './settingsComponents/ResetCard';
 import TimerCard from './settingsComponents/TimerCard';
+import PlaceholderCard from './settingsComponents/PlaceholderCard';
 import TypeCard from './settingsComponents/TypeCard';
 import { ToleranceCard } from './settingsComponents/Tolerance';
 import GroupFeedbackCard from './settingsComponents/GroupFeedback/index';
@@ -21,7 +22,7 @@ import messages from './messages';
 import { showAdvancedSettingsCards } from './hooks';
 
 import './index.scss';
-import { ProblemTypeKeys } from '../../../../../data/constants/problem';
+import { PlaceholderProblemTypes, ProblemTypeKeys } from '../../../../../data/constants/problem';
 import Randomization from './settingsComponents/Randomization';
 
 // This widget should be connected, grab all settings from store, update them as needed.
@@ -89,6 +90,13 @@ const SettingsWidget = ({
             />
           </div>
         )}
+      {/* The markdown editor's save path never writes the placeholder, so the card would be a no-op there. */}
+      {PlaceholderProblemTypes.includes(problemType)
+        && !(isMarkdownEditorEnabled && isMarkdownEditorEnabledForContext) && (
+        <div className="my-3">
+          <PlaceholderCard placeholder={settings.placeholder} updateSettings={updateSettings} />
+        </div>
+      )}
       {!isLibrary && (
         <div className="my-3">
           <ScoringCard
