@@ -10,7 +10,7 @@ import { useIntl } from '@edx/frontend-platform/i18n';
 
 import { useCurriculumManagementStatus } from '@src/curriculum-management/data/apiHooks';
 import curriculumMessages from '@src/curriculum-management/messages';
-import { useUberFlags } from '@src/reporting';
+import { useUberFlags } from '@src/reporting/data/apiHooks';
 
 import messages from './messages';
 import { BaseFilterState, Filter, LibrariesList } from './libraries-tab';

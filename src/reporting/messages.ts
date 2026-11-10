@@ -67,6 +67,16 @@ const messages = defineMessages({
     defaultMessage: 'The report could not be loaded. Please try again.',
     description: 'Error alert',
   },
+  forbidden: {
+    id: 'course-authoring.reporting.forbidden',
+    defaultMessage: 'You need global staff access to view curriculum reports.',
+    description: 'Shown when a course-staff user opens a report that only global staff may read',
+  },
+  clearSearch: {
+    id: 'course-authoring.reporting.search.clear',
+    defaultMessage: 'Clear search',
+    description: 'Screen-reader label for the search field clear button',
+  },
   passed: { id: 'course-authoring.reporting.status.passed', defaultMessage: 'Passed', description: 'Status badge' },
   failed: { id: 'course-authoring.reporting.status.failed', defaultMessage: 'Failed', description: 'Status badge' },
   active: { id: 'course-authoring.reporting.status.active', defaultMessage: 'Active', description: 'Status badge' },

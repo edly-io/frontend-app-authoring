@@ -8,7 +8,7 @@ import { Nav } from '@openedx/paragon';
 import { fetchOnlyStudioHomeData } from '@src/studio-home/data/thunks';
 import { getStudioHomeData } from '@src/studio-home/data/selectors';
 import homeTabMessages from '@src/studio-home/tabs-section/messages';
-import { useUberFlags } from '@src/reporting';
+import { useUberFlags } from '@src/reporting/data/apiHooks';
 import { CURRICULUM_MANAGEMENT_PATH } from './constants';
 import messages from './messages';
 

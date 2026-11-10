@@ -124,6 +124,16 @@ describe('<ReportingPage />', () => {
     expect(await screen.findByText(/could not be loaded/)).toBeInTheDocument();
   });
 
+  it('tells a course-staff user what a 403 means instead of asking them to retry', async () => {
+    // Curriculum reports are global-staff only, so retrying will never succeed here.
+    axiosMock.onGet(getCurriculumAssignmentsUrl(curriculumUuid)).reply(403);
+    render(<ReportingPage />, { path: '/reporting' });
+    await selectCurriculum();
+
+    expect(await screen.findByText(/global staff access/)).toBeInTheDocument();
+    expect(screen.queryByText(/Please try again/)).not.toBeInTheDocument();
+  });
+
   it('searches server-side', async () => {
     axiosMock.onGet(getCourseEnrollmentsUrl(courseId)).reply(200, { count: 1, results: [enrollment(1)] });
     render(<ReportingPage />, { path: '/reporting' });
@@ -171,6 +181,13 @@ describe('<ReportingPage />', () => {
           display_name: 'Three',
           finished_at: null,
           progress_pct: null,
+          status: 'not_started',
+        },
+        {
+          course_id: 'course-v1:Uber+4+2026',
+          display_name: 'Four',
+          finished_at: null,
+          progress_pct: null,
           status: 'locked',
         },
       ])],
@@ -182,9 +199,12 @@ describe('<ReportingPage />', () => {
     expect(await screen.findByText('assigned1')).toBeInTheDocument();
     expect(screen.getByText('Completed', { selector: 'span.reporting-badge' })).toBeInTheDocument();
     expect(screen.getByText('In Progress', { selector: 'span.reporting-badge' })).toBeInTheDocument();
+    expect(screen.getByText('Not Started', { selector: 'span.reporting-badge' })).toBeInTheDocument();
     expect(screen.getByText('Locked', { selector: 'span.reporting-badge' })).toBeInTheDocument();
-    // The in-progress course shows how far along it is; a locked one shows nothing.
+    // Only the in-progress course shows how far along it is; the others show nothing, so a
+    // percentage rendered for every status would fail here.
     expect(screen.getByText('40%')).toBeInTheDocument();
+    expect(screen.queryByText('100%')).not.toBeInTheDocument();
   });
 
   it('shows a course badge as awarded, not awarded or absent', async () => {

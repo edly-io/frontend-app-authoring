@@ -9,6 +9,14 @@ $uber-border: #E2E2E2;
 $uber-positive: #0E8345;
 $uber-negative: #DE1135;
 
+// Badge text is darkened from the brand hues so 12px/600 on a 12% tint clears WCAG AA 4.5:1
+// (the brand colours themselves only reach ~3.9-4.1:1 there). They stay unchanged everywhere
+// the background is plain white.
+$uber-positive-text: #0D7B41;
+$uber-negative-text: #CE1031;
+$uber-accent-text: #2465DE;
+$uber-muted-text: #717171;
+
 .reporting-page {
   font-family: "Uber Move Text", "Uber Move", UberMove, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   color: $uber-content-primary;
@@ -212,17 +220,17 @@ $uber-negative: #DE1135;
     font-weight: 600;
 
     &--positive {
-      color: $uber-positive;
+      color: $uber-positive-text;
       background: rgba($uber-positive, .12);
     }
 
     &--negative {
-      color: $uber-negative;
+      color: $uber-negative-text;
       background: rgba($uber-negative, .12);
     }
 
     &--accent {
-      color: $uber-accent;
+      color: $uber-accent-text;
       background: rgba($uber-accent, .12);
     }
 
@@ -232,7 +240,7 @@ $uber-negative: #DE1135;
     }
 
     &--muted {
-      color: $uber-content-muted;
+      color: $uber-muted-text;
       background: $uber-bg-secondary;
       border: 1px dashed $uber-border;
     }

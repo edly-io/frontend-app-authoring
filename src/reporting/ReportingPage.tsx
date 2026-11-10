@@ -123,6 +123,7 @@ interface ReportTableProps<T> {
   data?: { count: number; results: T[]; };
   isPending: boolean;
   isError: boolean;
+  error?: unknown;
   search: string;
   page: number;
   onSearch: (value: string) => void;
@@ -135,6 +136,7 @@ const ReportTable = <T extends object>({
   data,
   isPending,
   isError,
+  error,
   search,
   page,
   onSearch,
@@ -147,7 +149,14 @@ const ReportTable = <T extends object>({
 
   let body: ReactNode;
   if (isError) {
-    body = <Alert variant="danger">{intl.formatMessage(messages.error)}</Alert>;
+    // Curriculum reports are global-staff only while the course list is not, so a course-staff
+    // user can reach this tab and get a 403 that retrying will never fix.
+    const forbidden = (error as { response?: { status?: number; }; })?.response?.status === 403;
+    body = (
+      <Alert variant="danger">
+        {intl.formatMessage(forbidden ? messages.forbidden : messages.error)}
+      </Alert>
+    );
   } else if (isPending) {
     body = <LoadingSkeleton />;
   } else if (rows.length === 0) {
@@ -195,7 +204,7 @@ const ReportTable = <T extends object>({
           placeholder={intl.formatMessage(messages.searchPlaceholder)}
           screenReaderText={{
             label: intl.formatMessage(messages.searchLabel),
-            clearButton: intl.formatMessage(messages.searchLabel),
+            clearButton: intl.formatMessage(messages.clearSearch),
             submitButton: intl.formatMessage(messages.searchLabel),
           }}
         />
@@ -222,12 +231,16 @@ const CsvDownloadButton = ({ csvUrl }: { csvUrl: string; }) => {
   );
 };
 
-const EnrollmentsTable = ({ courseId }: { courseId: string; }) => {
+interface TableProps {
+  search: string;
+  onSearch: (value: string) => void;
+}
+
+const EnrollmentsTable = ({ courseId, search, onSearch }: TableProps & { courseId: string; }) => {
   const f = useFormatters();
   const { intl } = f;
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const { data, isPending, isError } = useCourseEnrollments(courseId, page, PAGE_SIZE, search);
+  const { data, isPending, isError, error } = useCourseEnrollments(courseId, page, PAGE_SIZE, search);
 
   const columns: Column<CourseEnrollmentRow>[] = [
     {
@@ -296,10 +309,11 @@ const EnrollmentsTable = ({ courseId }: { courseId: string; }) => {
       data={data}
       isPending={isPending}
       isError={isError}
+      error={error}
       search={search}
       page={page}
       onSearch={(value) => {
-        setSearch(value);
+        onSearch(value);
         setPage(1);
       }}
       onPageChange={setPage}
@@ -308,12 +322,11 @@ const EnrollmentsTable = ({ courseId }: { courseId: string; }) => {
   );
 };
 
-const AssignmentsTable = ({ curriculumUuid }: { curriculumUuid: string; }) => {
+const AssignmentsTable = ({ curriculumUuid, search, onSearch }: TableProps & { curriculumUuid: string; }) => {
   const f = useFormatters();
   const { intl } = f;
   const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  const { data, isPending, isError } = useCurriculumAssignments(curriculumUuid, page, PAGE_SIZE, search);
+  const { data, isPending, isError, error } = useCurriculumAssignments(curriculumUuid, page, PAGE_SIZE, search);
 
   const columns: Column<CurriculumAssignmentRow>[] = [
     {
@@ -428,10 +441,11 @@ const AssignmentsTable = ({ curriculumUuid }: { curriculumUuid: string; }) => {
       data={data}
       isPending={isPending}
       isError={isError}
+      error={error}
       search={search}
       page={page}
       onSearch={(value) => {
-        setSearch(value);
+        onSearch(value);
         setPage(1);
       }}
       onPageChange={setPage}
@@ -444,6 +458,8 @@ const CoursesTab = () => {
   const intl = useIntl();
   const { data: courses } = useStaffCourses();
   const [selectedCourse, setSelectedCourse] = useState('');
+  // Lifted out of the table so the CSV link exports the same rows the search is showing.
+  const [search, setSearch] = useState('');
 
   return (
     <>
@@ -454,15 +470,20 @@ const CoursesTab = () => {
             // The placeholder option carries the visible wording; the label is for screen readers.
             aria-label={intl.formatMessage(messages.courseSelectLabel)}
             value={selectedCourse}
-            onChange={(e) => setSelectedCourse(e.target.value)}
+            onChange={(e) => {
+              setSelectedCourse(e.target.value);
+              setSearch('');
+            }}
           >
             <option value="">{intl.formatMessage(messages.courseSelectPlaceholder)}</option>
             {courses?.map(c => <option key={c.courseId} value={c.courseId}>{c.displayName}</option>)}
           </Form.Control>
         </Form.Group>
-        {selectedCourse && <CsvDownloadButton csvUrl={getCourseEnrollmentsCsvUrl(selectedCourse)} />}
+        {selectedCourse && <CsvDownloadButton csvUrl={getCourseEnrollmentsCsvUrl(selectedCourse, search)} />}
       </div>
-      {selectedCourse && <EnrollmentsTable key={selectedCourse} courseId={selectedCourse} />}
+      {selectedCourse && (
+        <EnrollmentsTable key={selectedCourse} courseId={selectedCourse} search={search} onSearch={setSearch} />
+      )}
     </>
   );
 };
@@ -471,6 +492,7 @@ const CurriculumsTab = () => {
   const intl = useIntl();
   const { data: curriculums } = useAllCurriculums();
   const [selectedCurriculum, setSelectedCurriculum] = useState('');
+  const [search, setSearch] = useState('');
 
   if (curriculums && curriculums.length === 0) {
     return (
@@ -488,15 +510,29 @@ const CurriculumsTab = () => {
             as="select"
             aria-label={intl.formatMessage(messages.curriculumSelectLabel)}
             value={selectedCurriculum}
-            onChange={(e) => setSelectedCurriculum(e.target.value)}
+            onChange={(e) => {
+              setSelectedCurriculum(e.target.value);
+              setSearch('');
+            }}
           >
             <option value="">{intl.formatMessage(messages.curriculumSelectPlaceholder)}</option>
             {curriculums?.map(c => <option key={c.uuid} value={c.uuid}>{c.title}</option>)}
           </Form.Control>
         </Form.Group>
-        {selectedCurriculum && <CsvDownloadButton csvUrl={getCurriculumAssignmentsCsvUrl(selectedCurriculum)} />}
+        {selectedCurriculum && (
+          <CsvDownloadButton
+            csvUrl={getCurriculumAssignmentsCsvUrl(selectedCurriculum, search)}
+          />
+        )}
       </div>
-      {selectedCurriculum && <AssignmentsTable key={selectedCurriculum} curriculumUuid={selectedCurriculum} />}
+      {selectedCurriculum && (
+        <AssignmentsTable
+          key={selectedCurriculum}
+          curriculumUuid={selectedCurriculum}
+          search={search}
+          onSearch={setSearch}
+        />
+      )}
     </>
   );
 };
