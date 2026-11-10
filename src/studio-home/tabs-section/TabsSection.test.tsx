@@ -28,6 +28,7 @@ import { getApiBaseUrl, getStudioHomeApiUrl } from '../data/api';
 import { apiUrls as curriculumApiUrls } from '@src/curriculum-management/data/api';
 import curriculumMessages from '@src/curriculum-management/messages';
 import { rawStatus } from '@src/curriculum-management/__mocks__/fixtures';
+import { getUberFlagsUrl } from '@src/reporting/data/api';
 import { fetchStudioHomeData } from '../data/thunks';
 
 const { studioShortName } = studioHomeMock;
@@ -295,6 +296,38 @@ describe('<TabsSection />', () => {
       await renderHome();
       fireEvent.click(await screen.findByText(curriculumTab));
       expect(await screen.findByTestId('location-display')).toHaveTextContent('/curriculum-management');
+    });
+  });
+
+  describe('reporting tab', () => {
+    const reportingTab = tabMessages.reportingTabTitle.defaultMessage;
+
+    const renderHome = async () => {
+      // The curriculum flag shares the tab row, so pin it off to isolate Reporting.
+      axiosMock.onGet(curriculumApiUrls.status()).reply(200, rawStatus(false));
+      render();
+      await axiosMock.onGet(getStudioHomeApiUrl()).reply(200, generateGetStudioHomeDataApiResponse());
+      await executeThunk(fetchStudioHomeData(), store.dispatch);
+      await screen.findByText(tabMessages.coursesTabTitle.defaultMessage);
+    };
+
+    it.each([true, false])('flag %s: shows the tab only when the flag is on', async (enabled) => {
+      axiosMock.onGet(getUberFlagsUrl()).reply(200, { enable_reporting: enabled });
+      await renderHome();
+      await waitFor(() => expect(!!screen.queryByText(reportingTab)).toBe(enabled));
+    });
+
+    it('hides the tab when the flags call fails', async () => {
+      axiosMock.onGet(getUberFlagsUrl()).reply(404);
+      await renderHome();
+      expect(screen.queryByText(reportingTab)).toBeNull();
+    });
+
+    it('clicking it navigates to /reporting', async () => {
+      axiosMock.onGet(getUberFlagsUrl()).reply(200, { enable_reporting: true });
+      await renderHome();
+      fireEvent.click(await screen.findByText(reportingTab));
+      expect(await screen.findByTestId('location-display')).toHaveTextContent('/reporting');
     });
   });
 

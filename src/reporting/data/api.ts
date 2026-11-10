@@ -99,8 +99,9 @@ export async function getCourseEnrollments(
   return camelCaseObject(data);
 }
 
-export const getCourseEnrollmentsCsvUrl = (courseId: string) => (
-  `${getCourseEnrollmentsUrl(courseId)}?format=csv`
+// The backend applies ``search`` to the CSV too, so the export matches the rows on screen.
+export const getCourseEnrollmentsCsvUrl = (courseId: string, search = '') => (
+  `${getCourseEnrollmentsUrl(courseId)}?format=csv${search ? `&search=${encodeURIComponent(search)}` : ''}`
 );
 
 export async function getCourseCurriculums(courseId: string): Promise<CourseCurriculum[]> {
@@ -126,8 +127,8 @@ export async function getAllCurriculums(): Promise<CourseCurriculum[]> {
   return camelCaseObject(data);
 }
 
-export const getCurriculumAssignmentsCsvUrl = (curriculumUuid: string) => (
-  `${getCurriculumAssignmentsUrl(curriculumUuid)}?format=csv`
+export const getCurriculumAssignmentsCsvUrl = (curriculumUuid: string, search = '') => (
+  `${getCurriculumAssignmentsUrl(curriculumUuid)}?format=csv${search ? `&search=${encodeURIComponent(search)}` : ''}`
 );
 
 export async function getCurriculumAssignments(
