@@ -26,22 +26,36 @@ const uberColorMap = [
 
 const mapToolbars = toolbars => toolbars.map(toolbar => toolbar.join(' ')).join(' | ');
 
-const PASTE_KEPT_ATTRS = ['href', 'target', 'src', 'alt', 'title', 'width', 'height', 'colspan', 'rowspan'];
+const PASTE_KEPT_ATTRS = ['href', 'target', 'rel', 'src', 'alt', 'title', 'width', 'height', 'colspan', 'rowspan'];
+// Content classes this editor styles or relies on: headings (tinyMCEStyles), code samples, page embeds.
+const PASTE_KEPT_CLASS = /^(hd(-\d)?|language-.+|tiny-pageembed)$/;
 
-// Pasted HTML (Figma, Word, Google Docs, web pages) keeps its structure but loses the source's
-// styling: inline styles, ids, data-* blobs, foreign classes and wrapper spans. Uber author classes stay.
+// HTML pasted from outside the editor (Figma, Word, Google Docs, web pages) keeps its elements but
+// loses the source's attributes: inline styles, ids, data-* blobs and foreign classes. Spans left
+// without attributes are unwrapped, keeping their text. Elements themselves are not filtered.
 export const cleanPastedHtml = (root) => {
   root.querySelectorAll('*').forEach((el) => {
-    const uberClasses = [...el.classList].filter(name => name.startsWith('uber-'));
+    const keptClasses = [...el.classList].filter(name => PASTE_KEPT_CLASS.test(name));
     [...el.attributes].forEach(({ name }) => {
       if (!PASTE_KEPT_ATTRS.includes(name)) { el.removeAttribute(name); }
     });
-    if (uberClasses.length) { el.className = uberClasses.join(' '); }
+    // setAttribute, not className: className is read-only on SVG elements.
+    if (keptClasses.length) { el.setAttribute('class', keptClasses.join(' ')); }
   });
-  root.querySelectorAll('span').forEach(span => span.replaceWith(...span.childNodes));
+  root.querySelectorAll('span:not([class])').forEach(span => span.replaceWith(...span.childNodes));
 };
 
-const pastePostprocess = (_editor, args) => cleanPastedHtml(args.node);
+// In-editor copies (args.internal) are the author's own formatting, so they're left alone.
+// A cleanup failure must not drop the paste, so it falls back to the uncleaned HTML.
+export const pastePostprocess = (_editor, args) => {
+  if (args.internal) { return; }
+  try {
+    cleanPastedHtml(args.node);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('Pasted HTML cleanup failed', e);
+  }
+};
 
 const pluginConfig = ({ placeholder, editorType, enableImageUpload }) => {
   const image = enableImageUpload ? plugins.image : '';
