@@ -73,8 +73,11 @@ const useFormatters = () => {
   );
   // Three states, not two: a course or slot with no badge linked has nothing to earn, so showing
   // it as "Not Awarded" would read as the learner having failed at something that does not exist.
-  const badge = (configured: boolean, awarded: boolean) => {
-    if (!configured) {
+  const badge = (configured: boolean | undefined, awarded: boolean) => {
+    // Only an explicit `false` means "nothing to earn". A backend that predates
+    // `badge_configured` sends nothing, and treating that as "no badge" would turn every
+    // earned badge into a grey "No Badge" — fall back to the two-state read instead.
+    if (configured === false) {
       return (
         <span className="reporting-badge reporting-badge--muted">
           {intl.formatMessage(messages.badgeNone)}

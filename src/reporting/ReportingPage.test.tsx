@@ -226,6 +226,18 @@ describe('<ReportingPage />', () => {
     expect(screen.getByText('No Badge', { selector: 'span.reporting-badge' })).toBeInTheDocument();
   });
 
+  it('falls back to the two-state read when the backend sends no badge_configured', async () => {
+    // A server that predates the field must not turn an earned badge into "No Badge".
+    const { badge_configured: _omitted, ...withoutField } = enrollment(1);
+    axiosMock.onGet(getCourseEnrollmentsUrl(courseId)).reply(200, { count: 1, results: [withoutField] });
+    render(<ReportingPage />, { path: '/reporting' });
+    await selectCourse();
+
+    expect(await screen.findByText('learner1')).toBeInTheDocument();
+    expect(screen.getByText('Awarded', { selector: 'span.reporting-badge' })).toBeInTheDocument();
+    expect(screen.queryByText('No Badge')).not.toBeInTheDocument();
+  });
+
   it('shows curriculum slot badges, and marks an empty slot as having no badge', async () => {
     const row = assignment([]);
     axiosMock.onGet(getCurriculumAssignmentsUrl(curriculumUuid)).reply(200, {
