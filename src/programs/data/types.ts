@@ -41,6 +41,10 @@ export interface Program {
   discountPercentage?: string | null;
   /** ISO 4217 code of the regular and sale prices. */
   currency?: string;
+  /** VAT rate in percent as a 2-decimal string (e.g. "15.00"), used for the price preview only. */
+  vatRate?: string | null;
+  /** Tax name from the API (e.g. "VAT"), "" when none. */
+  vatLabel?: string;
   /** False when the program is paid and the user is not a superadmin: only they enroll learners into it. */
   canEnrollLearners?: boolean;
 }

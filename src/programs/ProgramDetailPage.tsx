@@ -32,7 +32,9 @@ import CoursesTab from './courses-tab/CoursesTab';
 import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
 import RichTextEditor from '../generic/RichTextEditor';
-import { getDiscountPercent, isPriceValid, isSalePriceValid } from '../schedule-and-details/pricing-section/validation';
+import {
+  getDiscountPercent, getPriceWithVat, isPriceValid, isSalePriceValid,
+} from '../schedule-and-details/pricing-section/validation';
 import './index.scss';
 
 const messages = defineMessages({
@@ -76,10 +78,12 @@ const messages = defineMessages({
   pricingPaidDescription: { id: 'programs.detail.field.pricing.paid.description', defaultMessage: 'Sold at the price set below.' },
   pricingSubscription: { id: 'programs.detail.field.pricing.subscription', defaultMessage: 'Part of Subscription' },
   pricingSubscriptionDescription: { id: 'programs.detail.field.pricing.subscription.description', defaultMessage: 'Learners reach this program through the {siteName} subscription. It has no price of its own.' },
-  fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price ({currency})' },
+  fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price before VAT ({currency})' },
   fieldPriceHint: { id: 'programs.detail.field.price.hint', defaultMessage: 'Regular price shown on the marketing site.' },
-  fieldSalePrice: { id: 'programs.detail.field.sale-price', defaultMessage: 'Discounted Price / Sale Price ({currency})' },
+  fieldSalePrice: { id: 'programs.detail.field.sale-price', defaultMessage: 'Discounted Price / Sale Price before VAT ({currency})' },
   fieldDiscountPercentage: { id: 'programs.detail.field.discount-percentage', defaultMessage: '{percentage}% off' },
+  fieldPriceWithVat: { id: 'programs.detail.field.price-with-vat', defaultMessage: 'Learner pays {amount} {currency} including {rate}% {label}' },
+  fieldVatLabelFallback: { id: 'programs.detail.field.vat-label-fallback', defaultMessage: 'VAT' },
   fieldSalePriceHint: { id: 'programs.detail.field.sale-price.hint', defaultMessage: 'Optional. Leave empty when the program is not on sale.' },
   pricingCoursesNote: { id: 'programs.detail.field.pricing.courses-note', defaultMessage: 'Courses inside a paid program are not priced separately. The program is the sellable unit.' },
   errorPriceNotPositive: { id: 'programs.detail.field.price.error-not-positive', defaultMessage: 'Price must be greater than 0.' },
@@ -97,6 +101,22 @@ const messages = defineMessages({
   imageUploadHint: { id: 'programs.detail.image.hint', defaultMessage: 'Recommended: 1280×720px · JPG or PNG' },
   imageChange: { id: 'programs.detail.image.change', defaultMessage: 'Change Image' },
 });
+
+/**
+ * The form keeps dates as YYYY-MM-DD strings. They are read and written as local calendar days:
+ * `new Date('2027-10-01')` is UTC midnight and `toISOString()` converts back to UTC, so in a time zone
+ * ahead of UTC (Saudi Arabia, Pakistan) the picked day was saved as the day before.
+ */
+const fromDateString = (value: string): Date => {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const toDateString = (date: Date): string => {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+};
 
 const STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft' },
@@ -252,6 +272,7 @@ const ProgramDetailPage: React.FC = () => {
   };
 
   const discountPercent = getDiscountPercent(formik.values.regularPrice, formik.values.salePrice);
+  const priceWithVat = getPriceWithVat(formik.values.regularPrice, formik.values.salePrice, program?.vatRate);
   const statusBadgeVariant = STATUS_BADGE_VARIANT[formik.values.status ?? 'draft'] ?? 'secondary';
   const statusLabel = STATUS_OPTIONS.find((o) => o.value === formik.values.status)?.label ?? 'Draft';
 
@@ -468,8 +489,8 @@ const ProgramDetailPage: React.FC = () => {
                           <Form.Group>
                             <Form.Label>{intl.formatMessage(messages.fieldStartDate)}</Form.Label>
                             <DatePicker
-                              selected={formik.values.startDate ? new Date(formik.values.startDate) : null}
-                              onChange={(date) => formik.setFieldValue('startDate', date ? date.toISOString().split('T')[0] : '')}
+                              selected={formik.values.startDate ? fromDateString(formik.values.startDate) : null}
+                              onChange={(date) => formik.setFieldValue('startDate', date ? toDateString(date) : '')}
                               customInput={<DateInput placeholder="Select start date" />}
                               dateFormat="MMMM d, yyyy"
                               popperPlacement="bottom-start"
@@ -484,12 +505,12 @@ const ProgramDetailPage: React.FC = () => {
                           <Form.Group>
                             <Form.Label>{intl.formatMessage(messages.fieldEndDate)}</Form.Label>
                             <DatePicker
-                              selected={formik.values.endDate ? new Date(formik.values.endDate) : null}
-                              onChange={(date) => formik.setFieldValue('endDate', date ? date.toISOString().split('T')[0] : '')}
+                              selected={formik.values.endDate ? fromDateString(formik.values.endDate) : null}
+                              onChange={(date) => formik.setFieldValue('endDate', date ? toDateString(date) : '')}
                               customInput={<DateInput placeholder="Select end date" />}
                               dateFormat="MMMM d, yyyy"
                               isClearable
-                              minDate={formik.values.startDate ? new Date(formik.values.startDate) : undefined}
+                              minDate={formik.values.startDate ? fromDateString(formik.values.startDate) : undefined}
                               popperPlacement="bottom-start"
                               showMonthDropdown
                               showYearDropdown
@@ -626,6 +647,17 @@ const ProgramDetailPage: React.FC = () => {
                               <Form.Text muted>
                                 {intl.formatMessage(messages.fieldDiscountPercentage, { percentage: discountPercent })}
                               </Form.Text>
+                            )}
+                            {priceWithVat && (
+                              <p className="font-weight-bold mt-2 mb-0" data-testid="price-with-vat">
+                                {intl.formatMessage(messages.fieldPriceWithVat, {
+                                  amount: priceWithVat.amount,
+                                  currency: program?.currency ?? 'SAR',
+                                  rate: priceWithVat.rate,
+                                  label: program?.vatLabel?.trim()
+                                    || intl.formatMessage(messages.fieldVatLabelFallback),
+                                })}
+                              </p>
                             )}
                           </Form.Group>
 
