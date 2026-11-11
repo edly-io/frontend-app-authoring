@@ -1,4 +1,5 @@
 import { mergeConfig } from '@edx/frontend-platform';
+import { IntlProvider } from '@edx/frontend-platform/i18n';
 import {
   fireEvent, initializeMocks, render, screen, waitFor,
 } from '@src/testUtils';
@@ -24,7 +25,16 @@ jest.mock('./enrollment-tab/EnrollmentTab', () => jest.fn(() => null));
 
 const programId = 'program-v1:ArbOrg+MASTERS+PAID1';
 
-const renderPage = (overrides: Partial<Program> = {}) => {
+const arabic = {
+  'programs.detail.status.draft': 'مسودة',
+  'programs.detail.status.active': 'نشط',
+  'programs.detail.status.archived': 'مؤرشف',
+  'programs.detail.badge.featured': 'مميز',
+  'programs.detail.start-date.placeholder': 'اختر تاريخ البدء',
+  'programs.detail.end-date.placeholder': 'اختر تاريخ الانتهاء',
+};
+
+const renderPage = (overrides: Partial<Program> = {}, locale = 'en') => {
   mockUseProgramDetail.mockReturnValue({
     data: {
       program: mockProgram({
@@ -34,7 +44,11 @@ const renderPage = (overrides: Partial<Program> = {}) => {
     isLoading: false,
     isError: false,
   });
-  return render(<ProgramDetailPage />, { path: '/programs/:programId', params: { programId } });
+  return render(<ProgramDetailPage />, {
+    path: '/programs/:programId',
+    params: { programId },
+    extraWrapper: ({ children }) => <IntlProvider locale={locale} messages={locale === 'ar' ? arabic : {}}>{children}</IntlProvider>,
+  });
 };
 
 const saveProgram = () => fireEvent.click(screen.getByRole('button', { name: 'Save Program' }));
@@ -46,6 +60,21 @@ describe('<ProgramDetailPage /> pricing', () => {
   beforeEach(() => {
     mockShowToast = initializeMocks().mockShowToast as jest.Mock;
     mockUpdateProgram.mockResolvedValue(undefined);
+  });
+
+  it('localizes program labels owned by the app in Arabic', () => {
+    renderPage({
+      status: 'active',
+      programType: 'MASTERS',
+      isFeatured: true,
+      pricingCategory: 'is_paid',
+      regularPrice: '30.00',
+      vatRate: '15.00',
+      startDate: '2026-11-01',
+    }, 'ar');
+    expect(screen.getByRole('option', { name: 'نشط' })).toBeInTheDocument();
+    expect(screen.getAllByText('مميز')).toHaveLength(2);
+    expect(screen.getByPlaceholderText('اختر تاريخ الانتهاء')).toBeInTheDocument();
   });
 
   it('keeps pricing editable', () => {
