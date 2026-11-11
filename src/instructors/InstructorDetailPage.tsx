@@ -41,6 +41,7 @@ const messages = defineMessages({
   sectionImageSubtitle: { id: 'instructors.detail.section.image.sub', defaultMessage: 'Upload a photo to represent this instructor in listings' },
   sectionSummary: { id: 'instructors.detail.section.summary', defaultMessage: 'Instructor Summary' },
   unsavedBannerMessage: { id: 'instructors.detail.unsaved.message', defaultMessage: 'You have unsaved changes.' },
+  unsavedBannerHint: { id: 'instructors.detail.unsaved.hint', defaultMessage: 'Save or discard before leaving.' },
   unsavedBannerDiscard: { id: 'instructors.detail.unsaved.discard', defaultMessage: 'Discard changes' },
   unsavedBannerSave: { id: 'instructors.detail.unsaved.save', defaultMessage: 'Save now' },
   fieldName: { id: 'instructors.detail.field.name', defaultMessage: 'Instructor Name' },
@@ -179,7 +180,7 @@ const InstructorDetailPage: React.FC = () => {
             <div className="d-flex justify-content-between align-items-center">
               <span>
                 <strong>{intl.formatMessage(messages.unsavedBannerMessage)}</strong>
-                {' '}Save or discard before leaving.
+                {' '}{intl.formatMessage(messages.unsavedBannerHint)}
               </span>
               <Stack direction="horizontal" gap={2}>
                 <Button
