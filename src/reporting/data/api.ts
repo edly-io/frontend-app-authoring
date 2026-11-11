@@ -26,16 +26,6 @@ export interface CourseCurriculum {
   title: string;
 }
 
-export type CourseProgressStatus = 'completed' | 'in_progress' | 'not_started' | 'locked';
-
-export interface CourseProgress {
-  courseId: string;
-  displayName: string;
-  finishedAt: string | null;
-  progressPct: number | null;
-  status: CourseProgressStatus;
-}
-
 export interface CurriculumAssignmentRow {
   username: string;
   email: string;
@@ -44,7 +34,6 @@ export interface CurriculumAssignmentRow {
   active: boolean;
   coursesCompleted: number | null;
   coursesTotal: number | null;
-  courseProgress: CourseProgress[];
   completeAt: string | null;
   completeBadgeAwardedAt: string | null;
   completeBadgeConfigured?: boolean;

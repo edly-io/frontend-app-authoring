@@ -45,7 +45,7 @@ const enrollment = (n: number, badge = { badge_awarded: true, badge_configured: 
   ...badge,
 });
 
-const assignment = (courseProgress) => ({
+const assignment = () => ({
   username: 'assigned1',
   email: 'assigned1@example.com',
   name: 'Assigned One',
@@ -53,7 +53,6 @@ const assignment = (courseProgress) => ({
   active: true,
   courses_completed: 1,
   courses_total: 3,
-  course_progress: courseProgress,
   complete_at: null,
   complete_badge_awarded_at: null,
   complete_badge_configured: false,
@@ -158,55 +157,6 @@ describe('<ReportingPage />', () => {
     });
   });
 
-  it('distinguishes completed, in-progress, not-started and locked courses', async () => {
-    axiosMock.onGet(getCurriculumAssignmentsUrl(curriculumUuid)).reply(200, {
-      count: 1,
-      results: [assignment([
-        {
-          course_id: 'course-v1:Uber+1+2026',
-          display_name: 'One',
-          finished_at: '2026-10-02T00:00:00Z',
-          progress_pct: 100,
-          status: 'completed',
-        },
-        {
-          course_id: 'course-v1:Uber+2+2026',
-          display_name: 'Two',
-          finished_at: null,
-          progress_pct: 40,
-          status: 'in_progress',
-        },
-        {
-          course_id: 'course-v1:Uber+3+2026',
-          display_name: 'Three',
-          finished_at: null,
-          progress_pct: null,
-          status: 'not_started',
-        },
-        {
-          course_id: 'course-v1:Uber+4+2026',
-          display_name: 'Four',
-          finished_at: null,
-          progress_pct: null,
-          status: 'locked',
-        },
-      ])],
-    });
-    render(<ReportingPage />, { path: '/reporting' });
-
-    await selectCurriculum();
-
-    expect(await screen.findByText('assigned1')).toBeInTheDocument();
-    expect(screen.getByText('Completed', { selector: 'span.reporting-badge' })).toBeInTheDocument();
-    expect(screen.getByText('In Progress', { selector: 'span.reporting-badge' })).toBeInTheDocument();
-    expect(screen.getByText('Not Started', { selector: 'span.reporting-badge' })).toBeInTheDocument();
-    expect(screen.getByText('Locked', { selector: 'span.reporting-badge' })).toBeInTheDocument();
-    // Only the in-progress course shows how far along it is; the others show nothing, so a
-    // percentage rendered for every status would fail here.
-    expect(screen.getByText('40%')).toBeInTheDocument();
-    expect(screen.queryByText('100%')).not.toBeInTheDocument();
-  });
-
   it('shows a course badge as awarded, not awarded or absent', async () => {
     axiosMock.onGet(getCourseEnrollmentsUrl(courseId)).reply(200, {
       count: 3,
@@ -239,7 +189,7 @@ describe('<ReportingPage />', () => {
   });
 
   it('shows curriculum slot badges, and marks an empty slot as having no badge', async () => {
-    const row = assignment([]);
+    const row = assignment();
     axiosMock.onGet(getCurriculumAssignmentsUrl(curriculumUuid)).reply(200, {
       count: 1,
       results: [{

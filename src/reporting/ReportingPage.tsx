@@ -1,6 +1,5 @@
 import { ReactNode, useMemo, useState } from 'react';
 import { useIntl } from '@edx/frontend-platform/i18n';
-import type { MessageDescriptor } from 'react-intl';
 import { StudioFooterSlot } from '@edx/frontend-component-footer';
 import {
   Alert,
@@ -27,25 +26,11 @@ import {
   useStaffCourses,
 } from './data/apiHooks';
 import { getCourseEnrollmentsCsvUrl, getCurriculumAssignmentsCsvUrl } from './data/api';
-import type { CourseEnrollmentRow, CourseProgressStatus, CurriculumAssignmentRow } from './data/api';
+import type { CourseEnrollmentRow, CurriculumAssignmentRow } from './data/api';
 import messages from './messages';
 import './ReportingPage.scss';
 
 const PAGE_SIZE = 10;
-
-const COURSE_STATUS_MESSAGE: Record<CourseProgressStatus, MessageDescriptor> = {
-  completed: messages.courseCompleted,
-  in_progress: messages.courseInProgress,
-  not_started: messages.courseNotStarted,
-  locked: messages.courseLocked,
-};
-
-const COURSE_STATUS_VARIANT: Record<CourseProgressStatus, string> = {
-  completed: 'positive',
-  in_progress: 'accent',
-  not_started: 'neutral',
-  locked: 'muted',
-};
 
 type Column<T> = {
   Header: string;
@@ -370,25 +355,6 @@ const AssignmentsTable = ({ curriculumUuid, search, onSearch }: TableProps & { c
           completed: f.number(row.original.coursesCompleted),
           total: f.number(row.original.coursesTotal),
         }),
-    },
-    {
-      Header: intl.formatMessage(messages.colCourseProgress),
-      accessor: 'courseProgress',
-      Cell: ({ row }) => (
-        <ul className="reporting-stacked">
-          {row.original.courseProgress.map((cp) => (
-            <li key={cp.courseId}>
-              <span className={`reporting-badge reporting-badge--${COURSE_STATUS_VARIANT[cp.status]}`}>
-                {intl.formatMessage(COURSE_STATUS_MESSAGE[cp.status])}
-              </span>
-              <span className="reporting-stacked__label">{cp.displayName}</span>
-              {cp.status === 'in_progress' && (
-                <span className="reporting-stacked__meta">{f.percent(cp.progressPct)}</span>
-              )}
-            </li>
-          ))}
-        </ul>
-      ),
     },
     {
       Header: intl.formatMessage(messages.colComplete),
