@@ -548,12 +548,15 @@ function addNewCourseItemQuery(
   };
 }
 
-export function addNewSectionQuery(parentLocator: string) {
+export function addNewSectionQuery(
+  parentLocator: string,
+  displayName: string = COURSE_BLOCK_NAMES.chapter.name,
+) {
   return async (dispatch) => {
     dispatch(addNewCourseItemQuery(
       parentLocator,
       COURSE_BLOCK_NAMES.chapter.id,
-      COURSE_BLOCK_NAMES.chapter.name,
+      displayName,
       async (result) => {
         const data = await getCourseItem(result.locator);
         // Page should scroll to newly created section.
@@ -564,12 +567,15 @@ export function addNewSectionQuery(parentLocator: string) {
   };
 }
 
-export function addNewSubsectionQuery(parentLocator: string) {
+export function addNewSubsectionQuery(
+  parentLocator: string,
+  displayName: string = COURSE_BLOCK_NAMES.sequential.name,
+) {
   return async (dispatch) => {
     dispatch(addNewCourseItemQuery(
       parentLocator,
       COURSE_BLOCK_NAMES.sequential.id,
-      COURSE_BLOCK_NAMES.sequential.name,
+      displayName,
       async (result) => {
         const data = await getCourseItem(result.locator);
         // Page should scroll to newly created subsection.
@@ -580,12 +586,16 @@ export function addNewSubsectionQuery(parentLocator: string) {
   };
 }
 
-export function addNewUnitQuery(parentLocator: string, callback: { (locator: any): void }) {
+export function addNewUnitQuery(
+  parentLocator: string,
+  callback: { (locator: any): void },
+  displayName: string = COURSE_BLOCK_NAMES.vertical.name,
+) {
   return async (dispatch) => {
     dispatch(addNewCourseItemQuery(
       parentLocator,
       COURSE_BLOCK_NAMES.vertical.id,
-      COURSE_BLOCK_NAMES.vertical.name,
+      displayName,
       async (result) => callback(result.locator),
     ));
   };
