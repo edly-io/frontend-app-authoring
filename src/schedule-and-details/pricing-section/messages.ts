@@ -41,6 +41,14 @@ const messages = defineMessages({
     id: 'course-authoring.schedule-section.pricing.category-subscription.description',
     defaultMessage: 'Learners reach this course through the Rwaq subscription. It has no price of its own.',
   },
+  categoryEnrollmentCode: {
+    id: 'course-authoring.schedule-section.pricing.category-enrollment-code',
+    defaultMessage: 'Enrollment code',
+  },
+  categoryEnrollmentCodeDescription: {
+    id: 'course-authoring.schedule-section.pricing.category-enrollment-code.description',
+    defaultMessage: 'Learners enroll at no cost, but only with an enrollment code. It has no price of its own.',
+  },
   noTypeHint: {
     id: 'course-authoring.schedule-section.pricing.no-type-hint',
     defaultMessage: 'This course has no type yet. Choose one and save.',

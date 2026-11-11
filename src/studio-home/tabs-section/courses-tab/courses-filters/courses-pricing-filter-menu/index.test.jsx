@@ -37,6 +37,7 @@ describe('CoursesPricingFilterMenu', () => {
       ['free-courses', 'Free'],
       ['paid-courses', 'Paid'],
       ['program-only-courses', 'Program-only'],
+      ['enrollment-code-courses', 'Enrollment code'],
     ].forEach(([id, name]) => {
       expect(screen.getByTestId(`item-menu-${id}`)).toHaveTextContent(name);
     });
@@ -47,6 +48,7 @@ describe('CoursesPricingFilterMenu', () => {
     ['free-courses', 'freeCourses'],
     ['paid-courses', 'paidCourses'],
     ['program-only-courses', 'programOnlyCourses'],
+    ['enrollment-code-courses', 'enrollmentCodeCourses'],
   ])('passes the %s item value to onItemMenuSelected', (id, value) => {
     renderComponent();
     fireEvent.click(screen.getByTestId('dropdown-toggle-course-pricing-menu'));

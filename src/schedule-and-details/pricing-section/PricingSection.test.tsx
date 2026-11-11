@@ -156,6 +156,22 @@ describe('<PricingSection />', () => {
     });
   });
 
+  it('offers the Enrollment code type, hides the price fields and saves it with no price', async () => {
+    await renderSection({ pricing_category: 'is_paid', regular_price: '100.00' });
+    expect(screen.getByRole('radio', { name: 'Enrollment code' })).toBeInTheDocument();
+    expect(screen.getByText(
+      'Learners enroll at no cost, but only with an enrollment code. It has no price of its own.',
+    )).toBeInTheDocument();
+    axiosMock.onPut(pricingUrl()).reply(200, pricingResponse({ pricing_category: 'is_enrollment_code' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Enrollment code' }));
+    expect(screen.queryByLabelText('Price before VAT (SAR)')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Save course type' }));
+    await waitFor(() => expect(axiosMock.history.put).toHaveLength(1));
+    expect(JSON.parse(axiosMock.history.put[0].data)).toEqual({
+      pricing_category: 'is_enrollment_code', regular_price: null, sale_price: null,
+    });
+  });
+
   it('saves Paid with the price and sale price', async () => {
     await renderSection();
     axiosMock.onPut(pricingUrl()).reply(200, pricingResponse({

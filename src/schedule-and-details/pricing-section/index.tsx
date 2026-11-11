@@ -214,6 +214,13 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
           >
             {intl.formatMessage(messages.categorySubscription)}
           </Form.Radio>
+          <Form.Radio
+            value="is_enrollment_code"
+            description={intl.formatMessage(messages.categoryEnrollmentCodeDescription)}
+            disabled={isSaving || isTypeLocked}
+          >
+            {intl.formatMessage(messages.categoryEnrollmentCode)}
+          </Form.Radio>
         </Form.RadioSet>
         {fieldErrors.pricing_category && (
           <Form.Control.Feedback type="invalid">{fieldErrors.pricing_category}</Form.Control.Feedback>
