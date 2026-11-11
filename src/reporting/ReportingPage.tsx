@@ -23,6 +23,7 @@ import {
   useAllCurriculums,
   useCourseEnrollments,
   useCurriculumAssignments,
+  usePlatformStats,
   useStaffCourses,
 } from './data/apiHooks';
 import { getCourseEnrollmentsCsvUrl, getCurriculumAssignmentsCsvUrl } from './data/api';
@@ -423,6 +424,162 @@ const AssignmentsTable = ({ curriculumUuid, search, onSearch }: TableProps & { c
   );
 };
 
+const PIE_SIZE = 200;
+const PIE_RADIUS = 90;
+const CENTRE = PIE_SIZE / 2;
+
+/**
+ * The SVG path of a wedge covering ``fraction`` of the circle, from twelve o'clock clockwise.
+ *
+ * Only called for a fraction strictly between 0 and 1: at either end the wedge degenerates into a
+ * point or a full turn that draws nothing, so those are rendered as a plain circle instead.
+ */
+const wedgePath = (fraction: number) => {
+  const angle = 2 * Math.PI * fraction;
+  const endX = CENTRE + PIE_RADIUS * Math.sin(angle);
+  const endY = CENTRE - PIE_RADIUS * Math.cos(angle);
+  const largeArc = fraction > 0.5 ? 1 : 0;
+  return `M ${CENTRE} ${CENTRE} L ${CENTRE} ${CENTRE - PIE_RADIUS} `
+    + `A ${PIE_RADIUS} ${PIE_RADIUS} 0 ${largeArc} 1 ${endX} ${endY} Z`;
+};
+
+const RatePie = ({ ratePct, exposed, completers }: {
+  ratePct: number;
+  exposed: number;
+  completers: number;
+}) => {
+  const intl = useIntl();
+  const fraction = Math.min(1, Math.max(0, ratePct / 100));
+  const label = intl.formatMessage(messages.voluntaryChartLabel, {
+    rate: `${intl.formatNumber(ratePct, { maximumFractionDigits: 1 })}%`,
+    exposed: intl.formatNumber(exposed),
+    completers: intl.formatNumber(completers),
+  });
+
+  return (
+    <svg
+      className="reporting-pie"
+      viewBox={`0 0 ${PIE_SIZE} ${PIE_SIZE}`}
+      role="img"
+      aria-label={label}
+    >
+      <circle cx={CENTRE} cy={CENTRE} r={PIE_RADIUS} className="reporting-pie__rest" />
+      {fraction >= 1 && <circle cx={CENTRE} cy={CENTRE} r={PIE_RADIUS} className="reporting-pie__share" />}
+      {fraction > 0 && fraction < 1 && <path d={wedgePath(fraction)} className="reporting-pie__share" />}
+    </svg>
+  );
+};
+
+/** ``YYYY-MM-DD`` in UTC, the form the date inputs and the API both use. */
+const isoDay = (date: Date) => date.toISOString().slice(0, 10);
+
+const DEFAULT_WINDOW_DAYS = 30;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const OverviewTab = () => {
+  const intl = useIntl();
+  const [range, setRange] = useState(() => {
+    const today = new Date();
+    return {
+      start: isoDay(new Date(today.getTime() - DEFAULT_WINDOW_DAYS * MS_PER_DAY)),
+      end: isoDay(today),
+    };
+  });
+  const backwards = range.start > range.end;
+  // The backend would reject a backwards range anyway; not asking spares a round trip and lets the
+  // message point at the inputs that caused it.
+  const { data, isPending, isError, error } = usePlatformStats(
+    backwards ? '' : range.start,
+    backwards ? '' : range.end,
+  );
+
+  const rate = data?.voluntaryLearning;
+
+  let body: ReactNode;
+  if (backwards) {
+    body = <Alert variant="danger">{intl.formatMessage(messages.rangeInvalid)}</Alert>;
+  } else if (isError) {
+    const forbidden = (error as { response?: { status?: number; }; })?.response?.status === 403;
+    body = (
+      <Alert variant="danger">
+        {intl.formatMessage(forbidden ? messages.forbidden : messages.error)}
+      </Alert>
+    );
+  } else if (isPending || !rate) {
+    body = <LoadingSkeleton />;
+  } else if (rate.ratePct === null) {
+    body = <div className="reporting-empty">{intl.formatMessage(messages.voluntaryNoExposure)}</div>;
+  } else {
+    const rest = rate.exposedLearners - rate.voluntaryCompleters;
+    body = (
+      <div className="reporting-chart">
+        <RatePie
+          ratePct={rate.ratePct}
+          exposed={rate.exposedLearners}
+          completers={rate.voluntaryCompleters}
+        />
+        <div className="reporting-chart__detail">
+          <p className="reporting-chart__rate">
+            {intl.formatNumber(rate.ratePct, { maximumFractionDigits: 1 })}%
+          </p>
+          <ul className="reporting-legend">
+            <li>
+              <span className="reporting-legend__swatch reporting-legend__swatch--share" />
+              {intl.formatMessage(messages.legendCompleted)}
+              <span className="reporting-legend__value">{intl.formatNumber(rate.voluntaryCompleters)}</span>
+            </li>
+            <li>
+              <span className="reporting-legend__swatch reporting-legend__swatch--rest" />
+              {intl.formatMessage(messages.legendRest)}
+              <span className="reporting-legend__value">{intl.formatNumber(rest)}</span>
+            </li>
+          </ul>
+          <dl className="reporting-stats">
+            <div>
+              <dt>{intl.formatMessage(messages.statCompleters)}</dt>
+              <dd>{intl.formatNumber(rate.voluntaryCompleters)}</dd>
+            </div>
+            <div>
+              <dt>{intl.formatMessage(messages.statExposed)}</dt>
+              <dd>{intl.formatNumber(rate.exposedLearners)}</dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="reporting-selector-row">
+        <Form.Group controlId="reporting-range-start" className="mb-0">
+          <Form.Label>{intl.formatMessage(messages.rangeStart)}</Form.Label>
+          <Form.Control
+            type="date"
+            value={range.start}
+            max={range.end}
+            onChange={(e) => setRange(r => ({ ...r, start: e.target.value }))}
+          />
+        </Form.Group>
+        <Form.Group controlId="reporting-range-end" className="mb-0">
+          <Form.Label>{intl.formatMessage(messages.rangeEnd)}</Form.Label>
+          <Form.Control
+            type="date"
+            value={range.end}
+            min={range.start}
+            onChange={(e) => setRange(r => ({ ...r, end: e.target.value }))}
+          />
+        </Form.Group>
+      </div>
+      <div className="reporting-card">
+        <h3 className="reporting-chart__title">{intl.formatMessage(messages.voluntaryTitle)}</h3>
+        <p className="reporting-chart__help">{intl.formatMessage(messages.voluntaryHelp)}</p>
+        {body}
+      </div>
+    </>
+  );
+};
+
 const CoursesTab = () => {
   const intl = useIntl();
   const { data: courses } = useStaffCourses();
@@ -508,7 +665,7 @@ const CurriculumsTab = () => {
 
 const ReportingPage = () => {
   const intl = useIntl();
-  const [activeTab, setActiveTab] = useState('courses');
+  const [activeTab, setActiveTab] = useState('overview');
 
   return (
     <>
@@ -526,6 +683,9 @@ const ReportingPage = () => {
             activeKey={activeTab}
             onSelect={(key: string) => setActiveTab(key)}
           >
+            <Tab eventKey="overview" title={intl.formatMessage(messages.overviewTab)}>
+              {activeTab === 'overview' && <OverviewTab />}
+            </Tab>
             <Tab eventKey="courses" title={intl.formatMessage(messages.enrollmentsTab)}>
               {activeTab === 'courses' && <CoursesTab />}
             </Tab>

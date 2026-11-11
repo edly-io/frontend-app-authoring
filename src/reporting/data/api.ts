@@ -21,6 +21,21 @@ export interface CourseEnrollmentRow {
   badgeConfigured?: boolean;
 }
 
+export interface VoluntaryLearningRate {
+  /** Learners with at least one non-mandatory course open to them by the end of the window. */
+  exposedLearners: number;
+  /** Of those, the learners who finished at least one of their own non-mandatory courses in the window. */
+  voluntaryCompleters: number;
+  /** Null when nobody was exposed: there was nothing to opt into, so the rate is undefined rather than 0%. */
+  ratePct: number | null;
+}
+
+export interface PlatformStats {
+  start: string;
+  end: string;
+  voluntaryLearning: VoluntaryLearningRate;
+}
+
 export interface CourseCurriculum {
   uuid: string;
   title: string;
@@ -62,6 +77,17 @@ export const getUberFlagsUrl = () => `${getUberApiUrl()}/flags/`;
 
 export async function getUberFlags(): Promise<UberFlags> {
   const { data } = await getAuthenticatedHttpClient().get(getUberFlagsUrl());
+  return camelCaseObject(data);
+}
+
+export const getPlatformStatsUrl = () => `${getReportingApiUrl()}/platform-stats/`;
+
+// Dates are inclusive whole days as ``YYYY-MM-DD``; the backend reads them in UTC.
+export async function getPlatformStats(start: string, end: string): Promise<PlatformStats> {
+  const { data } = await getAuthenticatedHttpClient().get(
+    getPlatformStatsUrl(),
+    { params: { start, end } },
+  );
   return camelCaseObject(data);
 }
 
