@@ -5,6 +5,7 @@ import {
   getCourseCurriculums,
   getCourseEnrollments,
   getCurriculumAssignments,
+  getPlatformStats,
   getStaffCourses,
   getUberFlags,
 } from './api';
@@ -15,6 +16,7 @@ export const reportingQueryKeys = {
   all: [ROOT],
   uberFlags: ['uberFlags'],
   staffCourses: [ROOT, 'staffCourses'],
+  platformStats: (start: string, end: string) => [ROOT, 'platformStats', start, end],
   allCurriculums: [ROOT, 'allCurriculums'],
   enrollments: (courseId: string, page: number, pageSize: number, search: string) => [
     ROOT,
@@ -86,5 +88,15 @@ export const useCurriculumAssignments = (
     queryFn: curriculumUuid
       ? () => getCurriculumAssignments(curriculumUuid, page, pageSize, search)
       : skipToken,
+    placeholderData: keepPreviousData,
+  });
+
+export const usePlatformStats = (start: string, end: string) =>
+  useQuery({
+    queryKey: reportingQueryKeys.platformStats(start, end),
+    // An empty date means the caller has nothing worth asking about (a backwards range, say).
+    // Without the skip the empty pair is just another cache key, and it would be fetched.
+    queryFn: start && end ? () => getPlatformStats(start, end) : skipToken,
+    // Keeps the previous figures on screen while a new window loads, so the chart does not flash empty.
     placeholderData: keepPreviousData,
   });
