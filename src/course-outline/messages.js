@@ -1,6 +1,21 @@
 import { defineMessages } from '@edx/frontend-platform/i18n';
 
 const messages = defineMessages({
+  defaultSectionName: {
+    id: 'course-authoring.course-outline.default-name.section',
+    defaultMessage: 'Section',
+    description: 'Name given to a newly created section in the course outline.',
+  },
+  defaultSubsectionName: {
+    id: 'course-authoring.course-outline.default-name.subsection',
+    defaultMessage: 'Subsection',
+    description: 'Name given to a newly created subsection in the course outline.',
+  },
+  defaultUnitName: {
+    id: 'course-authoring.course-outline.default-name.unit',
+    defaultMessage: 'Unit',
+    description: 'Name given to a newly created unit in the course outline.',
+  },
   headingTitle: {
     id: 'course-authoring.course-outline.headingTitle',
     defaultMessage: 'Course outline',
