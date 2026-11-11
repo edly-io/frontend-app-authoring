@@ -55,6 +55,7 @@ const messages = defineMessages({
   sectionImageSubtitle: { id: 'programs.detail.section.image.sub', defaultMessage: 'Upload an image to represent your program in listings' },
   sectionSummary: { id: 'programs.detail.section.summary', defaultMessage: 'Program Summary' },
   unsavedBannerMessage: { id: 'programs.detail.unsaved.message', defaultMessage: 'You have unsaved changes.' },
+  unsavedBannerHint: { id: 'programs.detail.unsaved.hint', defaultMessage: 'Save or discard before leaving.' },
   unsavedBannerDiscard: { id: 'programs.detail.unsaved.discard', defaultMessage: 'Discard changes' },
   unsavedBannerSave: { id: 'programs.detail.unsaved.save', defaultMessage: 'Save now' },
   fieldTitle: { id: 'programs.detail.field.title', defaultMessage: 'Program Title' },
@@ -69,6 +70,12 @@ const messages = defineMessages({
   fieldStartDate: { id: 'programs.detail.field.start-date', defaultMessage: 'Start Date' },
   fieldEndDate: { id: 'programs.detail.field.end-date', defaultMessage: 'End Date' },
   fieldStatus: { id: 'programs.detail.field.status', defaultMessage: 'Program Status' },
+  statusDraft: { id: 'programs.detail.status.draft', defaultMessage: 'Draft' },
+  statusActive: { id: 'programs.detail.status.active', defaultMessage: 'Active' },
+  statusArchived: { id: 'programs.detail.status.archived', defaultMessage: 'Archived' },
+  featuredBadge: { id: 'programs.detail.badge.featured', defaultMessage: 'Featured' },
+  startDatePlaceholder: { id: 'programs.detail.start-date.placeholder', defaultMessage: 'Select start date' },
+  endDatePlaceholder: { id: 'programs.detail.end-date.placeholder', defaultMessage: 'Select end date' },
   fieldFeatured: { id: 'programs.detail.field.featured', defaultMessage: 'Feature this program' },
   fieldFeaturedHint: { id: 'programs.detail.field.featured.hint', defaultMessage: 'Featured programs are highlighted in the program catalog.' },
   fieldPricingCategory: { id: 'programs.detail.field.pricing-category', defaultMessage: 'Pricing type' },
@@ -119,9 +126,9 @@ const toDateString = (date: Date): string => {
 };
 
 const STATUS_OPTIONS = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'active', label: 'Active' },
-  { value: 'archived', label: 'Archived' },
+  { value: 'draft', message: messages.statusDraft },
+  { value: 'active', message: messages.statusActive },
+  { value: 'archived', message: messages.statusArchived },
 ];
 
 const STATUS_BADGE_VARIANT: Record<string, string> = {
@@ -274,7 +281,9 @@ const ProgramDetailPage: React.FC = () => {
   const discountPercent = getDiscountPercent(formik.values.regularPrice, formik.values.salePrice);
   const priceWithVat = getPriceWithVat(formik.values.regularPrice, formik.values.salePrice, program?.vatRate);
   const statusBadgeVariant = STATUS_BADGE_VARIANT[formik.values.status ?? 'draft'] ?? 'secondary';
-  const statusLabel = STATUS_OPTIONS.find((o) => o.value === formik.values.status)?.label ?? 'Draft';
+  const statusMessage = STATUS_OPTIONS.find((option) => option.value === formik.values.status)?.message
+    ?? messages.statusDraft;
+  const statusLabel = intl.formatMessage(statusMessage);
 
   if (isLoading) {
     return (
@@ -313,7 +322,7 @@ const ProgramDetailPage: React.FC = () => {
               {formik.values.displayName || program.displayName}
               {formik.values.isFeatured && (
                 <Badge variant="primary" className="ml-2 align-middle" style={{ fontSize: '0.55em', verticalAlign: 'middle' }}>
-                  Featured
+                  {intl.formatMessage(messages.featuredBadge)}
                 </Badge>
               )}
             </h2>
@@ -337,7 +346,7 @@ const ProgramDetailPage: React.FC = () => {
             <div className="d-flex justify-content-between align-items-center">
               <span>
                 <strong>{intl.formatMessage(messages.unsavedBannerMessage)}</strong>
-                {' '}Save or discard before leaving.
+                {' '}{intl.formatMessage(messages.unsavedBannerHint)}
               </span>
               <Stack direction="horizontal" gap={2}>
                 <Button
@@ -491,7 +500,8 @@ const ProgramDetailPage: React.FC = () => {
                             <DatePicker
                               selected={formik.values.startDate ? fromDateString(formik.values.startDate) : null}
                               onChange={(date) => formik.setFieldValue('startDate', date ? toDateString(date) : '')}
-                              customInput={<DateInput placeholder="Select start date" />}
+                              customInput={<DateInput />}
+                              placeholderText={intl.formatMessage(messages.startDatePlaceholder)}
                               dateFormat="MMMM d, yyyy"
                               popperPlacement="bottom-start"
                               showMonthDropdown
@@ -507,7 +517,8 @@ const ProgramDetailPage: React.FC = () => {
                             <DatePicker
                               selected={formik.values.endDate ? fromDateString(formik.values.endDate) : null}
                               onChange={(date) => formik.setFieldValue('endDate', date ? toDateString(date) : '')}
-                              customInput={<DateInput placeholder="Select end date" />}
+                              customInput={<DateInput />}
+                              placeholderText={intl.formatMessage(messages.endDatePlaceholder)}
                               dateFormat="MMMM d, yyyy"
                               isClearable
                               minDate={formik.values.startDate ? fromDateString(formik.values.startDate) : undefined}
@@ -531,7 +542,7 @@ const ProgramDetailPage: React.FC = () => {
                           onChange={formik.handleChange}
                         >
                           {STATUS_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            <option key={opt.value} value={opt.value}>{intl.formatMessage(opt.message)}</option>
                           ))}
                         </Form.Control>
                       </Form.Group>
@@ -753,7 +764,7 @@ const ProgramDetailPage: React.FC = () => {
                     {/* Status + featured badges */}
                     <Stack direction="horizontal" gap={2} className="mb-4 flex-wrap">
                       <Badge variant={statusBadgeVariant as any}>{statusLabel}</Badge>
-                      {formik.values.isFeatured && <Badge variant="primary">Featured</Badge>}
+                      {formik.values.isFeatured && <Badge variant="primary">{intl.formatMessage(messages.featuredBadge)}</Badge>}
                     </Stack>
 
                     <SummaryField label={intl.formatMessage(messages.summaryOrg)} value={program.org} />
