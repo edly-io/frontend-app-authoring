@@ -6,13 +6,22 @@ import { Form, Dropdown } from '@openedx/paragon';
 import SectionSubHeader from '../../generic/section-sub-header';
 import messages from './messages';
 
+// The platform sends English language names. Show them in the language Studio is using.
+const getLanguageName = (code, fallbackName, locale) => {
+  try {
+    return new Intl.DisplayNames([locale], { type: 'language' }).of(code) || fallbackName;
+  } catch (error) {
+    return fallbackName;
+  }
+};
+
 const DetailsSection = ({
   language, languageOptions, onChange,
 }) => {
   const intl = useIntl();
   const formattedLanguage = () => {
     const result = languageOptions.find((arr) => arr[0] === language);
-    return result ? result[1] : intl.formatMessage(messages.dropdownEmpty);
+    return result ? getLanguageName(result[0], result[1], intl.locale) : intl.formatMessage(messages.dropdownEmpty);
   };
 
   return (
@@ -33,7 +42,7 @@ const DetailsSection = ({
                 key={option[0]}
                 onClick={() => onChange(option[0], 'language')}
               >
-                {option[1]}
+                {getLanguageName(option[0], option[1], intl.locale)}
               </Dropdown.Item>
             ))}
           </Dropdown.Menu>
