@@ -69,7 +69,7 @@ const messages = defineMessages({
   },
   forbidden: {
     id: 'course-authoring.reporting.forbidden',
-    defaultMessage: 'You need global staff access to view curriculum reports.',
+    defaultMessage: 'You need global staff access to view this report.',
     description: 'Shown when a course-staff user opens a report that only global staff may read',
   },
   clearSearch: {
@@ -127,6 +127,180 @@ const messages = defineMessages({
   colKcUnlocks: { id: 'course-authoring.reporting.col.kcUnlocks', defaultMessage: 'Knowledge Check Unlocks', description: 'Column header' },
   colKcTaken: { id: 'course-authoring.reporting.col.kcTaken', defaultMessage: 'Knowledge Check Taken', description: 'Column header' },
   colKcPassed: { id: 'course-authoring.reporting.col.kcPassed', defaultMessage: 'Knowledge Check Passed', description: 'Column header' },
+  coursesChartTitle: {
+    id: 'course-authoring.reporting.overview.coursesTitle',
+    defaultMessage: 'Courses knowledge gain',
+    description: 'Tab title for the course pre/post assessment report',
+  },
+  coursesChartHelp: {
+    id: 'course-authoring.reporting.overview.coursesHelp',
+    defaultMessage: 'Average Quick check score against average Final check score, across every course that has both. Only learners who took both are counted.',
+    description: 'Explanation of how the course figures are built',
+  },
+  coursesChartCaveat: {
+    id: 'course-authoring.reporting.overview.coursesCaveat',
+    defaultMessage: 'The "after" figure covers every learner who sat the Final check, whether or not they passed it.',
+    description: 'Note that the post-assessment average is not limited to passing learners',
+  },
+  curriculumsChartTitle: {
+    id: 'course-authoring.reporting.overview.curriculumsTitle',
+    defaultMessage: 'Curriculums knowledge gain',
+    description: 'Tab title for the curriculum pre/post assessment report',
+  },
+  curriculumsChartHelp: {
+    id: 'course-authoring.reporting.overview.curriculumsHelp',
+    defaultMessage: 'Average Quick check score in the first course against the retention check taken after the curriculum is completed. Only learners who took both are counted.',
+    description: 'Explanation of how the curriculum figures are built',
+  },
+  chartBefore: {
+    id: 'course-authoring.reporting.overview.before',
+    defaultMessage: 'Before',
+    description: 'Label of the pre-assessment bar',
+  },
+  chartAfter: {
+    id: 'course-authoring.reporting.overview.after',
+    defaultMessage: 'After',
+    description: 'Label of the post-assessment bar',
+  },
+  chartGain: {
+    id: 'course-authoring.reporting.overview.gain',
+    defaultMessage: '{gain} points gained',
+    description: 'Headline difference between the two bars',
+  },
+  chartScope: {
+    id: 'course-authoring.reporting.overview.scope',
+    defaultMessage: '{counted, plural, one {# course} other {# courses}}, {learners, plural, one {# learner} other {# learners}}',
+    description: 'How many courses and learners the course figures cover',
+  },
+  chartScopeCurriculums: {
+    id: 'course-authoring.reporting.overview.scopeCurriculums',
+    defaultMessage: '{counted, plural, one {# curriculum} other {# curriculums}}, {learners, plural, one {# learner} other {# learners}}',
+    description: 'How many curriculums and learners the curriculum figures cover',
+  },
+  chartNoData: {
+    id: 'course-authoring.reporting.overview.noData',
+    defaultMessage: 'No learner has completed both checks yet, so there is nothing to compare.',
+    description: 'Empty state when nothing qualifies or nobody has finished',
+  },
+  noQualifyingCourses: {
+    id: 'course-authoring.reporting.overview.noQualifyingCourses',
+    defaultMessage: 'No course has both a Quick check and a Final check yet. Courses without both are left out of this report.',
+    description: 'Empty state when no course qualifies',
+  },
+  noQualifyingCurriculums: {
+    id: 'course-authoring.reporting.overview.noQualifyingCurriculums',
+    defaultMessage: 'No curriculum has a Quick check in its first course and a Final check in its retention course yet. Curriculums without both are left out of this report.',
+    description: 'Empty state when no curriculum qualifies',
+  },
+  colCourse: { id: 'course-authoring.reporting.col.course', defaultMessage: 'Course', description: 'Column header' },
+  colCurriculum: { id: 'course-authoring.reporting.col.curriculum', defaultMessage: 'Curriculum', description: 'Column header' },
+  colLearners: { id: 'course-authoring.reporting.col.learners', defaultMessage: 'Learners', description: 'Column header' },
+  colAvgPre: {
+    id: 'course-authoring.reporting.col.avgPre',
+    defaultMessage: 'Avg Knowledge Before',
+    description: 'Column header for the average pre-assessment score',
+  },
+  colAvgPost: {
+    id: 'course-authoring.reporting.col.avgPost',
+    defaultMessage: 'Avg Knowledge After',
+    description: 'Column header for the average post-assessment score',
+  },
+  colGain: {
+    id: 'course-authoring.reporting.col.gain',
+    defaultMessage: 'Knowledge Gain',
+    description: 'Column header for the percentage points between the before and after averages',
+  },
+  chartAlt: {
+    id: 'course-authoring.reporting.overview.chartAlt',
+    defaultMessage: 'Bar chart: average score {before} before the lessons against {after} after them.',
+    description: 'Alternative text describing the comparison chart',
+  },
+  gainUnit: {
+    id: 'course-authoring.reporting.overview.gainUnit',
+    defaultMessage: 'pts',
+    description: 'Unit after the gain figure: percentage points, not a percentage of anything',
+  },
+  outcomesPanelTitleCurriculums: {
+    id: 'course-authoring.reporting.overview.outcomesPanelCurriculums',
+    defaultMessage: 'Retention check outcomes',
+    description: 'Title of the panel showing how many learners passed the retention check',
+  },
+  outcomeScopeCurriculums: {
+    id: 'course-authoring.reporting.overview.outcomeScopeCurriculums',
+    defaultMessage: '{attempted, plural, one {# learner} other {# learners}} sat the retention check',
+    description: 'Caption saying how many learners the retention outcome split covers',
+  },
+  outcomeNoDataCurriculums: {
+    id: 'course-authoring.reporting.overview.outcomeNoDataCurriculums',
+    defaultMessage: 'No learner has sat a retention check yet.',
+    description: 'Empty state for the curriculum outcomes chart',
+  },
+  outcomeAltCurriculums: {
+    id: 'course-authoring.reporting.overview.outcomeAltCurriculums',
+    defaultMessage: 'Bar chart: {passed} learners passed the retention check and {failed} did not.',
+    description: 'Alternative text describing the curriculum outcomes chart',
+  },
+  outcomesPanelTitle: {
+    id: 'course-authoring.reporting.overview.outcomesPanel',
+    defaultMessage: 'Final check outcomes',
+    description: 'Title of the panel showing how many learners passed and failed',
+  },
+  outcomePassed: {
+    id: 'course-authoring.reporting.overview.outcomePassed',
+    defaultMessage: 'Passed',
+    description: 'Label for learners who cleared the Final check',
+  },
+  outcomeFailed: {
+    id: 'course-authoring.reporting.overview.outcomeFailed',
+    defaultMessage: 'Did not pass',
+    description: 'Label for learners who sat the Final check and did not clear it',
+  },
+  outcomeScope: {
+    id: 'course-authoring.reporting.overview.outcomeScope',
+    defaultMessage: '{attempted, plural, one {# learner} other {# learners}} sat the Final check',
+    description: 'Caption saying how many learners the outcome split covers',
+  },
+  outcomeAlt: {
+    id: 'course-authoring.reporting.overview.outcomeAlt',
+    defaultMessage: 'Bar chart: {passed} learners passed the Final check and {failed} did not.',
+    description: 'Alternative text describing the outcomes chart',
+  },
+  outcomeNoData: {
+    id: 'course-authoring.reporting.overview.outcomeNoData',
+    defaultMessage: 'No learner has sat a Final check yet.',
+    description: 'Empty state for the outcomes chart',
+  },
+  chartPanelTitle: {
+    id: 'course-authoring.reporting.overview.chartPanel',
+    defaultMessage: 'Before and after',
+    description: 'Title of the panel holding the comparison chart',
+  },
+  coursesTableTitle: {
+    id: 'course-authoring.reporting.overview.coursesTable',
+    defaultMessage: 'Course breakdown',
+    description: 'Title of the panel holding the per-course table',
+  },
+  curriculumsTableTitle: {
+    id: 'course-authoring.reporting.overview.curriculumsTable',
+    defaultMessage: 'Curriculum breakdown',
+    description: 'Title of the panel holding the per-curriculum table',
+  },
+  gainLabel: {
+    id: 'course-authoring.reporting.overview.gainLabel',
+    defaultMessage: 'knowledge gain',
+    description: 'Caption under the gain figure on the chart',
+  },
+  colPassRate: { id: 'course-authoring.reporting.col.passRate', defaultMessage: 'Pass Rate', description: 'Column header' },
+  colRetentionRules: {
+    id: 'course-authoring.reporting.col.retentionRules',
+    defaultMessage: 'Retention Check',
+    description: 'Column header for the delay, pass mark and attempt limit of a retention check',
+  },
+  retentionRules: {
+    id: 'course-authoring.reporting.overview.retentionRules',
+    defaultMessage: '{days}d \u00b7 {threshold}% \u00b7 {attempts, plural, one {# attempt} other {# attempts}}',
+    description: 'The delay, pass mark and attempt limit of one curriculum retention check',
+  },
 });
 
 export default messages;
