@@ -33,4 +33,24 @@ describe('<AlertMessage />', () => {
     expect(alertElement).toBeInTheDocument();
     expect(classNameExists).toBe(true);
   });
+
+  it('uses the translated Studio label on the dismiss button', () => {
+    const { getByRole } = render(
+      <IntlProvider
+        locale="ar"
+        messages={{ 'authoring.alert-error-alert.dismiss': 'تجاهَل' }}
+      >
+        <AlertMessage title={alertTitle} description={alertDescription} dismissible />
+      </IntlProvider>,
+    );
+    expect(getByRole('button', { name: 'تجاهَل' })).toBeInTheDocument();
+  });
+  it('keeps a custom close label when one is passed', () => {
+    const { getByRole } = render(
+      <IntlProvider locale="en">
+        <AlertMessage title={alertTitle} description={alertDescription} dismissible closeLabel="Close it" />
+      </IntlProvider>,
+    );
+    expect(getByRole('button', { name: 'Close it' })).toBeInTheDocument();
+  });
 });
