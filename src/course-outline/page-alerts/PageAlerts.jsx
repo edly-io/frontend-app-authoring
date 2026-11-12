@@ -20,6 +20,7 @@ import { OutOfSyncAlert } from '../../course-libraries/OutOfSyncAlert';
 import { RequestStatus } from '../../data/constants';
 
 import ErrorAlert from '../../editors/sharedComponents/ErrorAlerts/ErrorAlert';
+import alertErrorMessages from '../../generic/alert-error/messages';
 import AlertMessage from '../../generic/alert-message';
 import AlertProctoringError from '../../generic/AlertProctoringError';
 import { API_ERROR_TYPES } from '../constants';
@@ -96,6 +97,7 @@ const PageAlerts = ({
     return (
       <Alert
         dismissible
+        closeLabel={intl.formatMessage(alertErrorMessages.dismissLabel)}
         show={showDiscussionAlert}
         icon={InfoOutlineIcon}
         variant="info"
