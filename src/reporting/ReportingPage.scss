@@ -1,0 +1,548 @@
+$uber-content-primary: #000000;
+$uber-content-secondary: #4B4B4B;
+$uber-content-muted: #757575;
+$uber-scrollbar-thumb: #BDBDBD;
+$uber-accent: #276EF1;
+$uber-bg-primary: #FFFFFF;
+$uber-bg-secondary: #F6F6F6;
+$uber-border: #E2E2E2;
+// Below this the summary row stacks and the fixed-width controls are allowed to shrink.
+$reporting-bp: 48rem;
+// Above this the table stops using every pixel it is given; long rows get hard to track across.
+$reporting-wide: 75rem;
+
+$uber-pre: #C76E00;
+$uber-post: #276EF1;
+$uber-positive: #0E8345;
+$uber-negative: #DE1135;
+
+// Badge text is darkened from the brand hues so 12px/600 on a 12% tint clears WCAG AA 4.5:1
+// (the brand colours themselves only reach ~3.9-4.1:1 there). They stay unchanged everywhere
+// the background is plain white.
+$uber-positive-text: #0D7B41;
+$uber-negative-text: #CE1031;
+$uber-accent-text: #2465DE;
+$uber-muted-text: #717171;
+
+.reporting-page {
+  font-family: "Uber Move Text", "Uber Move", UberMove, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: $uber-content-primary;
+  background: $uber-bg-primary;
+  padding: 2rem 0 3rem;
+  min-height: 60vh;
+
+  .reporting-container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .reporting-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .reporting-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .reporting-title {
+    font-family: "Uber Move", UberMove, "Uber Move Text", system-ui, sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -.02em;
+    margin: 0 0 .5rem;
+    color: $uber-content-primary;
+  }
+
+  .reporting-subtitle {
+    color: $uber-content-secondary;
+    font-size: 1rem;
+    margin: 0;
+  }
+
+  .nav-tabs {
+    border-bottom: 1px solid $uber-border;
+
+    .nav-link {
+      color: $uber-content-secondary;
+      font-weight: 500;
+      border: 0;
+      border-bottom: 2px solid transparent;
+
+      &.active {
+        color: $uber-content-primary;
+        border-bottom-color: $uber-content-primary;
+        background: transparent;
+      }
+    }
+  }
+
+  .reporting-card {
+    margin-top: 1.5rem;
+    background: $uber-bg-primary;
+    border: 1px solid $uber-border;
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .reporting-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+
+    .pgn__searchfield_wrapper {
+      min-width: 20rem;
+
+      @media (max-width: $reporting-bp) {
+        min-width: 0;
+        width: 100%;
+      }
+    }
+  }
+
+  // Equal breathing room above and below, now that the selectors have no heading of their own.
+  .reporting-selector-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .reporting-selector {
+    min-width: 20rem;
+    flex: 1;
+    max-width: 28rem;
+
+    @media (max-width: $reporting-bp) {
+      min-width: 0;
+      max-width: none;
+      width: 100%;
+    }
+  }
+
+  .reporting-table-scroll {
+    // `scroll` rather than `auto`, plus an explicit track: macOS overlay scrollbars otherwise fade
+    // out, hiding the fact that there are more columns off to the right.
+    overflow-x: scroll;
+    scrollbar-width: thin;
+    scrollbar-color: $uber-scrollbar-thumb $uber-bg-secondary;
+    border: 1px solid $uber-border;
+    border-radius: 12px;
+
+    &::-webkit-scrollbar {
+      height: .625rem;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: $uber-bg-secondary;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: $uber-scrollbar-thumb;
+      border-radius: 999px;
+    }
+
+    table {
+      margin: 0;
+      width: 100%;
+      white-space: nowrap;
+    }
+
+    th {
+      background: $uber-bg-secondary;
+      color: $uber-content-secondary;
+      font-size: .75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      border-bottom: 1px solid $uber-border;
+    }
+
+    th,
+    td {
+      // The table scrolls horizontally, so values keep to one line rather than wrapping.
+      white-space: nowrap;
+      text-align: center;
+    }
+
+    td {
+      border-top: 1px solid $uber-border;
+      font-size: .875rem;
+      vertical-align: middle;
+    }
+
+    // Opt-out for the free-text columns (username, email), where centring values of
+    // very different lengths leaves the column looking ragged.
+    th.reporting-cell--start,
+    td.reporting-cell--start {
+      text-align: left;
+    }
+
+    // Column rules, so a cell holding several stacked entries still reads against its neighbours.
+    th + th,
+    td + td {
+      border-left: 1px solid $uber-border;
+    }
+
+    tbody tr:nth-child(even) {
+      background: $uber-bg-secondary;
+    }
+  }
+
+  // These tables are not paginated, so past about ten rows they scroll in place. The cap is a little
+  // over ten rows deep on purpose: the eleventh showing half-cut is what tells a reader there is more.
+  .reporting-table-scroll--capped {
+    max-height: 34rem;
+    overflow-y: auto;
+
+    // Without this the column names scroll away and the numbers below lose their meaning.
+    th {
+      position: sticky;
+      top: 0;
+      // Above the cell borders, which would otherwise draw over the header as rows pass under it.
+      z-index: 1;
+      // A collapsed-border table paints cell borders as part of the table, not the cell, so the
+      // header's own border-bottom does not travel with it and the rows slide under a bare edge.
+      // An inset shadow belongs to the cell and does stick.
+      box-shadow: inset 0 -1px 0 $uber-border;
+    }
+
+    &::-webkit-scrollbar {
+      width: .625rem;
+    }
+  }
+
+  .reporting-table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+  }
+
+  .reporting-total {
+    color: $uber-content-secondary;
+    font-size: .875rem;
+  }
+
+  .reporting-progress {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    min-width: 9rem;
+
+    .progress {
+      flex: 1;
+      height: .5rem;
+      background: $uber-border;
+      border-radius: 4px;
+    }
+
+    .progress-bar {
+      background: $uber-accent;
+    }
+
+    span {
+      min-width: 3rem;
+      text-align: right;
+    }
+  }
+
+  .reporting-badge {
+    display: inline-block;
+    padding: .125rem .625rem;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 600;
+
+    &--positive {
+      color: $uber-positive-text;
+      background: rgba($uber-positive, .12);
+    }
+
+    &--negative {
+      color: $uber-negative-text;
+      background: rgba($uber-negative, .12);
+    }
+
+    &--accent {
+      color: $uber-accent-text;
+      background: rgba($uber-accent, .12);
+    }
+
+    &--neutral {
+      color: $uber-content-secondary;
+      background: $uber-bg-secondary;
+    }
+
+    &--muted {
+      color: $uber-muted-text;
+      background: $uber-bg-secondary;
+      border: 1px dashed $uber-border;
+    }
+
+  }
+
+  // --- Overview tab -------------------------------------------------------
+
+  // A dashboard, not a page of cards: each subject gets a heading, a row of figures, then the chart
+  // and the table in panels of their own. The chart answers "how big is the gain", the table answers
+  // "where did it come from"; sharing one card made the second read as a footnote to the first.
+  .reporting-section {
+    margin-top: 2.5rem;
+
+    @media (max-width: $reporting-bp) {
+      margin-top: 1.75rem;
+    }
+
+    &:first-child {
+      margin-top: 1.5rem;
+    }
+  }
+
+  .reporting-section__header {
+    margin-bottom: 1.25rem;
+  }
+
+  .reporting-section__title {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: $uber-content-primary;
+    margin-bottom: .375rem;
+
+    @media (max-width: $reporting-bp) {
+      font-size: 1.1875rem;
+    }
+  }
+
+  .reporting-section__help {
+    color: $uber-content-secondary;
+    max-width: 70ch;
+    margin-bottom: .25rem;
+  }
+
+  // The course "after" figure covers passers only. Said quietly, but said.
+  .reporting-section__caveat {
+    color: $uber-content-muted;
+    font-size: .875rem;
+    max-width: 70ch;
+    margin-bottom: 0;
+  }
+
+  // SVG text is sized in the viewBox's own units, so the browser shrinks it along with the chart.
+  // At phone width the 0.75rem labels would land near 6px, so the units are scaled up to compensate.
+  @media (max-width: $reporting-bp) {
+    .reporting-chart__tick,
+    .reporting-chart__delta-label {
+      font-size: 1.25rem;
+    }
+
+    .reporting-chart__label {
+      font-size: 1.375rem;
+    }
+
+    .reporting-chart__value {
+      font-size: 1.75rem;
+    }
+
+    .reporting-chart__delta-value {
+      font-size: 2rem;
+    }
+
+    .reporting-chart__delta-unit {
+      font-size: 1.125rem;
+    }
+  }
+
+  // Two charts side by side on a wide screen, stacked below the breakpoint. Each panel keeps its
+  // own margin, so the grid only has to place them.
+  .reporting-charts--pair {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: 1.25rem;
+
+    @media (max-width: $reporting-bp) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  // The outcome chart has only two short bars, so it does not need the comparison's width.
+  .reporting-chart__svg--outcome {
+    max-width: 26rem;
+  }
+
+  // The same validated pair as the comparison chart, and the same association: blue is the cleared
+  // state there (After) and here (Passed), so the two charts read as one system rather than two.
+  .reporting-outcome__bar {
+    &--passed {
+      fill: $uber-post;
+    }
+
+    &--failed {
+      fill: $uber-pre;
+    }
+  }
+
+  .reporting-panel {
+    background: $uber-bg-primary;
+    border: 1px solid $uber-border;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+
+    @media (max-width: $reporting-bp) {
+      padding: 1rem;
+    }
+  }
+
+  .reporting-panel__title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: $uber-content-primary;
+    margin-bottom: 1rem;
+  }
+
+  .reporting-chart {
+    margin: 0;
+  }
+
+  // The drawing keeps its aspect ratio, so an uncapped width makes a very wide card very tall.
+  // Two columns do not need more room than this; it is centred so the panel does not read as
+  // half-empty with the chart stranded on the left.
+  .reporting-chart__svg {
+    display: block;
+    width: 100%;
+    max-width: 46rem;
+    height: auto;
+    margin: 0 auto;
+  }
+
+  // Recessive: the grid is there to be measured against, not looked at.
+  .reporting-chart__grid {
+    stroke: $uber-border;
+    stroke-width: 1;
+  }
+
+  .reporting-chart__baseline {
+    stroke: $uber-content-muted;
+    stroke-width: 1;
+  }
+
+  .reporting-chart__scope {
+    color: $uber-content-muted;
+    font-size: .8125rem;
+    margin-bottom: .5rem;
+  }
+
+  .reporting-chart__delta-unit {
+    font-size: .75rem;
+    font-weight: 400;
+    fill: $uber-content-muted;
+  }
+
+  .reporting-chart__tick {
+    fill: $uber-content-muted;
+    font-size: .75rem;
+  }
+
+  .reporting-chart__label {
+    fill: $uber-content-secondary;
+    font-size: .875rem;
+  }
+
+  // The figure above each column, which is what the eye lands on.
+  .reporting-chart__value {
+    fill: $uber-content-primary;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .reporting-chart__bar {
+    &--pre {
+      fill: $uber-pre;
+    }
+
+    &--post {
+      fill: $uber-post;
+    }
+  }
+
+  // The span between the two column tops: thin, dashed, and clearly not a data mark itself.
+  // The dimension line and its leaders: clearly measurement furniture, never mistaken for a data mark.
+  .reporting-chart__delta-rule,
+  .reporting-chart__delta-cap {
+    stroke: $uber-content-muted;
+    stroke-width: 1;
+  }
+
+  .reporting-chart__delta-lead {
+    stroke: $uber-border;
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+  }
+
+  .reporting-chart__delta-label {
+    fill: $uber-content-muted;
+    font-size: .75rem;
+  }
+
+  .reporting-chart__delta-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+
+    &--up {
+      fill: $uber-positive-text;
+    }
+
+    &--down {
+      fill: $uber-negative-text;
+    }
+  }
+
+  .reporting-gain--up {
+    color: $uber-positive-text;
+  }
+
+  .reporting-gain--down {
+    color: $uber-negative-text;
+  }
+
+  // Carries a tooltip, so it needs the cursor hint without the browser's default dotted underline.
+  .reporting-questions-mismatch {
+    text-decoration: underline dotted;
+    cursor: help;
+  }
+
+  .reporting-gain {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+
+  .reporting-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: $uber-content-secondary;
+    background: $uber-bg-secondary;
+    border-radius: 12px;
+  }
+
+  .reporting-skeleton__row {
+    height: 2.5rem;
+    margin-bottom: .5rem;
+    border-radius: 8px;
+    background: linear-gradient(90deg, $uber-bg-secondary 25%, $uber-border 50%, $uber-bg-secondary 75%);
+    background-size: 200% 100%;
+    animation: reporting-shimmer 1.4s infinite;
+  }
+}
+
+@keyframes reporting-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
