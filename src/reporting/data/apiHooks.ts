@@ -2,6 +2,7 @@ import { keepPreviousData, skipToken, useQuery } from '@tanstack/react-query';
 
 import {
   getAllCurriculums,
+  getAssessmentStats,
   getCourseCurriculums,
   getCourseEnrollments,
   getCurriculumAssignments,
@@ -15,6 +16,7 @@ export const reportingQueryKeys = {
   all: [ROOT],
   uberFlags: ['uberFlags'],
   staffCourses: [ROOT, 'staffCourses'],
+  assessmentStats: [ROOT, 'assessmentStats'],
   allCurriculums: [ROOT, 'allCurriculums'],
   enrollments: (courseId: string, page: number, pageSize: number, search: string) => [
     ROOT,
@@ -87,4 +89,12 @@ export const useCurriculumAssignments = (
       ? () => getCurriculumAssignments(curriculumUuid, page, pageSize, search)
       : skipToken,
     placeholderData: keepPreviousData,
+  });
+
+export const useAssessmentStats = () =>
+  useQuery({
+    queryKey: reportingQueryKeys.assessmentStats,
+    queryFn: getAssessmentStats,
+    // The figures move only as learners sit checks, so a tab revisit need not refetch straight away.
+    staleTime: 5 * 60 * 1000,
   });
