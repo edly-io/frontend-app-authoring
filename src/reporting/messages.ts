@@ -7,62 +7,6 @@ const messages = defineMessages({
     defaultMessage: 'Learner enrollment, progress and badges',
     description: 'Reporting page subheading',
   },
-  overviewTab: { id: 'course-authoring.reporting.tab.overview', defaultMessage: 'Overview', description: 'Tab title' },
-  voluntaryTitle: {
-    id: 'course-authoring.reporting.voluntary.title',
-    defaultMessage: 'Meaningful voluntary learning rate',
-    description: 'Heading of the voluntary learning chart',
-  },
-  voluntaryHelp: {
-    id: 'course-authoring.reporting.voluntary.help',
-    defaultMessage: 'Learners who completed at least one non-mandatory course, out of the learners who had a non-mandatory course open to them.',
-    description: 'Explanation of how the voluntary learning rate is calculated',
-  },
-  voluntaryChartLabel: {
-    id: 'course-authoring.reporting.voluntary.chart',
-    defaultMessage: '{rate} of {exposed} eligible exposed learners completed a non-mandatory course: {completers} of them.',
-    description: 'Screen-reader description of the voluntary learning pie chart',
-  },
-  legendCompleted: {
-    id: 'course-authoring.reporting.voluntary.legend.completed',
-    defaultMessage: 'Completed voluntarily',
-    description: 'Chart legend for learners who completed a non-mandatory course',
-  },
-  legendRest: {
-    id: 'course-authoring.reporting.voluntary.legend.rest',
-    defaultMessage: 'No voluntary completion',
-    description: 'Chart legend for exposed learners who completed nothing non-mandatory',
-  },
-  statExposed: {
-    id: 'course-authoring.reporting.voluntary.stat.exposed',
-    defaultMessage: 'Eligible exposed learners',
-    description: 'Label for the denominator of the voluntary learning rate',
-  },
-  statCompleters: {
-    id: 'course-authoring.reporting.voluntary.stat.completers',
-    defaultMessage: 'Voluntary completers',
-    description: 'Label for the numerator of the voluntary learning rate',
-  },
-  rangeStart: {
-    id: 'course-authoring.reporting.range.start',
-    defaultMessage: 'From',
-    description: 'Label of the start date filter',
-  },
-  rangeEnd: {
-    id: 'course-authoring.reporting.range.end',
-    defaultMessage: 'To',
-    description: 'Label of the end date filter',
-  },
-  rangeInvalid: {
-    id: 'course-authoring.reporting.range.invalid',
-    defaultMessage: 'The start date must not be after the end date.',
-    description: 'Error shown when the date filter range is backwards',
-  },
-  voluntaryNoExposure: {
-    id: 'course-authoring.reporting.voluntary.empty',
-    defaultMessage: 'No learner had a non-mandatory course open to them in this period, so there is no rate to show.',
-    description: 'Empty state when nobody was exposed to optional courses',
-  },
   enrollmentsTab: { id: 'course-authoring.reporting.tab.enrollments', defaultMessage: 'Courses', description: 'Tab title' },
   curriculumTab: { id: 'course-authoring.reporting.tab.curriculum', defaultMessage: 'Curriculums', description: 'Tab title' },
   courseSelectLabel: {
