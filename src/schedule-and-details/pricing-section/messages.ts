@@ -47,7 +47,7 @@ const messages = defineMessages({
   },
   categoryEnrollmentCodeDescription: {
     id: 'course-authoring.schedule-section.pricing.category-enrollment-code.description',
-    defaultMessage: 'Learners enroll at no cost, but only with an enrollment code. It has no price of its own.',
+    defaultMessage: 'A free, restricted course that learners can only join with an enrollment code.',
   },
   noTypeHint: {
     id: 'course-authoring.schedule-section.pricing.no-type-hint',
@@ -90,6 +90,10 @@ const messages = defineMessages({
   savingBtn: {
     id: 'course-authoring.schedule-section.pricing.saving-btn',
     defaultMessage: 'Saving…',
+  },
+  categoriesRemoved: {
+    id: 'course-authoring.schedule-section.pricing.categories-removed',
+    defaultMessage: 'An Enrollment code course cannot have categories, so these were removed: {categories}.',
   },
   savedMsg: {
     id: 'course-authoring.schedule-section.pricing.saved-msg',
