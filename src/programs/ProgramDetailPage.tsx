@@ -78,7 +78,7 @@ const messages = defineMessages({
   pricingSubscription: { id: 'programs.detail.field.pricing.subscription', defaultMessage: 'Part of Subscription' },
   pricingSubscriptionDescription: { id: 'programs.detail.field.pricing.subscription.description', defaultMessage: 'Learners reach this program through the Rwaq subscription. It has no price of its own.' },
   pricingEnrollmentCode: { id: 'programs.detail.field.pricing.enrollment-code', defaultMessage: 'Enrollment code' },
-  pricingEnrollmentCodeDescription: { id: 'programs.detail.field.pricing.enrollment-code.description', defaultMessage: 'Learners enroll at no cost, but only with an enrollment code. It has no price of its own.' },
+  pricingEnrollmentCodeDescription: { id: 'programs.detail.field.pricing.enrollment-code.description', defaultMessage: 'A free, restricted program that learners can only join with an enrollment code.' },
   fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price before VAT ({currency})' },
   fieldPriceHint: { id: 'programs.detail.field.price.hint', defaultMessage: 'Regular price shown on the marketing site.' },
   fieldSalePrice: { id: 'programs.detail.field.sale-price', defaultMessage: 'Discounted Price / Sale Price before VAT ({currency})' },
