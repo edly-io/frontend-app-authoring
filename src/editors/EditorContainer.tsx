@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { getConfig } from '@edx/frontend-platform';
 import { useIntl } from '@edx/frontend-platform/i18n';
@@ -27,6 +27,16 @@ interface Props {
   returnFunction?: (prevPath?: string) => (newData: Record<string, any> | undefined) => void;
 }
 
+/** True when this page is loaded inside an iframe whose parent is this same app. */
+export const isInsideMfeIframe = (): boolean => {
+  try {
+    return window.self !== window.top && window.parent.location.origin === window.location.origin;
+  } catch {
+    // A cross-origin parent throws on .location access: not embedded in this app.
+    return false;
+  }
+};
+
 const EditorContainer: React.FC<Props> = ({
   learningContextId,
   onClose,
@@ -37,6 +47,25 @@ const EditorContainer: React.FC<Props> = ({
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const upstreamLibRef = searchParams.get('upstreamLibRef');
+  const isEmbedded = isInsideMfeIframe();
+
+  // Studio's container page (shown in an iframe) opens the editor for a block newly added to a
+  // custom container, e.g. a Video in a MicroLearning block, by navigating the iframe itself here.
+  // Hand the editor to the parent page instead and send the iframe back to the container.
+  useEffect(() => {
+    if (!isEmbedded) { return; }
+    const post = (type: string, payload: object) =>
+      window.parent.postMessage(
+        { type, payload },
+        window.location.origin,
+      );
+    post('handleRedirectToXBlockEditPage', { type: blockType, locator: blockId });
+    post('refreshIframe', {});
+  }, [isEmbedded, blockType, blockId]);
+
+  if (isEmbedded) {
+    return null;
+  }
 
   if (blockType === undefined || blockId === undefined) {
     // istanbul ignore next - This shouldn't be possible; it's just here to satisfy the type checker.
