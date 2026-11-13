@@ -26,6 +26,37 @@ const uberColorMap = [
 
 const mapToolbars = toolbars => toolbars.map(toolbar => toolbar.join(' ')).join(' | ');
 
+const PASTE_KEPT_ATTRS = ['href', 'target', 'rel', 'src', 'alt', 'title', 'width', 'height', 'colspan', 'rowspan'];
+// Content classes this editor styles or relies on: headings (tinyMCEStyles), code samples, page embeds.
+const PASTE_KEPT_CLASS = /^(hd(-\d)?|language-.+|tiny-pageembed)$/;
+
+// HTML pasted from outside the editor (Figma, Word, Google Docs, web pages) keeps its elements but
+// loses the source's attributes: inline styles, ids, data-* blobs and foreign classes. Spans left
+// without attributes are unwrapped, keeping their text. Elements themselves are not filtered.
+export const cleanPastedHtml = (root) => {
+  root.querySelectorAll('*').forEach((el) => {
+    const keptClasses = [...el.classList].filter(name => PASTE_KEPT_CLASS.test(name));
+    [...el.attributes].forEach(({ name }) => {
+      if (!PASTE_KEPT_ATTRS.includes(name)) { el.removeAttribute(name); }
+    });
+    // setAttribute, not className: className is read-only on SVG elements.
+    if (keptClasses.length) { el.setAttribute('class', keptClasses.join(' ')); }
+  });
+  root.querySelectorAll('span:not([class])').forEach(span => span.replaceWith(...span.childNodes));
+};
+
+// In-editor copies (args.internal) are the author's own formatting, so they're left alone.
+// A cleanup failure must not drop the paste, so it falls back to the uncleaned HTML.
+export const pastePostprocess = (_editor, args) => {
+  if (args.internal) { return; }
+  try {
+    cleanPastedHtml(args.node);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('Pasted HTML cleanup failed', e);
+  }
+};
+
 const pluginConfig = ({ placeholder, editorType, enableImageUpload }) => {
   const image = enableImageUpload ? plugins.image : '';
   const imageTools = enableImageUpload ? plugins.imagetools : '';
@@ -58,6 +89,7 @@ const pluginConfig = ({ placeholder, editorType, enableImageUpload }) => {
         quickToolbar,
         plugins.a11ychecker,
         plugins.powerpaste,
+        plugins.paste,
         plugins.embediframe,
       ].join(' '),
       menubar: false,
@@ -124,6 +156,9 @@ const pluginConfig = ({ placeholder, editorType, enableImageUpload }) => {
         powerpaste_word_import: 'prompt',
         powerpaste_html_import: 'prompt',
         powerpaste_googledoc_import: 'prompt',
+        // powerpaste is an open-source stub, so the core paste plugin does the cleanup
+        paste_data_images: true,
+        paste_postprocess: pastePostprocess,
         autoresize_bottom_margin: autoresizeBottomMargin,
         color_map: uberColorMap,
         // Keep content in the Uber font: drop inline font-family from pasted, loaded and saved HTML.

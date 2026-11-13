@@ -98,4 +98,18 @@ describe('EditorContainer', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Discard Changes and Exit' }));
     expect(onCloseMock).toHaveBeenCalled();
   });
+
+  test('hands the editor to the parent page when loaded inside the container iframe', () => {
+    jest.spyOn(window, 'top', 'get').mockReturnValue({} as Window);
+    const postMessageSpy = jest.spyOn(window.parent, 'postMessage').mockImplementation(() => {});
+
+    render(<EditorContainer {...props} />);
+
+    expect(postMessageSpy).toHaveBeenCalledWith({
+      type: 'handleRedirectToXBlockEditPage',
+      payload: { type: 'fake', locator: 'block-v1:Org+TS100+24+type@fake+block@123456fake' },
+    }, window.location.origin);
+    expect(postMessageSpy).toHaveBeenCalledWith({ type: 'refreshIframe', payload: {} }, window.location.origin);
+    expect(screen.queryByText('Advanced Editor Iframe')).not.toBeInTheDocument();
+  });
 });

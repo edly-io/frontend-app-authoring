@@ -39,6 +39,31 @@ export const nonQuestionKeys = [
   'textline',
 ];
 
+// Uber: where each placeholder problem type keeps its input's placeholder attribute.
+const placeholderPaths = {
+  [ProblemTypeKeys.DROPDOWN]: 'optionresponse.optioninput.@_placeholder',
+  [ProblemTypeKeys.TEXTINPUT]: 'stringresponse.textline.@_placeholder',
+  [ProblemTypeKeys.NUMERIC]: 'numericalresponse.formulaequationinput.@_placeholder',
+};
+
+const xmlEntities = {
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: '\'',
+  amp: '&',
+};
+// Named and numeric (&#233; / &#xE9;) references; an out-of-range number is left as written.
+const decodeXmlEntities = (text) =>
+  text.replace(
+    /&(?:(lt|gt|quot|apos|amp)|#(\d+)|#x([0-9a-fA-F]+));/g,
+    (match, name, dec, hex) => {
+      if (name) { return xmlEntities[name]; }
+      const code = dec ? Number(dec) : parseInt(hex, 16);
+      return code <= 0x10FFFF ? String.fromCodePoint(code) : match;
+    },
+  );
+
 export const responseKeys = [
   'multiplechoiceresponse',
   'numericalresponse',
@@ -236,7 +261,8 @@ export class OLXParser {
     const answers = [];
     let data = {};
     const widget = get(this.problem, `${problemType}.${widgetName}`);
-    const permissableTags = ['choice', '@_type', 'compoundhint', 'option', '#text'];
+    // Uber: '@_placeholder' is the dropdown's placeholder (see PlaceholderCard).
+    const permissableTags = ['choice', '@_type', 'compoundhint', 'option', '#text', '@_placeholder'];
     if (keys(widget).some((tag) => !permissableTags.includes(tag))) {
       throw new Error('Misc Tags, reverting to Advanced Editor');
     }
@@ -798,6 +824,9 @@ export class OLXParser {
       settings.tolerance = { value: null, type: 'None' };
     }
     if (solutionExplanation) { settings.solutionExplanation = solutionExplanation; }
+    // Uber: the input's placeholder attribute (see PlaceholderCard).
+    // The parser leaves entities encoded and the builder encodes again, so decode here.
+    settings.placeholder = decodeXmlEntities(String(get(this.problem, placeholderPaths[problemType], '')));
 
     return {
       question,
