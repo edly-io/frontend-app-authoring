@@ -23,6 +23,7 @@ import { updatePostErrors } from '../data/slice';
 import { updateCreateOrRerunCourseQuery } from '../data/thunks';
 import { useCreateOrRerunCourse } from './hooks';
 import messages from './messages';
+import { computeDefaultSlug } from './slug';
 
 const CreateOrRerunCourseForm = ({
   title,
@@ -51,6 +52,16 @@ const CreateOrRerunCourseForm = ({
     hasErrorField,
     setFieldValue,
   } = useCreateOrRerunCourse(initialValues);
+
+  let slugHelpText = intl.formatMessage(messages.courseSlugHelpText);
+  if (values.slug) {
+    slugHelpText = intl.formatMessage(messages.courseSlugCustomHelpText, { slug: values.slug });
+  } else if (values.org && values.number && values.run) {
+    slugHelpText = intl.formatMessage(
+      messages.courseSlugDefaultHelpText,
+      { slug: computeDefaultSlug(values.org, values.number, values.run) },
+    );
+  }
 
   const newCourseFields = [
     {
@@ -132,7 +143,7 @@ const CreateOrRerunCourseForm = ({
     },
     {
       label: intl.formatMessage(messages.courseSlugLabel),
-      helpText: intl.formatMessage(messages.courseSlugHelpText),
+      helpText: slugHelpText,
       name: 'slug',
       value: values.slug,
       placeholder: intl.formatMessage(messages.courseSlugPlaceholder),
