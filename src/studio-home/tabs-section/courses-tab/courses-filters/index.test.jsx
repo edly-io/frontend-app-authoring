@@ -123,6 +123,7 @@ describe('CoursesFilters', () => {
     ['free-courses', 'free'],
     ['paid-courses', 'paid'],
     ['program-only-courses', 'program_only'],
+    ['enrollment-code-courses', 'enrollment_code'],
     ['all-pricing-types', undefined],
   ])('should fetch courses with the course type of the %s item', (itemId, courseType) => {
     renderComponent();

@@ -21,6 +21,10 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.courses.tab.pricing-filter-menu.subscription',
     defaultMessage: 'Part of Subscription',
   },
+  coursesPricingFilterMenuEnrollmentCode: {
+    id: 'course-authoring.studio-home.courses.tab.pricing-filter-menu.enrollment-code',
+    defaultMessage: 'Enrollment code',
+  },
 });
 
 export default messages;

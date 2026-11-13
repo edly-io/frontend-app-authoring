@@ -156,6 +156,34 @@ describe('<PricingSection />', () => {
     });
   });
 
+  it('offers the Enrollment code type, hides the price fields and saves it with no price', async () => {
+    await renderSection({ pricing_category: 'is_paid', regular_price: '100.00' });
+    expect(screen.getByRole('radio', { name: 'Enrollment code' })).toBeInTheDocument();
+    expect(screen.getByText(
+      'A free, restricted course that learners can only join with an enrollment code.',
+    )).toBeInTheDocument();
+    axiosMock.onPut(pricingUrl()).reply(200, pricingResponse({ pricing_category: 'is_enrollment_code' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Enrollment code' }));
+    expect(screen.queryByLabelText('Price before VAT (SAR)')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Save course type' }));
+    await waitFor(() => expect(axiosMock.history.put).toHaveLength(1));
+    expect(JSON.parse(axiosMock.history.put[0].data)).toEqual({
+      pricing_category: 'is_enrollment_code', regular_price: null, sale_price: null,
+    });
+  });
+
+  it('tells the course team which categories the switch to Enrollment code removed', async () => {
+    await renderSection({ pricing_category: 'is_free' });
+    axiosMock.onPut(pricingUrl()).reply(200, pricingResponse({
+      pricing_category: 'is_enrollment_code', removed_categories: ['Art', 'Science'],
+    }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Enrollment code' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save course type' }));
+    expect(await screen.findByText(
+      'An Enrollment code course cannot have categories, so these were removed: Art, Science.',
+    )).toBeInTheDocument();
+  });
+
   it('saves Paid with the price and sale price', async () => {
     await renderSection();
     axiosMock.onPut(pricingUrl()).reply(200, pricingResponse({
