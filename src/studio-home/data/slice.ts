@@ -10,7 +10,7 @@ export interface Params {
   order?: string;
   archivedOnly?: boolean;
   activeOnly?: boolean;
-  /** Course type filter, sent as ?course_type=: 'free' | 'paid' | 'program_only' | 'subscription'. */
+  /** Course type filter, sent as ?course_type=: free, paid, program_only, subscription or enrollment_code. */
   courseType?: string;
   isFiltered?: boolean;
   cleanFilters?: boolean;
