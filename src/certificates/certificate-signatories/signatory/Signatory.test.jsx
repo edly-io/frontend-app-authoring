@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import { IntlProvider } from '@edx/frontend-platform/i18n';
 import userEvent from '@testing-library/user-event';
 
@@ -42,5 +42,24 @@ describe('Signatory Component', () => {
     await user.click(editButton);
 
     expect(mockHandleEdit).toHaveBeenCalled();
+  });
+
+  it('disables the edit button and shows the tooltip on focus when isEditDisabled', async () => {
+    const user = userEvent.setup();
+    mockHandleEdit.mockClear();
+    const { getByRole, getByText } = renderSignatory({ ...defaultProps, isEditDisabled: true });
+
+    const editButton = getByRole('button', { name: commonMessages.editTooltip.defaultMessage });
+    expect(editButton).toHaveAttribute('aria-disabled', 'true');
+
+    await user.tab();
+
+    await waitFor(() => {
+      expect(getByText(commonMessages.activeCertificateEditHint.defaultMessage)).toBeInTheDocument();
+    });
+
+    await user.click(editButton);
+
+    expect(mockHandleEdit).not.toHaveBeenCalled();
   });
 });

@@ -4,7 +4,7 @@ import { useToggle } from '@openedx/paragon';
 
 import { setMode } from '../../data/slice';
 import { deleteCourseCertificate } from '../../data/thunks';
-import { getIsCertificateActive } from '../../data/selectors';
+import { getCanEditCertificate, getIsCertificateActive } from '../../data/selectors';
 import { MODE_STATES } from '../../data/constants';
 
 const useCertificateDetails = (certificateId) => {
@@ -13,6 +13,7 @@ const useCertificateDetails = (certificateId) => {
   const [isConfirmOpen, confirmOpen, confirmClose] = useToggle(false);
   const [isEditModalOpen, editModalOpen, editModalClose] = useToggle(false);
   const isCertificateActive = useSelector(getIsCertificateActive);
+  const canEdit = useSelector(getCanEditCertificate);
 
   const handleEditAll = () => {
     dispatch(setMode(MODE_STATES.editAll));
@@ -32,6 +33,7 @@ const useCertificateDetails = (certificateId) => {
     editModalOpen,
     editModalClose,
     isCertificateActive,
+    canEdit,
     handleEditAll,
     handleDeleteCard,
   };

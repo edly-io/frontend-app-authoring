@@ -1,13 +1,12 @@
 import PropTypes from 'prop-types';
-import {
-  Image, Icon, Stack, IconButtonWithTooltip,
-} from '@openedx/paragon';
+import { Image, Icon, Stack } from '@openedx/paragon';
 import {
   EditOutline as EditOutlineIcon,
 } from '@openedx/paragon/icons';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { getConfig } from '@edx/frontend-platform';
 
+import CertificateActionButton from '../../certificate-section/CertificateActionButton';
 import commonMessages from '../../messages';
 import messages from '../messages';
 
@@ -18,6 +17,7 @@ const Signatory = ({
   organization,
   signatureImagePath,
   handleEdit,
+  isEditDisabled,
 }) => {
   const intl = useIntl();
 
@@ -32,7 +32,8 @@ const Signatory = ({
         </Stack>
       </Stack>
 
-      <IconButtonWithTooltip
+      <CertificateActionButton
+        isDisabled={isEditDisabled}
         className="signatory__action-button"
         src={EditOutlineIcon}
         iconAs={Icon}
@@ -54,6 +55,10 @@ const Signatory = ({
   );
 };
 
+Signatory.defaultProps = {
+  isEditDisabled: false,
+};
+
 Signatory.propTypes = {
   name: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
@@ -61,6 +66,7 @@ Signatory.propTypes = {
   signatureImagePath: PropTypes.string.isRequired,
   index: PropTypes.number.isRequired,
   handleEdit: PropTypes.func.isRequired,
+  isEditDisabled: PropTypes.bool,
 };
 
 export default Signatory;
