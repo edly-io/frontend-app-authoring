@@ -17,7 +17,7 @@ export const CardDetails = (
   { description, title, children }: { description?: string; title?: string; children: ReactNode; },
 ) => (
   <div className="configuration-card-content curriculum-management-card-body">
-    {isUseful(description, title) && <p className="small text-gray-700 mb-3">{description}</p>}
+    {isUseful(description, title) && <p className="small text-gray-700 mb-3 text-break">{description}</p>}
     <dl className="curriculum-management-details mb-0">{children}</dl>
   </div>
 );
