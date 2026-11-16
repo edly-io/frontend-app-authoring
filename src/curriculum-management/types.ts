@@ -41,7 +41,8 @@ export interface Curriculum {
   slug: string;
   title: string;
   description: string;
-  kind: CurriculumKind;
+  /** Missing from an older backend: read as 'learning_path'. */
+  kind?: CurriculumKind;
   imageUrl: string | null;
   courses: CurriculumCourse[];
   /** Null when this learning path or course has no knowledge check. */
