@@ -125,7 +125,7 @@ describe('CertificateDetails', () => {
         certificatesData: { ...initialState.certificates.certificatesData, isActive: true, isGlobalStaff: false },
       },
     });
-    const { getByRole, getByText } = renderComponent(defaultProps);
+    const { getByRole, getByText, queryByText } = renderComponent(defaultProps);
     const editButton = getByRole('button', { name: commonMessages.editTooltip.defaultMessage });
     const deleteButton = getByRole('button', { name: commonMessages.deleteTooltip.defaultMessage });
 
@@ -137,6 +137,13 @@ describe('CertificateDetails', () => {
     await waitFor(() => {
       expect(getByText(commonMessages.activeCertificateEditHint.defaultMessage)).toBeInTheDocument();
     });
+
+    await user.click(editButton);
+    await user.click(deleteButton);
+
+    expect(queryByText(messages.editCertificateConfirmationTitle.defaultMessage)).not.toBeInTheDocument();
+    expect(queryByText(messages.deleteCertificateConfirmationTitle.defaultMessage)).not.toBeInTheDocument();
+    expect(mockDispatch).not.toHaveBeenCalled();
   });
 
   it('shows the hint tooltip on the disabled delete button for an active certificate when user is not global staff', async () => {
@@ -180,8 +187,7 @@ describe('CertificateDetails', () => {
     const { getByRole, getByText } = renderComponent(defaultProps);
     const editButton = getByRole('button', { name: commonMessages.editTooltip.defaultMessage });
 
-    expect(editButton).not.toBeDisabled();
-    expect(editButton).not.toHaveAttribute('aria-disabled');
+    expect(editButton).toHaveAttribute('aria-disabled', 'false');
     expect(getByRole('button', { name: commonMessages.deleteTooltip.defaultMessage })).not.toBeDisabled();
 
     await user.click(editButton);

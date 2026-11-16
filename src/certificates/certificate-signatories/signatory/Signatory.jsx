@@ -1,12 +1,13 @@
 import PropTypes from 'prop-types';
-import { Image, Icon, Stack } from '@openedx/paragon';
+import {
+  Image, Icon, IconButtonWithTooltip, Stack,
+} from '@openedx/paragon';
 import {
   EditOutline as EditOutlineIcon,
 } from '@openedx/paragon/icons';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { getConfig } from '@edx/frontend-platform';
 
-import CertificateActionButton from '../../certificate-section/CertificateActionButton';
 import commonMessages from '../../messages';
 import messages from '../messages';
 
@@ -32,14 +33,18 @@ const Signatory = ({
         </Stack>
       </Stack>
 
-      <CertificateActionButton
-        isDisabled={isEditDisabled}
-        className="signatory__action-button"
+      <IconButtonWithTooltip
+        className={`signatory__action-button${isEditDisabled ? ' certificate-action--disabled' : ''}`}
+        aria-disabled={isEditDisabled}
         src={EditOutlineIcon}
         iconAs={Icon}
         alt={intl.formatMessage(commonMessages.editTooltip)}
-        tooltipContent={<div>{intl.formatMessage(commonMessages.editTooltip)}</div>}
-        onClick={handleEdit}
+        tooltipContent={(
+          <div>
+            {intl.formatMessage(isEditDisabled ? commonMessages.activeCertificateEditHint : commonMessages.editTooltip)}
+          </div>
+        )}
+        onClick={isEditDisabled ? undefined : handleEdit}
       />
       <div className="signatory__image-container">
         {signatureImagePath && (

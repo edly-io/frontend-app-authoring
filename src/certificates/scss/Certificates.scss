@@ -110,6 +110,13 @@
   }
 }
 
+.certificates {
+  .certificate-action--disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+}
+
 .certificates.alert-toast {
   z-index: $popover;
 }

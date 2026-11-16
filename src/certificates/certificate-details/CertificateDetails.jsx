@@ -1,12 +1,11 @@
 import PropTypes from 'prop-types';
 import { useIntl } from '@edx/frontend-platform/i18n';
-import { Icon, Stack } from '@openedx/paragon';
+import { Icon, IconButtonWithTooltip, Stack } from '@openedx/paragon';
 import {
   EditOutline as EditOutlineIcon, DeleteOutline as DeleteOutlineIcon,
 } from '@openedx/paragon/icons';
 
 import CertificateSection from '../certificate-section/CertificateSection';
-import CertificateActionButton from '../certificate-section/CertificateActionButton';
 import ModalNotification from '../../generic/modal-notification';
 import commonMessages from '../messages';
 import messages from './messages';
@@ -32,6 +31,7 @@ const CertificateDetails = ({
     handleEditAll,
     handleDeleteCard,
   } = useCertificateDetails(certificateId);
+  const handleEditClick = isCertificateActive ? editModalOpen : handleEditAll;
 
   return (
     <CertificateSection
@@ -40,21 +40,31 @@ const CertificateDetails = ({
       data-testid="certificate-details"
       actions={(
         <Stack direction="horizontal" gap="2">
-          <CertificateActionButton
-            isDisabled={!canEdit}
+          <IconButtonWithTooltip
+            className={canEdit ? undefined : 'certificate-action--disabled'}
+            aria-disabled={!canEdit}
             src={EditOutlineIcon}
             iconAs={Icon}
-            tooltipContent={<div>{intl.formatMessage(commonMessages.editTooltip)}</div>}
+            tooltipContent={(
+              <div>
+                {intl.formatMessage(canEdit ? commonMessages.editTooltip : commonMessages.activeCertificateEditHint)}
+              </div>
+            )}
             alt={intl.formatMessage(commonMessages.editTooltip)}
-            onClick={isCertificateActive ? editModalOpen : handleEditAll}
+            onClick={canEdit ? handleEditClick : undefined}
           />
-          <CertificateActionButton
-            isDisabled={!canEdit}
+          <IconButtonWithTooltip
+            className={canEdit ? undefined : 'certificate-action--disabled'}
+            aria-disabled={!canEdit}
             src={DeleteOutlineIcon}
             iconAs={Icon}
-            tooltipContent={<div>{intl.formatMessage(commonMessages.deleteTooltip)}</div>}
+            tooltipContent={(
+              <div>
+                {intl.formatMessage(canEdit ? commonMessages.deleteTooltip : commonMessages.activeCertificateEditHint)}
+              </div>
+            )}
             alt={intl.formatMessage(commonMessages.deleteTooltip)}
-            onClick={confirmOpen}
+            onClick={canEdit ? confirmOpen : undefined}
           />
         </Stack>
       )}
