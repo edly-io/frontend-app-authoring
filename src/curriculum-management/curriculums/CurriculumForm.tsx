@@ -18,6 +18,7 @@ import {
   CURRICULUM_DESCRIPTION_MAX,
   CURRICULUM_IMAGE_ACCEPT,
   CURRICULUM_IMAGE_MAX_BYTES,
+  CURRICULUM_KINDS,
   CURRICULUM_TITLE_MAX,
   DELAY_OPTIONS,
   GROUP_SLUG_PATTERN,
@@ -95,7 +96,7 @@ const CurriculumForm = ({
       .max(CURRICULUM_TITLE_MAX, intl.formatMessage(messages.tooLong, { max: CURRICULUM_TITLE_MAX })),
     description: Yup.string()
       .max(CURRICULUM_DESCRIPTION_MAX, intl.formatMessage(messages.tooLong, { max: CURRICULUM_DESCRIPTION_MAX })),
-    kind: Yup.string().required(intl.formatMessage(messages.kindRequired)),
+    kind: Yup.string().oneOf([...CURRICULUM_KINDS]).required(intl.formatMessage(messages.kindRequired)),
     courses: Yup.array()
       .min(1, intl.formatMessage(messages.coursesRequired))
       .test('one-course', intl.formatMessage(messages.oneCourseOnly), function oneCourse(value) {
@@ -306,16 +307,23 @@ const CurriculumForm = ({
                       <Form.Label>{intl.formatMessage(messages.curriculumKindLabel)}</Form.Label>
                       {/* Stacked, like the badge form's type choice: inline put the label in front of the first option. */}
                       <Form.RadioSet name="kind" value={values.kind} onChange={handleChange}>
+                        {/* Fixed once saved, like the path ID: switching would drop or strand the Complete badge. */}
                         <Form.Radio
                           value="learning_path"
+                          disabled={!!curriculum}
                           description={intl.formatMessage(messages.kindLearningPathHelp)}
                         >
                           {intl.formatMessage(messages.kindLearningPath)}
                         </Form.Radio>
-                        <Form.Radio value="course" description={intl.formatMessage(messages.kindCourseOptionHelp)}>
+                        <Form.Radio
+                          value="course"
+                          disabled={!!curriculum}
+                          description={intl.formatMessage(messages.kindCourseOptionHelp)}
+                        >
                           {intl.formatMessage(messages.kindCourseOption)}
                         </Form.Radio>
                       </Form.RadioSet>
+                      {curriculum && <Form.Text>{intl.formatMessage(messages.kindLocked)}</Form.Text>}
                       {errorFor('kind') && (
                         <Form.Control.Feedback type="invalid" hasIcon={false}>{errorFor('kind')}</Form.Control.Feedback>
                       )}
@@ -361,7 +369,7 @@ const CurriculumForm = ({
                           emptyFocusId="curriculum-course-search"
                         />
                         {values.courses.length > 0 ?
-                          <Form.Text>{intl.formatMessage(messages.reorderHint)}</Form.Text> :
+                          !isCourse && <Form.Text>{intl.formatMessage(messages.reorderHint)}</Form.Text> :
                           (
                             <p className="x-small text-gray-700 font-italic">
                               {intl.formatMessage(isCourse ? messages.noCourseYet : messages.badgeCoursesEmpty)}
@@ -400,11 +408,9 @@ const CurriculumForm = ({
                                   }}
                                   onClick={() => {
                                     setFocusKcSearch(true);
+                                    // Keeps the Retained pick: Change also swaps one check for another. Saving
+                                    // without a check sends no Retained badge (toCurriculumWriteData).
                                     setFieldValue('knowledgeCheck', null);
-                                    // No knowledge check, no Retained badge (UBER-351); an earned slot keeps its badge.
-                                    if (!curriculum?.badges.retained?.earned) {
-                                      setFieldValue('badges.retained', '');
-                                    }
                                   }}
                                 >
                                   {intl.formatMessage(messages.knowledgeCheckChange)}

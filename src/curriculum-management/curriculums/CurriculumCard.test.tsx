@@ -39,6 +39,32 @@ describe('<CurriculumCard />', () => {
     expect(screen.queryByText('No time limit')).not.toBeInTheDocument();
   });
 
+  it('shows only the Retained slot for a course, and no course count', () => {
+    initializeMocks();
+    const course = camelCaseObject({
+      ...rawCourseCurriculum,
+      knowledge_check: rawCurriculums[0].knowledge_check,
+      badges: { complete: null, retained: rawCurriculums[0].badges.retained },
+    }) as Curriculum;
+    render(<CurriculumCard curriculum={course} defaultExpanded onEdit={jest.fn()} />);
+    expect(screen.getByText('1 of 1 badges')).toBeInTheDocument();
+    expect(screen.queryByTestId('slot-complete')).not.toBeInTheDocument();
+    expect(screen.getByTestId('slot-retained')).toBeInTheDocument();
+    expect(screen.queryByText('1 course')).not.toBeInTheDocument();
+  });
+
+  it('counts only the Complete slot for a learning path without a knowledge check', () => {
+    initializeMocks();
+    const path = camelCaseObject({
+      ...rawCurriculums[0],
+      knowledge_check: null,
+      badges: { ...rawCurriculums[0].badges, retained: null },
+    }) as Curriculum;
+    render(<CurriculumCard curriculum={path} defaultExpanded onEdit={jest.fn()} />);
+    expect(screen.getByText('1 of 1 badges')).toBeInTheDocument();
+    expect(screen.queryByTestId('slot-retained')).not.toBeInTheDocument();
+  });
+
   it('shows title, ID and chips; expands to courses, knowledge check and slots', async () => {
     initializeMocks();
     const user = userEvent.setup();

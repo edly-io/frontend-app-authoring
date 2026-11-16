@@ -126,7 +126,8 @@ export const toCurriculumWriteData = (values: CurriculumFormValues): CurriculumW
   knowledgeCheckTimeLimit: values.knowledgeCheck ? optionalNumber(values.knowledgeCheckTimeLimit) : null,
   badges: {
     complete: values.kind === 'course' ? null : values.badges.complete || null,
-    retained: values.badges.retained || null,
+    // No knowledge check, no Retained badge (UBER-351); the API refuses one.
+    retained: values.knowledgeCheck ? values.badges.retained || null : null,
   },
 });
 

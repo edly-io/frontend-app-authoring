@@ -257,13 +257,12 @@ describe('<CurriculumForm />', () => {
     expect((axiosMock.history.post[0].data as FormData).get('kind')).toEqual('course');
   });
 
-  it('switching a two-course learning path to Course blocks saving', async () => {
-    const { axiosMock, user } = setup({ curriculum });
-    await user.click(screen.getByRole('radio', { name: 'Course' }));
-    await user.click(screen.getByRole('button', { name: 'Save' }));
-    expect(await screen.findByText('A course has exactly one course. Choose Learning path for more.'))
-      .toBeInTheDocument();
-    expect(axiosMock.history.put).toHaveLength(0);
+  it('locks the type on edit, so a saved learning path can\'t be switched to Course', () => {
+    setup({ curriculum });
+    expect(screen.getByRole('radio', { name: 'Learning path' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Learning path' })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: 'Course' })).toBeDisabled();
+    expect(screen.getByText('The type can\'t change after the first save.')).toBeInTheDocument();
   });
 
   it('hides the knowledge check settings until a knowledge check is picked', () => {
@@ -272,7 +271,7 @@ describe('<CurriculumForm />', () => {
     expect(screen.queryByLabelText('15 days')).not.toBeInTheDocument();
   });
 
-  it('disables the Retained slot without a knowledge check and clears it when the check is removed', async () => {
+  it('disables the Retained slot without a knowledge check and sends none on save', async () => {
     const { axiosMock, onClose, user } = setup({ curriculum });
     axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(200, rawCurriculums[0]);
     expect(slotToggle('Retained')).toBeEnabled();

@@ -99,7 +99,7 @@ export const rawCurriculums = [
   },
 ];
 
-/** A Course (UBER-351): one course, no knowledge check, so only the Complete slot. */
+/** A Course (UBER-351): one course and no knowledge check, so no usable badge slot (a course has no Complete). */
 export const rawCourseCurriculum = {
   ...rawCurriculums[0],
   uuid: 'cur-3',
@@ -108,7 +108,7 @@ export const rawCourseCurriculum = {
   title: 'Airport pickups',
   courses: [rawCurriculums[0].courses[0]],
   knowledge_check: null,
-  badges: { complete: rawCurriculums[0].badges.complete, retained: null },
+  badges: { complete: null, retained: null },
 };
 
 /** Identical to rawCurriculums[0] but with image_url: null, for testing the no-image case. */
