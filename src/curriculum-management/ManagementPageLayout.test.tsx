@@ -96,27 +96,27 @@ describe('<ManagementPageLayout />', () => {
   });
 
   it.each([
-    [CURRICULUMS, 'Curriculum', 'Badges'],
-    [BADGES, 'Badges', 'Curriculum'],
+    [CURRICULUMS, 'Learning Paths', 'Badges'],
+    [BADGES, 'Badges', 'Learning Paths'],
   ])('%s: both tabs link to their paths and only "%s" is current', async (path, current, other) => {
     axiosMock.onGet(apiUrls.status()).reply(200, rawStatus());
     renderLayout(path);
-    const nav = await screen.findByRole('navigation', { name: 'Curriculum management sections' });
-    expect(nav).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Curriculum' })).toHaveAttribute('href', CURRICULUMS);
-    expect(screen.getByRole('link', { name: 'Badges' })).toHaveAttribute('href', BADGES);
-    expect(screen.getByRole('link', { name: current })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: other })).not.toHaveAttribute('aria-current');
+    const nav = await screen.findByRole('navigation', { name: 'Learning path management sections' });
+    // The Studio home tab is also "Learning Paths", so look inside this tab bar.
+    expect(within(nav).getByRole('link', { name: 'Learning Paths' })).toHaveAttribute('href', CURRICULUMS);
+    expect(within(nav).getByRole('link', { name: 'Badges' })).toHaveAttribute('href', BADGES);
+    expect(within(nav).getByRole('link', { name: current })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('link', { name: other })).not.toHaveAttribute('aria-current');
   });
 
-  it('Curriculum tab: page title, New curriculum and the curriculum help', async () => {
+  it('Learning Paths tab: page title, New learning path and the learning path help', async () => {
     axiosMock.onGet(apiUrls.status()).reply(200, rawStatus());
     renderLayout();
     expect(await screen.findByTestId('curriculums-page')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Curriculum Management' })).toBeInTheDocument();
-    expect(screen.getByText('About curriculums')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Learning Paths' })).toBeInTheDocument();
+    expect(screen.getByText('About learning paths')).toBeInTheDocument();
     expect(screen.queryByText('Course badges')).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'New curriculum' }));
+    await userEvent.click(screen.getByRole('button', { name: 'New learning path' }));
     expect(screen.getByTestId('form-target')).toHaveTextContent('new');
   });
 
@@ -127,7 +127,8 @@ describe('<ManagementPageLayout />', () => {
     expect(screen.getByRole('link', { name: 'Course groups' })).toHaveAttribute('href', COURSE_GROUPS);
     expect(screen.getByRole('link', { name: 'Course groups' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Deep links' })).toHaveAttribute('href', DEEP_LINKS);
-    expect(screen.getByRole('link', { name: 'Curriculum' })).not.toHaveAttribute('aria-current');
+    const nav = screen.getByRole('navigation', { name: 'Learning path management sections' });
+    expect(within(nav).getByRole('link', { name: 'Learning Paths' })).not.toHaveAttribute('aria-current');
   });
 
   it('Course groups tab: New course group and the group help', async () => {
@@ -136,7 +137,7 @@ describe('<ManagementPageLayout />', () => {
     await screen.findByTestId('course-groups-page');
     expect(screen.getByText('About course groups')).toBeInTheDocument();
     expect(screen.getByText('Group IDs')).toBeInTheDocument();
-    expect(screen.queryByText('About curriculums')).not.toBeInTheDocument();
+    expect(screen.queryByText('About learning paths')).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'New course group' }));
     expect(screen.getByTestId('form-target')).toHaveTextContent('new');
   });
@@ -155,10 +156,10 @@ describe('<ManagementPageLayout />', () => {
     axiosMock.onGet(apiUrls.status()).reply(200, rawStatus());
     renderLayout(BADGES);
     expect(await screen.findByTestId('badges-page')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Curriculum Management' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Learning Paths' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New badge' })).toBeInTheDocument();
     expect(screen.getByText('Course badges')).toBeInTheDocument();
-    expect(screen.queryByText('About curriculums')).not.toBeInTheDocument();
+    expect(screen.queryByText('About learning paths')).not.toBeInTheDocument();
   });
 
   it('shows ConnectionErrorAlert, and no New button, when either list fails', async () => {
@@ -190,7 +191,7 @@ describe('<ManagementPageLayout />', () => {
     const user = userEvent.setup();
     renderLayout();
     await screen.findByTestId('curriculums-page');
-    await user.click(screen.getByRole('button', { name: 'New curriculum' }));
+    await user.click(screen.getByRole('button', { name: 'New learning path' }));
     await user.click(screen.getByRole('button', { name: 'make dirty' }));
     await user.click(screen.getByRole('button', { name: 'edit other' }));
     expect(screen.getByTestId('form-target')).toHaveTextContent('new');
@@ -207,7 +208,7 @@ describe('<ManagementPageLayout />', () => {
     const user = userEvent.setup();
     renderLayout();
     await screen.findByTestId('curriculums-page');
-    await user.click(screen.getByRole('button', { name: 'New curriculum' }));
+    await user.click(screen.getByRole('button', { name: 'New learning path' }));
     expect(screen.getByTestId('form-target')).toHaveTextContent('new');
     await user.click(screen.getByRole('link', { name: 'go to other page' }));
     expect(await screen.findByTestId('badges-page')).toBeInTheDocument();
@@ -225,7 +226,7 @@ describe('<ManagementPageLayout />', () => {
     );
     expect(within(homeNav).getByRole('link', { name: 'Courses' })).toHaveAttribute('href', '/home');
     expect(within(homeNav).getByRole('link', { name: 'Libraries' })).toHaveAttribute('href', '/libraries');
-    expect(within(homeNav).getByRole('link', { name: 'Curriculum Management' })).toHaveAttribute(
+    expect(within(homeNav).getByRole('link', { name: 'Learning Paths' })).toHaveAttribute(
       'aria-current',
       'page',
     );

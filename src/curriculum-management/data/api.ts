@@ -97,7 +97,9 @@ const toCurriculumFormData = (data: CurriculumWriteData): FormData => {
     formData.append('remove_image', 'true');
   }
   data.courseIds.forEach((id) => formData.append('course_ids', id));
-  formData.append('knowledge_check_course_id', data.knowledgeCheckCourseId);
+  formData.append('kind', data.kind);
+  // '' is multipart's null: no knowledge check.
+  formData.append('knowledge_check_course_id', data.knowledgeCheckCourseId ?? '');
   formData.append('knowledge_check_delay_days', String(data.knowledgeCheckDelayDays));
   formData.append('knowledge_check_pass_threshold', String(data.knowledgeCheckPassThreshold));
   formData.append('knowledge_check_max_attempts', String(data.knowledgeCheckMaxAttempts));

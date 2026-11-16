@@ -82,6 +82,7 @@ describe('curriculum-management apiHooks', () => {
     const { result } = renderHook(() => useCreateCurriculum(), { wrapper: makeWrapper() });
     await result.current.mutateAsync({
       slug: '',
+      kind: 'learning_path',
       title: 'T',
       description: '',
       courseIds: ['c'],

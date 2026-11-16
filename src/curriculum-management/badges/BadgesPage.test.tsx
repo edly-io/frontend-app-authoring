@@ -63,7 +63,7 @@ describe('<BadgesPage />', () => {
     );
     expect(within(roadReady).getByRole('img', { name: 'Road ready' })).toHaveAttribute('src', rawBadges[0].image_url);
     await expand(user, 'Holiday rush ready');
-    expect(within(cardFor('Holiday rush ready')).getByText('Not linked to a curriculum')).toBeInTheDocument();
+    expect(within(cardFor('Holiday rush ready')).getByText('Not linked to a learning path')).toBeInTheDocument();
   });
 
   it('expands and scrolls to the badge named in the open param', async () => {
@@ -74,7 +74,7 @@ describe('<BadgesPage />', () => {
     HTMLElement.prototype.scrollIntoView = scrollIntoView;
     renderPage(`/?open=${rawBadges[3].uuid}`);
     await screen.findByText('4 badges');
-    expect(within(cardFor('Holiday rush ready')).getByText('Not linked to a curriculum')).toBeInTheDocument();
+    expect(within(cardFor('Holiday rush ready')).getByText('Not linked to a learning path')).toBeInTheDocument();
     expect(within(cardFor('Road ready')).queryByRole('link')).not.toBeInTheDocument();
     expect(scrollIntoView.mock.contexts).toEqual([cardFor('Holiday rush ready')]);
     delete (HTMLElement.prototype as Partial<HTMLElement>).scrollIntoView;
@@ -85,7 +85,7 @@ describe('<BadgesPage />', () => {
     axiosMock.onGet(apiUrls.badgesPage(1)).reply(200, page(rawBadges.slice(3)));
     renderPage();
     await screen.findByText('1 badge');
-    expect(screen.getByText('Not linked to a curriculum')).toBeInTheDocument();
+    expect(screen.getByText('Not linked to a learning path')).toBeInTheDocument();
   });
 
   it('opens the create form from the button below the list', async () => {
@@ -136,7 +136,7 @@ describe('<BadgesPage />', () => {
     expect(deleteButton).toBeEnabled();
     await user.click(deleteButton);
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText('This badge will be removed from 1 curriculum:')).toBeInTheDocument();
+    expect(within(dialog).getByText('This badge will be removed from 1 learning path:')).toBeInTheDocument();
     expect(within(dialog).getByText('New driver essentials · Complete')).toBeInTheDocument();
     await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
     expect(axiosMock.history.delete).toHaveLength(1);
@@ -176,7 +176,7 @@ describe('<BadgesPage />', () => {
     const user = userEvent.setup();
     renderPage();
     await screen.findByText('5 badges');
-    expect(within(cardFor('Road ready')).getByText('Curriculum badge')).toBeInTheDocument();
+    expect(within(cardFor('Road ready')).getByText('Learning path badge')).toBeInTheDocument();
     const airport = cardFor('Airport pro');
     expect(within(airport).getByText('Course badge')).toBeInTheDocument();
     expect(within(airport).getByText('2 courses')).toBeInTheDocument();

@@ -103,14 +103,23 @@ const CurriculumCard = ({
               </span>
               <Badge variant="primary">
                 <span className="small">
-                  {intl.formatMessage(messages.courseCount, { count: curriculum.courses.length })}
+                  {intl.formatMessage(
+                    curriculum.kind === 'course' ? messages.kindCourseChip : messages.kindLearningPathChip,
+                  )}
                 </span>
               </Badge>
               <Badge variant="primary">
                 <span className="small">
-                  {intl.formatMessage(messages.delayChip, { days: curriculum.knowledgeCheckDelayDays })}
+                  {intl.formatMessage(messages.courseCount, { count: curriculum.courses.length })}
                 </span>
               </Badge>
+              {curriculum.knowledgeCheck && (
+                <Badge variant="primary">
+                  <span className="small">
+                    {intl.formatMessage(messages.delayChip, { days: curriculum.knowledgeCheckDelayDays })}
+                  </span>
+                </Badge>
+              )}
               <Badge variant="primary">
                 <span className="small">
                   {intl.formatMessage(messages.badgeSlotsChip, { count: filledSlots, total: SLOT_KEYS.length })}
@@ -150,30 +159,37 @@ const CurriculumCard = ({
             </ol>
           </DetailRow>
           <DetailRow label={intl.formatMessage(messages.knowledgeCheckHeading)}>
-            <CourseLine course={curriculum.knowledgeCheck} />
-            <Badge variant="light" className="mt-1">
-              {intl.formatMessage(messages.opensAfter, { days: curriculum.knowledgeCheckDelayDays })}
-            </Badge>
-            {/* Pass mark and attempts are hidden when the LMS doesn't send them; a missing time limit shows as 'No time limit'. */}
-            <ul className="list-unstyled mb-0 mt-2 small text-gray-700">
-              {curriculum.knowledgeCheckPassThreshold != null && (
-                <li>
-                  {intl.formatMessage(messages.passThresholdSummary, {
-                    threshold: curriculum.knowledgeCheckPassThreshold,
-                  })}
-                </li>
-              )}
-              {curriculum.knowledgeCheckMaxAttempts != null && (
-                <li>
-                  {intl.formatMessage(messages.maxAttemptsSummary, { count: curriculum.knowledgeCheckMaxAttempts })}
-                </li>
-              )}
-              <li>
-                {curriculum.knowledgeCheckTimeLimit != null
-                  ? intl.formatMessage(messages.timeLimitSummary, { minutes: curriculum.knowledgeCheckTimeLimit })
-                  : intl.formatMessage(messages.noTimeLimit)}
-              </li>
-            </ul>
+            {!curriculum.knowledgeCheck && (
+              <span className="small text-gray-700">{intl.formatMessage(messages.noKnowledgeCheck)}</span>
+            )}
+            {curriculum.knowledgeCheck && (
+              <>
+                <CourseLine course={curriculum.knowledgeCheck} />
+                <Badge variant="light" className="mt-1">
+                  {intl.formatMessage(messages.opensAfter, { days: curriculum.knowledgeCheckDelayDays })}
+                </Badge>
+                {/* Pass mark and attempts are hidden when the LMS doesn't send them; a missing time limit shows as 'No time limit'. */}
+                <ul className="list-unstyled mb-0 mt-2 small text-gray-700">
+                  {curriculum.knowledgeCheckPassThreshold != null && (
+                    <li>
+                      {intl.formatMessage(messages.passThresholdSummary, {
+                        threshold: curriculum.knowledgeCheckPassThreshold,
+                      })}
+                    </li>
+                  )}
+                  {curriculum.knowledgeCheckMaxAttempts != null && (
+                    <li>
+                      {intl.formatMessage(messages.maxAttemptsSummary, { count: curriculum.knowledgeCheckMaxAttempts })}
+                    </li>
+                  )}
+                  <li>
+                    {curriculum.knowledgeCheckTimeLimit != null
+                      ? intl.formatMessage(messages.timeLimitSummary, { minutes: curriculum.knowledgeCheckTimeLimit })
+                      : intl.formatMessage(messages.noTimeLimit)}
+                  </li>
+                </ul>
+              </>
+            )}
           </DetailRow>
           <DetailRow label={intl.formatMessage(messages.badgesHeading)}>
             {/* Read-only: the slots are picked on the curriculum form. */}

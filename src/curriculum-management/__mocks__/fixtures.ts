@@ -72,6 +72,7 @@ export const rawCurriculums = [
   {
     uuid: 'cur-1',
     slug: 'new-driver-essentials',
+    kind: 'learning_path',
     title: 'New driver essentials',
     description: 'Required courses for new drivers.',
     image_url: 'https://example.com/curriculum-image.png',
@@ -97,6 +98,18 @@ export const rawCurriculums = [
     modified: '2026-10-02T10:00:00Z',
   },
 ];
+
+/** A Course (UBER-351): one course, no knowledge check, so only the Complete slot. */
+export const rawCourseCurriculum = {
+  ...rawCurriculums[0],
+  uuid: 'cur-3',
+  slug: 'airport-pickups',
+  kind: 'course',
+  title: 'Airport pickups',
+  courses: [rawCurriculums[0].courses[0]],
+  knowledge_check: null,
+  badges: { complete: rawCurriculums[0].badges.complete, retained: null },
+};
 
 /** Identical to rawCurriculums[0] but with image_url: null, for testing the no-image case. */
 export const rawCurriculumNoImage = {

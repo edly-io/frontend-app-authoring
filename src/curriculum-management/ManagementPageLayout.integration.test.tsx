@@ -86,8 +86,8 @@ const renderApp = (mocks: ReturnType<typeof initializeMocks>, path = '/curriculu
   return router;
 };
 
-/** The SubHeader action; the list also has an outline "New curriculum" button under it. */
-const newCurriculumButton = async () => (await screen.findAllByRole('button', { name: 'New curriculum' }))[0];
+/** The SubHeader action; the list also has an outline "New learning path" button under it. */
+const newCurriculumButton = async () => (await screen.findAllByRole('button', { name: 'New learning path' }))[0];
 
 const PROMPT = 'You have unsaved changes';
 
@@ -105,9 +105,9 @@ describe('<ManagementPageLayout /> with real pages and forms', () => {
     const user = userEvent.setup();
     renderApp(mocks);
     await user.click(await newCurriculumButton());
-    expect(await screen.findByRole('dialog', { name: 'New curriculum' })).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'New learning path' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(screen.queryByRole('dialog', { name: 'New curriculum' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'New learning path' })).not.toBeInTheDocument();
     expect(screen.queryByText(PROMPT)).not.toBeInTheDocument();
   });
 
@@ -124,7 +124,7 @@ describe('<ManagementPageLayout /> with real pages and forms', () => {
 
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
     await user.click(await screen.findByRole('button', { name: 'Discard changes' }));
-    expect(screen.queryByRole('dialog', { name: 'New curriculum' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'New learning path' })).not.toBeInTheDocument();
     expect(screen.queryByText(PROMPT)).not.toBeInTheDocument();
   });
 

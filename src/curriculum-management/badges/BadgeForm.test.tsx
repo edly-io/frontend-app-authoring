@@ -60,7 +60,7 @@ describe('<BadgeForm />', () => {
     } = setup();
     axiosMock.onPost(apiUrls.badges()).reply(201, rawBadges[3]);
     expect(screen.getByRole('heading', { name: 'New badge' })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: 'Curriculum badge' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Learning path badge' })).toBeChecked();
     await user.type(screen.getByLabelText('Title'), 'Holiday rush ready');
     expect(screen.getByText('18 / 50')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Description'), 'Seasonal.');
