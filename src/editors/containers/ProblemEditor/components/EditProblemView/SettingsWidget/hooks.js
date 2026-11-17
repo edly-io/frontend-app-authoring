@@ -336,6 +336,12 @@ export const typeRowHooks = ({
         : ProblemTypes[typeKey].title;
       setBlockTitle(newTitle);
     }
+    // Text and numeric input edit the incorrect-answer feedback as plain text. Any other type's
+    // generalFeedback is rich text, so it would be escaped a second time on save.
+    const plainFeedbackTypes = [ProblemTypeKeys.TEXTINPUT, ProblemTypeKeys.NUMERIC];
+    if (plainFeedbackTypes.includes(typeKey) && !plainFeedbackTypes.includes(problemType)) {
+      updateField({ generalFeedback: '' });
+    }
     updateField({ problemType: typeKey });
   };
   return {

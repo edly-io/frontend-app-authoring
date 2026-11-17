@@ -15,11 +15,11 @@ const IncorrectFeedback = () => {
   const dispatch = useDispatch();
   const generalFeedback = useSelector(selectors.problem.generalFeedback);
   return (
-    <div className="mt-4 text-primary-500">
-      <div className="h4">
+    <Form.Group controlId="incorrect-answer-feedback" className="mt-4 text-primary-500">
+      <Form.Label className="h4 d-block mb-0">
         <FormattedMessage {...messages.incorrectFeedbackTitle} />
-      </div>
-      <div className="small mb-3">
+      </Form.Label>
+      <div id="incorrect-answer-feedback-help" className="small mb-3">
         <FormattedMessage {...messages.incorrectFeedbackHelperText} />
       </div>
       <Form.Control
@@ -29,9 +29,9 @@ const IncorrectFeedback = () => {
         value={generalFeedback || ''}
         onChange={(e) => dispatch(actions.problem.updateField({ generalFeedback: e.target.value, isDirty: true }))}
         placeholder={intl.formatMessage(messages.incorrectFeedbackPlaceholder)}
-        aria-label={intl.formatMessage(messages.incorrectFeedbackTitle)}
+        aria-describedby="incorrect-answer-feedback-help"
       />
-    </div>
+    </Form.Group>
   );
 };
 

@@ -412,12 +412,27 @@ describe('OLXParser', () => {
       expect(data.generalFeedback).toBe('Use x < 5 & don\'t!');
       expect(data.question).not.toContain('Use x');
     });
-    it.each([
+    const responses = [
+      ['stringresponse', (hint) => `<stringresponse answer="4">${hint}<textline/></stringresponse>`],
+      [
+        'numericalresponse',
+        (hint) => `<numericalresponse answer="4">${hint}<formulaequationinput/></numericalresponse>`,
+      ],
+    ];
+    const unsupportedHints = [
       ['a regexphint with another pattern', '<regexphint answer="5+">No.</regexphint>'],
       ['a catch-all regexphint with markup', '<regexphint answer=".*">Try <b>again</b>.</regexphint>'],
-    ])('reverts to the advanced editor for %s', (_, hint) => {
-      const parser = new OLXParser(`<problem><stringresponse answer="4">${hint}<textline/></stringresponse></problem>`);
-      expect(() => parser.getParsedOLXData()).toThrow('Answer-matching hints not supported by GUI');
-    });
+      [
+        'two catch-all regexphints',
+        '<regexphint answer=".*">One.</regexphint><regexphint answer=".*">Two.</regexphint>',
+      ],
+    ];
+    it.each(responses.flatMap(([tag, wrap]) => unsupportedHints.map(([name, hint]) => [tag, name, wrap(hint)])))(
+      'reverts %s to the advanced editor for %s',
+      (_, __, response) => {
+        const parser = new OLXParser(`<problem>${response}</problem>`);
+        expect(() => parser.getParsedOLXData()).toThrow('Answer-matching hints not supported by GUI');
+      },
+    );
   });
 });

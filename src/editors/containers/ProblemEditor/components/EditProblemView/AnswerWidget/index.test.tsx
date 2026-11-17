@@ -18,6 +18,9 @@ describe('AnswerWidget incorrect answer feedback', () => {
     });
     const field = screen.getByRole('textbox', { name: 'Feedback for incorrect answers' });
     expect(field).toHaveValue('Try again.');
+    expect(field).toHaveAccessibleDescription(
+      'Shown when a learner submits a wrong answer. Answer-specific feedback takes priority.',
+    );
 
     fireEvent.change(field, { target: { value: 'Not quite.' } });
     const { problem } = getEditorStore().getState();
