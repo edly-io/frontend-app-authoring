@@ -32,15 +32,21 @@ export interface SlotBadge extends BadgeSummary {
   earned: boolean;
 }
 
+/** What the author is creating (UBER-351): a learning path of several courses, or a single course. */
+export type CurriculumKind = 'learning_path' | 'course';
+
 export interface Curriculum {
   uuid: string;
   /** The learning path ID Uber signs into links: set on create, never changed. */
   slug: string;
   title: string;
   description: string;
+  /** Missing from an older backend: read as 'learning_path'. */
+  kind?: CurriculumKind;
   imageUrl: string | null;
   courses: CurriculumCourse[];
-  knowledgeCheck: CourseRef;
+  /** Null when this learning path or course has no knowledge check. */
+  knowledgeCheck: CourseRef | null;
   knowledgeCheckDelayDays: number;
   knowledgeCheckPassThreshold?: number | null;
   knowledgeCheckMaxAttempts?: number | null;
@@ -213,7 +219,9 @@ export interface CurriculumWriteData {
   image: File | null;
   removeImage: boolean;
   courseIds: string[];
-  knowledgeCheckCourseId: string;
+  kind: CurriculumKind;
+  /** Null: no knowledge check. */
+  knowledgeCheckCourseId: string | null;
   knowledgeCheckDelayDays: number;
   knowledgeCheckPassThreshold: number;
   knowledgeCheckMaxAttempts: number;

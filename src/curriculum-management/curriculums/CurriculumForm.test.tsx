@@ -67,9 +67,38 @@ const chooseBadge = async (user: User, slot: 'Complete' | 'Retained', title: str
   await user.click(menu.getByTitle(title));
 };
 
+/** New forms show their sections once a type is picked (UBER-351). */
+const pickType = async (user: User, type: 'Learning path' | 'Course') => {
+  await user.click(screen.getByRole('radio', { name: type }));
+};
+
 afterEach(() => jest.useRealTimers());
 
 describe('<CurriculumForm />', () => {
+  it('starts a new form with no type chosen and shows the rest only once one is picked', async () => {
+    const { user } = setup();
+    expect(screen.getByRole('radio', { name: 'Learning path' })).not.toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Course' })).not.toBeChecked();
+    expect(screen.queryByLabelText('Add a course')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Knowledge check course')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Complete badge/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('radio', { name: 'Course' }));
+    expect(screen.getByLabelText('Add a course')).toBeInTheDocument();
+    expect(screen.getByLabelText('Knowledge check course')).toBeInTheDocument();
+    // A single course gets singular wording.
+    expect(screen.getByText('The course learners take.')).toBeInTheDocument();
+    expect(screen.getByText('No course yet')).toBeInTheDocument();
+    expect(screen.getAllByText('Can\'t be the course above.').length).toBeGreaterThan(0);
+  });
+
+  it('asks for a type when saving without one', async () => {
+    const { axiosMock, user } = setup();
+    await user.type(screen.getByLabelText('Title'), 'Night driving');
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+    expect(await screen.findByText('Choose Learning path or Course.')).toBeInTheDocument();
+    expect(axiosMock.history.post).toHaveLength(0);
+  });
+
   it('creates a curriculum: picks courses, the knowledge check (excluding curriculum courses), delay and slots', async () => {
     const {
       axiosMock,
@@ -77,8 +106,9 @@ describe('<CurriculumForm />', () => {
       mockShowToast,
       user,
     } = setup();
+    await pickType(user, 'Learning path');
     axiosMock.onPost(apiUrls.curriculums()).reply(201, rawCurriculums[0]);
-    expect(screen.getByRole('heading', { name: 'New curriculum' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'New learning path' })).toBeInTheDocument();
 
     await user.type(screen.getByLabelText('Title'), 'New driver essentials');
     await search(user, 'Add a course', 'DRV');
@@ -107,7 +137,7 @@ describe('<CurriculumForm />', () => {
     expect(postBody.get('knowledge_check_delay_days')).toEqual('15');
     expect(postBody.has('badges.complete')).toBe(false);
     expect(postBody.get('badges.retained')).toEqual(rawBadges[1].uuid);
-    expect(mockShowToast).toHaveBeenCalledWith('Curriculum created');
+    expect(mockShowToast).toHaveBeenCalledWith('Learning path created');
   });
 
   it('suggests the learning path ID from the title until it is edited, and refuses a bad one', async () => {
@@ -135,16 +165,21 @@ describe('<CurriculumForm />', () => {
 
   it('shows client-side errors (no title, no courses, no knowledge check) and sends nothing', async () => {
     const { axiosMock, user } = setup();
+    await pickType(user, 'Learning path');
     await user.click(screen.getByRole('button', { name: 'Create' }));
     expect(await screen.findByText('Enter a title.')).toBeInTheDocument();
     expect(screen.getByText('Add at least one course.')).toBeInTheDocument();
-    expect(screen.getByText('Choose a knowledge check course.')).toBeInTheDocument();
+    // The knowledge check is optional (UBER-351).
+    expect(screen.queryByText('Choose a knowledge check course.')).not.toBeInTheDocument();
     expect(screen.queryByText('Choose a badge for this slot.')).not.toBeInTheDocument();
     expect(axiosMock.history.post).toHaveLength(0);
   });
 
-  it('prefills the knowledge check settings with the defaults for a new curriculum', () => {
-    setup();
+  it('prefills the knowledge check settings with the defaults for a new curriculum', async () => {
+    const { user } = setup();
+    await pickType(user, 'Learning path');
+    await search(user, 'Knowledge check course', 'DRV');
+    await user.click(await screen.findByRole('button', { name: 'Add Essentials check' }));
     expect(screen.getByLabelText('Pass mark (%)')).toHaveValue(80);
     expect(screen.getByLabelText('Maximum attempts')).toHaveValue(1);
     expect(screen.getByLabelText('Time limit (minutes, optional)')).toHaveValue(null);
@@ -195,6 +230,61 @@ describe('<CurriculumForm />', () => {
     expect(putBody.get('knowledge_check_time_limit')).toEqual('');
   });
 
+  it('creates a learning path without a knowledge check, sending a blank one', async () => {
+    const { axiosMock, onClose, user } = setup();
+    await pickType(user, 'Learning path');
+    axiosMock.onPost(apiUrls.curriculums()).reply(201, rawCurriculums[0]);
+    await user.type(screen.getByLabelText('Title'), 'Night driving');
+    await search(user, 'Add a course', 'DRV');
+    await user.click(await screen.findByRole('button', { name: 'Add Getting started' }));
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    const postBody = axiosMock.history.post[0].data as FormData;
+    expect(postBody.get('kind')).toEqual('learning_path');
+    expect(postBody.get('knowledge_check_course_id')).toEqual('');
+  });
+
+  it('Course type allows one course: the course search goes away once one is added', async () => {
+    const { axiosMock, onClose, user } = setup();
+    axiosMock.onPost(apiUrls.curriculums()).reply(201, rawCurriculums[0]);
+    await user.click(screen.getByRole('radio', { name: 'Course' }));
+    await user.type(screen.getByLabelText('Title'), 'Airport pickups');
+    await search(user, 'Add a course', 'DRV');
+    await user.click(await screen.findByRole('button', { name: 'Add Getting started' }));
+    expect(screen.queryByLabelText('Add a course')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect((axiosMock.history.post[0].data as FormData).get('kind')).toEqual('course');
+  });
+
+  it('locks the type on edit, so a saved learning path can\'t be switched to Course', () => {
+    setup({ curriculum });
+    expect(screen.getByRole('radio', { name: 'Learning path' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Learning path' })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: 'Course' })).toBeDisabled();
+    expect(screen.getByText('The type can\'t change after the first save.')).toBeInTheDocument();
+  });
+
+  it('hides the knowledge check settings until a knowledge check is picked', () => {
+    setup();
+    expect(screen.queryByLabelText('Pass mark (%)')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('15 days')).not.toBeInTheDocument();
+  });
+
+  it('disables the Retained slot without a knowledge check and sends none on save', async () => {
+    const { axiosMock, onClose, user } = setup({ curriculum });
+    axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(200, rawCurriculums[0]);
+    expect(slotToggle('Retained')).toBeEnabled();
+    await user.click(screen.getByRole('button', { name: 'Change' }));
+    expect(slotToggle('Retained')).toBeDisabled();
+    expect(screen.getByText('Choose a knowledge check course to use the Retained badge.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    const putBody = axiosMock.history.put[0].data as FormData;
+    expect(putBody.get('knowledge_check_course_id')).toEqual('');
+    expect(putBody.has('badges.retained')).toBe(false);
+  });
+
   it('counts title and description characters and caps them at 50 and 500', async () => {
     const { user } = setup();
     expect(screen.getByLabelText('Title')).toHaveAttribute('maxlength', '50');
@@ -226,7 +316,7 @@ describe('<CurriculumForm />', () => {
       course_ids: { 1: ['Course not found.'] },
       non_field_errors: ['Something general.'],
     });
-    expect(screen.getByRole('heading', { name: 'Edit curriculum' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Edit learning path' })).toBeInTheDocument();
     expect(screen.getByText('Course not found')).toBeInTheDocument();
     expect(screen.getByText('Essentials check')).toBeInTheDocument();
 
@@ -257,6 +347,10 @@ describe('<CurriculumForm />', () => {
 
   it('slot selects list curriculum badges only, offer "No badge", and disable a badge taken by another slot', async () => {
     const { user } = setup();
+    await pickType(user, 'Learning path');
+    // The Retained slot needs a knowledge check (UBER-351).
+    await search(user, 'Knowledge check course', 'DRV');
+    await user.click(await screen.findByRole('button', { name: 'Add Essentials check' }));
     const complete = await openSlot(user, 'Complete');
     expect(complete.getAllByTitle('No badge')[0]).toHaveClass('dropdown-item');
     expect(complete.queryByTitle('Airport pro')).not.toBeInTheDocument();
@@ -268,6 +362,7 @@ describe('<CurriculumForm />', () => {
 
   it('slot selects leave out badges another curriculum uses, but keep this curriculum\'s own', async () => {
     const { user } = setup();
+    await pickType(user, 'Learning path');
     const complete = await openSlot(user, 'Complete');
     expect(complete.getByTitle('Essentials complete')).toBeInTheDocument();
     expect(complete.queryByTitle('Road ready')).not.toBeInTheDocument();
@@ -295,15 +390,16 @@ describe('<CurriculumForm />', () => {
     expect(slotToggle('Complete')).toBeDisabled();
     expect(slotToggle('Retained')).toBeEnabled();
     expect(screen.getAllByText(
-      'Learners have earned this badge in this curriculum, so this slot\'s badge can\'t change.',
+      'Learners have earned this badge in this learning path, so this slot\'s badge can\'t change.',
     )).toHaveLength(1);
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect((axiosMock.history.put[0].data as FormData).get('badges.complete')).toEqual(rawBadges[0].uuid);
   });
 
-  it('links to the Badges tab in a new tab, so unsaved edits are kept', () => {
-    setup();
+  it('links to the Badges tab in a new tab, so unsaved edits are kept', async () => {
+    const { user } = setup();
+    await pickType(user, 'Learning path');
     const link = screen.getByRole('link', { name: 'Create a badge here, on the Badges tab (opens in a new tab)' });
     expect(link).toHaveAttribute('href', '/curriculum-management/badges');
     expect(link).toHaveAttribute('target', '_blank');
@@ -319,7 +415,7 @@ describe('<CurriculumForm />', () => {
 
   it('opens in its own modal', () => {
     setup();
-    expect(screen.getByRole('dialog', { name: 'New curriculum' })).toContainElement(
+    expect(screen.getByRole('dialog', { name: 'New learning path' })).toContainElement(
       screen.getByTestId('curriculum-form'),
     );
   });
@@ -356,6 +452,7 @@ describe('<CurriculumForm />', () => {
 
   it('after picking a course, focus stays in the course search; after removing the last one it returns there', async () => {
     const { user } = setup();
+    await pickType(user, 'Learning path');
     await search(user, 'Add a course', 'DRV');
     await user.click(await screen.findByRole('button', { name: 'Add Getting started' }));
     expect(screen.getByLabelText('Add a course')).toHaveFocus();
@@ -363,13 +460,12 @@ describe('<CurriculumForm />', () => {
     expect(screen.getByLabelText('Add a course')).toHaveFocus();
   });
 
-  it('ties the courses and knowledge-check errors to their inputs', async () => {
+  it('ties the courses error to its input', async () => {
     const { user } = setup();
+    await pickType(user, 'Learning path');
     await user.click(screen.getByRole('button', { name: 'Create' }));
     await screen.findByText('Add at least one course.');
     expect(screen.getByLabelText('Add a course')).toHaveAccessibleDescription('Add at least one course.');
-    expect(screen.getByLabelText('Knowledge check course'))
-      .toHaveAccessibleDescription(expect.stringContaining('Choose a knowledge check course.'));
   });
 
   it('ties a server knowledge-check error to "Change" while one is selected', async () => {
@@ -414,7 +510,8 @@ describe('<CurriculumForm />', () => {
   });
 
   it('Dropzone rejects an invalid file type and shows the type error', async () => {
-    setup();
+    const { user } = setup();
+    await pickType(user, 'Learning path');
     fireEvent.drop(screen.getByTestId('curriculum-image-dropzone'), {
       dataTransfer: {
         files: [new File(['<bad>'], 'evil.pdf', { type: 'application/pdf' })],

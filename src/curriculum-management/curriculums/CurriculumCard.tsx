@@ -55,7 +55,14 @@ const CurriculumCard = ({
       cardRef.current?.scrollIntoView?.({ block: 'center' });
     }
   }, [scrollIntoView]);
-  const filledSlots = SLOT_KEYS.filter((slot) => curriculum.badges[slot]).length;
+  // Only the slots this one can use: a course has no Complete slot, and Retained needs a knowledge check.
+  // A slot that still holds a badge is always shown.
+  const slots = SLOT_KEYS.filter((slot) =>
+    curriculum.badges[slot] || (
+      !(slot === 'complete' && curriculum.kind === 'course') && !(slot === 'retained' && !curriculum.knowledgeCheck)
+    )
+  );
+  const filledSlots = slots.filter((slot) => curriculum.badges[slot]).length;
 
   const handleDelete = async () => {
     setDeleteError(null);
@@ -103,19 +110,32 @@ const CurriculumCard = ({
               </span>
               <Badge variant="primary">
                 <span className="small">
-                  {intl.formatMessage(messages.courseCount, { count: curriculum.courses.length })}
+                  {intl.formatMessage(
+                    curriculum.kind === 'course' ? messages.kindCourseChip : messages.kindLearningPathChip,
+                  )}
                 </span>
               </Badge>
-              <Badge variant="primary">
-                <span className="small">
-                  {intl.formatMessage(messages.delayChip, { days: curriculum.knowledgeCheckDelayDays })}
-                </span>
-              </Badge>
-              <Badge variant="primary">
-                <span className="small">
-                  {intl.formatMessage(messages.badgeSlotsChip, { count: filledSlots, total: SLOT_KEYS.length })}
-                </span>
-              </Badge>
+              {curriculum.kind !== 'course' && (
+                <Badge variant="primary">
+                  <span className="small">
+                    {intl.formatMessage(messages.courseCount, { count: curriculum.courses.length })}
+                  </span>
+                </Badge>
+              )}
+              {curriculum.knowledgeCheck && (
+                <Badge variant="primary">
+                  <span className="small">
+                    {intl.formatMessage(messages.delayChip, { days: curriculum.knowledgeCheckDelayDays })}
+                  </span>
+                </Badge>
+              )}
+              {slots.length > 0 && (
+                <Badge variant="primary">
+                  <span className="small">
+                    {intl.formatMessage(messages.badgeSlotsChip, { count: filledSlots, total: slots.length })}
+                  </span>
+                </Badge>
+              )}
             </div>
           </div>
         </Button>
@@ -150,35 +170,43 @@ const CurriculumCard = ({
             </ol>
           </DetailRow>
           <DetailRow label={intl.formatMessage(messages.knowledgeCheckHeading)}>
-            <CourseLine course={curriculum.knowledgeCheck} />
-            <Badge variant="light" className="mt-1">
-              {intl.formatMessage(messages.opensAfter, { days: curriculum.knowledgeCheckDelayDays })}
-            </Badge>
-            {/* Pass mark and attempts are hidden when the LMS doesn't send them; a missing time limit shows as 'No time limit'. */}
-            <ul className="list-unstyled mb-0 mt-2 small text-gray-700">
-              {curriculum.knowledgeCheckPassThreshold != null && (
-                <li>
-                  {intl.formatMessage(messages.passThresholdSummary, {
-                    threshold: curriculum.knowledgeCheckPassThreshold,
-                  })}
-                </li>
-              )}
-              {curriculum.knowledgeCheckMaxAttempts != null && (
-                <li>
-                  {intl.formatMessage(messages.maxAttemptsSummary, { count: curriculum.knowledgeCheckMaxAttempts })}
-                </li>
-              )}
-              <li>
-                {curriculum.knowledgeCheckTimeLimit != null
-                  ? intl.formatMessage(messages.timeLimitSummary, { minutes: curriculum.knowledgeCheckTimeLimit })
-                  : intl.formatMessage(messages.noTimeLimit)}
-              </li>
-            </ul>
+            {!curriculum.knowledgeCheck && (
+              <span className="small text-gray-700">{intl.formatMessage(messages.noKnowledgeCheck)}</span>
+            )}
+            {curriculum.knowledgeCheck && (
+              <>
+                <CourseLine course={curriculum.knowledgeCheck} />
+                <Badge variant="light" className="mt-1">
+                  {intl.formatMessage(messages.opensAfter, { days: curriculum.knowledgeCheckDelayDays })}
+                </Badge>
+                {/* Pass mark and attempts are hidden when the LMS doesn't send them; a missing time limit shows as 'No time limit'. */}
+                <ul className="list-unstyled mb-0 mt-2 small text-gray-700">
+                  {curriculum.knowledgeCheckPassThreshold != null && (
+                    <li>
+                      {intl.formatMessage(messages.passThresholdSummary, {
+                        threshold: curriculum.knowledgeCheckPassThreshold,
+                      })}
+                    </li>
+                  )}
+                  {curriculum.knowledgeCheckMaxAttempts != null && (
+                    <li>
+                      {intl.formatMessage(messages.maxAttemptsSummary, { count: curriculum.knowledgeCheckMaxAttempts })}
+                    </li>
+                  )}
+                  <li>
+                    {curriculum.knowledgeCheckTimeLimit != null
+                      ? intl.formatMessage(messages.timeLimitSummary, { minutes: curriculum.knowledgeCheckTimeLimit })
+                      : intl.formatMessage(messages.noTimeLimit)}
+                  </li>
+                </ul>
+              </>
+            )}
           </DetailRow>
           <DetailRow label={intl.formatMessage(messages.badgesHeading)}>
             {/* Read-only: the slots are picked on the curriculum form. */}
+            {slots.length === 0 && <EmptyValue>{intl.formatMessage(messages.slotEmpty)}</EmptyValue>}
             <ul className="list-unstyled mb-0">
-              {SLOT_KEYS.map((slot) => {
+              {slots.map((slot) => {
                 const badge = curriculum.badges[slot];
                 return (
                   <li key={slot} className="mb-1 d-flex align-items-center" data-testid={`slot-${slot}`}>

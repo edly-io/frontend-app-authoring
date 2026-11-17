@@ -17,6 +17,8 @@ export const BADGE_IMAGE_ACCEPT = { 'image/png': ['.png'], 'image/jpeg': ['.jpg'
 /** Same limit as badge images — both must match UBER_BADGE_IMAGE_MAX_BYTES on the backend. */
 export const CURRICULUM_IMAGE_MAX_BYTES = BADGE_IMAGE_MAX_BYTES;
 export const CURRICULUM_IMAGE_ACCEPT = BADGE_IMAGE_ACCEPT;
+export const CURRICULUM_KINDS = ['learning_path', 'course'] as const;
+
 export const DELAY_OPTIONS = ['15', '30'] as const;
 // Defaults match the backend migration's defaults (uber-features 0004_kc_config).
 export const KC_PASS_THRESHOLD_DEFAULT = 80;

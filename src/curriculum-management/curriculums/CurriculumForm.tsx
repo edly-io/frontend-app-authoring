@@ -18,6 +18,7 @@ import {
   CURRICULUM_DESCRIPTION_MAX,
   CURRICULUM_IMAGE_ACCEPT,
   CURRICULUM_IMAGE_MAX_BYTES,
+  CURRICULUM_KINDS,
   CURRICULUM_TITLE_MAX,
   DELAY_OPTIONS,
   GROUP_SLUG_PATTERN,
@@ -95,27 +96,44 @@ const CurriculumForm = ({
       .max(CURRICULUM_TITLE_MAX, intl.formatMessage(messages.tooLong, { max: CURRICULUM_TITLE_MAX })),
     description: Yup.string()
       .max(CURRICULUM_DESCRIPTION_MAX, intl.formatMessage(messages.tooLong, { max: CURRICULUM_DESCRIPTION_MAX })),
-    courses: Yup.array().min(1, intl.formatMessage(messages.coursesRequired)),
+    kind: Yup.string().oneOf([...CURRICULUM_KINDS]).required(intl.formatMessage(messages.kindRequired)),
+    courses: Yup.array()
+      .min(1, intl.formatMessage(messages.coursesRequired))
+      .test('one-course', intl.formatMessage(messages.oneCourseOnly), function oneCourse(value) {
+        return this.parent.kind !== 'course' || (value ?? []).length <= 1;
+      }),
+    // Optional (UBER-351): its settings are validated only once one is chosen.
     knowledgeCheck: Yup.object()
       .nullable()
-      .required(intl.formatMessage(messages.knowledgeCheckRequired))
       .test('not-in-courses', intl.formatMessage(messages.knowledgeCheckInCourses), function notInCourses(value) {
         const courses = (this.parent.courses ?? []) as { id: string; }[];
         return !value || !courses.some((course) => course.id === (value as unknown as { id: string; }).id);
       }),
     knowledgeCheckDelayDays: Yup.string().oneOf([...DELAY_OPTIONS]),
-    knowledgeCheckPassThreshold: wholeNumber()
-      .min(1, intl.formatMessage(messages.passThresholdRange))
-      .max(100, intl.formatMessage(messages.passThresholdRange))
-      .required(intl.formatMessage(messages.passThresholdRange)),
-    knowledgeCheckMaxAttempts: wholeNumber()
-      .min(1, intl.formatMessage(messages.numberMinOne))
-      .max(32767, intl.formatMessage(messages.numberTooLarge))
-      .required(intl.formatMessage(messages.maxAttemptsRequired)),
-    knowledgeCheckTimeLimit: wholeNumber()
-      .nullable()
-      .min(1, intl.formatMessage(messages.numberMinOne))
-      .max(32767, intl.formatMessage(messages.numberTooLarge)),
+    knowledgeCheckPassThreshold: Yup.mixed().when('knowledgeCheck', {
+      is: Boolean,
+      then: wholeNumber()
+        .min(1, intl.formatMessage(messages.passThresholdRange))
+        .max(100, intl.formatMessage(messages.passThresholdRange))
+        .required(intl.formatMessage(messages.passThresholdRange)),
+      otherwise: Yup.mixed(),
+    }),
+    knowledgeCheckMaxAttempts: Yup.mixed().when('knowledgeCheck', {
+      is: Boolean,
+      then: wholeNumber()
+        .min(1, intl.formatMessage(messages.numberMinOne))
+        .max(32767, intl.formatMessage(messages.numberTooLarge))
+        .required(intl.formatMessage(messages.maxAttemptsRequired)),
+      otherwise: Yup.mixed(),
+    }),
+    knowledgeCheckTimeLimit: Yup.mixed().when('knowledgeCheck', {
+      is: Boolean,
+      then: wholeNumber()
+        .nullable()
+        .min(1, intl.formatMessage(messages.numberMinOne))
+        .max(32767, intl.formatMessage(messages.numberTooLarge)),
+      otherwise: Yup.mixed(),
+    }),
   });
 
   const onSubmit = async (
@@ -191,6 +209,9 @@ const CurriculumForm = ({
             return (submitCount > 0 || getIn(touched, name)) && typeof message === 'string' ? message : undefined;
           };
           const courseIds = values.courses.map((course) => course.id);
+          // A single course gets singular wording (UBER-351).
+          const isCourse = values.kind === 'course';
+          const kcHint = isCourse ? messages.knowledgeCheckHintCourse : messages.knowledgeCheckHint;
           return (
             <>
               <ModalDialog.Body>
@@ -281,253 +302,312 @@ const CurriculumForm = ({
                     </Form.Group>
                   </FormSection>
 
-                  <FormSection
-                    title={intl.formatMessage(messages.coursesSectionTitle)}
-                    help={intl.formatMessage(messages.coursesSectionHelp)}
-                    boxed
-                  >
-                    <CoursePicker
-                      id="curriculum-course-search"
-                      label={intl.formatMessage(messages.addCourseLabel)}
-                      excludedCourseIds={values.knowledgeCheck ? [values.knowledgeCheck.id] : []}
-                      addedCourseIds={courseIds}
-                      error={errorFor('courses')}
-                      onSelect={(course) =>
-                        setFieldValue('courses', [
-                          ...values.courses,
-                          { id: course.courseId, displayName: course.displayName, exists: true },
-                        ])}
-                    />
-                    <CourseOrderList
-                      courses={values.courses}
-                      onChange={(courses) => setFieldValue('courses', courses)}
-                      rowErrors={rowErrors}
-                      emptyFocusId="curriculum-course-search"
-                    />
-                    {values.courses.length > 0 ?
-                      <Form.Text>{intl.formatMessage(messages.reorderHint)}</Form.Text> :
-                      (
-                        <p className="x-small text-gray-700 font-italic">
-                          {intl.formatMessage(messages.badgeCoursesEmpty)}
-                        </p>
-                      )}
-                  </FormSection>
-
-                  <FormSection title={intl.formatMessage(messages.knowledgeCheckHeading)} boxed>
-                    {values.knowledgeCheck ?
-                      (
-                        <Form.Group
-                          controlId="curriculum-knowledge-check-selected"
-                          isInvalid={!!errorFor('knowledgeCheck')}
+                  <FormSection>
+                    <Form.Group isInvalid={!!errorFor('kind')}>
+                      <Form.Label>{intl.formatMessage(messages.curriculumKindLabel)}</Form.Label>
+                      {/* Stacked, like the badge form's type choice: inline put the label in front of the first option. */}
+                      <Form.RadioSet name="kind" value={values.kind} onChange={handleChange}>
+                        {/* Fixed once saved, like the path ID: switching would drop or strand the Complete badge. */}
+                        <Form.Radio
+                          value="learning_path"
+                          disabled={!!curriculum}
+                          description={intl.formatMessage(messages.kindLearningPathHelp)}
                         >
-                          <div className="d-flex align-items-center border rounded px-3 py-2 bg-white">
-                            <span className="flex-grow-1 mr-2 text-break curriculum-management-min-width-0">
-                              <span className="d-block font-weight-bold">
-                                {values.knowledgeCheck.displayName ?? values.knowledgeCheck.id}
-                              </span>
-                              <span className="x-small text-gray-700">{values.knowledgeCheck.id}</span>
-                            </span>
-                            <Button
-                              variant="tertiary"
-                              className="flex-shrink-0"
-                              aria-describedby={errorFor('knowledgeCheck') ? KC_ERROR_ID : undefined}
-                              ref={(button: HTMLButtonElement | null) => {
-                                // Runs when the button mounts after a pick; the search input it replaces had focus.
-                                if (button && focusKcChange.current) {
-                                  focusKcChange.current = false;
-                                  button.focus();
-                                }
-                              }}
-                              onClick={() => {
-                                setFocusKcSearch(true);
-                                setFieldValue('knowledgeCheck', null);
-                              }}
-                            >
-                              {intl.formatMessage(messages.knowledgeCheckChange)}
-                            </Button>
-                          </div>
-                          <Form.Text>{intl.formatMessage(messages.knowledgeCheckHint)}</Form.Text>
-                          {errorFor('knowledgeCheck') && (
-                            <Form.Control.Feedback id={KC_ERROR_ID} type="invalid" hasIcon={false}>
-                              {errorFor('knowledgeCheck')}
-                            </Form.Control.Feedback>
-                          )}
-                        </Form.Group>
-                      ) :
-                      (
-                        <CoursePicker
-                          id="curriculum-knowledge-check-search"
-                          label={intl.formatMessage(messages.knowledgeCheckCourseLabel)}
-                          excludedCourseIds={courseIds}
-                          help={intl.formatMessage(messages.knowledgeCheckHint)}
-                          error={errorFor('knowledgeCheck')}
-                          autoFocus={focusKcSearch}
-                          onSelect={(course) => {
-                            focusKcChange.current = true;
-                            setFieldValue('knowledgeCheck', {
-                              id: course.courseId,
-                              displayName: course.displayName,
-                              exists: true,
-                            });
-                          }}
-                        />
-                      )}
-
-                    <Form.Group isInvalid={!!errorFor('knowledgeCheckDelayDays')}>
-                      <Form.Label>{intl.formatMessage(messages.delayLabel)}</Form.Label>
-                      <Form.RadioSet
-                        name="knowledgeCheckDelayDays"
-                        value={values.knowledgeCheckDelayDays}
-                        onChange={handleChange}
-                        isInline
-                      >
-                        {DELAY_OPTIONS.map((days) => (
-                          <Form.Radio key={days} value={days}>
-                            {intl.formatMessage(messages.delayOption, { days })}
-                          </Form.Radio>
-                        ))}
+                          {intl.formatMessage(messages.kindLearningPath)}
+                        </Form.Radio>
+                        <Form.Radio
+                          value="course"
+                          disabled={!!curriculum}
+                          description={intl.formatMessage(messages.kindCourseOptionHelp)}
+                        >
+                          {intl.formatMessage(messages.kindCourseOption)}
+                        </Form.Radio>
                       </Form.RadioSet>
-                      {errorFor('knowledgeCheckDelayDays') && (
-                        <Form.Control.Feedback type="invalid" hasIcon={false}>
-                          {errorFor('knowledgeCheckDelayDays')}
-                        </Form.Control.Feedback>
-                      )}
-                    </Form.Group>
-
-                    <Form.Group
-                      controlId="curriculum-kc-pass-threshold"
-                      isInvalid={!!errorFor('knowledgeCheckPassThreshold')}
-                    >
-                      <Form.Label>{intl.formatMessage(messages.passThresholdLabel)}</Form.Label>
-                      <Form.Control
-                        type="number"
-                        name="knowledgeCheckPassThreshold"
-                        value={values.knowledgeCheckPassThreshold}
-                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                          if (event.target.validity.badInput) { return; }
-                          handleChange(event);
-                        }}
-                        onBlur={handleBlur}
-                        min={1}
-                        max={100}
-                      />
-                      <Form.Text>{intl.formatMessage(messages.passThresholdHelp)}</Form.Text>
-                      {errorFor('knowledgeCheckPassThreshold') && (
-                        <Form.Control.Feedback type="invalid" hasIcon={false}>
-                          {errorFor('knowledgeCheckPassThreshold')}
-                        </Form.Control.Feedback>
-                      )}
-                    </Form.Group>
-
-                    <Form.Group
-                      controlId="curriculum-kc-max-attempts"
-                      isInvalid={!!errorFor('knowledgeCheckMaxAttempts')}
-                    >
-                      <Form.Label>{intl.formatMessage(messages.maxAttemptsLabel)}</Form.Label>
-                      <Form.Control
-                        type="number"
-                        name="knowledgeCheckMaxAttempts"
-                        value={values.knowledgeCheckMaxAttempts}
-                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                          if (event.target.validity.badInput) { return; }
-                          handleChange(event);
-                        }}
-                        onBlur={handleBlur}
-                        min={1}
-                        max={32767}
-                      />
-                      <Form.Text>{intl.formatMessage(messages.maxAttemptsHelp)}</Form.Text>
-                      {errorFor('knowledgeCheckMaxAttempts') && (
-                        <Form.Control.Feedback type="invalid" hasIcon={false}>
-                          {errorFor('knowledgeCheckMaxAttempts')}
-                        </Form.Control.Feedback>
-                      )}
-                    </Form.Group>
-
-                    <Form.Group
-                      controlId="curriculum-kc-time-limit"
-                      isInvalid={!!errorFor('knowledgeCheckTimeLimit')}
-                    >
-                      <Form.Label>{intl.formatMessage(messages.timeLimitLabel)}</Form.Label>
-                      <Form.Control
-                        type="number"
-                        name="knowledgeCheckTimeLimit"
-                        value={values.knowledgeCheckTimeLimit}
-                        onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                          if (event.target.validity.badInput) { return; }
-                          handleChange(event);
-                        }}
-                        onBlur={handleBlur}
-                        min={1}
-                        max={32767}
-                      />
-                      <Form.Text>{intl.formatMessage(messages.timeLimitHelp)}</Form.Text>
-                      {errorFor('knowledgeCheckTimeLimit') && (
-                        <Form.Control.Feedback type="invalid" hasIcon={false}>
-                          {errorFor('knowledgeCheckTimeLimit')}
-                        </Form.Control.Feedback>
+                      {curriculum && <Form.Text>{intl.formatMessage(messages.kindLocked)}</Form.Text>}
+                      {errorFor('kind') && (
+                        <Form.Control.Feedback type="invalid" hasIcon={false}>{errorFor('kind')}</Form.Control.Feedback>
                       )}
                     </Form.Group>
                   </FormSection>
 
-                  <FormSection
-                    title={intl.formatMessage(messages.badgesHeading)}
-                    help={intl.formatMessage(messages.badgesSectionHelp)}
-                    boxed
-                  >
-                    {SLOT_KEYS.map((slot) => (
-                      <BadgeSlotSelect
-                        key={slot}
-                        slot={slot}
-                        value={values.badges[slot]}
-                        badges={curriculumBadges}
-                        takenBadgeUuids={SLOT_KEYS
-                          .filter((other) => other !== slot)
-                          .map((other) => values.badges[other])
-                          .filter(Boolean)}
-                        onChange={(badgeUuid) => setFieldValue(`badges.${slot}`, badgeUuid)}
-                        error={errorFor(`badges.${slot}`)}
-                        locked={!!curriculum?.badges[slot]?.earned}
-                      />
-                    ))}
-                    {/* A new tab keeps this form's unsaved edits; the slot lists refetch when the author comes back. */}
-                    <p className="small mb-0">
-                      {intl.formatMessage(messages.createBadgeHint, {
-                        link: (
-                          <a
-                            href={badgesHref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={intl.formatMessage(messages.createBadgeLinkLabel)}
-                          >
-                            {intl.formatMessage(messages.createBadgeLinkText)}
-                          </a>
-                        ),
-                      })}
-                    </p>
-                  </FormSection>
+                  {/* A new form shows the rest once the author picks what they are creating. */}
+                  {values.kind && (
+                    <>
+                      <FormSection
+                        title={intl.formatMessage(
+                          isCourse ? messages.courseSectionTitle : messages.coursesSectionTitle,
+                        )}
+                        help={intl.formatMessage(isCourse ? messages.courseSectionHelp : messages.coursesSectionHelp)}
+                        boxed
+                      >
+                        {!(values.kind === 'course' && values.courses.length >= 1) && (
+                          <CoursePicker
+                            id="curriculum-course-search"
+                            label={intl.formatMessage(messages.addCourseLabel)}
+                            excludedCourseIds={values.knowledgeCheck ? [values.knowledgeCheck.id] : []}
+                            addedCourseIds={courseIds}
+                            error={errorFor('courses')}
+                            onSelect={(course) =>
+                              setFieldValue('courses', [
+                                ...values.courses,
+                                { id: course.courseId, displayName: course.displayName, exists: true },
+                              ])}
+                          />
+                        )}
+                        {/* With the search hidden (a Course already has its one course), its error shows here. */}
+                        {values.kind === 'course' && values.courses.length >= 1 && errorFor('courses') && (
+                          <Form.Group isInvalid>
+                            <Form.Control.Feedback type="invalid" hasIcon={false}>
+                              {errorFor('courses')}
+                            </Form.Control.Feedback>
+                          </Form.Group>
+                        )}
+                        <CourseOrderList
+                          courses={values.courses}
+                          onChange={(courses) => setFieldValue('courses', courses)}
+                          rowErrors={rowErrors}
+                          emptyFocusId="curriculum-course-search"
+                        />
+                        {values.courses.length > 0 ?
+                          !isCourse && <Form.Text>{intl.formatMessage(messages.reorderHint)}</Form.Text> :
+                          (
+                            <p className="x-small text-gray-700 font-italic">
+                              {intl.formatMessage(isCourse ? messages.noCourseYet : messages.badgeCoursesEmpty)}
+                            </p>
+                          )}
+                      </FormSection>
 
-                  <FormSection boxed>
-                    <ImageField
-                      fieldId="curriculum-image"
-                      value={values.image}
-                      existingUrl={values.removeImage ? null : curriculum?.imageUrl ?? null}
-                      onPick={(file) => {
-                        setFieldValue('image', file);
-                        setFieldValue('removeImage', false);
-                      }}
-                      onRemove={() => {
-                        setFieldValue('image', null);
-                        setFieldValue('removeImage', !!curriculum?.imageUrl);
-                      }}
-                      maxBytes={CURRICULUM_IMAGE_MAX_BYTES}
-                      accept={CURRICULUM_IMAGE_ACCEPT}
-                      label={intl.formatMessage(messages.imageLabel)}
-                      helpText={intl.formatMessage(messages.imageHelp)}
-                      altText={curriculum?.title ?? ''}
-                      error={getIn(errors, 'image') as string | undefined}
-                    />
-                  </FormSection>
+                      <FormSection
+                        title={intl.formatMessage(messages.knowledgeCheckFormHeading)}
+                        help={intl.formatMessage(messages.knowledgeCheckOptionalHelp)}
+                        boxed
+                      >
+                        {values.knowledgeCheck ?
+                          (
+                            <Form.Group
+                              controlId="curriculum-knowledge-check-selected"
+                              isInvalid={!!errorFor('knowledgeCheck')}
+                            >
+                              <div className="d-flex align-items-center border rounded px-3 py-2 bg-white">
+                                <span className="flex-grow-1 mr-2 text-break curriculum-management-min-width-0">
+                                  <span className="d-block font-weight-bold">
+                                    {values.knowledgeCheck.displayName ?? values.knowledgeCheck.id}
+                                  </span>
+                                  <span className="x-small text-gray-700">{values.knowledgeCheck.id}</span>
+                                </span>
+                                <Button
+                                  variant="tertiary"
+                                  className="flex-shrink-0"
+                                  aria-describedby={errorFor('knowledgeCheck') ? KC_ERROR_ID : undefined}
+                                  ref={(button: HTMLButtonElement | null) => {
+                                    // Runs when the button mounts after a pick; the search input it replaces had focus.
+                                    if (button && focusKcChange.current) {
+                                      focusKcChange.current = false;
+                                      button.focus();
+                                    }
+                                  }}
+                                  onClick={() => {
+                                    setFocusKcSearch(true);
+                                    // Keeps the Retained pick: Change also swaps one check for another. Saving
+                                    // without a check sends no Retained badge (toCurriculumWriteData).
+                                    setFieldValue('knowledgeCheck', null);
+                                  }}
+                                >
+                                  {intl.formatMessage(messages.knowledgeCheckChange)}
+                                </Button>
+                              </div>
+                              <Form.Text>{intl.formatMessage(kcHint)}</Form.Text>
+                              {errorFor('knowledgeCheck') && (
+                                <Form.Control.Feedback id={KC_ERROR_ID} type="invalid" hasIcon={false}>
+                                  {errorFor('knowledgeCheck')}
+                                </Form.Control.Feedback>
+                              )}
+                            </Form.Group>
+                          ) :
+                          (
+                            <CoursePicker
+                              id="curriculum-knowledge-check-search"
+                              label={intl.formatMessage(messages.knowledgeCheckCourseLabel)}
+                              excludedCourseIds={courseIds}
+                              help={intl.formatMessage(kcHint)}
+                              error={errorFor('knowledgeCheck')}
+                              autoFocus={focusKcSearch}
+                              onSelect={(course) => {
+                                focusKcChange.current = true;
+                                setFieldValue('knowledgeCheck', {
+                                  id: course.courseId,
+                                  displayName: course.displayName,
+                                  exists: true,
+                                });
+                              }}
+                            />
+                          )}
+
+                        {values.knowledgeCheck && (
+                          <>
+                            <Form.Group isInvalid={!!errorFor('knowledgeCheckDelayDays')}>
+                              <Form.Label>{intl.formatMessage(messages.delayLabel)}</Form.Label>
+                              <Form.RadioSet
+                                name="knowledgeCheckDelayDays"
+                                value={values.knowledgeCheckDelayDays}
+                                onChange={handleChange}
+                                isInline
+                              >
+                                {DELAY_OPTIONS.map((days) => (
+                                  <Form.Radio key={days} value={days}>
+                                    {intl.formatMessage(messages.delayOption, { days })}
+                                  </Form.Radio>
+                                ))}
+                              </Form.RadioSet>
+                              {errorFor('knowledgeCheckDelayDays') && (
+                                <Form.Control.Feedback type="invalid" hasIcon={false}>
+                                  {errorFor('knowledgeCheckDelayDays')}
+                                </Form.Control.Feedback>
+                              )}
+                            </Form.Group>
+
+                            <Form.Group
+                              controlId="curriculum-kc-pass-threshold"
+                              isInvalid={!!errorFor('knowledgeCheckPassThreshold')}
+                            >
+                              <Form.Label>{intl.formatMessage(messages.passThresholdLabel)}</Form.Label>
+                              <Form.Control
+                                type="number"
+                                name="knowledgeCheckPassThreshold"
+                                value={values.knowledgeCheckPassThreshold}
+                                onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                                  if (event.target.validity.badInput) { return; }
+                                  handleChange(event);
+                                }}
+                                onBlur={handleBlur}
+                                min={1}
+                                max={100}
+                              />
+                              <Form.Text>{intl.formatMessage(messages.passThresholdHelp)}</Form.Text>
+                              {errorFor('knowledgeCheckPassThreshold') && (
+                                <Form.Control.Feedback type="invalid" hasIcon={false}>
+                                  {errorFor('knowledgeCheckPassThreshold')}
+                                </Form.Control.Feedback>
+                              )}
+                            </Form.Group>
+
+                            <Form.Group
+                              controlId="curriculum-kc-max-attempts"
+                              isInvalid={!!errorFor('knowledgeCheckMaxAttempts')}
+                            >
+                              <Form.Label>{intl.formatMessage(messages.maxAttemptsLabel)}</Form.Label>
+                              <Form.Control
+                                type="number"
+                                name="knowledgeCheckMaxAttempts"
+                                value={values.knowledgeCheckMaxAttempts}
+                                onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                                  if (event.target.validity.badInput) { return; }
+                                  handleChange(event);
+                                }}
+                                onBlur={handleBlur}
+                                min={1}
+                                max={32767}
+                              />
+                              <Form.Text>{intl.formatMessage(messages.maxAttemptsHelp)}</Form.Text>
+                              {errorFor('knowledgeCheckMaxAttempts') && (
+                                <Form.Control.Feedback type="invalid" hasIcon={false}>
+                                  {errorFor('knowledgeCheckMaxAttempts')}
+                                </Form.Control.Feedback>
+                              )}
+                            </Form.Group>
+
+                            <Form.Group
+                              controlId="curriculum-kc-time-limit"
+                              isInvalid={!!errorFor('knowledgeCheckTimeLimit')}
+                            >
+                              <Form.Label>{intl.formatMessage(messages.timeLimitLabel)}</Form.Label>
+                              <Form.Control
+                                type="number"
+                                name="knowledgeCheckTimeLimit"
+                                value={values.knowledgeCheckTimeLimit}
+                                onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                                  if (event.target.validity.badInput) { return; }
+                                  handleChange(event);
+                                }}
+                                onBlur={handleBlur}
+                                min={1}
+                                max={32767}
+                              />
+                              <Form.Text>{intl.formatMessage(messages.timeLimitHelp)}</Form.Text>
+                              {errorFor('knowledgeCheckTimeLimit') && (
+                                <Form.Control.Feedback type="invalid" hasIcon={false}>
+                                  {errorFor('knowledgeCheckTimeLimit')}
+                                </Form.Control.Feedback>
+                              )}
+                            </Form.Group>
+                          </>
+                        )}
+                      </FormSection>
+
+                      <FormSection
+                        title={intl.formatMessage(messages.badgesHeading)}
+                        help={intl.formatMessage(messages.badgesSectionHelp)}
+                        boxed
+                      >
+                        {/* A course has no Complete badge: finishing its one course is not a milestone of its own. */}
+                        {SLOT_KEYS.filter((slot) => !(isCourse && slot === 'complete')).map((slot) => (
+                          <BadgeSlotSelect
+                            key={slot}
+                            slot={slot}
+                            value={values.badges[slot]}
+                            badges={curriculumBadges}
+                            takenBadgeUuids={SLOT_KEYS
+                              .filter((other) => other !== slot)
+                              .map((other) => values.badges[other])
+                              .filter(Boolean)}
+                            onChange={(badgeUuid) => setFieldValue(`badges.${slot}`, badgeUuid)}
+                            error={errorFor(`badges.${slot}`)}
+                            locked={!!curriculum?.badges[slot]?.earned}
+                            unavailableNote={slot === 'retained' && !values.knowledgeCheck
+                              ? intl.formatMessage(messages.retainedNeedsKnowledgeCheck)
+                              : undefined}
+                          />
+                        ))}
+                        {/* A new tab keeps this form's unsaved edits; the slot lists refetch when the author comes back. */}
+                        <p className="small mb-0">
+                          {intl.formatMessage(messages.createBadgeHint, {
+                            link: (
+                              <a
+                                href={badgesHref}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={intl.formatMessage(messages.createBadgeLinkLabel)}
+                              >
+                                {intl.formatMessage(messages.createBadgeLinkText)}
+                              </a>
+                            ),
+                          })}
+                        </p>
+                      </FormSection>
+
+                      <FormSection boxed>
+                        <ImageField
+                          fieldId="curriculum-image"
+                          value={values.image}
+                          existingUrl={values.removeImage ? null : curriculum?.imageUrl ?? null}
+                          onPick={(file) => {
+                            setFieldValue('image', file);
+                            setFieldValue('removeImage', false);
+                          }}
+                          onRemove={() => {
+                            setFieldValue('image', null);
+                            setFieldValue('removeImage', !!curriculum?.imageUrl);
+                          }}
+                          maxBytes={CURRICULUM_IMAGE_MAX_BYTES}
+                          accept={CURRICULUM_IMAGE_ACCEPT}
+                          label={intl.formatMessage(messages.imageLabel)}
+                          helpText={intl.formatMessage(messages.imageHelp)}
+                          altText={curriculum?.title ?? ''}
+                          error={getIn(errors, 'image') as string | undefined}
+                        />
+                      </FormSection>
+                    </>
+                  )}
                 </Form>
               </ModalDialog.Body>
               <ModalDialog.Footer>

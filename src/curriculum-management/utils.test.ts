@@ -1,6 +1,6 @@
 import { camelCaseObject } from '@edx/frontend-platform';
 import { AxiosError, AxiosHeaders } from 'axios';
-import { rawBadges, rawCourseGroups, rawCurriculums } from './__mocks__/fixtures';
+import { rawBadges, rawCourseCurriculum, rawCourseGroups, rawCurriculums } from './__mocks__/fixtures';
 import type { CourseGroup, Curriculum } from './types';
 import {
   buildAppLink,
@@ -44,6 +44,7 @@ describe('curriculum form mapping', () => {
         title: 'Trimmed',
         description: 'Required courses for new drivers.',
         courseIds: ['course-v1:Uber+DRV101+2026_Q4', 'course-v1:Uber+DRV102+2026_Q4'],
+        kind: 'learning_path',
         knowledgeCheckCourseId: 'course-v1:Uber+DRVKC1+2026_Q4',
         knowledgeCheckDelayDays: 30,
         knowledgeCheckPassThreshold: 80,
@@ -86,9 +87,34 @@ describe('curriculum form mapping', () => {
     });
   });
 
+  it('maps a course with no knowledge check to form values and back', () => {
+    const values = toCurriculumFormValues(camelCaseObject(rawCourseCurriculum) as Curriculum);
+    expect(values.kind).toBe('course');
+    expect(values.knowledgeCheck).toBeNull();
+    const data = toCurriculumWriteData(values);
+    expect(data.kind).toBe('course');
+    expect(data.knowledgeCheckCourseId).toBeNull();
+  });
+
+  it('sends the default knowledge check settings when there is no knowledge check, whatever the hidden fields hold', () => {
+    const values = {
+      ...toCurriculumFormValues(),
+      knowledgeCheckPassThreshold: '' as const,
+      knowledgeCheckMaxAttempts: '' as const,
+      knowledgeCheckTimeLimit: 20,
+    };
+    expect(toCurriculumWriteData(values)).toMatchObject({
+      knowledgeCheckCourseId: null,
+      knowledgeCheckPassThreshold: 80,
+      knowledgeCheckMaxAttempts: 1,
+      knowledgeCheckTimeLimit: null,
+    });
+  });
+
   it('gives empty defaults for a new curriculum', () => {
     expect(toCurriculumFormValues()).toEqual({
       slug: '',
+      kind: '',
       title: '',
       description: '',
       courses: [],

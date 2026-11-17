@@ -1,7 +1,7 @@
 import { camelCaseObject } from '@edx/frontend-platform';
 import userEvent from '@testing-library/user-event';
 import { initializeMocks, render, screen, waitFor, within } from '@src/testUtils';
-import { rawCurriculums } from '../__mocks__/fixtures';
+import { rawCourseCurriculum, rawCurriculums } from '../__mocks__/fixtures';
 import { apiUrls } from '../data/api';
 import type { Curriculum } from '../types';
 import CurriculumCard from './CurriculumCard';
@@ -9,6 +9,62 @@ import CurriculumCard from './CurriculumCard';
 const curriculum = camelCaseObject(rawCurriculums[0]) as Curriculum;
 
 describe('<CurriculumCard />', () => {
+  it('shows the type chip', () => {
+    initializeMocks();
+    const { rerender } = render(<CurriculumCard curriculum={curriculum} defaultExpanded={false} onEdit={jest.fn()} />);
+    expect(screen.getByText('Learning path')).toBeInTheDocument();
+    rerender(
+      <CurriculumCard
+        curriculum={camelCaseObject(rawCourseCurriculum) as Curriculum}
+        defaultExpanded={false}
+        onEdit={jest.fn()}
+      />,
+    );
+    expect(screen.getByText('Course')).toBeInTheDocument();
+  });
+
+  it('shows "No knowledge check" and no delay chip or settings when there is none', () => {
+    initializeMocks();
+    render(
+      <CurriculumCard
+        curriculum={camelCaseObject(rawCourseCurriculum) as Curriculum}
+        defaultExpanded
+        onEdit={jest.fn()}
+      />,
+    );
+    expect(screen.getByText('No knowledge check')).toBeInTheDocument();
+    expect(screen.queryByText(/Knowledge check after/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Opens \d+ days after/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Pass mark/)).not.toBeInTheDocument();
+    expect(screen.queryByText('No time limit')).not.toBeInTheDocument();
+  });
+
+  it('shows only the Retained slot for a course, and no course count', () => {
+    initializeMocks();
+    const course = camelCaseObject({
+      ...rawCourseCurriculum,
+      knowledge_check: rawCurriculums[0].knowledge_check,
+      badges: { complete: null, retained: rawCurriculums[0].badges.retained },
+    }) as Curriculum;
+    render(<CurriculumCard curriculum={course} defaultExpanded onEdit={jest.fn()} />);
+    expect(screen.getByText('1 of 1 badges')).toBeInTheDocument();
+    expect(screen.queryByTestId('slot-complete')).not.toBeInTheDocument();
+    expect(screen.getByTestId('slot-retained')).toBeInTheDocument();
+    expect(screen.queryByText('1 course')).not.toBeInTheDocument();
+  });
+
+  it('counts only the Complete slot for a learning path without a knowledge check', () => {
+    initializeMocks();
+    const path = camelCaseObject({
+      ...rawCurriculums[0],
+      knowledge_check: null,
+      badges: { ...rawCurriculums[0].badges, retained: null },
+    }) as Curriculum;
+    render(<CurriculumCard curriculum={path} defaultExpanded onEdit={jest.fn()} />);
+    expect(screen.getByText('1 of 1 badges')).toBeInTheDocument();
+    expect(screen.queryByTestId('slot-retained')).not.toBeInTheDocument();
+  });
+
   it('shows title, ID and chips; expands to courses, knowledge check and slots', async () => {
     initializeMocks();
     const user = userEvent.setup();
@@ -98,7 +154,7 @@ describe('<CurriculumCard />', () => {
     await user.click(screen.getByRole('button', { name: 'Delete New driver essentials' }));
     await user.click(await screen.findByRole('button', { name: 'Delete' }));
     expect(axiosMock.history.delete[0].url).toEqual(apiUrls.curriculum('cur-1'));
-    expect(mockShowToast).toHaveBeenCalledWith('Curriculum deleted');
+    expect(mockShowToast).toHaveBeenCalledWith('Learning path deleted');
   });
 
   it('shows an alert when delete fails', async () => {
@@ -126,14 +182,14 @@ describe('<CurriculumCard />', () => {
   it('explains a 409 when the curriculum is assigned to learners', async () => {
     const { axiosMock } = initializeMocks();
     axiosMock.onDelete(apiUrls.curriculum('cur-1')).reply(409, {
-      detail: 'This curriculum is assigned to learners and can\'t be deleted.',
+      detail: 'This learning path is assigned to learners and can\'t be deleted.',
       assignment_count: 3,
     });
     const user = userEvent.setup();
     render(<CurriculumCard curriculum={curriculum} defaultExpanded={false} onEdit={jest.fn()} />);
     await user.click(screen.getByRole('button', { name: 'Delete New driver essentials' }));
     await user.click(await screen.findByRole('button', { name: 'Delete' }));
-    expect(await screen.findByText('This curriculum is assigned to 3 learners, so it can\'t be deleted.'))
+    expect(await screen.findByText('This learning path is assigned to 3 learners, so it can\'t be deleted.'))
       .toBeInTheDocument();
   });
   it('copies the curriculum UUID and confirms with a toast', async () => {
@@ -142,14 +198,14 @@ describe('<CurriculumCard />', () => {
     const user = userEvent.setup();
     const writeText = jest.spyOn(navigator.clipboard, 'writeText');
     render(<CurriculumCard curriculum={curriculum} onEdit={jest.fn()} />);
-    await user.click(screen.getByRole('button', { name: 'Copy curriculum ID' }));
+    await user.click(screen.getByRole('button', { name: 'Copy learning path ID' }));
     expect(writeText).toHaveBeenCalledWith('cur-1');
-    expect(mockShowToast).toHaveBeenCalledWith('Curriculum ID copied');
+    expect(mockShowToast).toHaveBeenCalledWith('Learning path ID copied');
   });
 
   it.each([
-    [true, 'Curriculum ID copied'],
-    [false, 'Could not copy the curriculum ID'],
+    [true, 'Learning path ID copied'],
+    [false, 'Could not copy the learning path ID'],
   ])('falls back to execCommand without the Clipboard API (plain-http Studio): copy=%s', async (ok, toast) => {
     const { mockShowToast } = initializeMocks();
     const user = userEvent.setup();
@@ -161,7 +217,7 @@ describe('<CurriculumCard />', () => {
       return ok;
     });
     render(<CurriculumCard curriculum={curriculum} onEdit={jest.fn()} />);
-    const button = screen.getByRole('button', { name: 'Copy curriculum ID' });
+    const button = screen.getByRole('button', { name: 'Copy learning path ID' });
     await user.click(button);
     await waitFor(() => expect(mockShowToast).toHaveBeenCalledWith(toast));
     expect(document.execCommand).toHaveBeenCalledWith('copy');

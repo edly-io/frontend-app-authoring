@@ -44,7 +44,7 @@ describe('curriculum-management api', () => {
     axiosMock.onGet(apiUrls.curriculumsPage(3)).reply(200, page([{ ...rawCurriculums[0], uuid: 'cur-3' }], 101));
     const result = await api.getAllCurriculums();
     expect(result.map((c) => c.uuid)).toEqual(['cur-1', 'cur-2', 'cur-3']);
-    expect(result[0].knowledgeCheck.courseId).toEqual('course-v1:Uber+DRVKC1+2026_Q4');
+    expect(result[0].knowledgeCheck?.courseId).toEqual('course-v1:Uber+DRVKC1+2026_Q4');
     expect(result[0].courses[1]).toEqual({
       courseId: 'course-v1:Uber+DRV102+2026_Q4',
       displayName: null,
@@ -82,7 +82,8 @@ describe('curriculum-management api', () => {
     title: 'T',
     description: '',
     courseIds: ['course-v1:A+B+C'],
-    knowledgeCheckCourseId: 'course-v1:A+KC+C',
+    kind: 'learning_path' as 'learning_path' | 'course',
+    knowledgeCheckCourseId: 'course-v1:A+KC+C' as string | null,
     knowledgeCheckDelayDays: 15,
     knowledgeCheckPassThreshold: 80,
     knowledgeCheckMaxAttempts: 1,
@@ -107,6 +108,14 @@ describe('curriculum-management api', () => {
     expect(body.get('knowledge_check_max_attempts')).toEqual('1');
     // Unset optional time limit is sent empty so a PUT can clear it.
     expect(body.get('knowledge_check_time_limit')).toEqual('');
+  });
+
+  it('sends kind, and a blank knowledge_check_course_id when there is none', async () => {
+    axiosMock.onPost(apiUrls.curriculums()).reply(201, rawCurriculums[0]);
+    await api.createCurriculum({ ...curriculumData, kind: 'course', knowledgeCheckCourseId: null });
+    const body = axiosMock.history.post[0].data as FormData;
+    expect(body.get('kind')).toEqual('course');
+    expect(body.get('knowledge_check_course_id')).toEqual('');
   });
 
   it('sends a set time limit as a number', async () => {
@@ -137,6 +146,7 @@ describe('curriculum-management api', () => {
     axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(200, rawCurriculums[0]);
     await api.updateCurriculum('cur-1', {
       slug: '',
+      kind: 'learning_path',
       title: 'T',
       description: '',
       courseIds: [],

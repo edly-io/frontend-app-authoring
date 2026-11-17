@@ -10,6 +10,7 @@ import type {
   CourseGroup,
   CourseGroupWriteData,
   Curriculum,
+  CurriculumKind,
   CurriculumWriteData,
   DeepLink,
   DeepLinkWriteData,
@@ -33,11 +34,14 @@ export const kindMessages: Record<BadgeKind, { label: MessageDescriptor; help: M
 export interface CurriculumFormValues {
   /** The learning path ID; on the create form it follows the title until the author edits it. */
   slug: string;
+  /** '' on a new form until the author picks a type. */
+  kind: CurriculumKind | '';
   title: string;
   description: string;
   image: File | null;
   removeImage: boolean;
   courses: CourseItem[];
+  /** Optional (UBER-351): null means no knowledge check. */
   knowledgeCheck: CourseItem | null;
   knowledgeCheckDelayDays: '15' | '30';
   /*
@@ -55,6 +59,7 @@ export const toCurriculumFormValues = (curriculum?: Curriculum): CurriculumFormV
   if (!curriculum) {
     return {
       slug: '',
+      kind: '',
       title: '',
       description: '',
       image: null,
@@ -70,6 +75,7 @@ export const toCurriculumFormValues = (curriculum?: Curriculum): CurriculumFormV
   }
   return {
     slug: curriculum.slug,
+    kind: curriculum.kind ?? 'learning_path',
     title: curriculum.title,
     description: curriculum.description,
     image: null,
@@ -79,7 +85,7 @@ export const toCurriculumFormValues = (curriculum?: Curriculum): CurriculumFormV
       displayName: course.displayName,
       exists: course.exists,
     })),
-    knowledgeCheck: {
+    knowledgeCheck: curriculum.knowledgeCheck && {
       id: curriculum.knowledgeCheck.courseId,
       displayName: curriculum.knowledgeCheck.displayName,
       exists: curriculum.knowledgeCheck.exists,
@@ -107,15 +113,21 @@ export const toCurriculumWriteData = (values: CurriculumFormValues): CurriculumW
   image: values.image,
   removeImage: values.removeImage && !values.image,
   courseIds: values.courses.map((course) => course.id),
-  knowledgeCheckCourseId: values.knowledgeCheck?.id ?? '',
+  // The schema requires a type, so '' never reaches here.
+  kind: values.kind || 'learning_path',
+  knowledgeCheckCourseId: values.knowledgeCheck?.id ?? null,
   knowledgeCheckDelayDays: Number(values.knowledgeCheckDelayDays),
-  // The form schema requires the pass mark and attempts, so '' never reaches here for them.
-  knowledgeCheckPassThreshold: Number(values.knowledgeCheckPassThreshold),
-  knowledgeCheckMaxAttempts: Number(values.knowledgeCheckMaxAttempts),
-  knowledgeCheckTimeLimit: optionalNumber(values.knowledgeCheckTimeLimit),
+  // With a knowledge check the schema requires the pass mark and attempts, so '' never reaches here for them.
+  // Without one its settings are hidden and unvalidated: send the backend defaults instead (UBER-351).
+  knowledgeCheckPassThreshold: values.knowledgeCheck
+    ? Number(values.knowledgeCheckPassThreshold)
+    : KC_PASS_THRESHOLD_DEFAULT,
+  knowledgeCheckMaxAttempts: values.knowledgeCheck ? Number(values.knowledgeCheckMaxAttempts) : KC_MAX_ATTEMPTS_DEFAULT,
+  knowledgeCheckTimeLimit: values.knowledgeCheck ? optionalNumber(values.knowledgeCheckTimeLimit) : null,
   badges: {
-    complete: values.badges.complete || null,
-    retained: values.badges.retained || null,
+    complete: values.kind === 'course' ? null : values.badges.complete || null,
+    // No knowledge check, no Retained badge (UBER-351); the API refuses one.
+    retained: values.knowledgeCheck ? values.badges.retained || null : null,
   },
 });
 

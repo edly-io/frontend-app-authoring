@@ -21,7 +21,7 @@ const CourseBadgeLinks = ({ courseId }: { courseId: string; }) => {
   // A course awards at most one course badge.
   const badge = badges.find((item) => item.kind === 'course' && item.courses.some((c) => c.courseId === courseId));
   const linked = curriculums.filter((item) => (
-    item.knowledgeCheck.courseId === courseId || item.courses.some((c) => c.courseId === courseId)
+    item.knowledgeCheck?.courseId === courseId || item.courses.some((c) => c.courseId === courseId)
   ));
 
   const chip = (key: string, to: string, label: string) => (
@@ -39,7 +39,7 @@ const CourseBadgeLinks = ({ courseId }: { courseId: string; }) => {
           item.uuid,
           curriculumUrl(item.uuid),
           intl.formatMessage(
-            item.knowledgeCheck.courseId === courseId
+            item.knowledgeCheck?.courseId === courseId
               ? messages.courseKnowledgeCheckLink
               : messages.courseCurriculumLink,
             { title: item.title },

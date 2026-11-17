@@ -36,8 +36,8 @@ describe('<CurriculumsPage />', () => {
     const { axiosMock } = initializeMocks();
     axiosMock.onGet(apiUrls.curriculumsPage(1)).reply(200, page([]));
     renderPage();
-    expect(await screen.findByText('You haven\'t created any curriculums yet.')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'New curriculum' }));
+    expect(await screen.findByText('You haven\'t created any learning paths yet.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'New learning path' }));
     expect(screen.getByTestId('curriculum-form')).toHaveTextContent('new');
   });
 

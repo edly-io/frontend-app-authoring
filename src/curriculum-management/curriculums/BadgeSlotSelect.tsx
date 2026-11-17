@@ -18,6 +18,8 @@ interface BadgeSlotSelectProps {
   error?: string;
   /** Learners earned the slot's badge in this curriculum: the picker is read-only, with a note. */
   locked?: boolean;
+  /** The slot can't be used here (e.g. Retained without a knowledge check): the picker is read-only with this note. */
+  unavailableNote?: string;
 }
 
 /**
@@ -32,6 +34,7 @@ const BadgeSlotSelect = ({
   onChange,
   error,
   locked = false,
+  unavailableNote,
 }: BadgeSlotSelectProps) => {
   const intl = useIntl();
   const slotLabel = intl.formatMessage(slotMessages[slot].label);
@@ -40,10 +43,12 @@ const BadgeSlotSelect = ({
   const valueId = `${baseId}-value`;
   const ruleId = `${baseId}-rule`;
   const lockedId = `${baseId}-locked`;
+  const unavailableId = `${baseId}-unavailable`;
   const errorId = `${baseId}-error`;
   const noBadge = intl.formatMessage(messages.noBadgeOption);
   const selected = badges.find((badge) => badge.uuid === value);
-  const describedBy = [ruleId, locked && lockedId, error && errorId].filter(Boolean).join(' ');
+  const describedBy = [ruleId, locked && lockedId, unavailableNote && unavailableId, error && errorId]
+    .filter(Boolean).join(' ');
 
   const renderItem = (uuid: string, title: string, imageUrl?: string | null) => {
     const isSelected = uuid === value;
@@ -82,7 +87,7 @@ const BadgeSlotSelect = ({
           aria-labelledby={`${labelId} ${valueId}`}
           aria-describedby={describedBy}
           aria-invalid={!!error || undefined}
-          disabled={locked}
+          disabled={locked || !!unavailableNote}
           className={`form-control d-flex align-items-center text-left${error ? ' is-invalid' : ''}`}
           title={selected?.title}
           data-value={value}
@@ -101,6 +106,7 @@ const BadgeSlotSelect = ({
       </Dropdown>
       <Form.Text id={ruleId}>{intl.formatMessage(slotMessages[slot].rule)}</Form.Text>
       {locked && <Form.Text id={lockedId}>{intl.formatMessage(messages.slotLocked)}</Form.Text>}
+      {unavailableNote && <Form.Text id={unavailableId}>{unavailableNote}</Form.Text>}
       {error && <Form.Control.Feedback id={errorId} type="invalid" hasIcon={false}>{error}</Form.Control.Feedback>}
     </Form.Group>
   );

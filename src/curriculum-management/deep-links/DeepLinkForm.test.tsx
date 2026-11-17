@@ -234,7 +234,7 @@ describe('<DeepLinkForm />', () => {
 
   it('says when there are no learning paths or course groups to pick', () => {
     setup({ paths: [], groups: [] });
-    expect(screen.getByText('No learning paths yet. Create one on the Curriculum tab.')).toBeInTheDocument();
+    expect(screen.getByText('No learning paths yet. Create one on the Learning Paths tab.')).toBeInTheDocument();
     expect(screen.getByText('No course groups yet.')).toBeInTheDocument();
   });
 

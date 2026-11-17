@@ -34,9 +34,24 @@ describe('<BadgeSlotSelect />', () => {
     expect(onChange).toHaveBeenCalledWith(badges[0].uuid);
   });
 
+  it('is read-only with the given note when unavailableNote is set', () => {
+    render(
+      <BadgeSlotSelect
+        slot="retained"
+        value=""
+        badges={badges}
+        takenBadgeUuids={[]}
+        onChange={jest.fn()}
+        unavailableNote="Not available"
+      />,
+    );
+    expect(screen.getByLabelText(/^Retained badge/)).toBeDisabled();
+    expect(screen.getByText('Not available')).toBeInTheDocument();
+  });
+
   it.each(
     [
-      ['complete', 'Every curriculum course completed'],
+      ['complete', 'Every learning path course completed'],
       ['retained', 'Knowledge check passed after it unlocks'],
     ] as const,
   )('explains when the %s badge is earned', (slot, rule) => {
