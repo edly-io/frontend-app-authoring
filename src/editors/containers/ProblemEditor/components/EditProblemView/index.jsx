@@ -14,6 +14,7 @@ import { useEditorContext } from '@src/editors/EditorContext';
 import AnswerWidget from './AnswerWidget';
 import SettingsWidget from './SettingsWidget';
 import QuestionWidget from './QuestionWidget';
+import PlaceholderWidget from './PlaceholderWidget';
 import EditorContainer from '../../../EditorContainer';
 import RawEditor from '../../../../sharedComponents/RawEditor';
 import { ProblemTypeKeys } from '../../../../data/constants/problem';
@@ -134,6 +135,7 @@ const EditProblemView = ({ returnFunction }) => {
             (
               <span className="flex-grow-1 mb-5">
                 <QuestionWidget />
+                <PlaceholderWidget problemType={problemType} />
                 <ExplanationWidget />
                 <AnswerWidget problemType={problemType} />
               </span>
