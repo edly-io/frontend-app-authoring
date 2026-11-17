@@ -9,6 +9,7 @@ import { fetchCertificates } from './data/thunks';
 import { certificatesDataMock } from './__mocks__';
 import Certificates from './Certificates';
 import messages from './messages';
+import signatoryMessages from './certificate-signatories/messages';
 
 let axiosMock;
 let store;
@@ -171,5 +172,33 @@ describe('Certificates', () => {
     await executeThunk(fetchCertificates(courseId), store.dispatch);
 
     expect(store.getState().certificates.loadingStatus).toBe(RequestStatus.FAILED);
+  });
+
+  it('closes an open signatory form and locks the controls when a non-global-staff user activates the certificate', async () => {
+    const user = userEvent.setup();
+    axiosMock
+      .onGet(getCertificatesApiUrl(courseId))
+      .reply(200, { ...certificatesDataMock, isActive: false, isGlobalStaff: false });
+    await executeThunk(fetchCertificates(courseId), store.dispatch);
+
+    const {
+      getByRole, getAllByRole, findAllByRole, queryByPlaceholderText, findByRole,
+    } = render(<Certificates courseId={courseId} />, { path: '/course/:courseId', params: { courseId } });
+
+    await user.click((await findAllByRole('button', { name: messages.editTooltip.defaultMessage }))[1]);
+
+    expect(queryByPlaceholderText(signatoryMessages.namePlaceholder.defaultMessage)).toBeInTheDocument();
+
+    axiosMock.onPost().reply(200, {});
+    axiosMock
+      .onGet(getCertificatesApiUrl(courseId))
+      .reply(200, { ...certificatesDataMock, isActive: true, isGlobalStaff: false });
+    await user.click(getByRole('button', { name: messages.headingActionsActivate.defaultMessage }));
+
+    await findByRole('button', { name: messages.headingActionsDeactivate.defaultMessage });
+
+    expect(queryByPlaceholderText(signatoryMessages.namePlaceholder.defaultMessage)).not.toBeInTheDocument();
+    getAllByRole('button', { name: messages.editTooltip.defaultMessage })
+      .forEach((button) => expect(button).toHaveAttribute('aria-disabled', 'true'));
   });
 });

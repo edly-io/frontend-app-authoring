@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types';
-import { useSelector } from 'react-redux';
 import { Stack, Button, Form } from '@openedx/paragon';
 import { useIntl } from '@edx/frontend-platform/i18n';
 
@@ -9,7 +8,6 @@ import SignatoryForm from './signatory/SignatoryForm';
 import useEditSignatory from './hooks/useEditSignatory';
 import useCreateSignatory from './hooks/useCreateSignatory';
 import messages from './messages';
-import { getCanEditCertificate } from '../data/selectors';
 
 const CertificateSignatories = ({
   isForm,
@@ -23,7 +21,6 @@ const CertificateSignatories = ({
   handleChange,
 }) => {
   const intl = useIntl();
-  const canEdit = useSelector(getCanEditCertificate);
 
   const {
     toggleEditSignatory,
@@ -75,7 +72,6 @@ const CertificateSignatories = ({
                 organization={organization}
                 signatureImagePath={signatureImagePath}
                 handleEdit={() => toggleEditSignatory(idx)}
-                isEditDisabled={!canEdit}
               />
             )
           ))}

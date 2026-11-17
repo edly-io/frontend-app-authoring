@@ -1,7 +1,9 @@
+import { Provider } from 'react-redux';
 import { render, waitFor } from '@testing-library/react';
 import { IntlProvider } from '@edx/frontend-platform/i18n';
 import userEvent from '@testing-library/user-event';
 
+import initializeStore from '../../../store';
 import { signatoriesMock } from '../../__mocks__';
 import commonMessages from '../../messages';
 import messages from '../messages';
@@ -9,10 +11,12 @@ import Signatory from './Signatory';
 
 const mockHandleEdit = jest.fn();
 
-const renderSignatory = (props) => render(
-  <IntlProvider locale="en">
-    <Signatory {...props} />
-  </IntlProvider>,
+const renderSignatory = (props, certificatesData = {}) => render(
+  <Provider store={initializeStore({ certificates: { certificatesData } })}>
+    <IntlProvider locale="en">
+      <Signatory {...props} />
+    </IntlProvider>
+  </Provider>,
 );
 
 const defaultProps = { ...signatoriesMock[0], handleEdit: mockHandleEdit, index: 0 };
@@ -44,10 +48,10 @@ describe('Signatory Component', () => {
     expect(mockHandleEdit).toHaveBeenCalled();
   });
 
-  it('disables the edit button and shows the tooltip on focus when isEditDisabled', async () => {
+  it('locks the edit button and shows the tooltip on focus for an active certificate when user is not global staff', async () => {
     const user = userEvent.setup();
     mockHandleEdit.mockClear();
-    const { getByRole, getByText } = renderSignatory({ ...defaultProps, isEditDisabled: true });
+    const { getByRole, getByText } = renderSignatory(defaultProps, { isActive: true, isGlobalStaff: false });
 
     const editButton = getByRole('button', { name: commonMessages.editTooltip.defaultMessage });
     expect(editButton).toHaveAttribute('aria-disabled', 'true');

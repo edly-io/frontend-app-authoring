@@ -7,6 +7,7 @@ import { initializeMockApp } from '@edx/frontend-platform';
 
 import initializeStore from '../../store';
 import { MODE_STATES } from '../data/constants';
+import { setMode } from '../data/slice';
 import { deleteCourseCertificate } from '../data/thunks';
 import commonMessages from '../messages';
 import messages from './messages';
@@ -118,19 +119,19 @@ describe('CertificateDetails', () => {
     expect(getByText(courseTitleOverride)).toBeInTheDocument();
   });
 
-  it('disables edit and delete with a tooltip for an active certificate when user is not global staff', async () => {
-    const user = userEvent.setup();
+  const initStore = (data) => {
     store = initializeStore({
-      certificates: {
-        certificatesData: { ...initialState.certificates.certificatesData, isActive: true, isGlobalStaff: false },
-      },
+      certificates: { certificatesData: { ...initialState.certificates.certificatesData, ...data } },
     });
+  };
+
+  it('locks edit with a tooltip for an active certificate when user is not global staff', async () => {
+    const user = userEvent.setup();
+    initStore({ isActive: true, isGlobalStaff: false });
     const { getByRole, getByText, queryByText } = renderComponent(defaultProps);
     const editButton = getByRole('button', { name: commonMessages.editTooltip.defaultMessage });
-    const deleteButton = getByRole('button', { name: commonMessages.deleteTooltip.defaultMessage });
 
     expect(editButton).toHaveAttribute('aria-disabled', 'true');
-    expect(deleteButton).toHaveAttribute('aria-disabled', 'true');
 
     await user.hover(editButton);
 
@@ -139,21 +140,15 @@ describe('CertificateDetails', () => {
     });
 
     await user.click(editButton);
-    await user.click(deleteButton);
 
     expect(queryByText(messages.editCertificateConfirmationTitle.defaultMessage)).not.toBeInTheDocument();
-    expect(queryByText(messages.deleteCertificateConfirmationTitle.defaultMessage)).not.toBeInTheDocument();
     expect(mockDispatch).not.toHaveBeenCalled();
   });
 
-  it('shows the hint tooltip on the disabled delete button for an active certificate when user is not global staff', async () => {
+  it('locks delete with a tooltip for an active certificate when user is not global staff', async () => {
     const user = userEvent.setup();
-    store = initializeStore({
-      certificates: {
-        certificatesData: { ...initialState.certificates.certificatesData, isActive: true, isGlobalStaff: false },
-      },
-    });
-    const { getByRole, getByText } = renderComponent(defaultProps);
+    initStore({ isActive: true, isGlobalStaff: false });
+    const { getByRole, getByText, queryByText } = renderComponent(defaultProps);
     const deleteButton = getByRole('button', { name: commonMessages.deleteTooltip.defaultMessage });
 
     expect(deleteButton).toHaveAttribute('aria-disabled', 'true');
@@ -163,35 +158,56 @@ describe('CertificateDetails', () => {
     await waitFor(() => {
       expect(getByText(commonMessages.activeCertificateEditHint.defaultMessage)).toBeInTheDocument();
     });
+
+    await user.click(deleteButton);
+
+    expect(queryByText(messages.deleteCertificateConfirmationTitle.defaultMessage)).not.toBeInTheDocument();
+    expect(mockDispatch).not.toHaveBeenCalled();
   });
 
-  it('disables edit and delete for an active certificate while isGlobalStaff is not loaded', () => {
-    store = initializeStore({
-      certificates: {
-        certificatesData: { ...initialState.certificates.certificatesData, isActive: true },
-      },
-    });
+  it('locks edit and delete for an active certificate while isGlobalStaff is not loaded', () => {
+    initStore({ isActive: true });
     const { getByRole } = renderComponent(defaultProps);
 
     expect(getByRole('button', { name: commonMessages.editTooltip.defaultMessage })).toHaveAttribute('aria-disabled', 'true');
     expect(getByRole('button', { name: commonMessages.deleteTooltip.defaultMessage })).toHaveAttribute('aria-disabled', 'true');
   });
 
-  it('enables edit and delete for an active certificate when user is global staff', async () => {
+  it('keeps edit and delete enabled for an inactive certificate when user is not global staff', async () => {
     const user = userEvent.setup();
-    store = initializeStore({
-      certificates: {
-        certificatesData: { ...initialState.certificates.certificatesData, isActive: true, isGlobalStaff: true },
-      },
-    });
+    initStore({ isActive: false, isGlobalStaff: false });
+    const { getByRole } = renderComponent(defaultProps);
+
+    expect(getByRole('button', { name: commonMessages.editTooltip.defaultMessage })).toHaveAttribute('aria-disabled', 'false');
+    expect(getByRole('button', { name: commonMessages.deleteTooltip.defaultMessage })).toHaveAttribute('aria-disabled', 'false');
+
+    await user.click(getByRole('button', { name: commonMessages.editTooltip.defaultMessage }));
+
+    expect(mockDispatch).toHaveBeenCalledWith(setMode(MODE_STATES.editAll));
+  });
+
+  it('keeps edit and delete enabled for an active certificate when user is global staff', async () => {
+    const user = userEvent.setup();
+    initStore({ isActive: true, isGlobalStaff: true });
     const { getByRole, getByText } = renderComponent(defaultProps);
     const editButton = getByRole('button', { name: commonMessages.editTooltip.defaultMessage });
+    const deleteButton = getByRole('button', { name: commonMessages.deleteTooltip.defaultMessage });
 
     expect(editButton).toHaveAttribute('aria-disabled', 'false');
-    expect(getByRole('button', { name: commonMessages.deleteTooltip.defaultMessage })).not.toBeDisabled();
+    expect(deleteButton).toHaveAttribute('aria-disabled', 'false');
 
     await user.click(editButton);
 
     expect(getByText(messages.editCertificateConfirmationTitle.defaultMessage)).toBeInTheDocument();
+  });
+
+  it('opens the delete confirm modal for global staff on an active certificate', async () => {
+    const user = userEvent.setup();
+    initStore({ isActive: true, isGlobalStaff: true });
+    const { getByRole, getByText } = renderComponent(defaultProps);
+
+    await user.click(getByRole('button', { name: commonMessages.deleteTooltip.defaultMessage }));
+
+    expect(getByText(messages.deleteCertificateConfirmationTitle.defaultMessage)).toBeInTheDocument();
   });
 });

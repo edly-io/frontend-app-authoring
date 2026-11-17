@@ -1,11 +1,14 @@
 import PropTypes from 'prop-types';
 import { useIntl } from '@edx/frontend-platform/i18n';
-import { Icon, IconButtonWithTooltip, Stack } from '@openedx/paragon';
+import {
+  Icon, Stack,
+} from '@openedx/paragon';
 import {
   EditOutline as EditOutlineIcon, DeleteOutline as DeleteOutlineIcon,
 } from '@openedx/paragon/icons';
 
 import CertificateSection from '../certificate-section/CertificateSection';
+import LockableActionButton from '../certificate-action-button/LockableActionButton';
 import ModalNotification from '../../generic/modal-notification';
 import commonMessages from '../messages';
 import messages from './messages';
@@ -27,11 +30,9 @@ const CertificateDetails = ({
     editModalOpen,
     editModalClose,
     isCertificateActive,
-    canEdit,
     handleEditAll,
     handleDeleteCard,
   } = useCertificateDetails(certificateId);
-  const handleEditClick = isCertificateActive ? editModalOpen : handleEditAll;
 
   return (
     <CertificateSection
@@ -40,31 +41,19 @@ const CertificateDetails = ({
       data-testid="certificate-details"
       actions={(
         <Stack direction="horizontal" gap="2">
-          <IconButtonWithTooltip
-            className={canEdit ? undefined : 'certificate-action--disabled'}
-            aria-disabled={!canEdit}
+          <LockableActionButton
             src={EditOutlineIcon}
             iconAs={Icon}
-            tooltipContent={(
-              <div>
-                {intl.formatMessage(canEdit ? commonMessages.editTooltip : commonMessages.activeCertificateEditHint)}
-              </div>
-            )}
+            tooltipContent={<div>{intl.formatMessage(commonMessages.editTooltip)}</div>}
             alt={intl.formatMessage(commonMessages.editTooltip)}
-            onClick={canEdit ? handleEditClick : undefined}
+            onClick={isCertificateActive ? editModalOpen : handleEditAll}
           />
-          <IconButtonWithTooltip
-            className={canEdit ? undefined : 'certificate-action--disabled'}
-            aria-disabled={!canEdit}
+          <LockableActionButton
             src={DeleteOutlineIcon}
             iconAs={Icon}
-            tooltipContent={(
-              <div>
-                {intl.formatMessage(canEdit ? commonMessages.deleteTooltip : commonMessages.activeCertificateEditHint)}
-              </div>
-            )}
+            tooltipContent={<div>{intl.formatMessage(commonMessages.deleteTooltip)}</div>}
             alt={intl.formatMessage(commonMessages.deleteTooltip)}
-            onClick={canEdit ? confirmOpen : undefined}
+            onClick={confirmOpen}
           />
         </Stack>
       )}

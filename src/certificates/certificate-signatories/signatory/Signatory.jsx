@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import {
-  Image, Icon, IconButtonWithTooltip, Stack,
+  Image, Icon, Stack,
 } from '@openedx/paragon';
 import {
   EditOutline as EditOutlineIcon,
@@ -8,6 +8,7 @@ import {
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { getConfig } from '@edx/frontend-platform';
 
+import LockableActionButton from '../../certificate-action-button/LockableActionButton';
 import commonMessages from '../../messages';
 import messages from '../messages';
 
@@ -18,7 +19,6 @@ const Signatory = ({
   organization,
   signatureImagePath,
   handleEdit,
-  isEditDisabled,
 }) => {
   const intl = useIntl();
 
@@ -33,18 +33,13 @@ const Signatory = ({
         </Stack>
       </Stack>
 
-      <IconButtonWithTooltip
-        className={`signatory__action-button${isEditDisabled ? ' certificate-action--disabled' : ''}`}
-        aria-disabled={isEditDisabled}
+      <LockableActionButton
+        className="signatory__action-button"
         src={EditOutlineIcon}
         iconAs={Icon}
         alt={intl.formatMessage(commonMessages.editTooltip)}
-        tooltipContent={(
-          <div>
-            {intl.formatMessage(isEditDisabled ? commonMessages.activeCertificateEditHint : commonMessages.editTooltip)}
-          </div>
-        )}
-        onClick={isEditDisabled ? undefined : handleEdit}
+        tooltipContent={<div>{intl.formatMessage(commonMessages.editTooltip)}</div>}
+        onClick={handleEdit}
       />
       <div className="signatory__image-container">
         {signatureImagePath && (
@@ -60,10 +55,6 @@ const Signatory = ({
   );
 };
 
-Signatory.defaultProps = {
-  isEditDisabled: false,
-};
-
 Signatory.propTypes = {
   name: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
@@ -71,7 +62,6 @@ Signatory.propTypes = {
   signatureImagePath: PropTypes.string.isRequired,
   index: PropTypes.number.isRequired,
   handleEdit: PropTypes.func.isRequired,
-  isEditDisabled: PropTypes.bool,
 };
 
 export default Signatory;

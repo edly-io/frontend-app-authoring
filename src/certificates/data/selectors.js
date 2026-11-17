@@ -12,7 +12,6 @@ export const getCertificateActivationUrl = state => state.certificates.certifica
 export const getCertificateWebViewUrl = state => state.certificates.certificatesData.certificateWebViewUrl;
 export const getIsCertificateActive = state => state.certificates.certificatesData.isActive;
 export const getIsGlobalStaff = state => state.certificates.certificatesData.isGlobalStaff;
-// EDLYCUSTOM: non-global-staff cannot change an active certificate (backend 403s), as in legacy Studio.
 export const getCanEditCertificate = state => getIsGlobalStaff(state) || !getIsCertificateActive(state);
 export const getComponentMode = state => state.certificates.componentMode;
 export const getCourseNumber = state => state.certificates.certificatesData.courseNumber;

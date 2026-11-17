@@ -130,4 +130,25 @@ describe('HeaderButtons Component', () => {
       expect(queryByRole('button', { name: messages.headingActionsDeactivate.defaultMessage })).not.toBeInTheDocument();
     });
   });
+
+  it('keeps the deactivate button enabled for a non-global-staff user on an active certificate', async () => {
+    const user = userEvent.setup();
+    axiosMock
+      .onGet(getCertificatesApiUrl(courseId))
+      .reply(200, { ...certificatesDataMock, isActive: true, isGlobalStaff: false });
+    await executeThunk(fetchCertificates(courseId), store.dispatch);
+    axiosMock.onPost().reply(200, {});
+
+    const { getByRole } = renderComponent();
+    const deactivateButton = getByRole('button', { name: messages.headingActionsDeactivate.defaultMessage });
+
+    expect(deactivateButton).toBeEnabled();
+    expect(deactivateButton).not.toHaveAttribute('aria-disabled');
+
+    await user.click(deactivateButton);
+
+    await waitFor(() => {
+      expect(axiosMock.history.post).toHaveLength(1);
+    });
+  });
 });
