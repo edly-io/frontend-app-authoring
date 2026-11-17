@@ -6,6 +6,21 @@ const messages = defineMessages({
     defaultMessage: 'Answers',
     description: 'Main title for Answers widget',
   },
+  incorrectFeedbackTitle: {
+    id: 'authoring.problemEditor.answerWidget.incorrectFeedback.title',
+    defaultMessage: 'Feedback for incorrect answers',
+    description: 'Title of the field for feedback shown on any wrong answer to a text or numerical input problem',
+  },
+  incorrectFeedbackHelperText: {
+    id: 'authoring.problemEditor.answerWidget.incorrectFeedback.helperText',
+    defaultMessage: 'Shown when a learner submits a wrong answer. Answer-specific feedback takes priority.',
+    description: 'Helper text for the incorrect answer feedback field',
+  },
+  incorrectFeedbackPlaceholder: {
+    id: 'authoring.problemEditor.answerWidget.incorrectFeedback.placeholder',
+    defaultMessage: 'Enter feedback for incorrect answers',
+    description: 'Placeholder for the incorrect answer feedback field',
+  },
   answerHelperText: {
     id: 'authoring.problemEditor.answerWidget.answer.answerHelperText',
     defaultMessage: '{helperText}',

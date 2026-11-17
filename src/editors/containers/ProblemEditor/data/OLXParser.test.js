@@ -402,4 +402,21 @@ describe('OLXParser', () => {
       expect(explanation).toBe(parseOutExplanationTests.solutionExplanation);
     });
   });
+
+  describe('incorrect answer feedback for text and numeric input', () => {
+    it.each([
+      ['<stringresponse answer="4" type="ci"><regexphint answer=".*">Try <b>again</b>.</regexphint><textline size="20"/></stringresponse>'],
+      ['<numericalresponse answer="4"><regexphint answer=".*">Try <b>again</b>.</regexphint><formulaequationinput/></numericalresponse>'],
+    ])('reads the catch-all regexphint as general feedback, not as question text: %s', (response) => {
+      const data = new OLXParser(`<problem><p>What is 2 + 2?</p>${response}</problem>`).getParsedOLXData();
+      expect(data.generalFeedback).toBe('Try <b>again</b>.');
+      expect(data.question).not.toContain('again');
+    });
+    it('reverts to the advanced editor for any other regexphint', () => {
+      const parser = new OLXParser(
+        '<problem><stringresponse answer="4"><regexphint answer="5+">No.</regexphint><textline/></stringresponse></problem>',
+      );
+      expect(() => parser.getParsedOLXData()).toThrow('Answer-matching hints not supported by GUI');
+    });
+  });
 });
