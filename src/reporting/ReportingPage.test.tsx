@@ -416,7 +416,7 @@ describe('<ReportingPage />', () => {
         ...populated,
         courses: { totals: populated.courses.totals, rows },
       });
-      const { container } = render(<ReportingPage />, { path: '/reporting' });
+      render(<ReportingPage />, { path: '/reporting' });
 
       // 14 rows over a page size of 10: the first page holds ten of them and a control turns the rest.
       await screen.findByRole('heading', { name: 'Course breakdown' });
@@ -428,7 +428,7 @@ describe('<ReportingPage />', () => {
 
     it('leaves the pagination control off a breakdown that fits on one page', async () => {
       axiosMock.onGet(getAssessmentStatsUrl()).reply(200, populated);
-      const { container } = render(<ReportingPage />, { path: '/reporting' });
+      render(<ReportingPage />, { path: '/reporting' });
 
       // One qualifying course: the count still shows, but there is no page to turn to.
       await screen.findByRole('heading', { name: 'Course breakdown' });
