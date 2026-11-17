@@ -1,4 +1,6 @@
-import { useCallback, useState } from 'react';
+import {
+  useCallback, useRef, useState,
+} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getConfig } from '@edx/frontend-platform';
 import { useIntl, FormattedMessage } from '@edx/frontend-platform/i18n';
@@ -15,7 +17,7 @@ import { useEventListener } from '@src/generic/hooks';
 import VideoSelectorPage from '@src/editors/VideoSelectorPage';
 import EditorPage from '@src/editors/EditorPage';
 import { SelectedComponent } from '@src/library-authoring';
-import { fetchCourseSectionVerticalData } from '../data/thunk';
+import { deleteUnitItemQuery, fetchCourseSectionVerticalData } from '../data/thunk';
 import { messageTypes } from '../constants';
 import messages from './messages';
 import AddComponentButton from './add-component-btn';
@@ -79,6 +81,10 @@ const AddComponent = ({
   const [blockType, setBlockType] = useState<string | null>(null);
   const [courseId, setCourseId] = useState<string | null>(null);
   const [newBlockId, setNewBlockId] = useState<string | null>(null);
+  // Tracks the block id currently being rolled back so a second near-simultaneous cancel
+  // (e.g. the video modal's onClose and onCancel both firing in the same tick) can't
+  // dispatch a duplicate delete for a locator that's already been removed.
+  const deletingBlockIdRef = useRef<string | null>(null);
   const [isSelectLibraryContentModalOpen, showSelectLibraryContentModal, closeSelectLibraryContentModal] = useToggle();
   const [selectedComponents, setSelectedComponents] = useState<SelectedComponent[]>([]);
   const [usageId, setUsageId] = useState(null);
@@ -105,19 +111,27 @@ const AddComponent = ({
     closeSelectLibraryContentModal();
   }, [selectedComponents]);
 
-  const onXBlockSave = useCallback(/* istanbul ignore next */ () => {
+  const onXBlockSave = useCallback(() => {
     closeXBlockEditorModal();
     closeVideoSelectorModal();
+    setNewBlockId(null);
     sendMessageToIframe(messageTypes.refreshXBlock, null);
     dispatch(fetchCourseSectionVerticalData(blockId, sequenceId));
   }, [closeXBlockEditorModal, closeVideoSelectorModal, sendMessageToIframe]);
 
-  const onXBlockCancel = useCallback(/* istanbul ignore next */ () => {
-    // ignoring tests because it triggers when someone closes the editor which has a separate store
+  const onXBlockCancel = useCallback(() => {
     closeXBlockEditorModal();
     closeVideoSelectorModal();
-    dispatch(fetchCourseSectionVerticalData(blockId, sequenceId));
-  }, [closeXBlockEditorModal, closeVideoSelectorModal, sendMessageToIframe, blockId, sequenceId]);
+    if (newBlockId && deletingBlockIdRef.current !== newBlockId) {
+      // The block was created eagerly before its editor opened; cancelling without saving
+      // must roll that creation back instead of leaving a blank stub in the unit.
+      deletingBlockIdRef.current = newBlockId;
+      dispatch(deleteUnitItemQuery(blockId, newBlockId, sendMessageToIframe));
+      setNewBlockId(null);
+    } else if (!newBlockId) {
+      dispatch(fetchCourseSectionVerticalData(blockId, sequenceId));
+    }
+  }, [closeXBlockEditorModal, closeVideoSelectorModal, sendMessageToIframe, blockId, sequenceId, newBlockId]);
 
   const handleLibraryV2Selection = useCallback((selection: SelectedComponent) => {
     handleCreateNewCourseXBlock({
@@ -288,7 +302,7 @@ const AddComponent = ({
         <StandardModal
           title={intl.formatMessage(messages.videoPickerModalTitle)}
           isOpen={isVideoSelectorModalOpen}
-          onClose={closeVideoSelectorModal}
+          onClose={onXBlockCancel}
           isOverflowVisible={false}
           size="xl"
         >
@@ -298,7 +312,7 @@ const AddComponent = ({
               courseId={courseId}
               studioEndpointUrl={getConfig().STUDIO_BASE_URL}
               lmsEndpointUrl={getConfig().LMS_BASE_URL}
-              onCancel={closeVideoSelectorModal}
+              onCancel={onXBlockCancel}
               returnFunction={/* istanbul ignore next */ () => onXBlockSave}
             />
           </div>

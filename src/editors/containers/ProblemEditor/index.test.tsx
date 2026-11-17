@@ -114,5 +114,9 @@ describe('ProblemEditor', () => {
 
     editorRender(<ProblemEditor {...baseProps} />, { initialState });
     expect(screen.getByText(/EditProblemView/)).toBeInTheDocument();
+    // Regression check: cancelling from the type-specific editor (not just the initial
+    // SelectTypeModal step) must also roll back an eagerly-created block, which requires
+    // onClose to actually reach EditProblemView -> EditorContainer.
+    expect(screen.getByText(/withOnClose/)).toBeInTheDocument();
   });
 });
