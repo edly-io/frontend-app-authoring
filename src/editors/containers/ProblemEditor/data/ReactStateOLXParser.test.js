@@ -227,14 +227,17 @@ describe('Check React State OLXParser problem', () => {
     it.each([
       ['<stringresponse answer="4" type="ci"><textline size="20"/></stringresponse>'],
       ['<numericalresponse answer="4"><formulaequationinput/></numericalresponse>'],
-    ])('writes general feedback as a catch-all regexphint and reads it back: %s', (response) => {
+    ])('writes general feedback as an escaped catch-all regexphint and reads it back unchanged: %s', (response) => {
       const problem = new OLXParser(`<problem><p>What is 2 + 2?</p>${response}</problem>`).getParsedOLXData();
+      const feedback = 'Use x < 5 & don\'t type <b>.';
       const olx = new ReactStateOLXParser({
-        problem: { ...problem, generalFeedback: 'Add the two numbers.' },
+        problem: { ...problem, generalFeedback: feedback },
         editorObject,
       }).buildOLX();
-      expect(olx).toContain('<regexphint answer=".*">Add the two numbers.</regexphint>');
-      expect(new OLXParser(olx).getParsedOLXData().generalFeedback).toBe('Add the two numbers.');
+      expect(olx).toContain(
+        '<regexphint answer=".*">Use x &lt; 5 &amp; don&apos;t type &lt;b&gt;.</regexphint>',
+      );
+      expect(new OLXParser(olx).getParsedOLXData().generalFeedback).toBe(feedback);
     });
     it('writes no regexphint without general feedback', () => {
       const problem = new OLXParser(

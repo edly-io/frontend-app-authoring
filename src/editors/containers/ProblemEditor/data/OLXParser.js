@@ -759,18 +759,24 @@ export class OLXParser {
 
   /** getIncorrectFeedback(problemType)
    * Text and numeric input keep the feedback for any wrong answer in a catch-all
-   * <regexphint answer=".*">. Any other regexphint can't be edited here, so it opens
-   * the advanced editor rather than being dropped on save.
+   * <regexphint answer=".*">, edited as plain text. A regexphint with any other pattern,
+   * or with markup inside, can't be edited here, so it opens the advanced editor rather
+   * than being changed on save.
    * @param {string} problemType - string of the olx problem type
    * @return {string} feedback for a wrong answer, or an empty string
    */
   getIncorrectFeedback(problemType) {
     const [problemBody] = this.richTextProblem.filter(section => Object.keys(section).includes(problemType));
     const hints = (problemBody?.[problemType] || []).filter(subtag => has(subtag, 'regexphint'));
-    if (hints.length > 1 || hints.some(hint => hint[':@']?.['@_answer']?.trim() !== '.*')) {
+    if (
+      hints.length > 1
+      || hints.some(hint => hint[':@']?.['@_answer']?.trim() !== '.*')
+      || hints.some(hint => hint.regexphint.some(node => !has(node, '#text')))
+    ) {
       throw new Error('Answer-matching hints not supported by GUI, reverting to Advanced Editor');
     }
-    return hints.length ? this.getFeedback(hints[0].regexphint) : '';
+    const text = hints.length ? hints[0].regexphint.map(node => node['#text']).join('') : '';
+    return decodeXmlEntities(text).trim();
   }
 
   getParsedOLXData() {

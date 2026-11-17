@@ -405,17 +405,18 @@ describe('OLXParser', () => {
 
   describe('incorrect answer feedback for text and numeric input', () => {
     it.each([
-      ['<stringresponse answer="4" type="ci"><regexphint answer=".*">Try <b>again</b>.</regexphint><textline size="20"/></stringresponse>'],
-      ['<numericalresponse answer="4"><regexphint answer=".*">Try <b>again</b>.</regexphint><formulaequationinput/></numericalresponse>'],
-    ])('reads the catch-all regexphint as general feedback, not as question text: %s', (response) => {
+      ['<stringresponse answer="4" type="ci"><regexphint answer=".*">Use x &lt; 5 &amp; don&apos;t&#33;</regexphint><textline size="20"/></stringresponse>'],
+      ['<numericalresponse answer="4"><regexphint answer=".*">Use x &lt; 5 &amp; don&apos;t&#33;</regexphint><formulaequationinput/></numericalresponse>'],
+    ])('reads the catch-all regexphint as plain text, not as question text: %s', (response) => {
       const data = new OLXParser(`<problem><p>What is 2 + 2?</p>${response}</problem>`).getParsedOLXData();
-      expect(data.generalFeedback).toBe('Try <b>again</b>.');
-      expect(data.question).not.toContain('again');
+      expect(data.generalFeedback).toBe('Use x < 5 & don\'t!');
+      expect(data.question).not.toContain('Use x');
     });
-    it('reverts to the advanced editor for any other regexphint', () => {
-      const parser = new OLXParser(
-        '<problem><stringresponse answer="4"><regexphint answer="5+">No.</regexphint><textline/></stringresponse></problem>',
-      );
+    it.each([
+      ['a regexphint with another pattern', '<regexphint answer="5+">No.</regexphint>'],
+      ['a catch-all regexphint with markup', '<regexphint answer=".*">Try <b>again</b>.</regexphint>'],
+    ])('reverts to the advanced editor for %s', (_, hint) => {
+      const parser = new OLXParser(`<problem><stringresponse answer="4">${hint}<textline/></stringresponse></problem>`);
       expect(() => parser.getParsedOLXData()).toThrow('Answer-matching hints not supported by GUI');
     });
   });

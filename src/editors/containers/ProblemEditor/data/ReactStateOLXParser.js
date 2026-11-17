@@ -507,9 +507,8 @@ class ReactStateOLXParser {
   addIncorrectFeedback(answerObject) {
     const { generalFeedback, problemType } = this.problemState;
     if (generalFeedback?.trim()) {
-      // The feedback is plain text, and the parser drops text that isn't inside a tag.
-      const [{ regexphint }] = this.richTextParser.parse(`<regexphint>${generalFeedback}</regexphint>`);
-      answerObject[problemType].push({ ':@': { '@_answer': '.*' }, regexphint });
+      // Plain text: a text node, so the builder escapes characters such as < and &.
+      answerObject[problemType].push({ ':@': { '@_answer': '.*' }, regexphint: [{ '#text': generalFeedback }] });
     }
   }
 
