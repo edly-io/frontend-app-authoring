@@ -436,6 +436,15 @@ describe('<ReportingPage />', () => {
       expect(within(breakdownPanel()).queryByRole('navigation')).not.toBeInTheDocument();
     });
 
+    it('reports a failed request on the Curriculums tab too, which has nothing else to report it', async () => {
+      axiosMock.onGet(getAssessmentStatsUrl()).reply(500);
+      render(<ReportingPage />, { path: '/reporting' });
+      await userEvent.click(await screen.findByRole('tab', { name: 'Curriculums' }));
+
+      // Returning nothing here would read as "no learning paths have a check" rather than a failure.
+      expect(await screen.findByRole('alert')).toHaveTextContent(/could not be loaded|try again/i);
+    });
+
     it('tells a user without global staff that the figures are not theirs to see', async () => {
       axiosMock.onGet(getAssessmentStatsUrl()).reply(403);
       render(<ReportingPage />, { path: '/reporting' });

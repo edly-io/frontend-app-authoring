@@ -952,6 +952,8 @@ const RetentionSection = () => {
   ], [intl, f]);
 
   // Absent from a backend that predates the field: render nothing rather than break the page.
+  // The knowledge-gain section above shares this request and reports its failures, so a second
+  // alert here would only repeat it.
   if (isError || isPending || !data?.retention) {
     return null;
   }
@@ -988,7 +990,7 @@ const RetentionSection = () => {
 const CurriculumRetentionSection = () => {
   const f = useFormatters();
   const { intl } = f;
-  const { data, isPending, isError } = useAssessmentStats();
+  const { data, isPending, isError, error } = useAssessmentStats();
 
   const columns: Column<CurriculumRetentionRow>[] = useMemo(() => [
     {
@@ -1038,8 +1040,15 @@ const CurriculumRetentionSection = () => {
     },
   ], [intl, f]);
 
+  // Nothing else on this tab reports a failed request, so this section has to.
+  if (isError) {
+    return <StatsError error={error} />;
+  }
+  if (isPending) {
+    return <LoadingSkeleton />;
+  }
   // Absent from a backend that predates the field: render nothing rather than break the page.
-  if (isError || isPending || !data?.curriculumRetention?.completion) {
+  if (!data?.curriculumRetention?.completion) {
     return null;
   }
 
@@ -1089,6 +1098,17 @@ const CurriculumRetentionSection = () => {
  * A stats table: every row is already loaded, so it pages in the browser. Uses the same footer as the
  * learner tables above (``reporting-table-footer``), so all five tables in the report read the same.
  */
+/** The alert a failed assessment-stats request shows. A 403 is final: retrying will not fix it. */
+const StatsError = ({ error }: { error: unknown; }) => {
+  const intl = useIntl();
+  const forbidden = (error as { response?: { status?: number; }; })?.response?.status === 403;
+  return (
+    <Alert variant="danger">
+      {intl.formatMessage(forbidden ? messages.forbidden : messages.error)}
+    </Alert>
+  );
+};
+
 const StatsTable = <T extends object>({ rows, columns, countMessage }: {
   rows: T[];
   columns: Column<T>[];
@@ -1165,12 +1185,7 @@ const KnowledgeGainSection = () => {
   ], [intl, f]);
 
   if (isError) {
-    const forbidden = (error as { response?: { status?: number; }; })?.response?.status === 403;
-    return (
-      <Alert variant="danger">
-        {intl.formatMessage(forbidden ? messages.forbidden : messages.error)}
-      </Alert>
-    );
+    return <StatsError error={error} />;
   }
   if (isPending || !data) {
     return <LoadingSkeleton />;
