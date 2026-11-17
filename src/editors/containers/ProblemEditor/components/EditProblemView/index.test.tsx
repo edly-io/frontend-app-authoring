@@ -28,6 +28,10 @@ jest.mock('../../../../sharedComponents/RawEditor', () =>
   function mockRawEditor({ lang, content }) {
     return <div>{lang}:{content}</div>;
   });
+jest.mock('./PlaceholderWidget', () =>
+  function mockPlaceholderWidget() {
+    return <div>PlaceholderWidget</div>;
+  });
 jest.mock('./ExplanationWidget', () =>
   function mockExplanationWidget() {
     return <div>ExplanationWidget</div>;
