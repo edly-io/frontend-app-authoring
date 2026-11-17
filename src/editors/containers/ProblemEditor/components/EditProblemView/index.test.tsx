@@ -74,6 +74,7 @@ describe('EditProblemView', () => {
   it('renders standard problem widgets', () => {
     editorRender(<EditProblemView returnFunction={returnFunction} />, { initialState });
     expect(screen.getByText('QuestionWidget')).toBeInTheDocument();
+    expect(screen.getByText('PlaceholderWidget')).toBeInTheDocument();
     expect(screen.getByText('ExplanationWidget')).toBeInTheDocument();
     expect(screen.getByText('AnswerWidget')).toBeInTheDocument();
     expect(screen.getByText('SettingsWidget')).toBeInTheDocument();
@@ -93,6 +94,7 @@ describe('EditProblemView', () => {
     });
     expect(screen.getByText('xml:<problem></problem>')).toBeInTheDocument();
     expect(screen.getByText('SettingsWidget')).toBeInTheDocument();
+    expect(screen.queryByText('PlaceholderWidget')).not.toBeInTheDocument();
   });
 
   it('renders markdown editor with RawEditor', () => {
@@ -110,6 +112,7 @@ describe('EditProblemView', () => {
     };
     editorRender(<EditProblemView returnFunction={returnFunction} />, { initialState: modifiedInitialState });
     expect(screen.getByText('markdown:## Problem')).toBeInTheDocument();
+    expect(screen.queryByText('PlaceholderWidget')).not.toBeInTheDocument();
   });
 
   it('shows AlertModal with correct title/body for standard', () => {
