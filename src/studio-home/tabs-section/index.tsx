@@ -63,7 +63,7 @@ const TabsSection = ({
         : TABS_LIST.legacyLibraries;
     }
 
-    if (pname.includes('/reporting')) {
+    if (pname.startsWith('/reporting')) {
       return TABS_LIST.reporting;
     }
 

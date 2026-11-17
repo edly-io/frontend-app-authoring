@@ -114,6 +114,55 @@ describe('<ReportingPage />', () => {
     axiosMock.onGet(getAssessmentStatsUrl()).reply(200, emptyStats);
   });
 
+  describe('the waffle gate', () => {
+    it('does not exist for a user the reporting flag is off for', async () => {
+      axiosMock.onGet(getUberFlagsUrl()).reply(200, { enable_reporting: false });
+      render(<ReportingPage />, { path: '/reporting' });
+
+      // Opening /reporting directly used to render the page and call the API, so the reader met a
+      // generic error instead of being told the page is not there.
+      expect(await screen.findByTestId('notFoundAlert')).toBeInTheDocument();
+      expect(screen.queryByRole('tab', { name: 'Courses' })).not.toBeInTheDocument();
+    });
+
+    it('reads a 404 on the flag call as the page not existing', async () => {
+      axiosMock.onGet(getUberFlagsUrl()).reply(404);
+      render(<ReportingPage />, { path: '/reporting' });
+
+      expect(await screen.findByTestId('notFoundAlert')).toBeInTheDocument();
+    });
+  });
+
+  it('asks a client error only once, instead of retrying something final', async () => {
+    axiosMock.onGet(getCurriculumAssignmentsUrl(curriculumUuid)).reply(403);
+    render(<ReportingPage />, { path: '/reporting' });
+    await selectCurriculum();
+    await screen.findByText(/global staff/i);
+
+    // Without the retry rule React Query asks three more times, with backoff, before showing anything.
+    const asked = axiosMock.history.get.filter(
+      r => r.url === getCurriculumAssignmentsUrl(curriculumUuid),
+    );
+    expect(asked).toHaveLength(1);
+  });
+
+  it('says so when the course list itself fails, instead of offering an empty picker', async () => {
+    axiosMock.onGet(getStaffCoursesUrl()).reply(400);
+    render(<ReportingPage />, { path: '/reporting' });
+    await openCoursesTab();
+
+    expect(await screen.findByText(/could not be loaded/)).toBeInTheDocument();
+  });
+
+  it('tells course staff why the curriculum picker is empty', async () => {
+    // Curriculums are global-staff only, so this 403s for course staff every time.
+    axiosMock.onGet(getAllCurriculumsUrl()).reply(403);
+    render(<ReportingPage />, { path: '/reporting' });
+    await userEvent.click(await screen.findByRole('tab', { name: 'Curriculums' }));
+
+    expect(await screen.findByText(/global staff/i)).toBeInTheDocument();
+  });
+
   it('shows no table until a course is picked', async () => {
     axiosMock.onGet(getCourseEnrollmentsUrl(courseId)).reply(200, { count: 1, results: [enrollment(1)] });
     render(<ReportingPage />, { path: '/reporting' });
@@ -134,7 +183,7 @@ describe('<ReportingPage />', () => {
     expect(await screen.findByText('learner1')).toBeInTheDocument();
     expect(screen.getByText('learner1@example.com')).toBeInTheDocument();
     expect(screen.getByText('Oct 29, 2026')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Download CSV/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Download CSV/ })).toBeInTheDocument();
   });
 
   it('shows the empty state', async () => {
@@ -146,7 +195,8 @@ describe('<ReportingPage />', () => {
   });
 
   it('shows an alert on error', async () => {
-    axiosMock.onGet(getCourseEnrollmentsUrl(courseId)).reply(500);
+    // A 400 rather than a 500: a 4xx is final, so the alert is immediate. The retry rule has its own test.
+    axiosMock.onGet(getCourseEnrollmentsUrl(courseId)).reply(400);
     render(<ReportingPage />, { path: '/reporting' });
     await selectCourse();
 
@@ -437,7 +487,7 @@ describe('<ReportingPage />', () => {
     });
 
     it('reports a failed request on the Curriculums tab too, which has nothing else to report it', async () => {
-      axiosMock.onGet(getAssessmentStatsUrl()).reply(500);
+      axiosMock.onGet(getAssessmentStatsUrl()).reply(400);
       render(<ReportingPage />, { path: '/reporting' });
       await userEvent.click(await screen.findByRole('tab', { name: 'Curriculums' }));
 

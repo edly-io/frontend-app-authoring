@@ -1,9 +1,10 @@
 import { keepPreviousData, skipToken, useQuery } from '@tanstack/react-query';
 
+import { retryUnlessClientError } from '@src/generic/queryErrors';
+
 import {
   getAllCurriculums,
   getAssessmentStats,
-  getCourseCurriculums,
   getCourseEnrollments,
   getCurriculumAssignments,
   getStaffCourses,
@@ -26,7 +27,6 @@ export const reportingQueryKeys = {
     pageSize,
     search,
   ],
-  curriculums: (courseId: string) => [ROOT, 'curriculums', courseId],
   assignments: (curriculumUuid: string, page: number, pageSize: number, search: string) => [
     ROOT,
     'assignments',
@@ -43,6 +43,7 @@ export const useUberFlags = () =>
     queryFn: getUberFlags,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
+    retry: retryUnlessClientError,
   });
 
 export const useCourseEnrollments = (
@@ -55,12 +56,7 @@ export const useCourseEnrollments = (
     queryKey: reportingQueryKeys.enrollments(courseId, page, pageSize, search),
     queryFn: () => getCourseEnrollments(courseId, page, pageSize, search),
     placeholderData: keepPreviousData,
-  });
-
-export const useCourseCurriculums = (courseId: string) =>
-  useQuery({
-    queryKey: reportingQueryKeys.curriculums(courseId),
-    queryFn: () => getCourseCurriculums(courseId),
+    retry: retryUnlessClientError,
   });
 
 export const useStaffCourses = () =>
@@ -68,6 +64,7 @@ export const useStaffCourses = () =>
     queryKey: reportingQueryKeys.staffCourses,
     queryFn: getStaffCourses,
     staleTime: 5 * 60 * 1000,
+    retry: retryUnlessClientError,
   });
 
 export const useAllCurriculums = () =>
@@ -75,6 +72,7 @@ export const useAllCurriculums = () =>
     queryKey: reportingQueryKeys.allCurriculums,
     queryFn: getAllCurriculums,
     staleTime: 5 * 60 * 1000,
+    retry: retryUnlessClientError,
   });
 
 export const useCurriculumAssignments = (
@@ -89,6 +87,7 @@ export const useCurriculumAssignments = (
       ? () => getCurriculumAssignments(curriculumUuid, page, pageSize, search)
       : skipToken,
     placeholderData: keepPreviousData,
+    retry: retryUnlessClientError,
   });
 
 export const useAssessmentStats = () =>
@@ -97,4 +96,5 @@ export const useAssessmentStats = () =>
     queryFn: getAssessmentStats,
     // The figures move only as learners sit checks, so a tab revisit need not refetch straight away.
     staleTime: 5 * 60 * 1000,
+    retry: retryUnlessClientError,
   });

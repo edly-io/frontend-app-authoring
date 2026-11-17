@@ -39,15 +39,10 @@ export interface CurriculumAssignmentRow {
   completeBadgeConfigured?: boolean;
   kcUnlocksAt: string | null;
   kcTakenAt: string | null;
-  kcScorePct: number | null;
   kcPassed: boolean | null;
-  kcAttemptsUsed: number | null;
   retainedAt: string | null;
   retainedBadgeAwardedAt: string | null;
   retainedBadgeConfigured?: boolean;
-  currentStreak: number | null;
-  longestStreak: number | null;
-  lifetimePoints: number | null;
   lastActivity: string | null;
 }
 
@@ -67,9 +62,6 @@ export async function getUberFlags(): Promise<UberFlags> {
 
 export const getCourseEnrollmentsUrl = (courseId: string) => (
   `${getReportingApiUrl()}/courses/${encodeURIComponent(courseId)}/enrollments/`
-);
-export const getCourseCurriculumsUrl = (courseId: string) => (
-  `${getReportingApiUrl()}/courses/${encodeURIComponent(courseId)}/curriculums/`
 );
 export const getCurriculumAssignmentsUrl = (curriculumUuid: string) => (
   `${getReportingApiUrl()}/curriculums/${encodeURIComponent(curriculumUuid)}/assignments/`
@@ -92,11 +84,6 @@ export async function getCourseEnrollments(
 export const getCourseEnrollmentsCsvUrl = (courseId: string, search = '') => (
   `${getCourseEnrollmentsUrl(courseId)}?format=csv${search ? `&search=${encodeURIComponent(search)}` : ''}`
 );
-
-export async function getCourseCurriculums(courseId: string): Promise<CourseCurriculum[]> {
-  const { data } = await getAuthenticatedHttpClient().get(getCourseCurriculumsUrl(courseId));
-  return camelCaseObject(data);
-}
 
 export interface StaffCourse {
   courseId: string;
@@ -206,4 +193,28 @@ export const getAssessmentStatsUrl = () => `${getReportingApiUrl()}/assessment-s
 export async function getAssessmentStats(): Promise<AssessmentStats> {
   const { data } = await getAuthenticatedHttpClient().get(getAssessmentStatsUrl());
   return camelCaseObject(data);
+}
+
+/**
+ * Fetch a CSV export and hand it to the browser as a download.
+ *
+ * A plain `<a href download>` pointing at Studio does not work reliably: the `download` attribute is
+ * ignored across origins, and a top-level navigation carries no `USE-JWT-COOKIE` header, so it
+ * authenticates only where the browser happens to hold a Studio session cookie. Fetching it through the
+ * authenticated client is how every other call here is made, and a same-origin blob URL makes `download`
+ * - and the filename - work wherever the MFE is hosted.
+ */
+export async function downloadCsv(url: string, filename: string): Promise<void> {
+  const { data } = await getAuthenticatedHttpClient().get(url, { responseType: 'blob' });
+  const objectUrl = URL.createObjectURL(data as Blob);
+  try {
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
 }

@@ -226,6 +226,11 @@ const messages = defineMessages({
     description: 'Shown when no badge is linked to the course or slot, so there is nothing to earn',
   },
   downloadCsv: { id: 'course-authoring.reporting.downloadCsv', defaultMessage: 'Download CSV', description: 'CSV download button label' },
+  downloadFailed: {
+    id: 'course-authoring.reporting.downloadFailed',
+    defaultMessage: 'The export could not be downloaded. Please try again.',
+    description: 'Error alert shown when a CSV export fails to download',
+  },
   colAssigned: { id: 'course-authoring.reporting.col.assigned', defaultMessage: 'Assigned At', description: 'Column header' },
   colActive: { id: 'course-authoring.reporting.col.active', defaultMessage: 'Active', description: 'Column header' },
   colCoursesDone: { id: 'course-authoring.reporting.col.coursesDone', defaultMessage: 'Courses Done', description: 'Column header' },

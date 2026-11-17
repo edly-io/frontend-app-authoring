@@ -4,7 +4,6 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { AxiosError } from 'axios';
 
 import type {
   BadgeWriteData,
@@ -14,6 +13,7 @@ import type {
   TestLinkRequest,
 } from '../types';
 import * as api from './api';
+import { isClientError, retryUnlessClientError } from '@src/generic/queryErrors';
 
 // Query-key factory, in the style of taxonomyQueryKeys (src/taxonomy/data/apiHooks.ts).
 export const curriculumQueryKeys = {
@@ -26,14 +26,6 @@ export const curriculumQueryKeys = {
   deepLinksConfig: () => [...curriculumQueryKeys.all, 'deepLinksConfig'],
   deepLinks: () => [...curriculumQueryKeys.all, 'deepLinks'],
 };
-
-const isClientError = (error: unknown) => {
-  const status = (error as AxiosError | undefined)?.response?.status;
-  return status !== undefined && status >= 400 && status < 500;
-};
-
-/** Retry network/5xx failures up to 3 times, but never 4xx responses. */
-const retryUnlessClientError = (failureCount: number, error: unknown) => !isClientError(error) && failureCount < 3;
 
 /**
  * Whether `uber_features.curriculum_management` is on for this user (spec §6.3). Runs on Studio home

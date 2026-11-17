@@ -18,6 +18,10 @@ import { Download } from '@openedx/paragon/icons';
 
 import Header from '../header';
 import SubHeader from '../generic/sub-header/SubHeader';
+import Loading from '../generic/Loading';
+import NotFoundAlert from '../generic/NotFoundAlert';
+import ConnectionErrorAlert from '../generic/ConnectionErrorAlert';
+import { getErrorStatus, isClientError } from '../generic/queryErrors';
 import StudioHomeNav from '../curriculum-management/StudioHomeNav';
 
 import {
@@ -26,8 +30,9 @@ import {
   useCourseEnrollments,
   useCurriculumAssignments,
   useStaffCourses,
+  useUberFlags,
 } from './data/apiHooks';
-import { getCourseEnrollmentsCsvUrl, getCurriculumAssignmentsCsvUrl } from './data/api';
+import { downloadCsv, getCourseEnrollmentsCsvUrl, getCurriculumAssignmentsCsvUrl } from './data/api';
 import type {
   AssessmentOutcome,
   AssessmentSummary,
@@ -223,20 +228,37 @@ const ReportTable = <T extends object>({
   );
 };
 
-const CsvDownloadButton = ({ csvUrl }: { csvUrl: string; }) => {
+const CsvDownloadButton = ({ csvUrl, filename }: { csvUrl: string; filename: string; }) => {
   const intl = useIntl();
+  const [failed, setFailed] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const onClick = () => {
+    setBusy(true);
+    setFailed(false);
+    downloadCsv(csvUrl, filename)
+      .catch(() => setFailed(true))
+      .finally(() => setBusy(false));
+  };
+
   return (
-    <Button
-      as="a"
-      variant="outline-primary"
-      size="sm"
-      iconBefore={Download}
-      href={csvUrl}
-      download
-      className="ml-auto"
-    >
-      {intl.formatMessage(messages.downloadCsv)}
-    </Button>
+    <>
+      <Button
+        variant="outline-primary"
+        size="sm"
+        iconBefore={Download}
+        onClick={onClick}
+        disabled={busy}
+        className="ml-auto"
+      >
+        {intl.formatMessage(messages.downloadCsv)}
+      </Button>
+      {failed && (
+        <Alert variant="danger" className="w-100 mt-2 mb-0">
+          {intl.formatMessage(messages.downloadFailed)}
+        </Alert>
+      )}
+    </>
   );
 };
 
@@ -251,7 +273,7 @@ const EnrollmentsTable = ({ courseId, search, onSearch }: TableProps & { courseI
   const [page, setPage] = useState(1);
   const { data, isPending, isError, error } = useCourseEnrollments(courseId, page, PAGE_SIZE, search);
 
-  const columns: Column<CourseEnrollmentRow>[] = [
+  const columns: Column<CourseEnrollmentRow>[] = useMemo(() => [
     {
       Header: intl.formatMessage(messages.colUsername),
       accessor: 'username',
@@ -310,7 +332,7 @@ const EnrollmentsTable = ({ courseId, search, onSearch }: TableProps & { courseI
       accessor: 'badgeAwarded',
       Cell: ({ row }) => f.badge(row.original.badgeConfigured, row.original.badgeAwarded),
     },
-  ];
+  ], [intl, f]);
 
   return (
     <ReportTable
@@ -337,7 +359,7 @@ const AssignmentsTable = ({ curriculumUuid, search, onSearch }: TableProps & { c
   const [page, setPage] = useState(1);
   const { data, isPending, isError, error } = useCurriculumAssignments(curriculumUuid, page, PAGE_SIZE, search);
 
-  const columns: Column<CurriculumAssignmentRow>[] = [
+  const columns: Column<CurriculumAssignmentRow>[] = useMemo(() => [
     {
       Header: intl.formatMessage(messages.colUsername),
       accessor: 'username',
@@ -423,7 +445,7 @@ const AssignmentsTable = ({ curriculumUuid, search, onSearch }: TableProps & { c
       accessor: 'lastActivity',
       Cell: ({ row }) => f.date(row.original.lastActivity),
     },
-  ];
+  ], [intl, f]);
 
   return (
     <ReportTable
@@ -446,7 +468,7 @@ const AssignmentsTable = ({ curriculumUuid, search, onSearch }: TableProps & { c
 
 const CoursesTab = () => {
   const intl = useIntl();
-  const { data: courses } = useStaffCourses();
+  const { data: courses, isError: coursesFailed, error: coursesError } = useStaffCourses();
   const [selectedCourse, setSelectedCourse] = useState('');
   // Lifted out of the table so the CSV link exports the same rows the search is showing.
   const [search, setSearch] = useState('');
@@ -457,6 +479,8 @@ const CoursesTab = () => {
       <KnowledgeGainSection />
       <RetentionSection />
       <h3 className="reporting-section-title">{intl.formatMessage(messages.courseProgressHeading)}</h3>
+      {/* Without this the picker would just be empty, which reads as "you have no courses". */}
+      {coursesFailed && <RequestError error={coursesError} />}
       <div className="reporting-selector-row">
         <Form.Group controlId="reporting-course-select" className="reporting-selector mb-0">
           <Form.Control
@@ -473,7 +497,12 @@ const CoursesTab = () => {
             {courses?.map(c => <option key={c.courseId} value={c.courseId}>{c.displayName}</option>)}
           </Form.Control>
         </Form.Group>
-        {selectedCourse && <CsvDownloadButton csvUrl={getCourseEnrollmentsCsvUrl(selectedCourse, search)} />}
+        {selectedCourse && (
+          <CsvDownloadButton
+            csvUrl={getCourseEnrollmentsCsvUrl(selectedCourse, search)}
+            filename={`enrollments_${selectedCourse}.csv`}
+          />
+        )}
       </div>
       {selectedCourse && (
         <EnrollmentsTable key={selectedCourse} courseId={selectedCourse} search={search} onSearch={setSearch} />
@@ -484,9 +513,14 @@ const CoursesTab = () => {
 
 const CurriculumsTab = () => {
   const intl = useIntl();
-  const { data: curriculums } = useAllCurriculums();
+  const { data: curriculums, isError, error } = useAllCurriculums();
   const [selectedCurriculum, setSelectedCurriculum] = useState('');
   const [search, setSearch] = useState('');
+
+  // Course staff get a 403 here every time, so an empty dropdown would be the only thing they ever saw.
+  if (isError) {
+    return <RequestError error={error} />;
+  }
 
   if (curriculums && curriculums.length === 0) {
     return (
@@ -518,6 +552,7 @@ const CurriculumsTab = () => {
         {selectedCurriculum && (
           <CsvDownloadButton
             csvUrl={getCurriculumAssignmentsCsvUrl(selectedCurriculum, search)}
+            filename={`curriculum_${selectedCurriculum}.csv`}
           />
         )}
       </div>
@@ -1042,7 +1077,7 @@ const CurriculumRetentionSection = () => {
 
   // Nothing else on this tab reports a failed request, so this section has to.
   if (isError) {
-    return <StatsError error={error} />;
+    return <RequestError error={error} />;
   }
   if (isPending) {
     return <LoadingSkeleton />;
@@ -1099,9 +1134,13 @@ const CurriculumRetentionSection = () => {
  * learner tables above (``reporting-table-footer``), so all five tables in the report read the same.
  */
 /** The alert a failed assessment-stats request shows. A 403 is final: retrying will not fix it. */
-const StatsError = ({ error }: { error: unknown; }) => {
+/**
+ * The alert a failed reporting request shows. A 403 is final and says so; anything else reads as a
+ * failure the reader can retry. Shared so a selector and a table never explain the same 403 differently.
+ */
+const RequestError = ({ error }: { error: unknown; }) => {
   const intl = useIntl();
-  const forbidden = (error as { response?: { status?: number; }; })?.response?.status === 403;
+  const forbidden = getErrorStatus(error) === 403;
   return (
     <Alert variant="danger">
       {intl.formatMessage(forbidden ? messages.forbidden : messages.error)}
@@ -1185,7 +1224,7 @@ const KnowledgeGainSection = () => {
   ], [intl, f]);
 
   if (isError) {
-    return <StatsError error={error} />;
+    return <RequestError error={error} />;
   }
   if (isPending || !data) {
     return <LoadingSkeleton />;
@@ -1215,6 +1254,37 @@ const KnowledgeGainSection = () => {
 const ReportingPage = () => {
   const intl = useIntl();
   const [activeTab, setActiveTab] = useState('courses');
+  const { data: uberFlags, isPending, isError, error } = useUberFlags();
+
+  const renderBody = () => {
+    if (isPending) {
+      return <Loading />;
+    }
+    // A 4xx is an answer - the plugin is not installed, or this is not our user - so the page does not
+    // exist for them. A network error or 5xx is the same page being temporarily unreachable.
+    if (isError) {
+      return isClientError(error) ? <NotFoundAlert /> : <ConnectionErrorAlert />;
+    }
+    if (!uberFlags?.enableReporting) {
+      return <NotFoundAlert />;
+    }
+    return (
+      <div className="reporting-page">
+        <Tabs
+          id="reporting-tabs"
+          activeKey={activeTab}
+          onSelect={(key: string) => setActiveTab(key)}
+        >
+          <Tab eventKey="courses" title={intl.formatMessage(messages.enrollmentsTab)}>
+            {activeTab === 'courses' && <CoursesTab />}
+          </Tab>
+          <Tab eventKey="curriculums" title={intl.formatMessage(messages.curriculumTab)}>
+            {activeTab === 'curriculums' && <CurriculumsTab />}
+          </Tab>
+        </Tabs>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -1226,20 +1296,7 @@ const ReportingPage = () => {
           hideBorder
         />
         <StudioHomeNav />
-        <div className="reporting-page">
-          <Tabs
-            id="reporting-tabs"
-            activeKey={activeTab}
-            onSelect={(key: string) => setActiveTab(key)}
-          >
-            <Tab eventKey="courses" title={intl.formatMessage(messages.enrollmentsTab)}>
-              {activeTab === 'courses' && <CoursesTab />}
-            </Tab>
-            <Tab eventKey="curriculums" title={intl.formatMessage(messages.curriculumTab)}>
-              {activeTab === 'curriculums' && <CurriculumsTab />}
-            </Tab>
-          </Tabs>
-        </div>
+        {renderBody()}
       </Container>
       <StudioFooterSlot />
     </>
