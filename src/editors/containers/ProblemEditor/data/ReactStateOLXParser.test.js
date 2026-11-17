@@ -221,6 +221,32 @@ describe('Check React State OLXParser problem', () => {
       expect(result[':@']['@_answer']).toBe('[10,10]');
     });
   });
+
+  describe('incorrect answer feedback for text and numeric input', () => {
+    const editorObject = { question: '<p>What is 2 + 2?</p>', hints: [] };
+    it.each([
+      ['<stringresponse answer="4" type="ci"><textline size="20"/></stringresponse>'],
+      ['<numericalresponse answer="4"><formulaequationinput/></numericalresponse>'],
+    ])('writes general feedback as an escaped catch-all regexphint and reads it back unchanged: %s', (response) => {
+      const problem = new OLXParser(`<problem><p>What is 2 + 2?</p>${response}</problem>`).getParsedOLXData();
+      const feedback = 'Use x < 5 & don\'t type <b>.';
+      const olx = new ReactStateOLXParser({
+        problem: { ...problem, generalFeedback: feedback },
+        editorObject,
+      }).buildOLX();
+      expect(olx).toContain(
+        '<regexphint answer=".*">Use x &lt; 5 &amp; don&apos;t type &lt;b&gt;.</regexphint>',
+      );
+      expect(new OLXParser(olx).getParsedOLXData().generalFeedback).toBe(feedback);
+    });
+    it('writes no regexphint without general feedback', () => {
+      const problem = new OLXParser(
+        '<problem><stringresponse answer="4"><textline size="20"/></stringresponse></problem>',
+      ).getParsedOLXData();
+      const olx = new ReactStateOLXParser({ problem, editorObject }).buildOLX();
+      expect(olx).not.toContain('regexphint');
+    });
+  });
 });
 
 // Uber: the placeholder setting round-trips through the input's placeholder attribute.

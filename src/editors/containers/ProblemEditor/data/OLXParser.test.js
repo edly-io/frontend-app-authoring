@@ -402,4 +402,37 @@ describe('OLXParser', () => {
       expect(explanation).toBe(parseOutExplanationTests.solutionExplanation);
     });
   });
+
+  describe('incorrect answer feedback for text and numeric input', () => {
+    it.each([
+      ['<stringresponse answer="4" type="ci"><regexphint answer=".*">Use x &lt; 5 &amp; don&apos;t&#33;</regexphint><textline size="20"/></stringresponse>'],
+      ['<numericalresponse answer="4"><regexphint answer=".*">Use x &lt; 5 &amp; don&apos;t&#33;</regexphint><formulaequationinput/></numericalresponse>'],
+    ])('reads the catch-all regexphint as plain text, not as question text: %s', (response) => {
+      const data = new OLXParser(`<problem><p>What is 2 + 2?</p>${response}</problem>`).getParsedOLXData();
+      expect(data.generalFeedback).toBe('Use x < 5 & don\'t!');
+      expect(data.question).not.toContain('Use x');
+    });
+    const responses = [
+      ['stringresponse', (hint) => `<stringresponse answer="4">${hint}<textline/></stringresponse>`],
+      [
+        'numericalresponse',
+        (hint) => `<numericalresponse answer="4">${hint}<formulaequationinput/></numericalresponse>`,
+      ],
+    ];
+    const unsupportedHints = [
+      ['a regexphint with another pattern', '<regexphint answer="5+">No.</regexphint>'],
+      ['a catch-all regexphint with markup', '<regexphint answer=".*">Try <b>again</b>.</regexphint>'],
+      [
+        'two catch-all regexphints',
+        '<regexphint answer=".*">One.</regexphint><regexphint answer=".*">Two.</regexphint>',
+      ],
+    ];
+    it.each(responses.flatMap(([tag, wrap]) => unsupportedHints.map(([name, hint]) => [tag, name, wrap(hint)])))(
+      'reverts %s to the advanced editor for %s',
+      (_, __, response) => {
+        const parser = new OLXParser(`<problem>${response}</problem>`);
+        expect(() => parser.getParsedOLXData()).toThrow('Answer-matching hints not supported by GUI');
+      },
+    );
+  });
 });

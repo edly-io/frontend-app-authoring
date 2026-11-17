@@ -32,6 +32,7 @@ export const nonQuestionKeys = [
   'numericalresponse',
   'optioninput',
   'optionresponse',
+  'regexphint',
   'responseparam',
   'solution',
   'stringequalhint',
@@ -738,7 +739,11 @@ export class OLXParser {
     /* Feedback is Generalized for a Problem IFF:
     1. The problem is of Types: Single Select or Dropdown.
     2. All the problem's incorrect, if Selected answers are equivalent strings, and there is no other feedback.
+    Text and numeric input store it as a catch-all hint instead (see getIncorrectFeedback).
     */
+    if (problemType === ProblemTypeKeys.TEXTINPUT || problemType === ProblemTypeKeys.NUMERIC) {
+      return this.getIncorrectFeedback(problemType);
+    }
     if (problemType === ProblemTypeKeys.SINGLESELECT || problemType === ProblemTypeKeys.DROPDOWN) {
       const firstIncorrectAnswerText = answers.find(answer => answer.correct === false)?.selectedFeedback;
       const isAllIncorrectSelectedFeedbackTheSame = answers.every(answer => (answer.correct
@@ -750,6 +755,28 @@ export class OLXParser {
       }
     }
     return '';
+  }
+
+  /** getIncorrectFeedback(problemType)
+   * Text and numeric input keep the feedback for any wrong answer in a catch-all
+   * <regexphint answer=".*">, edited as plain text. A regexphint with any other pattern,
+   * or with markup inside, can't be edited here, so it opens the advanced editor rather
+   * than being changed on save.
+   * @param {string} problemType - string of the olx problem type
+   * @return {string} feedback for a wrong answer, or an empty string
+   */
+  getIncorrectFeedback(problemType) {
+    const [problemBody] = this.richTextProblem.filter(section => Object.keys(section).includes(problemType));
+    const hints = (problemBody?.[problemType] || []).filter(subtag => has(subtag, 'regexphint'));
+    if (
+      hints.length > 1
+      || hints.some(hint => hint[':@']?.['@_answer']?.trim() !== '.*')
+      || hints.some(hint => hint.regexphint.some(node => !has(node, '#text')))
+    ) {
+      throw new Error('Answer-matching hints not supported by GUI, reverting to Advanced Editor');
+    }
+    const text = hints.length ? hints[0].regexphint.map(node => node['#text']).join('') : '';
+    return decodeXmlEntities(text).trim();
   }
 
   getParsedOLXData() {

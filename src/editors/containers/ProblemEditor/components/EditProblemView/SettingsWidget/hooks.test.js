@@ -422,6 +422,18 @@ describe('Problem settings hooks', () => {
       expect(typeRowProps.updateField).toHaveBeenCalledWith({ problemType: ProblemTypeKeys.TEXTINPUT });
     });
 
+    test.each([
+      [ProblemTypeKeys.SINGLESELECT, ProblemTypeKeys.TEXTINPUT, true],
+      [ProblemTypeKeys.DROPDOWN, ProblemTypeKeys.NUMERIC, true],
+      [ProblemTypeKeys.TEXTINPUT, ProblemTypeKeys.NUMERIC, false],
+      [ProblemTypeKeys.NUMERIC, ProblemTypeKeys.TEXTINPUT, false],
+      [ProblemTypeKeys.MULTISELECT, ProblemTypeKeys.DROPDOWN, false],
+    ])('switching %s to %s clears the rich-text general feedback: %s', (problemType, typeKey, cleared) => {
+      hooks.typeRowHooks({ ...typeRowProps, problemType, typeKey, correctAnswerCount: 1 }).onClick();
+      const clearCalls = typeRowProps.updateField.mock.calls.filter(([change]) => 'generalFeedback' in change);
+      expect(clearCalls).toEqual(cleared ? [[{ generalFeedback: '' }]] : []);
+    });
+
     test('test typeRowHooks sets localized block title when formatMessage is provided', () => {
       const mockSetBlockTitle = jest.fn();
       const mockUpdateField = jest.fn();

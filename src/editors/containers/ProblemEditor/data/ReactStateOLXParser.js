@@ -376,6 +376,7 @@ class ReactStateOLXParser {
         }
       }
     });
+    this.addIncorrectFeedback(answerObject);
     answerObject[problemType].push({
       textline: { '#text': '' },
       ':@': {
@@ -492,8 +493,23 @@ class ReactStateOLXParser {
         }
       }
     });
+    this.addIncorrectFeedback(answerObject);
     answerObject[problemType].push({ formulaequationinput: { '#text': '' }, ...this.placeholderAttribute() });
     return answerObject;
+  }
+
+  /** addIncorrectFeedback(answerObject)
+   * Text and numeric input: the general feedback becomes a catch-all
+   * <regexphint answer=".*">, which the LMS shows for any wrong answer that has
+   * no answer-specific feedback.
+   * @param {object} answerObject - object representation of the response tag, changed in place
+   */
+  addIncorrectFeedback(answerObject) {
+    const { generalFeedback, problemType } = this.problemState;
+    if (generalFeedback?.trim()) {
+      // Plain text: a text node, so the builder escapes characters such as < and &.
+      answerObject[problemType].push({ ':@': { '@_answer': '.*' }, regexphint: [{ '#text': generalFeedback }] });
+    }
   }
 
   /** getAnswerHints(feedback)
