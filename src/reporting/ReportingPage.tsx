@@ -32,8 +32,9 @@ import type {
   AssessmentOutcome,
   AssessmentSummary,
   CourseAssessmentRow,
+  CurriculumRetentionRow,
+  RetentionRow,
   CourseEnrollmentRow,
-  CurriculumAssessmentRow,
   CurriculumAssignmentRow,
 } from './data/api';
 import messages from './messages';
@@ -452,6 +453,10 @@ const CoursesTab = () => {
 
   return (
     <>
+      {/* Knowledge gain is a course-level measure, so it lives on this tab above the per-course picker. */}
+      <KnowledgeGainSection />
+      <RetentionSection />
+      <h3 className="reporting-section-title">{intl.formatMessage(messages.courseProgressHeading)}</h3>
       <div className="reporting-selector-row">
         <Form.Group controlId="reporting-course-select" className="reporting-selector mb-0">
           <Form.Control
@@ -493,6 +498,8 @@ const CurriculumsTab = () => {
 
   return (
     <>
+      <CurriculumRetentionSection />
+      <h3 className="reporting-section-title">{intl.formatMessage(messages.curriculumProgressHeading)}</h3>
       <div className="reporting-selector-row">
         <Form.Group controlId="reporting-curriculum-select" className="reporting-selector mb-0">
           <Form.Control
@@ -727,11 +734,20 @@ const OUTCOME = {
  * two-learner course behind the same bar as a two-hundred-learner one. The scale is the attempt count,
  * so the two bars always add up to the whole.
  */
-const OutcomeChart = ({ outcome, scopeMessage, emptyMessage, altMessage }: {
+const OutcomeChart = ({
+  outcome,
+  scopeMessage,
+  emptyMessage,
+  altMessage,
+  passedLabel = messages.outcomePassed,
+  failedLabel = messages.outcomeFailed,
+}: {
   outcome: AssessmentOutcome;
   scopeMessage: MessageDescriptor;
   emptyMessage: MessageDescriptor;
   altMessage: MessageDescriptor;
+  passedLabel?: MessageDescriptor;
+  failedLabel?: MessageDescriptor;
 }) => {
   const intl = useIntl();
   const { attempted, passed, failed } = outcome;
@@ -808,8 +824,8 @@ const OutcomeChart = ({ outcome, scopeMessage, emptyMessage, altMessage }: {
             </text>
           </g>
         ))}
-        {column(passed, centres[0], intl.formatMessage(messages.outcomePassed), 'passed')}
-        {column(failed, centres[1], intl.formatMessage(messages.outcomeFailed), 'failed')}
+        {column(passed, centres[0], intl.formatMessage(passedLabel), 'passed')}
+        {column(failed, centres[1], intl.formatMessage(failedLabel), 'failed')}
       </svg>
     </figure>
   );
@@ -879,11 +895,7 @@ const StatsSection = <T extends object>({
             </Panel>
           </div>
           <Panel title={tableTitle}>
-            <div className="reporting-table-scroll reporting-table-scroll--capped">
-              <DataTable data={rows} columns={columns} itemCount={rows.length}>
-                <DataTable.Table />
-              </DataTable>
-            </div>
+            <StatsTable rows={rows} columns={columns} countMessage={messages.totalCourses} />
           </Panel>
         </>
       )}
@@ -891,7 +903,231 @@ const StatsSection = <T extends object>({
   );
 };
 
-const GainTab = ({ subject }: { subject: 'courses' | 'curriculums'; }) => {
+/**
+ * Retention of the single courses that carry a retention check. A separate query result from the same
+ * endpoint as the knowledge gain above, so the loading and error states belong to that section; this one
+ * renders nothing until the data is there.
+ */
+const RetentionSection = () => {
+  const f = useFormatters();
+  const { intl } = f;
+  const { data, isPending, isError } = useAssessmentStats();
+
+  const columns: Column<RetentionRow>[] = useMemo(() => [
+    {
+      Header: intl.formatMessage(messages.colCourse),
+      accessor: 'displayName',
+      Cell: ({ row }) => row.original.displayName,
+    },
+    {
+      Header: intl.formatMessage(messages.colRetentionLearners),
+      accessor: 'assigned',
+      Cell: ({ row }) => f.number(row.original.assigned),
+    },
+    {
+      Header: intl.formatMessage(messages.colSat),
+      accessor: 'attempted',
+      Cell: ({ row }) => f.number(row.original.attempted),
+    },
+    {
+      Header: intl.formatMessage(messages.colRetainedCount),
+      accessor: 'passed',
+      Cell: ({ row }) => f.number(row.original.passed),
+    },
+    {
+      Header: intl.formatMessage(messages.colRetentionRate),
+      accessor: 'passRatePct',
+      Cell: ({ row }) => f.percent(row.original.passRatePct),
+    },
+    {
+      Header: intl.formatMessage(messages.colRetentionRules),
+      accessor: 'passThresholdPct',
+      Cell: ({ row }) =>
+        intl.formatMessage(messages.retentionRules, {
+          days: row.original.delayDays,
+          threshold: row.original.passThresholdPct,
+          attempts: row.original.maxAttempts,
+        }),
+    },
+  ], [intl, f]);
+
+  // Absent from a backend that predates the field: render nothing rather than break the page.
+  if (isError || isPending || !data?.retention) {
+    return null;
+  }
+
+  return (
+    <section className="reporting-section">
+      <header className="reporting-section__header">
+        <p className="reporting-section__help">{intl.formatMessage(messages.retentionHelp)}</p>
+      </header>
+      {data.retention.rows.length === 0
+        ? <div className="reporting-panel reporting-empty">{intl.formatMessage(messages.noRetentionCourses)}</div>
+        : (
+          <>
+            <div className="reporting-charts">
+              <Panel title={intl.formatMessage(messages.retentionChartTitle)}>
+                <OutcomeChart
+                  outcome={data.retention.totals}
+                  scopeMessage={messages.retentionScope}
+                  emptyMessage={messages.retentionNoData}
+                  altMessage={messages.retentionAlt}
+                />
+              </Panel>
+            </div>
+            <Panel title={intl.formatMessage(messages.retentionTableTitle)}>
+              <StatsTable rows={data.retention.rows} columns={columns} countMessage={messages.totalCourses} />
+            </Panel>
+          </>
+        )}
+    </section>
+  );
+};
+
+/** Retention of the learning paths that carry a 30-day check. Same measure as the course one above. */
+const CurriculumRetentionSection = () => {
+  const f = useFormatters();
+  const { intl } = f;
+  const { data, isPending, isError } = useAssessmentStats();
+
+  const columns: Column<CurriculumRetentionRow>[] = useMemo(() => [
+    {
+      Header: intl.formatMessage(messages.colPath),
+      accessor: 'title',
+      Cell: ({ row }) => row.original.title,
+    },
+    {
+      Header: intl.formatMessage(messages.colCoursesInPath),
+      accessor: 'coursesTotal',
+      Cell: ({ row }) => f.number(row.original.coursesTotal),
+    },
+    {
+      Header: intl.formatMessage(messages.colRetentionLearners),
+      accessor: 'assigned',
+      Cell: ({ row }) => f.number(row.original.assigned),
+    },
+    {
+      Header: intl.formatMessage(messages.colCompleted),
+      accessor: 'completed',
+      Cell: ({ row }) => f.number(row.original.completed),
+    },
+    {
+      Header: intl.formatMessage(messages.colSat),
+      accessor: 'attempted',
+      Cell: ({ row }) => f.number(row.original.attempted),
+    },
+    {
+      Header: intl.formatMessage(messages.colRetainedCount),
+      accessor: 'passed',
+      Cell: ({ row }) => f.number(row.original.passed),
+    },
+    {
+      Header: intl.formatMessage(messages.colRetentionRate),
+      accessor: 'passRatePct',
+      Cell: ({ row }) => f.percent(row.original.passRatePct),
+    },
+    {
+      Header: intl.formatMessage(messages.colRetentionRules),
+      accessor: 'passThresholdPct',
+      Cell: ({ row }) =>
+        intl.formatMessage(messages.retentionRules, {
+          days: row.original.delayDays,
+          threshold: row.original.passThresholdPct,
+          attempts: row.original.maxAttempts,
+        }),
+    },
+  ], [intl, f]);
+
+  // Absent from a backend that predates the field: render nothing rather than break the page.
+  if (isError || isPending || !data?.curriculumRetention?.completion) {
+    return null;
+  }
+
+  return (
+    <section className="reporting-section">
+      <header className="reporting-section__header">
+        <p className="reporting-section__help">{intl.formatMessage(messages.curriculumRetentionHelp)}</p>
+      </header>
+      {data.curriculumRetention.rows.length === 0
+        ? <div className="reporting-panel reporting-empty">{intl.formatMessage(messages.noCurriculumRetention)}</div>
+        : (
+          <>
+            <div className="reporting-charts reporting-charts--pair reporting-charts--even">
+              <Panel title={intl.formatMessage(messages.completionChartTitle)}>
+                <OutcomeChart
+                  outcome={data.curriculumRetention.completion}
+                  scopeMessage={messages.completionScope}
+                  emptyMessage={messages.completionNoData}
+                  altMessage={messages.completionAlt}
+                  passedLabel={messages.outcomeCompleted}
+                  failedLabel={messages.outcomeInProgress}
+                />
+              </Panel>
+              <Panel title={intl.formatMessage(messages.curriculumRetentionChartTitle)}>
+                <OutcomeChart
+                  outcome={data.curriculumRetention.totals}
+                  scopeMessage={messages.retentionScope}
+                  emptyMessage={messages.retentionNoData}
+                  altMessage={messages.retentionAlt}
+                />
+              </Panel>
+            </div>
+            <Panel title={intl.formatMessage(messages.curriculumRetentionTableTitle)}>
+              <StatsTable
+                rows={data.curriculumRetention.rows}
+                columns={columns}
+                countMessage={messages.totalPaths}
+              />
+            </Panel>
+          </>
+        )}
+    </section>
+  );
+};
+
+/**
+ * A stats table: every row is already loaded, so it pages in the browser. Uses the same footer as the
+ * learner tables above (``reporting-table-footer``), so all five tables in the report read the same.
+ */
+const StatsTable = <T extends object>({ rows, columns, countMessage }: {
+  rows: T[];
+  columns: Column<T>[];
+  countMessage: MessageDescriptor;
+}) => {
+  const intl = useIntl();
+  const [page, setPage] = useState(1);
+  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  // A refetch can shrink the table under the page the reader is on.
+  const current = Math.min(page, pageCount);
+  const visible = useMemo(
+    () => rows.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE),
+    [rows, current],
+  );
+
+  return (
+    <>
+      <div className="reporting-table-scroll">
+        <DataTable data={visible} columns={columns} itemCount={visible.length}>
+          <DataTable.Table />
+        </DataTable>
+      </div>
+      <div className="reporting-table-footer">
+        <span className="reporting-total">{intl.formatMessage(countMessage, { count: rows.length })}</span>
+        {pageCount > 1 && (
+          <Pagination
+            variant="reduced"
+            paginationLabel={intl.formatMessage(messages.paginationLabel)}
+            pageCount={pageCount}
+            currentPage={current}
+            onPageSelect={setPage}
+          />
+        )}
+      </div>
+    </>
+  );
+};
+
+const KnowledgeGainSection = () => {
   const f = useFormatters();
   const { intl } = f;
   const { data, isPending, isError, error } = useAssessmentStats();
@@ -928,30 +1164,6 @@ const GainTab = ({ subject }: { subject: 'courses' | 'curriculums'; }) => {
     ...summaryColumns<CourseAssessmentRow>(),
   ], [intl, f]);
 
-  const curriculumColumns: Column<CurriculumAssessmentRow>[] = useMemo(() => [
-    {
-      Header: intl.formatMessage(messages.colCurriculum),
-      accessor: 'title',
-      Cell: ({ row }) => row.original.title,
-    },
-    ...summaryColumns<CurriculumAssessmentRow>(),
-    {
-      Header: intl.formatMessage(messages.colPassRate),
-      accessor: 'passRatePct',
-      Cell: ({ row }) => f.percent(row.original.passRatePct),
-    },
-    {
-      Header: intl.formatMessage(messages.colRetentionRules),
-      accessor: 'passThresholdPct',
-      Cell: ({ row }) =>
-        intl.formatMessage(messages.retentionRules, {
-          days: row.original.delayDays,
-          threshold: row.original.passThresholdPct,
-          attempts: row.original.maxAttempts,
-        }),
-    },
-  ], [intl, f]);
-
   if (isError) {
     const forbidden = (error as { response?: { status?: number; }; })?.response?.status === 403;
     return (
@@ -964,43 +1176,22 @@ const GainTab = ({ subject }: { subject: 'courses' | 'curriculums'; }) => {
     return <LoadingSkeleton />;
   }
 
-  if (subject === 'courses') {
-    return (
-      <div className="reporting-overview">
-        <StatsSection
-          help={intl.formatMessage(messages.coursesChartHelp)}
-          caveat={intl.formatMessage(messages.coursesChartCaveat)}
-          summary={data.courses.totals}
-          scopeMessage={messages.chartScope}
-          outcome={data.courses.totals}
-          outcomeTitle={intl.formatMessage(messages.outcomesPanelTitle)}
-          outcomeScope={messages.outcomeScope}
-          outcomeEmpty={messages.outcomeNoData}
-          outcomeAlt={messages.outcomeAlt}
-          tableTitle={intl.formatMessage(messages.coursesTableTitle)}
-          rows={data.courses.rows}
-          columns={courseColumns}
-          emptyMessage={intl.formatMessage(messages.noQualifyingCourses)}
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="reporting-overview">
       <StatsSection
-        help={intl.formatMessage(messages.curriculumsChartHelp)}
-        summary={data.curriculums.totals}
-        scopeMessage={messages.chartScopeCurriculums}
-        outcome={data.curriculums.totals}
-        outcomeTitle={intl.formatMessage(messages.outcomesPanelTitleCurriculums)}
-        outcomeScope={messages.outcomeScopeCurriculums}
-        outcomeEmpty={messages.outcomeNoDataCurriculums}
-        outcomeAlt={messages.outcomeAltCurriculums}
-        tableTitle={intl.formatMessage(messages.curriculumsTableTitle)}
-        rows={data.curriculums.rows}
-        columns={curriculumColumns}
-        emptyMessage={intl.formatMessage(messages.noQualifyingCurriculums)}
+        help={intl.formatMessage(messages.coursesChartHelp)}
+        caveat={intl.formatMessage(messages.coursesChartCaveat)}
+        summary={data.courses.totals}
+        scopeMessage={messages.chartScope}
+        outcome={data.courses.totals}
+        outcomeTitle={intl.formatMessage(messages.outcomesPanelTitle)}
+        outcomeScope={messages.outcomeScope}
+        outcomeEmpty={messages.outcomeNoData}
+        outcomeAlt={messages.outcomeAlt}
+        tableTitle={intl.formatMessage(messages.coursesTableTitle)}
+        rows={data.courses.rows}
+        columns={courseColumns}
+        emptyMessage={intl.formatMessage(messages.noQualifyingCourses)}
       />
     </div>
   );
@@ -1008,7 +1199,7 @@ const GainTab = ({ subject }: { subject: 'courses' | 'curriculums'; }) => {
 
 const ReportingPage = () => {
   const intl = useIntl();
-  const [activeTab, setActiveTab] = useState('course-gain');
+  const [activeTab, setActiveTab] = useState('courses');
 
   return (
     <>
@@ -1026,12 +1217,6 @@ const ReportingPage = () => {
             activeKey={activeTab}
             onSelect={(key: string) => setActiveTab(key)}
           >
-            <Tab eventKey="course-gain" title={intl.formatMessage(messages.coursesChartTitle)}>
-              {activeTab === 'course-gain' && <GainTab subject="courses" />}
-            </Tab>
-            <Tab eventKey="curriculum-gain" title={intl.formatMessage(messages.curriculumsChartTitle)}>
-              {activeTab === 'curriculum-gain' && <GainTab subject="curriculums" />}
-            </Tab>
             <Tab eventKey="courses" title={intl.formatMessage(messages.enrollmentsTab)}>
               {activeTab === 'courses' && <CoursesTab />}
             </Tab>

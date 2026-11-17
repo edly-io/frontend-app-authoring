@@ -4,6 +4,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@src/testUtils';
 
 import ReportingPage from './ReportingPage';
@@ -77,7 +78,12 @@ const outcome = (over = {}) => ({ attempted: 0, passed: 0, failed: 0, pass_rate_
 
 const emptyStats = {
   courses: { totals: { ...summary(), ...outcome() }, rows: [] },
-  curriculums: { totals: { ...summary(), ...outcome() }, rows: [] },
+  retention: { totals: { counted: 0, ...outcome() }, rows: [] },
+  curriculum_retention: {
+    totals: { counted: 0, ...outcome() },
+    completion: { counted: 0, ...outcome() },
+    rows: [],
+  },
 };
 
 let axiosMock;
@@ -239,6 +245,10 @@ describe('<ReportingPage />', () => {
     expect(screen.queryByText('assigned1')).not.toBeInTheDocument();
   });
   describe('the knowledge-gain tabs', () => {
+    // Both stats tables on the Courses tab count courses, so assertions name the panel they mean.
+    const breakdownPanel = () =>
+      screen.getByRole('heading', { name: 'Course breakdown' }).closest('.reporting-panel') as HTMLElement;
+
     const populated = {
       courses: {
         totals: {
@@ -252,25 +262,35 @@ describe('<ReportingPage />', () => {
           ...outcome({ attempted: 5, passed: 4, failed: 1, pass_rate_pct: 80 }),
         }],
       },
-      curriculums: {
-        totals: {
-          ...summary({ counted: 1, learners: 3, avg_pre_pct: 40, avg_post_pct: 75, gain_pct: 35 }),
-          ...outcome({ attempted: 3, passed: 2, failed: 1, pass_rate_pct: 66.7 }),
-        },
+      retention: {
+        totals: { counted: 1, ...outcome({ attempted: 4, passed: 3, failed: 1, pass_rate_pct: 75 }) },
         rows: [{
-          uuid: curriculumUuid,
-          title: 'Onboarding',
+          course_id: courseId,
+          display_name: 'Uber 101',
+          retention_course_id: 'course-v1:Uber+R101+2026',
+          assigned: 5,
           delay_days: 15,
           pass_threshold_pct: 80,
           max_attempts: 1,
-          ...summary({ counted: 1, learners: 3, avg_pre_pct: 40, avg_post_pct: 75, gain_pct: 35 }),
-          ...outcome({ attempted: 3, passed: 2, failed: 1, pass_rate_pct: 66.7 }),
+          ...outcome({ attempted: 4, passed: 3, failed: 1, pass_rate_pct: 75 }),
         }],
       },
-    };
-
-    const openCurriculumGain = async () => {
-      await userEvent.click(await screen.findByRole('tab', { name: 'Curriculums knowledge gain' }));
+      curriculum_retention: {
+        totals: { counted: 1, ...outcome({ attempted: 2, passed: 2, failed: 0, pass_rate_pct: 100 }) },
+        completion: { counted: 1, ...outcome({ attempted: 4, passed: 2, failed: 2, pass_rate_pct: 50 }) },
+        rows: [{
+          uuid: curriculumUuid,
+          title: 'Onboarding',
+          retention_course_id: 'course-v1:Uber+R202+2026',
+          courses_total: 3,
+          assigned: 4,
+          completed: 2,
+          delay_days: 30,
+          pass_threshold_pct: 80,
+          max_attempts: 2,
+          ...outcome({ attempted: 2, passed: 2, failed: 0, pass_rate_pct: 100 }),
+        }],
+      },
     };
 
     it('opens on the course report and charts its comparison and outcomes', async () => {
@@ -283,29 +303,48 @@ describe('<ReportingPage />', () => {
       expect(screen.getByRole('heading', { name: 'Course breakdown' })).toBeInTheDocument();
       // Both bars of each chart are labelled, so neither is identified by its colour alone.
       expect(screen.getByText('Before')).toBeInTheDocument();
-      expect(screen.getByText('Passed')).toBeInTheDocument();
+      // Retention draws a second outcome chart on this tab, so both have a "Passed" bar.
+      expect(screen.getAllByText('Passed')).toHaveLength(2);
       // The scope lives in each chart's own caption.
       expect(screen.getByText('2 courses, 8 learners')).toBeInTheDocument();
       expect(screen.getByText('6 learners sat the Final check')).toBeInTheDocument();
     });
 
-    it('keeps the curriculum report on its own tab', async () => {
+    it('reports retention of a single course beside the knowledge gain', async () => {
       axiosMock.onGet(getAssessmentStatsUrl()).reply(200, populated);
       render(<ReportingPage />, { path: '/reporting' });
 
-      // Nothing of the curriculum report is on the course tab.
-      expect(await screen.findByText('Uber 101')).toBeInTheDocument();
-      expect(screen.queryByText('Onboarding')).not.toBeInTheDocument();
-      expect(screen.queryByRole('heading', { name: 'Retention check outcomes' })).not.toBeInTheDocument();
-
-      await openCurriculumGain();
-
-      expect(await screen.findByRole('heading', { name: 'Retention check outcomes' })).toBeInTheDocument();
-      expect(screen.getByText('Onboarding')).toBeInTheDocument();
-      expect(screen.getByText('3 learners sat the retention check')).toBeInTheDocument();
+      expect(await screen.findByRole('heading', { name: 'Retention outcomes' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Retention breakdown' })).toBeInTheDocument();
+      // Learners who have not sat it yet are counted as assigned, not as a failure.
+      expect(screen.getByText('4 learners sat a retention check')).toBeInTheDocument();
       expect(screen.getByText('15d · 80% · 1 attempt')).toBeInTheDocument();
-      // ...and nothing of the course report is on the curriculum tab.
-      expect(screen.queryByText('Uber 101')).not.toBeInTheDocument();
+    });
+
+    it('leaves the retention section out when the backend does not send it', async () => {
+      const { retention, ...withoutRetention } = populated;
+      axiosMock.onGet(getAssessmentStatsUrl()).reply(200, withoutRetention);
+      render(<ReportingPage />, { path: '/reporting' });
+
+      expect(await screen.findByRole('heading', { name: 'Course breakdown' })).toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: 'Retention outcomes' })).not.toBeInTheDocument();
+    });
+
+    it('reports learning-path retention on the Curriculums tab', async () => {
+      axiosMock.onGet(getAssessmentStatsUrl()).reply(200, populated);
+      render(<ReportingPage />, { path: '/reporting' });
+      await userEvent.click(await screen.findByRole('tab', { name: 'Curriculums' }));
+
+      expect(await screen.findByRole('heading', { name: 'Retention by learning path' })).toBeInTheDocument();
+      // The path is also an option in the picker below, so look in the retention table specifically.
+      expect(within(screen.getByRole('table')).getByText('Onboarding')).toBeInTheDocument();
+      expect(screen.getByText('30d · 80% · 2 attempts')).toBeInTheDocument();
+      // Completion sits beside retention: a different cohort, so not a second pass/fail chart.
+      expect(screen.getByRole('heading', { name: 'Path completion' })).toBeInTheDocument();
+      expect(screen.getByText('In progress')).toBeInTheDocument();
+      expect(screen.getByText('4 learners on a learning path')).toBeInTheDocument();
+      // Completion counts everyone assigned, retention only those who sat the check: different cohorts.
+      expect(screen.getByRole('img', { name: 'Path completion: 2 finished, 2 still working.' })).toBeInTheDocument();
     });
 
     it('charts the platform-wide comparison, not a column per course', async () => {
@@ -337,14 +376,10 @@ describe('<ReportingPage />', () => {
       expect(await screen.findByText(/whether or not they passed it/)).toBeInTheDocument();
     });
 
-    it('explains on each tab that something without both checks is left out', async () => {
+    it('explains that a course without both checks is left out', async () => {
       render(<ReportingPage />, { path: '/reporting' });
 
       expect(await screen.findByText(/No course has both a Quick check and a Final check/)).toBeInTheDocument();
-
-      await openCurriculumGain();
-
-      expect(await screen.findByText(/No curriculum has a Quick check in its first course/)).toBeInTheDocument();
     });
 
     it('shows a qualifying course nobody has finished as having nothing to compare', async () => {
@@ -363,13 +398,14 @@ describe('<ReportingPage />', () => {
       render(<ReportingPage />, { path: '/reporting' });
 
       expect(await screen.findByText(/nothing to compare/)).toBeInTheDocument();
-      // The row is still listed: the course is set up, it just has no results yet.
-      expect(screen.getByText('Uber 101')).toBeInTheDocument();
+      // The row is still listed: the course is set up, it just has no results yet. The name is also an
+      // option in the course picker below, so look for it in the breakdown table specifically.
+      expect(within(screen.getAllByRole('table')[0]).getByText('Uber 101')).toBeInTheDocument();
       // And two zero bars would read as a failure rather than as "nobody has sat it".
       expect(screen.getByText('No learner has sat a Final check yet.')).toBeInTheDocument();
     });
 
-    it('scrolls the breakdown in place instead of paginating it', async () => {
+    it('paginates the breakdown once it grows past a page', async () => {
       const rows = Array.from({ length: 14 }, (_, i) => ({
         course_id: `course-v1:Uber+${i}+2026`,
         display_name: `Course ${i}`,
@@ -382,11 +418,22 @@ describe('<ReportingPage />', () => {
       });
       const { container } = render(<ReportingPage />, { path: '/reporting' });
 
-      // Every row is rendered -- there is no page to turn to reach the last one.
-      expect(await screen.findByText('Course 13')).toBeInTheDocument();
-      expect(screen.getByText('Course 0')).toBeInTheDocument();
-      expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
-      expect(container.querySelector('.reporting-table-scroll--capped')).toBeInTheDocument();
+      // 14 rows over a page size of 10: the first page holds ten of them and a control turns the rest.
+      await screen.findByRole('heading', { name: 'Course breakdown' });
+      const breakdown = screen.getAllByRole('table')[0];
+      expect(within(breakdown).getAllByRole('row')).toHaveLength(11); // ten rows plus the header
+      expect(within(breakdownPanel()).getByText('14 courses')).toBeInTheDocument();
+      expect(within(breakdownPanel()).getByRole('navigation', { name: 'Reporting pagination' })).toBeInTheDocument();
+    });
+
+    it('leaves the pagination control off a breakdown that fits on one page', async () => {
+      axiosMock.onGet(getAssessmentStatsUrl()).reply(200, populated);
+      const { container } = render(<ReportingPage />, { path: '/reporting' });
+
+      // One qualifying course: the count still shows, but there is no page to turn to.
+      await screen.findByRole('heading', { name: 'Course breakdown' });
+      expect(within(breakdownPanel()).getByText('1 course')).toBeInTheDocument();
+      expect(within(breakdownPanel()).queryByRole('navigation')).not.toBeInTheDocument();
     });
 
     it('tells a user without global staff that the figures are not theirs to see', async () => {

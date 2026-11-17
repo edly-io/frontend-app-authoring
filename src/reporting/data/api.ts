@@ -160,10 +160,27 @@ export interface CourseAssessmentRow extends AssessmentSummary, AssessmentOutcom
   displayName: string;
 }
 
-export interface CurriculumAssessmentRow extends AssessmentSummary, AssessmentOutcome {
+/** One single course (a `kind: 'course'` curriculum) and how many of its learners its retention check kept. */
+export interface RetentionRow extends AssessmentOutcome {
+  courseId: string;
+  displayName: string;
+  retentionCourseId: string;
+  /** Learners on the course, including those who have not sat the retention check yet. */
+  assigned: number;
+  delayDays: number;
+  passThresholdPct: number;
+  maxAttempts: number;
+}
+
+/** One learning path with a 30-day retention check, and how many of its learners it kept. */
+export interface CurriculumRetentionRow extends AssessmentOutcome {
   uuid: string;
   title: string;
-  /** Days after the curriculum is completed before its retention course unlocks. */
+  retentionCourseId: string;
+  coursesTotal: number;
+  assigned: number;
+  /** Learners who have finished the path; only they ever reach the check. */
+  completed: number;
   delayDays: number;
   passThresholdPct: number;
   maxAttempts: number;
@@ -171,9 +188,16 @@ export interface CurriculumAssessmentRow extends AssessmentSummary, AssessmentOu
 
 export interface AssessmentStats {
   courses: { totals: AssessmentSummary & AssessmentOutcome; rows: CourseAssessmentRow[]; };
-  curriculums: {
-    totals: AssessmentSummary & AssessmentOutcome;
-    rows: CurriculumAssessmentRow[];
+  retention: {
+    totals: AssessmentOutcome & { counted: number; };
+    rows: RetentionRow[];
+  };
+  curriculumRetention: {
+    /** The retention split, over the learners who sat the check. */
+    totals: AssessmentOutcome & { counted: number; };
+    /** The same shape over everyone assigned, counting those who finished the path. */
+    completion: AssessmentOutcome & { counted: number; };
+    rows: CurriculumRetentionRow[];
   };
 }
 

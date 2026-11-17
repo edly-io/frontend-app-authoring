@@ -106,6 +106,20 @@ $uber-muted-text: #717171;
   }
 
   // Equal breathing room above and below, now that the selectors have no heading of their own.
+  // Names the picker below it, so the dropdown does not float unlabelled under the charts.
+  .reporting-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: $uber-content-primary;
+    margin-top: 1.5rem;
+    margin-bottom: 0;
+
+    // The row brings its own top margin; the heading already provides that gap.
+    + .reporting-selector-row {
+      margin-top: .5rem;
+    }
+  }
+
   .reporting-selector-row {
     display: flex;
     flex-wrap: wrap;
@@ -198,26 +212,6 @@ $uber-muted-text: #717171;
 
   // These tables are not paginated, so past about ten rows they scroll in place. The cap is a little
   // over ten rows deep on purpose: the eleventh showing half-cut is what tells a reader there is more.
-  .reporting-table-scroll--capped {
-    max-height: 34rem;
-    overflow-y: auto;
-
-    // Without this the column names scroll away and the numbers below lose their meaning.
-    th {
-      position: sticky;
-      top: 0;
-      // Above the cell borders, which would otherwise draw over the header as rows pass under it.
-      z-index: 1;
-      // A collapsed-border table paints cell borders as part of the table, not the cell, so the
-      // header's own border-bottom does not travel with it and the rows slide under a bare edge.
-      // An inset shadow belongs to the cell and does stick.
-      box-shadow: inset 0 -1px 0 $uber-border;
-    }
-
-    &::-webkit-scrollbar {
-      width: .625rem;
-    }
-  }
 
   .reporting-table-footer {
     display: flex;
@@ -372,8 +366,20 @@ $uber-muted-text: #717171;
     }
   }
 
+  // Two charts of the same kind share the row evenly. The 3:2 split above is for the wide
+  // before-and-after chart beside the narrow outcome one; two outcome charts want equal halves.
+  .reporting-charts--even {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+
+    @media (max-width: $reporting-bp) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
   // The outcome chart has only two short bars, so it does not need the comparison's width.
-  .reporting-chart__svg--outcome {
+  // Both classes, so this beats the `.reporting-chart__svg` max-width below whatever the source
+  // order: a single class would tie with it and lose for being written first.
+  .reporting-chart__svg.reporting-chart__svg--outcome {
     max-width: 26rem;
   }
 
