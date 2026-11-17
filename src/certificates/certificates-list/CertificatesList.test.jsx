@@ -124,6 +124,20 @@ describe('CertificatesList Component', () => {
     });
   });
 
+  it('disables all edit controls for an active certificate when user is not global staff', async () => {
+    axiosMock.onGet(getCertificatesApiUrl(courseId)).reply(200, {
+      ...certificatesDataMock, certificates: certificatesMock, isActive: true, isGlobalStaff: false,
+    });
+    await executeThunk(fetchCertificates(courseId), store.dispatch);
+    const { getAllByRole } = renderComponent();
+    const editButtons = getAllByRole('button', { name: messages.editTooltip.defaultMessage });
+
+    expect(editButtons).toHaveLength(3);
+    editButtons.forEach((button) => expect(button).toHaveAttribute('aria-disabled', 'true'));
+    getAllByRole('button', { name: messages.deleteTooltip.defaultMessage })
+      .forEach((button) => expect(button).toHaveAttribute('aria-disabled', 'true'));
+  });
+
   it('toggle certificate edit all', async () => {
     const user = userEvent.setup();
     const { getByTestId } = renderComponent();

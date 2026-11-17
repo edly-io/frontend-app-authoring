@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
 import { MODE_STATES } from '../../data/constants';
 import {
-  getCourseTitle, getCourseNumber, getCourseNumberOverride, getCertificates,
+  getCourseTitle, getCourseNumber, getCourseNumberOverride, getCertificates, getCanEditCertificate,
 } from '../../data/selectors';
 import { updateCourseCertificate } from '../../data/thunks';
 import { setMode } from '../../data/slice';
@@ -15,8 +15,15 @@ const useCertificatesList = (courseId) => {
   const courseTitle = useSelector(getCourseTitle);
   const courseNumber = useSelector(getCourseNumber);
   const courseNumberOverride = useSelector(getCourseNumberOverride);
+  const canEdit = useSelector(getCanEditCertificate);
 
   const [editModes, setEditModes] = useState({});
+
+  useEffect(() => {
+    if (!canEdit) {
+      setEditModes({});
+    }
+  }, [canEdit]);
 
   const initialValues = certificates.map((certificate) => ({
     ...certificate,

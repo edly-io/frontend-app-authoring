@@ -57,6 +57,11 @@ const messages = defineMessages({
     id: 'course-authoring.certificates.signatories.save.tooltip',
     defaultMessage: 'Save',
   },
+  activeCertificateEditHint: {
+    id: 'course-authoring.certificates.active.edit.hint',
+    defaultMessage: 'Deactivate the certificate to make changes.',
+    description: 'Tooltip on the disabled edit and delete buttons when the certificate is active and the user is not allowed to change it',
+  },
 });
 
 export default messages;

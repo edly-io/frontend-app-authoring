@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import {
-  Image, Icon, Stack, IconButtonWithTooltip,
+  Image, Icon, Stack,
 } from '@openedx/paragon';
 import {
   EditOutline as EditOutlineIcon,
@@ -8,6 +8,7 @@ import {
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { getConfig } from '@edx/frontend-platform';
 
+import LockableActionButton from '../../certificate-action-button/LockableActionButton';
 import commonMessages from '../../messages';
 import messages from '../messages';
 
@@ -32,7 +33,7 @@ const Signatory = ({
         </Stack>
       </Stack>
 
-      <IconButtonWithTooltip
+      <LockableActionButton
         className="signatory__action-button"
         src={EditOutlineIcon}
         iconAs={Icon}

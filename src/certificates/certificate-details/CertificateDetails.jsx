@@ -1,13 +1,14 @@
 import PropTypes from 'prop-types';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import {
-  Icon, Stack, IconButtonWithTooltip,
+  Icon, Stack,
 } from '@openedx/paragon';
 import {
   EditOutline as EditOutlineIcon, DeleteOutline as DeleteOutlineIcon,
 } from '@openedx/paragon/icons';
 
 import CertificateSection from '../certificate-section/CertificateSection';
+import LockableActionButton from '../certificate-action-button/LockableActionButton';
 import ModalNotification from '../../generic/modal-notification';
 import commonMessages from '../messages';
 import messages from './messages';
@@ -40,14 +41,14 @@ const CertificateDetails = ({
       data-testid="certificate-details"
       actions={(
         <Stack direction="horizontal" gap="2">
-          <IconButtonWithTooltip
+          <LockableActionButton
             src={EditOutlineIcon}
             iconAs={Icon}
             tooltipContent={<div>{intl.formatMessage(commonMessages.editTooltip)}</div>}
             alt={intl.formatMessage(commonMessages.editTooltip)}
             onClick={isCertificateActive ? editModalOpen : handleEditAll}
           />
-          <IconButtonWithTooltip
+          <LockableActionButton
             src={DeleteOutlineIcon}
             iconAs={Icon}
             tooltipContent={<div>{intl.formatMessage(commonMessages.deleteTooltip)}</div>}

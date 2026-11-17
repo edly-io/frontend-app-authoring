@@ -1,12 +1,13 @@
-import { Provider, useDispatch } from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { IntlProvider } from '@edx/frontend-platform/i18n';
 import { initializeMockApp } from '@edx/frontend-platform';
 
 import initializeStore from '../../store';
 import { MODE_STATES } from '../data/constants';
+import { setMode } from '../data/slice';
 import { deleteCourseCertificate } from '../data/thunks';
 import commonMessages from '../messages';
 import messages from './messages';
@@ -72,11 +73,13 @@ describe('CertificateDetails', () => {
     useParams.mockReturnValue({ courseId });
     mockDispatch = jest.fn();
     useDispatch.mockReturnValue(mockDispatch);
+    useSelector.mockImplementation((selector) => selector(store.getState()));
   });
 
   afterEach(() => {
     useParams.mockClear();
     mockDispatch.mockClear();
+    useSelector.mockReset();
   });
 
   it('renders correctly in view mode', () => {
@@ -114,5 +117,97 @@ describe('CertificateDetails', () => {
     const { getByText } = renderComponent(props);
 
     expect(getByText(courseTitleOverride)).toBeInTheDocument();
+  });
+
+  const initStore = (data) => {
+    store = initializeStore({
+      certificates: { certificatesData: { ...initialState.certificates.certificatesData, ...data } },
+    });
+  };
+
+  it('locks edit with a tooltip for an active certificate when user is not global staff', async () => {
+    const user = userEvent.setup();
+    initStore({ isActive: true, isGlobalStaff: false });
+    const { getByRole, getByText, queryByText } = renderComponent(defaultProps);
+    const editButton = getByRole('button', { name: commonMessages.editTooltip.defaultMessage });
+
+    expect(editButton).toHaveAttribute('aria-disabled', 'true');
+
+    await user.hover(editButton);
+
+    await waitFor(() => {
+      expect(getByText(commonMessages.activeCertificateEditHint.defaultMessage)).toBeInTheDocument();
+    });
+
+    await user.click(editButton);
+
+    expect(queryByText(messages.editCertificateConfirmationTitle.defaultMessage)).not.toBeInTheDocument();
+    expect(mockDispatch).not.toHaveBeenCalled();
+  });
+
+  it('locks delete with a tooltip for an active certificate when user is not global staff', async () => {
+    const user = userEvent.setup();
+    initStore({ isActive: true, isGlobalStaff: false });
+    const { getByRole, getByText, queryByText } = renderComponent(defaultProps);
+    const deleteButton = getByRole('button', { name: commonMessages.deleteTooltip.defaultMessage });
+
+    expect(deleteButton).toHaveAttribute('aria-disabled', 'true');
+
+    await user.hover(deleteButton);
+
+    await waitFor(() => {
+      expect(getByText(commonMessages.activeCertificateEditHint.defaultMessage)).toBeInTheDocument();
+    });
+
+    await user.click(deleteButton);
+
+    expect(queryByText(messages.deleteCertificateConfirmationTitle.defaultMessage)).not.toBeInTheDocument();
+    expect(mockDispatch).not.toHaveBeenCalled();
+  });
+
+  it('locks edit and delete for an active certificate while isGlobalStaff is not loaded', () => {
+    initStore({ isActive: true });
+    const { getByRole } = renderComponent(defaultProps);
+
+    expect(getByRole('button', { name: commonMessages.editTooltip.defaultMessage })).toHaveAttribute('aria-disabled', 'true');
+    expect(getByRole('button', { name: commonMessages.deleteTooltip.defaultMessage })).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('keeps edit and delete enabled for an inactive certificate when user is not global staff', async () => {
+    const user = userEvent.setup();
+    initStore({ isActive: false, isGlobalStaff: false });
+    const { getByRole } = renderComponent(defaultProps);
+
+    expect(getByRole('button', { name: commonMessages.editTooltip.defaultMessage })).toHaveAttribute('aria-disabled', 'false');
+    expect(getByRole('button', { name: commonMessages.deleteTooltip.defaultMessage })).toHaveAttribute('aria-disabled', 'false');
+
+    await user.click(getByRole('button', { name: commonMessages.editTooltip.defaultMessage }));
+
+    expect(mockDispatch).toHaveBeenCalledWith(setMode(MODE_STATES.editAll));
+  });
+
+  it('keeps edit and delete enabled for an active certificate when user is global staff', async () => {
+    const user = userEvent.setup();
+    initStore({ isActive: true, isGlobalStaff: true });
+    const { getByRole, getByText } = renderComponent(defaultProps);
+    const editButton = getByRole('button', { name: commonMessages.editTooltip.defaultMessage });
+    const deleteButton = getByRole('button', { name: commonMessages.deleteTooltip.defaultMessage });
+
+    expect(editButton).toHaveAttribute('aria-disabled', 'false');
+    expect(deleteButton).toHaveAttribute('aria-disabled', 'false');
+
+    await user.click(editButton);
+
+    expect(getByText(messages.editCertificateConfirmationTitle.defaultMessage)).toBeInTheDocument();
+  });
+
+  it('opens the delete confirm modal for global staff on an active certificate', async () => {
+    const user = userEvent.setup();
+    initStore({ isActive: true, isGlobalStaff: true });
+    const { getByRole, getByText } = renderComponent(defaultProps);
+
+    await user.click(getByRole('button', { name: commonMessages.deleteTooltip.defaultMessage }));
+
+    expect(getByText(messages.deleteCertificateConfirmationTitle.defaultMessage)).toBeInTheDocument();
   });
 });
