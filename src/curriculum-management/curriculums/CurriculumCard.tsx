@@ -20,10 +20,9 @@ import {
 
 import DeleteModal from '../../generic/delete-modal/DeleteModal';
 import { useToastContext } from '../../generic/toast-context';
-import { SLOT_KEYS } from '../constants';
 import { useDeleteCurriculum } from '../data/apiHooks';
 import type { Curriculum } from '../types';
-import { slotMessages } from '../utils';
+import { slotMessages, visibleSlotKeys } from '../utils';
 import messages from '../messages';
 import CopyIdButton from '../CopyIdButton';
 import { CardDetails, CourseLine, DetailRow, EmptyValue } from '../CardDetails';
@@ -57,7 +56,7 @@ const CurriculumCard = ({
   }, [scrollIntoView]);
   // Only the slots this one can use: a course has no Complete slot, and Retained needs a knowledge check.
   // A slot that still holds a badge is always shown.
-  const slots = SLOT_KEYS.filter((slot) =>
+  const slots = visibleSlotKeys().filter((slot) =>
     curriculum.badges[slot] || (
       !(slot === 'complete' && curriculum.kind === 'course') && !(slot === 'retained' && !curriculum.knowledgeCheck)
     )

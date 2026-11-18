@@ -1,4 +1,4 @@
-import { camelCaseObject } from '@edx/frontend-platform';
+import { camelCaseObject, mergeConfig } from '@edx/frontend-platform';
 import userEvent from '@testing-library/user-event';
 import { initializeMocks, render, screen, waitFor, within } from '@src/testUtils';
 import { rawCourseCurriculum, rawCurriculums } from '../__mocks__/fixtures';
@@ -39,7 +39,7 @@ describe('<CurriculumCard />', () => {
     expect(screen.queryByText('No time limit')).not.toBeInTheDocument();
   });
 
-  it('shows only the Retained slot for a course, and no course count', () => {
+  it('shows no badges for a course, even one with a Retained badge, and no course count', () => {
     initializeMocks();
     const course = camelCaseObject({
       ...rawCourseCurriculum,
@@ -47,22 +47,10 @@ describe('<CurriculumCard />', () => {
       badges: { complete: null, retained: rawCurriculums[0].badges.retained },
     }) as Curriculum;
     render(<CurriculumCard curriculum={course} defaultExpanded onEdit={jest.fn()} />);
-    expect(screen.getByText('1 of 1 badges')).toBeInTheDocument();
-    expect(screen.queryByTestId('slot-complete')).not.toBeInTheDocument();
-    expect(screen.getByTestId('slot-retained')).toBeInTheDocument();
-    expect(screen.queryByText('1 course')).not.toBeInTheDocument();
-  });
-
-  it('counts only the Complete slot for a learning path without a knowledge check', () => {
-    initializeMocks();
-    const path = camelCaseObject({
-      ...rawCurriculums[0],
-      knowledge_check: null,
-      badges: { ...rawCurriculums[0].badges, retained: null },
-    }) as Curriculum;
-    render(<CurriculumCard curriculum={path} defaultExpanded onEdit={jest.fn()} />);
-    expect(screen.getByText('1 of 1 badges')).toBeInTheDocument();
+    expect(screen.queryByText(/badges$/)).not.toBeInTheDocument();
+    expect(screen.getByText('None')).toBeInTheDocument();
     expect(screen.queryByTestId('slot-retained')).not.toBeInTheDocument();
+    expect(screen.queryByText('1 course')).not.toBeInTheDocument();
   });
 
   it('shows title, ID and chips; expands to courses, knowledge check and slots', async () => {
@@ -73,7 +61,7 @@ describe('<CurriculumCard />', () => {
     expect(screen.getByText('Path ID: new-driver-essentials')).toBeInTheDocument();
     expect(screen.getByText('2 courses')).toBeInTheDocument();
     expect(screen.getByText('Knowledge check after 30 days')).toBeInTheDocument();
-    expect(screen.getByText('2 of 2 badges')).toBeInTheDocument();
+    expect(screen.getByText('1 of 1 badges')).toBeInTheDocument();
     expect(screen.queryByText('Courses')).not.toBeInTheDocument();
 
     const toggle = screen.getByRole('button', { name: /^new driver essentials/i });
@@ -115,19 +103,26 @@ describe('<CurriculumCard />', () => {
 
   it('shows each slot read-only, with the badge image, and "None" for an empty slot', () => {
     initializeMocks();
-    const withEmptySlot = { ...curriculum, badges: { ...curriculum.badges, retained: null } };
-    render(<CurriculumCard curriculum={withEmptySlot} defaultExpanded onEdit={jest.fn()} />);
-    expect(screen.getByText('1 of 2 badges')).toBeInTheDocument();
+    const { rerender } = render(<CurriculumCard curriculum={curriculum} defaultExpanded onEdit={jest.fn()} />);
     expect(within(screen.getByTestId('slot-complete')).getByText('Road ready')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Road ready' })).toHaveAttribute(
       'src',
       curriculum.badges.complete?.imageUrl,
     );
-    const retained = screen.getByTestId('slot-retained');
-    expect(within(retained).getByText('Retained')).toBeInTheDocument();
-    expect(within(retained).getByText('None')).toBeInTheDocument();
-    expect(screen.getAllByRole('img')).toHaveLength(1); // no image for the image-less or empty slots
+    // The Retained badge is a stock trophy in the learner MFE, so its slot is never shown, even when filled.
+    expect(screen.queryByTestId('slot-retained')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('img')).toHaveLength(1);
     expect(screen.queryByRole('link')).not.toBeInTheDocument(); // slots never link to the Badges page
+
+    rerender(
+      <CurriculumCard
+        curriculum={{ ...curriculum, badges: { complete: null, retained: null } }}
+        defaultExpanded
+        onEdit={jest.fn()}
+      />,
+    );
+    expect(screen.getByText('0 of 1 badges')).toBeInTheDocument();
+    expect(within(screen.getByTestId('slot-complete')).getByText('None')).toBeInTheDocument();
   });
 
   it('falls back to the course key and flags a course that no longer exists', () => {
@@ -226,5 +221,17 @@ describe('<CurriculumCard />', () => {
     expect(button).toHaveFocus();
     document.execCommand = execCommand;
     clipboard.mockRestore();
+  });
+});
+
+describe('<CurriculumCard /> with ENABLE_RETAINED_BADGE_SLOT on', () => {
+  beforeEach(() => mergeConfig({ ENABLE_RETAINED_BADGE_SLOT: true }));
+  afterEach(() => mergeConfig({ ENABLE_RETAINED_BADGE_SLOT: false }));
+
+  it('shows and counts the Retained slot', () => {
+    initializeMocks();
+    render(<CurriculumCard curriculum={curriculum} defaultExpanded onEdit={jest.fn()} />);
+    expect(screen.getByText('2 of 2 badges')).toBeInTheDocument();
+    expect(within(screen.getByTestId('slot-retained')).getByText('Retained')).toBeInTheDocument();
   });
 });

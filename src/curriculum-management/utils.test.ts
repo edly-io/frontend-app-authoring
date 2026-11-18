@@ -1,9 +1,10 @@
-import { camelCaseObject } from '@edx/frontend-platform';
+import { camelCaseObject, mergeConfig } from '@edx/frontend-platform';
 import { AxiosError, AxiosHeaders } from 'axios';
 import { rawBadges, rawCourseCurriculum, rawCourseGroups, rawCurriculums } from './__mocks__/fixtures';
 import type { CourseGroup, Curriculum } from './types';
 import {
   buildAppLink,
+  isRetainedSlotEnabled,
   mapBadgeErrors,
   mapCourseGroupErrors,
   mapCurriculumErrors,
@@ -185,13 +186,13 @@ describe('mapCurriculumErrors', () => {
 
   it('maps badges.<slot> errors onto the slots, and anything else under badges onto the form', () => {
     const slotErrors = mapCurriculumErrors(
-      axiosError(400, { badges: { retained: ['Badge not found.'], bonus: ['Unknown badge slot.'] } }),
+      axiosError(400, { badges: { complete: ['Badge not found.'], retained: ['Retained is fixed.'] } }),
       [],
     );
     expect(slotErrors).toEqual({
-      fieldErrors: { badges: { retained: 'Badge not found.' } },
+      fieldErrors: { badges: { complete: 'Badge not found.' } },
       rowErrors: {},
-      formError: 'Unknown badge slot.',
+      formError: 'Retained is fixed.', // no Retained select any more, so it goes to the form
     });
     const listError = mapCurriculumErrors(axiosError(400, { badges: ['Expected a dictionary.'] }), []);
     expect(listError?.formError).toEqual('Expected a dictionary.');
@@ -304,5 +305,27 @@ describe('deep links helpers', () => {
     expect(mapTestLinkErrors(axiosError(400, { detail: 'CSRF failed.' })))
       .toEqual({ fieldErrors: {}, formError: 'CSRF failed.' });
     expect(mapTestLinkErrors(axiosError(404, { error_code: 'launch_disabled' }))).toBeNull();
+  });
+});
+
+describe('with ENABLE_RETAINED_BADGE_SLOT on', () => {
+  beforeEach(() => mergeConfig({ ENABLE_RETAINED_BADGE_SLOT: true }));
+  afterEach(() => mergeConfig({ ENABLE_RETAINED_BADGE_SLOT: false }));
+
+  it('maps a badges.retained error onto the Retained slot', () => {
+    const errors = mapCurriculumErrors(axiosError(400, { badges: { retained: ['Badge not found.'] } }), []);
+    expect(errors?.fieldErrors).toEqual({ badges: { retained: 'Badge not found.' } });
+  });
+});
+
+describe('isRetainedSlotEnabled', () => {
+  afterEach(() => mergeConfig({ ENABLE_RETAINED_BADGE_SLOT: false }));
+
+  it('is on only for boolean true, not the string "true"', () => {
+    expect(isRetainedSlotEnabled()).toBe(false);
+    mergeConfig({ ENABLE_RETAINED_BADGE_SLOT: 'true' });
+    expect(isRetainedSlotEnabled()).toBe(false);
+    mergeConfig({ ENABLE_RETAINED_BADGE_SLOT: true });
+    expect(isRetainedSlotEnabled()).toBe(true);
   });
 });

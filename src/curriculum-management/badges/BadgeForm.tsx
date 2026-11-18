@@ -24,7 +24,7 @@ import { useCreateBadge, useUpdateBadge } from '../data/apiHooks';
 import FormDirtyReporter from '../FormDirtyReporter';
 import FocusFirstError from '../FocusFirstError';
 import type { Badge, BadgeKind, BadgeWriteData } from '../types';
-import { kindMessages, mapBadgeErrors } from '../utils';
+import { kindMessages, mapBadgeErrors, retainedCopy } from '../utils';
 import messages from '../messages';
 import CoursePicker from '../curriculums/CoursePicker';
 import type { CourseItem } from '../curriculums/CourseOrderList';
@@ -204,7 +204,7 @@ const BadgeForm = ({
                               <Form.Radio
                                 key={kind}
                                 value={kind}
-                                description={intl.formatMessage(kindMessages[kind].help)}
+                                description={intl.formatMessage(retainedCopy(kindMessages[kind].help))}
                               >
                                 {intl.formatMessage(kindMessages[kind].label)}
                               </Form.Radio>
