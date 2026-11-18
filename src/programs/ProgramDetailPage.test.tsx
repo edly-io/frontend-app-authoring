@@ -77,7 +77,7 @@ describe('<ProgramDetailPage /> pricing', () => {
 
   it('keeps pricing editable', () => {
     renderPage({ pricingCategory: 'is_paid', regularPrice: '100.00' });
-    ['Free', 'Paid', 'Part of Subscription'].forEach((name) => {
+    ['Free', 'Paid', 'Part of Subscription', 'Enrollment code'].forEach((name) => {
       expect(screen.getByRole('radio', { name })).toBeEnabled();
     });
     expect(screen.getByRole('radio', { name: 'Paid' })).toBeChecked();

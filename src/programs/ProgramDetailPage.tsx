@@ -84,6 +84,8 @@ const messages = defineMessages({
   pricingPaidDescription: { id: 'programs.detail.field.pricing.paid.description', defaultMessage: 'Sold at the price set below.' },
   pricingSubscription: { id: 'programs.detail.field.pricing.subscription', defaultMessage: 'Part of Subscription' },
   pricingSubscriptionDescription: { id: 'programs.detail.field.pricing.subscription.description', defaultMessage: 'Learners reach this program through the Rwaq subscription. It has no price of its own.' },
+  pricingEnrollmentCode: { id: 'programs.detail.field.pricing.enrollment-code', defaultMessage: 'Enrollment code' },
+  pricingEnrollmentCodeDescription: { id: 'programs.detail.field.pricing.enrollment-code.description', defaultMessage: 'A free, restricted program that learners can only join with an enrollment code.' },
   fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price before VAT ({currency})' },
   fieldPriceHint: { id: 'programs.detail.field.price.hint', defaultMessage: 'Regular price shown on the marketing site.' },
   fieldSalePrice: { id: 'programs.detail.field.sale-price', defaultMessage: 'Discounted Price / Sale Price before VAT ({currency})' },
@@ -606,6 +608,12 @@ const ProgramDetailPage: React.FC = () => {
                             description={intl.formatMessage(messages.pricingSubscriptionDescription)}
                           >
                             {intl.formatMessage(messages.pricingSubscription)}
+                          </Form.Radio>
+                          <Form.Radio
+                            value="is_enrollment_code"
+                            description={intl.formatMessage(messages.pricingEnrollmentCodeDescription)}
+                          >
+                            {intl.formatMessage(messages.pricingEnrollmentCode)}
                           </Form.Radio>
                         </Form.RadioSet>
                         {formik.touched.pricingCategory && formik.errors.pricingCategory && (

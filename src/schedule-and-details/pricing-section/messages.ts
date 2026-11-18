@@ -41,6 +41,14 @@ const messages = defineMessages({
     id: 'course-authoring.schedule-section.pricing.category-subscription.description',
     defaultMessage: 'Learners reach this course through the Rwaq subscription. It has no price of its own.',
   },
+  categoryEnrollmentCode: {
+    id: 'course-authoring.schedule-section.pricing.category-enrollment-code',
+    defaultMessage: 'Enrollment code',
+  },
+  categoryEnrollmentCodeDescription: {
+    id: 'course-authoring.schedule-section.pricing.category-enrollment-code.description',
+    defaultMessage: 'A free, restricted course that learners can only join with an enrollment code.',
+  },
   noTypeHint: {
     id: 'course-authoring.schedule-section.pricing.no-type-hint',
     defaultMessage: 'This course has no type yet. Choose one and save.',
@@ -82,6 +90,10 @@ const messages = defineMessages({
   savingBtn: {
     id: 'course-authoring.schedule-section.pricing.saving-btn',
     defaultMessage: 'Saving…',
+  },
+  categoriesRemoved: {
+    id: 'course-authoring.schedule-section.pricing.categories-removed',
+    defaultMessage: 'An Enrollment code course cannot have categories, so these were removed: {categories}.',
   },
   savedMsg: {
     id: 'course-authoring.schedule-section.pricing.saved-msg',

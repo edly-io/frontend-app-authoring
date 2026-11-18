@@ -2,7 +2,7 @@ import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 
 /** Mirrors rwaq_features.models.CoursePricing.PRICING_CATEGORY_CHOICES. */
-export type PricingCategory = 'is_free' | 'is_paid' | 'is_program_only' | 'is_part_of_subscription';
+export type PricingCategory = 'is_free' | 'is_paid' | 'is_program_only' | 'is_part_of_subscription' | 'is_enrollment_code';
 
 export interface CoursePricing {
   /** null when the course has no type yet (legacy courses). */
@@ -24,6 +24,8 @@ export interface CoursePricing {
   partOfProgramName: string | null;
   /** false when the course type is locked for the current user. */
   canEdit: boolean;
+  /** Names of the categories the save removed. Only a switch to Enrollment code removes any. */
+  removedCategories: string[];
 }
 
 /** Error body of a rejected PUT. `field` names the input the error belongs to, when there is one. */
@@ -49,6 +51,7 @@ const toCoursePricing = (data: any): CoursePricing => ({
   partOfProgram: data.part_of_program ?? null,
   partOfProgramName: data.part_of_program_name ?? null,
   canEdit: data.can_edit ?? false,
+  removedCategories: data.removed_categories ?? [],
 });
 
 export const getCoursePricing = async (courseId: string): Promise<CoursePricing> => {

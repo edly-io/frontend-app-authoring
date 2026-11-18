@@ -43,6 +43,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [saved, setSaved] = useState(false);
+  const [removedCategories, setRemovedCategories] = useState<string[]>([]);
   const [loadFailed, setLoadFailed] = useState(false);
 
   const applyPricing = (pricing: CoursePricing) => {
@@ -103,6 +104,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
     if (!category) { return; }
     setError('');
     setSaved(false);
+    setRemovedCategories([]);
     if (showPriceFields) {
       const errors = { regular_price: priceError(regularPrice), sale_price: salePriceError(regularPrice, salePrice) };
       setFieldErrors(errors);
@@ -119,6 +121,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
         salePrice: showPriceFields && salePrice.trim() !== '' ? salePrice.trim() : null,
       });
       applyPricing(pricing);
+      setRemovedCategories(pricing.removedCategories);
       setSaved(true);
     } catch (err) {
       logError(err);
@@ -175,6 +178,11 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
       )}
       {error && <Alert variant="danger" className="mb-3">{error}</Alert>}
       {saved && !error && <Alert variant="success" className="mb-3">{intl.formatMessage(messages.savedMsg)}</Alert>}
+      {saved && !error && removedCategories.length > 0 && (
+        <Alert variant="warning" className="mb-3">
+          {intl.formatMessage(messages.categoriesRemoved, { categories: removedCategories.join(', ') })}
+        </Alert>
+      )}
       {!category && !isTypeLocked && (
         <p className="small text-muted">{intl.formatMessage(messages.noTypeHint)}</p>
       )}
@@ -213,6 +221,13 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
             disabled={isSaving || isTypeLocked}
           >
             {intl.formatMessage(messages.categorySubscription)}
+          </Form.Radio>
+          <Form.Radio
+            value="is_enrollment_code"
+            description={intl.formatMessage(messages.categoryEnrollmentCodeDescription)}
+            disabled={isSaving || isTypeLocked}
+          >
+            {intl.formatMessage(messages.categoryEnrollmentCode)}
           </Form.Radio>
         </Form.RadioSet>
         {fieldErrors.pricing_category && (
