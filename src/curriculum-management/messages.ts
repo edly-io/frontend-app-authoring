@@ -24,6 +24,8 @@ const messages = defineMessages({
   unsavedBody: { id: `${p}.unsaved.body`, defaultMessage: 'If you leave now, your changes will be lost.', description: 'Body of the unsaved-changes dialog.' },
   keepEditing: { id: `${p}.unsaved.keep-editing`, defaultMessage: 'Keep editing', description: 'Button that closes the unsaved-changes dialog and stays on the form.' },
   discardChanges: { id: `${p}.unsaved.discard`, defaultMessage: 'Discard changes', description: 'Button that discards unsaved changes and continues.' },
+  curriculumSearchPlaceholder: { id: `${p}.curriculums.search`, defaultMessage: 'Search learning paths by title or ID', description: 'Placeholder of the learning path search field.' },
+  curriculumCount: { id: `${p}.curriculums.count`, defaultMessage: '{count, plural, one {# learning path} other {# learning paths}}', description: 'Number of learning paths shown.' },
   emptyCurriculums: { id: `${p}.curriculums.empty`, defaultMessage: 'You haven\'t created any learning paths yet.', description: 'Shown when there are no learning paths.' },
   emptyBadges: { id: `${p}.badges.empty`, defaultMessage: 'You haven\'t created any badges yet.', description: 'Shown when there are no badges.' },
   itemId: { id: `${p}.item-id`, defaultMessage: 'ID: {id}', description: 'Unique ID of a learning path, shown under its title.' },

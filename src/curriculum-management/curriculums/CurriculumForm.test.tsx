@@ -24,9 +24,10 @@ jest.mock('@src/generic/prompt-if-dirty/PromptIfDirty', () => ({ __esModule: tru
 
 const curriculum = camelCaseObject(rawCurriculums[0]) as Curriculum;
 
-const setup = (props: Partial<React.ComponentProps<typeof CurriculumForm>> = {}) => {
+const setup = (props: Partial<React.ComponentProps<typeof CurriculumForm>> = {}, otherCurriculums: object[] = []) => {
   jest.useFakeTimers({ doNotFake: ['nextTick', 'queueMicrotask'] });
   const mocks = initializeMocks();
+  mocks.axiosMock.onGet(apiUrls.curriculumsPage(1)).reply(200, page(otherCurriculums));
   mocks.axiosMock.onGet(apiUrls.courses('DRV')).reply(200, page(rawCourses));
   mocks.axiosMock.onGet(apiUrls.badgesPage(1)).reply(200, page([...rawBadges, rawCourseBadge]));
   const onClose = jest.fn();
@@ -173,6 +174,14 @@ describe('<CurriculumForm />', () => {
     expect(screen.queryByText('Choose a knowledge check course.')).not.toBeInTheDocument();
     expect(screen.queryByText('Choose a badge for this slot.')).not.toBeInTheDocument();
     expect(axiosMock.history.post).toHaveLength(0);
+  });
+
+  it('does not offer the knowledge check of another learning path as this one\'s knowledge check', async () => {
+    const { user } = setup({}, rawCurriculums);
+    await pickType(user, 'Learning path');
+    await search(user, 'Knowledge check course', 'DRV');
+    expect(await screen.findByRole('button', { name: 'Add Getting started' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add Essentials check' })).not.toBeInTheDocument();
   });
 
   it('prefills the knowledge check settings with the defaults for a new curriculum', async () => {
