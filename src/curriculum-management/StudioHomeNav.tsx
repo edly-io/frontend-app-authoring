@@ -9,6 +9,7 @@ import { fetchOnlyStudioHomeData } from '@src/studio-home/data/thunks';
 import { getStudioHomeData } from '@src/studio-home/data/selectors';
 import homeTabMessages from '@src/studio-home/tabs-section/messages';
 import { useUberFlags } from '@src/reporting/data/apiHooks';
+import { useCurriculumManagementStatus } from './data/apiHooks';
 import { CURRICULUM_MANAGEMENT_PATH } from './constants';
 import messages from './messages';
 
@@ -21,6 +22,7 @@ const StudioHomeNav = () => {
   const dispatch = useDispatch();
   const { librariesV1Enabled, librariesV2Enabled } = useSelector(getStudioHomeData);
   const { data: uberFlags } = useUberFlags();
+  const { enabled: curriculumManagementEnabled } = useCurriculumManagementStatus();
 
   useEffect(() => {
     dispatch(fetchOnlyStudioHomeData());
@@ -41,7 +43,9 @@ const StudioHomeNav = () => {
   if (getConfig().ENABLE_TAGGING_TAXONOMY_PAGES === 'true') {
     tabs.push(['/taxonomies', intl.formatMessage(homeTabMessages.taxonomiesTabTitle)]);
   }
-  tabs.push([CURRICULUM_MANAGEMENT_PATH, intl.formatMessage(messages.homeTabTitle)]);
+  if (curriculumManagementEnabled) {
+    tabs.push([CURRICULUM_MANAGEMENT_PATH, intl.formatMessage(messages.homeTabTitle)]);
+  }
   if (uberFlags?.enableReporting) {
     tabs.push(['/reporting', intl.formatMessage(homeTabMessages.reportingTabTitle)]);
   }

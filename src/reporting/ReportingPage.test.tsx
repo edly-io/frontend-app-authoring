@@ -11,7 +11,9 @@ import ReportingPage from './ReportingPage';
 import {
   getAllCurriculumsUrl,
   getAssessmentStatsUrl,
+  getCourseEnrollmentsCsvUrl,
   getCourseEnrollmentsUrl,
+  getCurriculumAssignmentsCsvUrl,
   getCurriculumAssignmentsUrl,
   getStaffCoursesUrl,
   getUberFlagsUrl,
@@ -172,7 +174,7 @@ describe('<ReportingPage />', () => {
     await openCoursesTab();
     expect(screen.getByRole('option', { name: 'Select a course' })).toBeInTheDocument();
     expect(screen.queryByText('learner1')).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /Download CSV/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Download CSV/ })).not.toBeInTheDocument();
   });
 
   it('shows enrollment data and the CSV link once a course is picked', async () => {
@@ -500,6 +502,68 @@ describe('<ReportingPage />', () => {
       render(<ReportingPage />, { path: '/reporting' });
 
       expect(await screen.findByRole('alert')).toHaveTextContent(/global staff access/i);
+    });
+  });
+  describe('CSV export', () => {
+    // The download is the one place the page hands a file to the user, and it was never exercised:
+    // the only assertion looked for a <a> that had already become a <button>, so it could not fail.
+    beforeEach(() => {
+      Object.defineProperty(URL, 'createObjectURL', { value: jest.fn(() => 'blob:csv'), writable: true });
+      Object.defineProperty(URL, 'revokeObjectURL', { value: jest.fn(), writable: true });
+    });
+
+    const csvRequests = () => axiosMock.history.get.filter((r) => (r.url ?? '').includes('format=csv'));
+
+    it('asks for the enrollment CSV as a blob, over the authenticated client', async () => {
+      axiosMock.onGet(getCourseEnrollmentsUrl(courseId)).reply(200, { count: 1, results: [enrollment(1)] });
+      axiosMock.onGet(getCourseEnrollmentsCsvUrl(courseId)).reply(200, 'a,b\n1,2');
+      render(<ReportingPage />, { path: '/reporting' });
+      await selectCourse();
+
+      await userEvent.click(await screen.findByRole('button', { name: /Download CSV/ }));
+
+      await waitFor(() => expect(csvRequests()).toHaveLength(1));
+      // A plain <a href download> would have sent no auth header at all across origins.
+      expect(csvRequests()[0].responseType).toBe('blob');
+      expect(csvRequests()[0].url).toBe(getCourseEnrollmentsCsvUrl(courseId));
+    });
+
+    it('carries the active search into the exported file', async () => {
+      axiosMock.onGet(getCourseEnrollmentsUrl(courseId)).reply(200, { count: 1, results: [enrollment(1)] });
+      axiosMock.onGet(getCourseEnrollmentsCsvUrl(courseId, 'learner1')).reply(200, 'a,b');
+      render(<ReportingPage />, { path: '/reporting' });
+      await selectCourse();
+
+      await userEvent.type(screen.getByRole('searchbox'), 'learner1{enter}');
+      await waitFor(() => expect(screen.getByRole('button', { name: /Download CSV/ })).toBeEnabled());
+      await userEvent.click(screen.getByRole('button', { name: /Download CSV/ }));
+
+      await waitFor(() => expect(csvRequests()).toHaveLength(1));
+      expect(csvRequests()[0].url).toContain('search=learner1');
+    });
+
+    it('shows an alert when the export fails', async () => {
+      axiosMock.onGet(getCourseEnrollmentsUrl(courseId)).reply(200, { count: 1, results: [enrollment(1)] });
+      axiosMock.onGet(getCourseEnrollmentsCsvUrl(courseId)).reply(500);
+      render(<ReportingPage />, { path: '/reporting' });
+      await selectCourse();
+
+      await userEvent.click(await screen.findByRole('button', { name: /Download CSV/ }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(/could not be downloaded|try again/i);
+    });
+
+    it('exports the curriculum report too', async () => {
+      axiosMock.onGet(getCurriculumAssignmentsUrl(curriculumUuid))
+        .reply(200, { count: 1, results: [assignment()] });
+      axiosMock.onGet(getCurriculumAssignmentsCsvUrl(curriculumUuid)).reply(200, 'a,b');
+      render(<ReportingPage />, { path: '/reporting' });
+      await selectCurriculum();
+
+      await userEvent.click(await screen.findByRole('button', { name: /Download CSV/ }));
+
+      await waitFor(() => expect(csvRequests()).toHaveLength(1));
+      expect(csvRequests()[0].url).toBe(getCurriculumAssignmentsCsvUrl(curriculumUuid));
     });
   });
 });

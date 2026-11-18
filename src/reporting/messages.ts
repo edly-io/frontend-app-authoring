@@ -269,11 +269,6 @@ const messages = defineMessages({
     defaultMessage: 'After',
     description: 'Label of the post-assessment bar',
   },
-  chartGain: {
-    id: 'course-authoring.reporting.overview.gain',
-    defaultMessage: '{gain} points gained',
-    description: 'Headline difference between the two bars',
-  },
   chartScope: {
     id: 'course-authoring.reporting.overview.scope',
     defaultMessage: '{counted, plural, one {# course} other {# courses}}, {learners, plural, one {# learner} other {# learners}}',

@@ -519,12 +519,6 @@ $uber-muted-text: #717171;
     color: $uber-negative-text;
   }
 
-  // Carries a tooltip, so it needs the cursor hint without the browser's default dotted underline.
-  .reporting-questions-mismatch {
-    text-decoration: underline dotted;
-    cursor: help;
-  }
-
   .reporting-gain {
     font-variant-numeric: tabular-nums;
     font-weight: 600;

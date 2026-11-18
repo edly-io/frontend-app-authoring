@@ -123,8 +123,6 @@ export async function getCurriculumAssignments(
 /** Figures shared by a chart's headline and by one row of the table beneath it. */
 export interface AssessmentSummary {
   /** Questions in the pre/post check. Null when the block could not be read, not when it is empty. */
-  preQuestions?: number | null;
-  postQuestions?: number | null;
   /** How many courses or curriculums the figures are drawn from; 1 on a table row. */
   counted: number;
   /** Learners with both a pre and a post score. The averages are over exactly these learners. */
@@ -215,6 +213,8 @@ export async function downloadCsv(url: string, filename: string): Promise<void> 
     link.click();
     link.remove();
   } finally {
-    URL.revokeObjectURL(objectUrl);
+    // Revoked on a later tick: Safari cancels a download whose object URL is released in the same tick
+    // as the click that started it.
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
   }
 }
