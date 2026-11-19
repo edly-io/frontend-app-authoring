@@ -1,7 +1,10 @@
 import type { AxiosError } from 'axios';
 import type { IntlShape, MessageDescriptor } from 'react-intl';
 
+import { getErrorStatus, isClientError } from '@src/generic/queryErrors';
 import messages from './messages';
+
+export { getErrorStatus, isClientError };
 
 /** The longest category name the API accepts (uber-features ``NAME_MAX_LENGTH``). */
 export const CATEGORY_NAME_MAX_LENGTH = 100;
@@ -13,15 +16,6 @@ const NAME_ERROR_MESSAGES: Record<string, MessageDescriptor> = {
   name_taken: messages.nameTaken,
   name_not_sluggable: messages.nameNotSluggable,
   name_too_similar: messages.nameTooSimilar,
-};
-
-/** The HTTP status of a failed request, or undefined for a network error. */
-export const getErrorStatus = (error: unknown): number | undefined =>
-  (error as AxiosError | undefined)?.response?.status;
-
-export const isClientError = (error: unknown) => {
-  const status = getErrorStatus(error);
-  return status !== undefined && status >= 400 && status < 500;
 };
 
 /** The first message the API returned for `field` in a 400 (`{"field": ["message"]}`), if any. */
