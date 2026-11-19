@@ -33,9 +33,11 @@ import type { Curriculum } from '../types';
 import {
   type CurriculumFormValues,
   mapCurriculumErrors,
+  retainedCopy,
   suggestSlug,
   toCurriculumFormValues,
   toCurriculumWriteData,
+  visibleSlotKeys,
 } from '../utils';
 import messages from '../messages';
 import FormSection from '../FormSection';
@@ -211,6 +213,7 @@ const CurriculumForm = ({
           const courseIds = values.courses.map((course) => course.id);
           // A single course gets singular wording (UBER-351).
           const isCourse = values.kind === 'course';
+          const formSlots = visibleSlotKeys().filter((slot) => !(isCourse && slot === 'complete'));
           const kcHint = isCourse ? messages.knowledgeCheckHintCourse : messages.knowledgeCheckHint;
           return (
             <>
@@ -379,7 +382,7 @@ const CurriculumForm = ({
 
                       <FormSection
                         title={intl.formatMessage(messages.knowledgeCheckFormHeading)}
-                        help={intl.formatMessage(messages.knowledgeCheckOptionalHelp)}
+                        help={intl.formatMessage(retainedCopy(messages.knowledgeCheckOptionalHelp))}
                         boxed
                       >
                         {values.knowledgeCheck ?
@@ -544,46 +547,51 @@ const CurriculumForm = ({
                         )}
                       </FormSection>
 
-                      <FormSection
-                        title={intl.formatMessage(messages.badgesHeading)}
-                        help={intl.formatMessage(messages.badgesSectionHelp)}
-                        boxed
-                      >
-                        {/* A course has no Complete badge: finishing its one course is not a milestone of its own. */}
-                        {SLOT_KEYS.filter((slot) => !(isCourse && slot === 'complete')).map((slot) => (
-                          <BadgeSlotSelect
-                            key={slot}
-                            slot={slot}
-                            value={values.badges[slot]}
-                            badges={curriculumBadges}
-                            takenBadgeUuids={SLOT_KEYS
-                              .filter((other) => other !== slot)
-                              .map((other) => values.badges[other])
-                              .filter(Boolean)}
-                            onChange={(badgeUuid) => setFieldValue(`badges.${slot}`, badgeUuid)}
-                            error={errorFor(`badges.${slot}`)}
-                            locked={!!curriculum?.badges[slot]?.earned}
-                            unavailableNote={slot === 'retained' && !values.knowledgeCheck
-                              ? intl.formatMessage(messages.retainedNeedsKnowledgeCheck)
-                              : undefined}
-                          />
-                        ))}
-                        {/* A new tab keeps this form's unsaved edits; the slot lists refetch when the author comes back. */}
-                        <p className="small mb-0">
-                          {intl.formatMessage(messages.createBadgeHint, {
-                            link: (
-                              <a
-                                href={badgesHref}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                aria-label={intl.formatMessage(messages.createBadgeLinkLabel)}
-                              >
-                                {intl.formatMessage(messages.createBadgeLinkText)}
-                              </a>
-                            ),
-                          })}
-                        </p>
-                      </FormSection>
+                      {
+                        /* A course has no Complete badge: finishing its one course is not a milestone of its own.
+                          Without the Retained slot (ENABLE_RETAINED_BADGE_SLOT off), a course has no badges to pick. */
+                      }
+                      {formSlots.length > 0 && (
+                        <FormSection
+                          title={intl.formatMessage(messages.badgesHeading)}
+                          help={intl.formatMessage(messages.badgesSectionHelp)}
+                          boxed
+                        >
+                          {formSlots.map((slot) => (
+                            <BadgeSlotSelect
+                              key={slot}
+                              slot={slot}
+                              value={values.badges[slot]}
+                              badges={curriculumBadges}
+                              takenBadgeUuids={SLOT_KEYS
+                                .filter((other) => other !== slot)
+                                .map((other) => values.badges[other])
+                                .filter(Boolean)}
+                              onChange={(badgeUuid) => setFieldValue(`badges.${slot}`, badgeUuid)}
+                              error={errorFor(`badges.${slot}`)}
+                              locked={!!curriculum?.badges[slot]?.earned}
+                              unavailableNote={slot === 'retained' && !values.knowledgeCheck
+                                ? intl.formatMessage(messages.retainedNeedsKnowledgeCheck)
+                                : undefined}
+                            />
+                          ))}
+                          {/* A new tab keeps this form's unsaved edits; the slot lists refetch when the author comes back. */}
+                          <p className="small mb-0">
+                            {intl.formatMessage(messages.createBadgeHint, {
+                              link: (
+                                <a
+                                  href={badgesHref}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  aria-label={intl.formatMessage(messages.createBadgeLinkLabel)}
+                                >
+                                  {intl.formatMessage(messages.createBadgeLinkText)}
+                                </a>
+                              ),
+                            })}
+                          </p>
+                        </FormSection>
+                      )}
 
                       <FormSection boxed>
                         <ImageField

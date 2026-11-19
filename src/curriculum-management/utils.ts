@@ -1,6 +1,7 @@
 import type { AxiosError } from 'axios';
 import type { FormikErrors } from 'formik';
 import type { MessageDescriptor } from 'react-intl';
+import { getConfig } from '@edx/frontend-platform';
 
 import { KC_MAX_ATTEMPTS_DEFAULT, KC_PASS_THRESHOLD_DEFAULT, SLOT_KEYS } from './constants';
 import type { CourseItem } from './curriculums/CourseOrderList';
@@ -18,6 +19,31 @@ import type {
   PickedCourse,
   SlotKey,
 } from './types';
+
+/**
+ * Off (the default): the Retained badge is a stock trophy in the learner MFE, so authors can't attach one and the
+ * Retained slot is hidden. On: authors pick a Retained badge per learning path, as before.
+ */
+export const isRetainedSlotEnabled = () => getConfig().ENABLE_RETAINED_BADGE_SLOT === true;
+
+/** The slots authors can see and fill. */
+export const visibleSlotKeys = (): readonly SlotKey[] => (
+  isRetainedSlotEnabled() ? SLOT_KEYS : SLOT_KEYS.filter((slot) => slot !== 'retained')
+);
+
+/** Help copy that mentions picking a Retained badge → its stock-trophy wording. */
+const STOCK_TROPHY_COPY = new Map<MessageDescriptor, MessageDescriptor>([
+  [messages.sidebarBadgesBody, messages.sidebarBadgesBodyStockTrophy],
+  [messages.sidebarCurriculumBadgesBody, messages.sidebarCurriculumBadgesBodyStockTrophy],
+  [messages.sidebarKnowledgeCheckBody, messages.sidebarKnowledgeCheckBodyStockTrophy],
+  [messages.knowledgeCheckOptionalHelp, messages.knowledgeCheckOptionalHelpStockTrophy],
+  [messages.kindCurriculumHelp, messages.kindCurriculumHelpStockTrophy],
+]);
+
+/** `message`, or its stock-trophy wording while the Retained slot is off. */
+export const retainedCopy = (message: MessageDescriptor): MessageDescriptor => (
+  isRetainedSlotEnabled() ? message : STOCK_TROPHY_COPY.get(message) ?? message
+);
 
 /** Slot key → display messages. Raw API slot values are never shown. */
 export const slotMessages: Record<SlotKey, { label: MessageDescriptor; rule: MessageDescriptor; }> = {
@@ -214,7 +240,8 @@ export const mapCurriculumErrors = (error: unknown, courseIds: string[]): Mapped
       if (!message) {
         return;
       }
-      if ((SLOT_KEYS as readonly string[]).includes(slot)) {
+      // A hidden slot's error goes to the form, where the author can see it.
+      if ((visibleSlotKeys() as readonly string[]).includes(slot)) {
         slotErrors[slot] = message;
       } else {
         extraFormErrors.push(message);

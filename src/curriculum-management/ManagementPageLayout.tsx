@@ -35,6 +35,7 @@ import ConfirmNavigationModal from './ConfirmNavigationModal';
 import StudioHomeNav from './StudioHomeNav';
 import type { CurriculumManagementOutletContext, FormTarget, ManagementSection } from './types';
 import messages from './messages';
+import { retainedCopy } from './utils';
 import './CurriculumManagement.scss';
 
 /** Per-tab copy; the shell itself is shared. A tab without `newLabel` has no New button (nothing to create). */
@@ -215,7 +216,7 @@ const ManagementPageLayout = () => {
               {copy.help.map(([heading, body]) => (
                 <div key={heading.id}>
                   <h4 className="help-sidebar-about-title">{intl.formatMessage(heading)}</h4>
-                  <p className="help-sidebar-about-descriptions">{intl.formatMessage(body)}</p>
+                  <p className="help-sidebar-about-descriptions">{intl.formatMessage(retainedCopy(body))}</p>
                 </div>
               ))}
             </HelpSidebar>

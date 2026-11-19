@@ -1,4 +1,4 @@
-import { camelCaseObject } from '@edx/frontend-platform';
+import { camelCaseObject, mergeConfig } from '@edx/frontend-platform';
 import userEvent from '@testing-library/user-event';
 import {
   act,
@@ -121,7 +121,7 @@ describe('<CurriculumForm />', () => {
     expect(screen.queryByRole('button', { name: 'Add Getting started' })).not.toBeInTheDocument();
     await user.click(await screen.findByRole('button', { name: 'Add Essentials check' }));
     await user.click(screen.getByLabelText('15 days'));
-    await chooseBadge(user, 'Retained', rawBadges[1].title);
+    await chooseBadge(user, 'Complete', rawBadges[1].title);
 
     await user.click(screen.getByRole('button', { name: 'Create' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
@@ -135,8 +135,8 @@ describe('<CurriculumForm />', () => {
     ]);
     expect(postBody.get('knowledge_check_course_id')).toEqual('course-v1:Uber+DRVKC1+2026_Q4');
     expect(postBody.get('knowledge_check_delay_days')).toEqual('15');
-    expect(postBody.has('badges.complete')).toBe(false);
-    expect(postBody.get('badges.retained')).toEqual(rawBadges[1].uuid);
+    expect(postBody.get('badges.complete')).toEqual(rawBadges[1].uuid);
+    expect(postBody.has('badges.retained')).toBe(false);
     expect(mockShowToast).toHaveBeenCalledWith('Learning path created');
   });
 
@@ -252,6 +252,8 @@ describe('<CurriculumForm />', () => {
     await search(user, 'Add a course', 'DRV');
     await user.click(await screen.findByRole('button', { name: 'Add Getting started' }));
     expect(screen.queryByLabelText('Add a course')).not.toBeInTheDocument();
+    // No Complete badge for a course, and Retained is a stock trophy: no badges section at all.
+    expect(screen.queryByText('Need a new badge?', { exact: false })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Create' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect((axiosMock.history.post[0].data as FormData).get('kind')).toEqual('course');
@@ -271,13 +273,12 @@ describe('<CurriculumForm />', () => {
     expect(screen.queryByLabelText('15 days')).not.toBeInTheDocument();
   });
 
-  it('disables the Retained slot without a knowledge check and sends none on save', async () => {
+  it('has no Retained slot, and sends no Retained badge once the knowledge check is removed', async () => {
     const { axiosMock, onClose, user } = setup({ curriculum });
     axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(200, rawCurriculums[0]);
-    expect(slotToggle('Retained')).toBeEnabled();
+    expect(slotToggle('Complete')).toBeEnabled();
+    expect(screen.queryByRole('button', { name: /^Retained badge/ })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Change' }));
-    expect(slotToggle('Retained')).toBeDisabled();
-    expect(screen.getByText('Choose a knowledge check course to use the Retained badge.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     const putBody = axiosMock.history.put[0].data as FormData;
@@ -345,19 +346,14 @@ describe('<CurriculumForm />', () => {
     await waitFor(() => expect(axiosMock.history.put).toHaveLength(1));
   });
 
-  it('slot selects list curriculum badges only, offer "No badge", and disable a badge taken by another slot', async () => {
+  it('slot selects list curriculum badges only and offer "No badge"', async () => {
     const { user } = setup();
     await pickType(user, 'Learning path');
-    // The Retained slot needs a knowledge check (UBER-351).
-    await search(user, 'Knowledge check course', 'DRV');
-    await user.click(await screen.findByRole('button', { name: 'Add Essentials check' }));
     const complete = await openSlot(user, 'Complete');
     expect(complete.getAllByTitle('No badge')[0]).toHaveClass('dropdown-item');
     expect(complete.queryByTitle('Airport pro')).not.toBeInTheDocument();
     await user.click(complete.getByTitle(rawBadges[1].title));
     expect(slotToggle('Complete')).toHaveAccessibleName(`Complete badge ${rawBadges[1].title}`);
-    const retained = await openSlot(user, 'Retained');
-    expect(retained.getByTitle(rawBadges[1].title)).toHaveClass('disabled');
   });
 
   it('slot selects leave out badges another curriculum uses, but keep this curriculum\'s own', async () => {
@@ -372,12 +368,13 @@ describe('<CurriculumForm />', () => {
     const { axiosMock, onClose, user } = setup({ curriculum });
     axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(200, rawCurriculums[0]);
     await waitFor(() => expect(slotToggle('Complete')).toHaveAccessibleName(`Complete badge ${rawBadges[0].title}`));
-    await chooseBadge(user, 'Retained', 'No badge');
+    await chooseBadge(user, 'Complete', 'No badge');
     await user.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     const putBody = axiosMock.history.put[0].data as FormData;
-    expect(putBody.get('badges.complete')).toEqual(rawBadges[0].uuid);
-    expect(putBody.has('badges.retained')).toBe(false);
+    expect(putBody.has('badges.complete')).toBe(false);
+    // A Retained badge attached before it became a stock trophy is hidden but left as it is.
+    expect(putBody.get('badges.retained')).toEqual(rawBadges[2].uuid);
   });
 
   it('makes an earned slot read-only with a note, and still sends its badge', async () => {
@@ -388,7 +385,6 @@ describe('<CurriculumForm />', () => {
     const { axiosMock, onClose, user } = setup({ curriculum: earned });
     axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(200, rawCurriculums[0]);
     expect(slotToggle('Complete')).toBeDisabled();
-    expect(slotToggle('Retained')).toBeEnabled();
     expect(screen.getAllByText(
       'Learners have earned this badge in this learning path, so this slot\'s badge can\'t change.',
     )).toHaveLength(1);
@@ -408,7 +404,7 @@ describe('<CurriculumForm />', () => {
 
   it('maps a server badges.<slot> error onto that slot', async () => {
     const { axiosMock, user } = setup({ curriculum });
-    axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(400, { badges: { retained: ['Badge not found.'] } });
+    axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(400, { badges: { complete: ['Badge not found.'] } });
     await user.click(screen.getByRole('button', { name: 'Save' }));
     expect(await screen.findByText('Badge not found.')).toBeInTheDocument();
   });
@@ -534,5 +530,30 @@ describe('<CurriculumForm />', () => {
     const body = axiosMock.history.put[0].data as FormData;
     expect(body.has('image')).toBe(false);
     expect(body.has('remove_image')).toBe(false);
+  });
+});
+
+describe('<CurriculumForm /> with ENABLE_RETAINED_BADGE_SLOT on', () => {
+  beforeEach(() => mergeConfig({ ENABLE_RETAINED_BADGE_SLOT: true }));
+  afterEach(() => mergeConfig({ ENABLE_RETAINED_BADGE_SLOT: false }));
+
+  it('shows the Retained slot, disabled without a knowledge check, and sends none on save', async () => {
+    const { axiosMock, onClose, user } = setup({ curriculum });
+    axiosMock.onPut(apiUrls.curriculum('cur-1')).reply(200, rawCurriculums[0]);
+    expect(slotToggle('Retained')).toBeEnabled();
+    expect(screen.getByText('Optional. Without one, there is no Retained badge.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Change' }));
+    expect(slotToggle('Retained')).toBeDisabled();
+    expect(screen.getByText('Choose a knowledge check course to use the Retained badge.')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect((axiosMock.history.put[0].data as FormData).has('badges.retained')).toBe(false);
+  });
+
+  it('lets a course pick a Retained badge', async () => {
+    const { user } = setup();
+    await user.click(screen.getByRole('radio', { name: 'Course' }));
+    expect(slotToggle('Retained')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Complete badge/ })).not.toBeInTheDocument();
   });
 });

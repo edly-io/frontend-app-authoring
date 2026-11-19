@@ -201,6 +201,7 @@ initialize({
         ENABLE_UNIT_PAGE_NEW_DESIGN: process.env.ENABLE_UNIT_PAGE_NEW_DESIGN || 'true',
         ENABLE_TAGGING_TAXONOMY_PAGES: process.env.ENABLE_TAGGING_TAXONOMY_PAGES || 'false',
         ENABLE_CHECKLIST_QUALITY: process.env.ENABLE_CHECKLIST_QUALITY || 'true',
+        ENABLE_RETAINED_BADGE_SLOT: process.env.ENABLE_RETAINED_BADGE_SLOT === 'true',
         ENABLE_GRADING_METHOD_IN_PROBLEMS: process.env.ENABLE_GRADING_METHOD_IN_PROBLEMS === 'true',
         LIBRARY_UNSUPPORTED_BLOCKS:
           (process.env.LIBRARY_UNSUPPORTED_BLOCKS || 'conditional,step-builder,problem-builder').split(','),
