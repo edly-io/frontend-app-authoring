@@ -34,6 +34,7 @@ jest.mock('@edx/frontend-component-footer', () => ({
 }));
 
 const courseId = 'course-v1:Uber+101+2026';
+const otherCourseId = 'course-v1:Uber+202+2026';
 const curriculumUuid = 'abc-123';
 
 const enrollment = (n: number, badge = { badge_awarded: true, badge_configured: true }) => ({
@@ -497,11 +498,24 @@ describe('<ReportingPage />', () => {
       expect(await screen.findByRole('alert')).toHaveTextContent(/could not be loaded|try again/i);
     });
 
-    it('tells a user without global staff that the figures are not theirs to see', async () => {
+    it('hides the figures from course staff without putting an error over a page that works', async () => {
+      // Any course author can open the Courses tab and use the picker, but assessment-stats/ is global
+      // staff only. A red alert about a dashboard they never asked for is worse than no dashboard.
       axiosMock.onGet(getAssessmentStatsUrl()).reply(403);
       render(<ReportingPage />, { path: '/reporting' });
+      await openCoursesTab();
 
-      expect(await screen.findByRole('alert')).toHaveTextContent(/global staff access/i);
+      expect(await screen.findByRole('option', { name: 'Uber 101' })).toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('still reports a non-403 failure of the figures, which is not an access problem', async () => {
+      // 404 rather than 500: a 4xx is final, so the alert appears without waiting out three retries.
+      axiosMock.onGet(getAssessmentStatsUrl()).reply(404);
+      render(<ReportingPage />, { path: '/reporting' });
+      await openCoursesTab();
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(/could not be loaded|try again/i);
     });
   });
   describe('CSV export', () => {
@@ -551,6 +565,27 @@ describe('<ReportingPage />', () => {
       await userEvent.click(await screen.findByRole('button', { name: /Download CSV/ }));
 
       expect(await screen.findByRole('alert')).toHaveTextContent(/could not be downloaded|try again/i);
+    });
+
+    it('clears a failed export when the selection changes', async () => {
+      // The alert belongs to the selection that produced it; carrying it to the next course would accuse
+      // a download that was never tried.
+      axiosMock.onGet(getStaffCoursesUrl()).reply(200, [
+        { course_id: courseId, display_name: 'Uber 101' },
+        { course_id: otherCourseId, display_name: 'Uber 202' },
+      ]);
+      axiosMock.onGet(getCourseEnrollmentsUrl(courseId)).reply(200, { count: 1, results: [enrollment(1)] });
+      axiosMock.onGet(getCourseEnrollmentsUrl(otherCourseId)).reply(200, { count: 1, results: [enrollment(2)] });
+      axiosMock.onGet(getCourseEnrollmentsCsvUrl(courseId)).reply(400);
+      render(<ReportingPage />, { path: '/reporting' });
+      await selectCourse();
+
+      await userEvent.click(await screen.findByRole('button', { name: /Download CSV/ }));
+      expect(await screen.findByRole('alert')).toHaveTextContent(/could not be downloaded|try again/i);
+
+      await userEvent.selectOptions(screen.getByLabelText('Course'), otherCourseId);
+
+      await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
     });
 
     it('exports the curriculum report too', async () => {

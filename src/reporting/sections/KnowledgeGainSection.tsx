@@ -4,6 +4,7 @@ import { useAssessmentStats } from '../data/apiHooks';
 import messages from '../messages';
 import useFormatters from '../useFormatters';
 import type { Column } from '../types';
+import { getErrorStatus } from '../../generic/queryErrors';
 import RequestError from '../components/RequestError';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import StatsSection from './StatsSection';
@@ -47,6 +48,12 @@ const KnowledgeGainSection = () => {
   ], [intl, f]);
 
   if (isError) {
+    // Any course author can open this tab and use the course picker below, but `assessment-stats/` is
+    // global-staff only. Telling them they lack access to a dashboard they never asked for would put a red
+    // alert above a page that works; the figures simply are not theirs to see, so they are not shown.
+    if (getErrorStatus(error) === 403) {
+      return null;
+    }
     return <RequestError error={error} />;
   }
   if (isPending || !data) {

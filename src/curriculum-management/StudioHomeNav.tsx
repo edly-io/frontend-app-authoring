@@ -14,8 +14,9 @@ import { CURRICULUM_MANAGEMENT_PATH } from './constants';
 import messages from './messages';
 
 /**
- * The Studio home tab bar (Courses, Libraries, ..., Curriculum Management), shown on the Curriculum
- * management page so it reads as one of the home tabs. Visibility mirrors studio-home's TabsSection.
+ * The Studio home tab bar (Courses, Libraries, ..., Learning Paths, Reporting), shown on the Learning path
+ * management and Reporting pages so they read as home tabs. Visibility mirrors studio-home's TabsSection:
+ * each optional tab appears only while its own flag is on.
  */
 const StudioHomeNav = () => {
   const intl = useIntl();
