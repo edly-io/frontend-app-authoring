@@ -26,7 +26,12 @@ import {
   SLOT_KEYS,
 } from '../constants';
 import ImageField from '../ImageField';
-import { useBadges, useCreateCurriculum, useUpdateCurriculum } from '../data/apiHooks';
+import {
+  useBadges,
+  useCreateCurriculum,
+  useCurriculums,
+  useUpdateCurriculum,
+} from '../data/apiHooks';
 import FormDirtyReporter from '../FormDirtyReporter';
 import FocusFirstError from '../FocusFirstError';
 import type { Curriculum } from '../types';
@@ -72,6 +77,11 @@ const CurriculumForm = ({
   // The layout already loads the badges, so this reads the cache. Course badges can't fill a slot (spec R11),
   // and a badge another curriculum already uses can't fill one here (one curriculum per badge).
   const { data: allBadges = [] } = useBadges();
+  const { data: allCurriculums = [] } = useCurriculums();
+  // A course can be the knowledge check of only one learning path or course.
+  const otherKcIds = allCurriculums
+    .filter((other) => other.uuid !== curriculum?.uuid && other.knowledgeCheck)
+    .map((other) => other.knowledgeCheck!.courseId);
   const curriculumBadges = allBadges.filter((badge) =>
     badge.kind === 'curriculum'
     && badge.linkedCurriculums.every((linked) => linked.uuid === curriculum?.uuid)
@@ -431,7 +441,7 @@ const CurriculumForm = ({
                             <CoursePicker
                               id="curriculum-knowledge-check-search"
                               label={intl.formatMessage(messages.knowledgeCheckCourseLabel)}
-                              excludedCourseIds={courseIds}
+                              excludedCourseIds={[...courseIds, ...otherKcIds]}
                               help={intl.formatMessage(kcHint)}
                               error={errorFor('knowledgeCheck')}
                               autoFocus={focusKcSearch}

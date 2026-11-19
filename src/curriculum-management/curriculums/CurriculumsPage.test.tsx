@@ -1,7 +1,7 @@
 import { Route, Routes } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
 import { initializeMocks, render, screen } from '@src/testUtils';
-import { page, rawCurriculums } from '../__mocks__/fixtures';
+import { page, rawCourseCurriculum, rawCurriculums } from '../__mocks__/fixtures';
 import OutletHarness from '../__mocks__/OutletHarness';
 import { apiUrls } from '../data/api';
 import CurriculumsPage from './CurriculumsPage';
@@ -85,5 +85,21 @@ describe('<CurriculumsPage />', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Edit New driver essentials' }));
     await userEvent.click(screen.getByRole('button', { name: 'cancel form' }));
     expect(screen.queryByTestId('curriculum-form')).not.toBeInTheDocument();
+  });
+
+  it('filters the list by title, learning path ID or uuid, and shows the count', async () => {
+    const { axiosMock } = initializeMocks();
+    axiosMock.onGet(apiUrls.curriculumsPage(1)).reply(200, page([...rawCurriculums, rawCourseCurriculum]));
+    renderPage();
+    expect(await screen.findByText('2 learning paths')).toBeInTheDocument();
+    await userEvent.type(screen.getByRole('searchbox'), 'airport');
+    expect(screen.getByText('1 learning path')).toBeInTheDocument();
+    expect(screen.getAllByTestId('curriculum-card')).toHaveLength(1);
+    await userEvent.clear(screen.getByRole('searchbox'));
+    await userEvent.type(screen.getByRole('searchbox'), 'new-driver');
+    expect(screen.getByText('1 learning path')).toBeInTheDocument();
+    await userEvent.clear(screen.getByRole('searchbox'));
+    await userEvent.type(screen.getByRole('searchbox'), 'zzz');
+    expect(screen.getByText('0 learning paths')).toBeInTheDocument();
   });
 });
