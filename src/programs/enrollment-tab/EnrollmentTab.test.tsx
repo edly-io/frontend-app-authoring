@@ -1,16 +1,19 @@
 import {
-  fireEvent, initializeMocks, render, screen,
+  fireEvent, initializeMocks, render, screen, waitFor,
 } from '@src/testUtils';
 import EnrollmentTab from './EnrollmentTab';
 import { mockLearner, mockPaginatedLearners } from '../data/api.mock';
 
 const mockUseProgramEnrollments = jest.fn();
+const mockBulkEnroll = jest.fn();
 
 jest.mock('@src/programs/data/apiHooks', () => ({
   useProgramEnrollments: (...args: any[]) => mockUseProgramEnrollments(...args),
   // hooks used by child modals — supply minimal stubs
   useLearners: () => ({ data: { results: [], count: 0, numPages: 1 }, isLoading: false, isFetching: false }),
   useEnrollLearner: () => ({ mutateAsync: jest.fn(), isPending: false }),
+  useBulkEnrollProgram: () => ({ mutateAsync: mockBulkEnroll, isPending: false }),
+  useCancelProgramInvite: () => ({ mutate: jest.fn(), isPending: false }),
 }));
 
 const programId = 'prog-key-1';
@@ -31,6 +34,16 @@ describe('<EnrollmentTab />', () => {
     expect(screen.getByText('alice@example.com')).toBeInTheDocument();
   });
 
+  it('shows the courses that could not be enrolled when an invitation was claimed', () => {
+    mockUseProgramEnrollments.mockReturnValue({
+      data: mockPaginatedLearners([mockLearner({ courseFailures: ['course-v1:Org+Course+2026'] })]),
+      isLoading: false,
+      isFetching: false,
+    });
+    render(<EnrollmentTab programId={programId} />);
+    expect(screen.getByText('Course enrollment failed: course-v1:Org+Course+2026')).toBeInTheDocument();
+  });
+
   it('shows empty state message when no learners enrolled', () => {
     mockUseProgramEnrollments.mockReturnValue({
       data: mockPaginatedLearners([], { count: 0 }),
@@ -43,12 +56,12 @@ describe('<EnrollmentTab />', () => {
 
   it('renders search field', () => {
     render(<EnrollmentTab programId={programId} />);
-    expect(screen.getByPlaceholderText(/Search enrolled learners/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Search learners and invites/i)).toBeInTheDocument();
   });
 
   it('passes search query to useProgramEnrollments', () => {
     render(<EnrollmentTab programId={programId} />);
-    const searchInput = screen.getByPlaceholderText(/Search enrolled learners/i);
+    const searchInput = screen.getByPlaceholderText(/Search learners and invites/i);
     fireEvent.change(searchInput, { target: { value: 'alice' } });
     expect(mockUseProgramEnrollments).toHaveBeenCalledWith(
       programId,
@@ -83,5 +96,36 @@ describe('<EnrollmentTab />', () => {
     render(<EnrollmentTab programId={programId} />);
     fireEvent.click(screen.getByRole('button', { name: /Enroll Learner/i }));
     expect(screen.getByText('Enroll Learner in Program')).toBeInTheDocument();
+  });
+
+  it('allows notification without auto enrollment in the bulk form', async () => {
+    mockBulkEnroll.mockResolvedValue({
+      enrolled: [], already_enrolled: [], invited: [], notification_failures: [], failed: [], course_failures: [],
+    });
+    render(<EnrollmentTab programId={programId} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Bulk enroll' }));
+    fireEvent.change(screen.getByLabelText('Email addresses'), { target: { value: 'learner@example.com' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Notify by email' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enroll learners' }));
+    await waitFor(() => expect(mockBulkEnroll).toHaveBeenCalledWith({
+      programId, emails: 'learner@example.com', reason: '', autoEnroll: false, notify: true,
+    }));
+  });
+
+  it('explains pending invitations when auto enrollment and notification are off', async () => {
+    mockBulkEnroll.mockResolvedValue({
+      enrolled: [],
+      already_enrolled: [],
+      invited: [{ email: 'new@example.com' }],
+      notification_failures: [],
+      failed: [],
+      course_failures: [],
+    });
+    render(<EnrollmentTab programId={programId} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Bulk enroll' }));
+    fireEvent.change(screen.getByLabelText('Email addresses'), { target: { value: 'new@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enroll learners' }));
+    expect(await screen.findByText('Invitations remain pending and will not enroll learners automatically.')).toBeInTheDocument();
+    expect(screen.getByText('No invitation email was sent.')).toBeInTheDocument();
   });
 });
