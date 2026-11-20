@@ -42,6 +42,7 @@ const BulkEnrollModal: React.FC<Props> = ({
   const [error, setError] = useState('');
   const [result, setResult] = useState<ProgramBulkEnrollResult | null>(null);
   const mutation = useBulkEnrollProgram();
+  const addressCount = new Set(emails.toLowerCase().split(/[,;\s]+/).filter(Boolean)).size;
 
   const close = () => {
     setEmails(''); setReason(''); setAutoEnroll(false); setNotify(false); setError(''); setResult(null); onClose();
@@ -111,7 +112,12 @@ const BulkEnrollModal: React.FC<Props> = ({
             <p>{intl.formatMessage(messages.invited, { count: result.invited.length })}</p>
             {result.failed.map((failure) => <p key={failure.email}>{failure.email}: {failure.reason}</p>)}
             {result.course_failures.length > 0 && (
-              <Alert variant="warning">{intl.formatMessage(messages.courseFailures)}</Alert>
+              <Alert variant="warning">
+                {intl.formatMessage(messages.courseFailures)}
+                {result.course_failures.map((failure) => (
+                  <p key={`${failure.email}-${failure.course_id}`}>{failure.email}: {failure.course_id}: {failure.reason}</p>
+                ))}
+              </Alert>
             )}
             {result.notification_failures.length > 0 && (
               <Alert variant="warning">
@@ -127,7 +133,7 @@ const BulkEnrollModal: React.FC<Props> = ({
         <ActionRow>
           <Button variant="outline-primary" onClick={close}>{intl.formatMessage(messages.close)}</Button>
           {!result && (
-            <Button disabled={!emails.trim() || mutation.isPending} onClick={submit}>
+            <Button disabled={!emails.trim() || addressCount > 200 || mutation.isPending} onClick={submit}>
               {intl.formatMessage(messages.submit)}
             </Button>
           )}

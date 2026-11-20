@@ -369,9 +369,9 @@ export const bulkEnrollProgram = async (...args: [string, string, string, boolea
   };
   return {
     ...result,
-    failed: result.failed.map((item) => ({ ...item, email: addressFor(item.index) })),
-    course_failures: result.course_failures.map((item) => ({ ...item, email: addressFor(item.index) })),
-    notification_failures: result.notification_failures.map((item) => ({ ...item, email: addressFor(item.index) })),
+    failed: (result.failed ?? []).map((item) => ({ ...item, email: addressFor(item.index) })),
+    course_failures: (result.course_failures ?? []).map((item) => ({ ...item, email: addressFor(item.index) })),
+    notification_failures: (result.notification_failures ?? []).map((item) => ({ ...item, email: addressFor(item.index) })),
   };
 };
 
@@ -386,6 +386,8 @@ export const removeCourseFromProgram = async (programId: string, courseId: strin
 // ── Error body: { detail: "..." } from a rejected request ─────────────────────
 /** The backend's `detail` message of a failed request, or null when there is none. */
 export const getApiErrorDetail = (err: unknown): string | null => {
-  const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
-  return typeof detail === 'string' && detail ? detail : null;
+  const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
+  if (typeof data?.detail === 'string' && data.detail) { return data.detail; }
+  const fieldError = Object.values(data ?? {}).find((value) => Array.isArray(value) && typeof value[0] === 'string');
+  return Array.isArray(fieldError) ? fieldError[0] : null;
 };

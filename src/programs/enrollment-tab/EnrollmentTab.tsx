@@ -29,7 +29,7 @@ const messages = defineMessages({
   cancelError: { id: 'programs.enrollment.cancel-error', defaultMessage: 'Could not cancel the invite.' },
   downloadCsv: { id: 'programs.enrollment.download-csv', defaultMessage: 'Download CSV' },
   downloadError: { id: 'programs.enrollment.download-error', defaultMessage: 'Could not download the CSV.' },
-  searchPlaceholder: { id: 'programs.enrollment.search', defaultMessage: 'Search enrolled learners...' },
+  searchPlaceholder: { id: 'programs.enrollment.search', defaultMessage: 'Search learners and invites...' },
   loading: { id: 'programs.enrollment.loading', defaultMessage: 'Loading enrolled learners...' },
   emptyEnrollment: { id: 'programs.enrollment.empty', defaultMessage: 'No learners enrolled yet. Click \'+ Enroll Learner\' to begin.' },
   noResults: { id: 'programs.enrollment.no-results', defaultMessage: 'No enrolled learners match your search.' },
@@ -87,8 +87,10 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
       const link = document.createElement('a');
       link.href = url;
       link.download = 'program-learners.csv';
+      document.body.appendChild(link);
       link.click();
-      URL.revokeObjectURL(url);
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
     } catch {
       setDownloadError(true);
     } finally {
@@ -165,7 +167,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
           placeholder={intl.formatMessage(messages.searchPlaceholder)}
         />
       </div>
-      <p className="small">{intl.formatMessage(messages.invitedCount, { count: data?.invitedCount ?? 0 })}</p>
+      {data && !enrolledSearch && <p className="small">{intl.formatMessage(messages.invitedCount, { count: data.invitedCount })}</p>}
       {cancelError && <p role="alert">{intl.formatMessage(messages.cancelError)}</p>}
       {downloadError && <p role="alert">{intl.formatMessage(messages.downloadError)}</p>}
       <Button variant="outline-primary" size="sm" disabled={downloading} onClick={download}>
@@ -210,7 +212,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
               {(enrolledPage - 1) * 5 + index + 1}
             </span>
             <div className="flex-grow-1">
-              <p className="mb-0 font-weight-bold">{learner.name}</p>
+              <p className="mb-0 font-weight-bold">{learner.name || learner.email}</p>
               <Stack direction="horizontal" gap={1} className="flex-wrap mt-1">
                 <Badge variant="light">{learner.email}</Badge>
                 <Badge variant="light">{intl.formatMessage(learner.status === 'invited' ? messages.invited : messages.enrolled)}</Badge>
@@ -220,7 +222,8 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
               <Button
                 variant="outline-primary"
                 size="sm"
-                disabled={cancelInvite.isPending}
+                disabled={cancelInvite.isPending && cancelInvite.variables?.inviteId === learner.inviteId}
+                aria-label={`${intl.formatMessage(messages.cancelInvite)}: ${learner.email}`}
                 onClick={() => {
                   setCancelError(false);
                   const options = { onError: () => setCancelError(true) };
