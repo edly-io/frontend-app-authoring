@@ -358,7 +358,21 @@ export const bulkEnrollProgram = async (...args: [string, string, string, boolea
       emails, reason, auto_enroll: autoEnroll, notify,
     },
   );
-  return data as ProgramBulkEnrollResult;
+  // Only map indices to addresses when JavaScript and Python parsing agree.
+  const addresses = /^[\x20-\x7e\t\r\n]*$/.test(emails)
+    ? [...new Set(emails.toLowerCase().split(/[,;\s]+/).filter(Boolean))] : [];
+  const addressFor = (index: number) => addresses[index] ?? `#${index + 1}`;
+  const result = data as Omit<ProgramBulkEnrollResult, 'failed' | 'course_failures' | 'notification_failures'> & {
+    failed: { index: number; reason: string }[];
+    course_failures: { index: number; course_id: string; reason: string }[];
+    notification_failures: { index: number }[];
+  };
+  return {
+    ...result,
+    failed: result.failed.map((item) => ({ ...item, email: addressFor(item.index) })),
+    course_failures: result.course_failures.map((item) => ({ ...item, email: addressFor(item.index) })),
+    notification_failures: result.notification_failures.map((item) => ({ ...item, email: addressFor(item.index) })),
+  };
 };
 
 // ── Remove course from program — DELETE /rwaq/api/programs/<key>/courses/ ──────
