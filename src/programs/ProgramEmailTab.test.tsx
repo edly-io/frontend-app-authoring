@@ -24,4 +24,7 @@ it('shows the recipient count and asks for confirmation before sending', async (
   fireEvent.click(screen.getByRole('button', { name: 'Confirm send' }));
   await waitFor(() => expect(axiosMock.history.post).toHaveLength(1));
   expect(JSON.parse(axiosMock.history.post[0].data)).toEqual({ subject: 'Hello', body: 'Welcome', recipients: 'myself' });
+  expect(await screen.findByText('Email submitted. Check history for its status.')).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Subject'), { target: { value: 'Another message' } });
+  expect(screen.queryByText('Email submitted. Check history for its status.')).not.toBeInTheDocument();
 });

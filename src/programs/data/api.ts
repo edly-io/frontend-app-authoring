@@ -304,6 +304,7 @@ export const getProgramEnrollments = async (
   return {
     results: (data.results ?? []).map((row: {
       id: number; username: string; email: string; name: string; status: 'enrolled' | 'invited';
+      course_failures?: string[];
     }) => ({
       id: row.status === 'invited' ? `invite-${row.id}` : row.username,
       username: row.username,
@@ -311,6 +312,7 @@ export const getProgramEnrollments = async (
       name: row.name,
       status: row.status,
       inviteId: row.status === 'invited' ? row.id : undefined,
+      courseFailures: row.course_failures ?? [],
     })),
     count,
     numPages: pagination.num_pages ?? (Math.ceil(count / pageSize) || 1),
@@ -363,15 +365,19 @@ export const bulkEnrollProgram = async (...args: [string, string, string, boolea
     ? [...new Set(emails.toLowerCase().split(/[,;\s]+/).filter(Boolean))] : [];
   const addressFor = (index: number) => addresses[index] ?? `#${index + 1}`;
   const result = data as Omit<ProgramBulkEnrollResult, 'failed' | 'course_failures' | 'notification_failures'> & {
-    failed: { index: number; reason: string }[];
-    course_failures: { index: number; course_id: string; reason: string }[];
-    notification_failures: { index: number }[];
+    failed: { index: number; email?: string; reason: string }[];
+    course_failures: { index: number; email?: string; course_id: string; reason: string }[];
+    notification_failures: { index: number; email?: string }[];
   };
   return {
     ...result,
-    failed: (result.failed ?? []).map((item) => ({ ...item, email: addressFor(item.index) })),
-    course_failures: (result.course_failures ?? []).map((item) => ({ ...item, email: addressFor(item.index) })),
-    notification_failures: (result.notification_failures ?? []).map((item) => ({ ...item, email: addressFor(item.index) })),
+    failed: (result.failed ?? []).map((item) => ({ ...item, email: item.email ?? addressFor(item.index) })),
+    course_failures: (result.course_failures ?? []).map((item) => ({
+      ...item, email: item.email ?? addressFor(item.index),
+    })),
+    notification_failures: (result.notification_failures ?? []).map((item) => ({
+      ...item, email: item.email ?? addressFor(item.index),
+    })),
   };
 };
 

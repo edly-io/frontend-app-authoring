@@ -92,6 +92,7 @@ export interface Learner {
   name: string;
   status?: 'enrolled' | 'invited';
   inviteId?: number;
+  courseFailures?: string[];
 }
 
 export interface PaginatedLearners {

@@ -21,6 +21,8 @@ const messages = defineMessages({
   enrolled: { id: 'programs.bulk.enrolled', defaultMessage: '{count} enrolled' },
   already: { id: 'programs.bulk.already', defaultMessage: '{count} already enrolled' },
   invited: { id: 'programs.bulk.invited', defaultMessage: '{count} invited' },
+  pendingWithoutAutoEnroll: { id: 'programs.bulk.pendingWithoutAutoEnroll', defaultMessage: 'Invitations remain pending and will not enroll learners automatically.' },
+  pendingWithoutNotification: { id: 'programs.bulk.pendingWithoutNotification', defaultMessage: 'No invitation email was sent.' },
   courseFailures: { id: 'programs.bulk.courseFailures', defaultMessage: 'Some course enrollments failed.' },
 });
 
@@ -110,6 +112,8 @@ const BulkEnrollModal: React.FC<Props> = ({
             <p>{intl.formatMessage(messages.enrolled, { count: result.enrolled.length })}</p>
             <p>{intl.formatMessage(messages.already, { count: result.already_enrolled.length })}</p>
             <p>{intl.formatMessage(messages.invited, { count: result.invited.length })}</p>
+            {result.invited.length > 0 && !autoEnroll && <p>{intl.formatMessage(messages.pendingWithoutAutoEnroll)}</p>}
+            {result.invited.length > 0 && !notify && <p>{intl.formatMessage(messages.pendingWithoutNotification)}</p>}
             {result.failed.map((failure) => <p key={failure.email}>{failure.email}: {failure.reason}</p>)}
             {result.course_failures.length > 0 && (
               <Alert variant="warning">

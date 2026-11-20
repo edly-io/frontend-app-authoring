@@ -27,6 +27,7 @@ const messages = defineMessages({
   invitedCount: { id: 'programs.enrollment.invited-count', defaultMessage: '{count} invited' },
   cancelInvite: { id: 'programs.enrollment.cancel-invite', defaultMessage: 'Cancel invite' },
   cancelError: { id: 'programs.enrollment.cancel-error', defaultMessage: 'Could not cancel the invite.' },
+  courseEnrollmentFailed: { id: 'programs.enrollment.course-failed', defaultMessage: 'Course enrollment failed: {course}' },
   downloadCsv: { id: 'programs.enrollment.download-csv', defaultMessage: 'Download CSV' },
   downloadError: { id: 'programs.enrollment.download-error', defaultMessage: 'Could not download the CSV.' },
   searchPlaceholder: { id: 'programs.enrollment.search', defaultMessage: 'Search learners and invites...' },
@@ -167,7 +168,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
           placeholder={intl.formatMessage(messages.searchPlaceholder)}
         />
       </div>
-      {data && !enrolledSearch && <p className="small">{intl.formatMessage(messages.invitedCount, { count: data.invitedCount })}</p>}
+      {data && <p className="small">{intl.formatMessage(messages.invitedCount, { count: data.invitedCount })}</p>}
       {cancelError && <p role="alert">{intl.formatMessage(messages.cancelError)}</p>}
       {downloadError && <p role="alert">{intl.formatMessage(messages.downloadError)}</p>}
       <Button variant="outline-primary" size="sm" disabled={downloading} onClick={download}>
@@ -213,6 +214,11 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
             </span>
             <div className="flex-grow-1">
               <p className="mb-0 font-weight-bold">{learner.name || learner.email}</p>
+              {learner.courseFailures?.map((course) => (
+                <p key={course} className="text-danger small mb-0">
+                  {intl.formatMessage(messages.courseEnrollmentFailed, { course })}
+                </p>
+              ))}
               <Stack direction="horizontal" gap={1} className="flex-wrap mt-1">
                 <Badge variant="light">{learner.email}</Badge>
                 <Badge variant="light">{intl.formatMessage(learner.status === 'invited' ? messages.invited : messages.enrolled)}</Badge>
