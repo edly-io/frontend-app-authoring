@@ -1,16 +1,19 @@
 import {
-  fireEvent, initializeMocks, render, screen,
+  fireEvent, initializeMocks, render, screen, waitFor,
 } from '@src/testUtils';
 import EnrollmentTab from './EnrollmentTab';
 import { mockLearner, mockPaginatedLearners } from '../data/api.mock';
 
 const mockUseProgramEnrollments = jest.fn();
+const mockBulkEnroll = jest.fn();
 
 jest.mock('@src/programs/data/apiHooks', () => ({
   useProgramEnrollments: (...args: any[]) => mockUseProgramEnrollments(...args),
   // hooks used by child modals — supply minimal stubs
   useLearners: () => ({ data: { results: [], count: 0, numPages: 1 }, isLoading: false, isFetching: false }),
   useEnrollLearner: () => ({ mutateAsync: jest.fn(), isPending: false }),
+  useBulkEnrollProgram: () => ({ mutateAsync: mockBulkEnroll, isPending: false }),
+  useCancelProgramInvite: () => ({ mutate: jest.fn(), isPending: false }),
 }));
 
 const programId = 'prog-key-1';
@@ -83,5 +86,19 @@ describe('<EnrollmentTab />', () => {
     render(<EnrollmentTab programId={programId} />);
     fireEvent.click(screen.getByRole('button', { name: /Enroll Learner/i }));
     expect(screen.getByText('Enroll Learner in Program')).toBeInTheDocument();
+  });
+
+  it('allows notification without auto enrollment in the bulk form', async () => {
+    mockBulkEnroll.mockResolvedValue({
+      enrolled: [], already_enrolled: [], invited: [], notification_failures: [], failed: [], course_failures: [],
+    });
+    render(<EnrollmentTab programId={programId} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Bulk enroll' }));
+    fireEvent.change(screen.getByLabelText('Email addresses'), { target: { value: 'learner@example.com' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Notify by email' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enroll learners' }));
+    await waitFor(() => expect(mockBulkEnroll).toHaveBeenCalledWith({
+      programId, emails: 'learner@example.com', reason: '', autoEnroll: false, notify: true,
+    }));
   });
 });

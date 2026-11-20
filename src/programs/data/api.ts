@@ -290,7 +290,7 @@ export const getProgramEnrollments = async (
 ): Promise<PaginatedLearners> => {
   const pageSize = 5;
   const { data } = await getAuthenticatedHttpClient().get(
-    `${getProgramsBaseUrl()}/${programId}/learners/`,
+    `${getProgramsBaseUrl()}/${encodeURIComponent(programId)}/members/`,
     {
       params: {
         page: params.page ?? 1,
@@ -302,10 +302,34 @@ export const getProgramEnrollments = async (
   const pagination = data.pagination ?? {};
   const count = pagination.count ?? 0;
   return {
-    results: (data.results ?? []).map(toUser),
+    results: (data.results ?? []).map((row: {
+      id: number; username: string; email: string; name: string; status: 'enrolled' | 'invited';
+    }) => ({
+      id: row.status === 'invited' ? `invite-${row.id}` : row.username,
+      username: row.username,
+      email: row.email,
+      name: row.name,
+      status: row.status,
+      inviteId: row.status === 'invited' ? row.id : undefined,
+    })),
     count,
     numPages: pagination.num_pages ?? (Math.ceil(count / pageSize) || 1),
+    invitedCount: data.invited_count ?? 0,
   };
+};
+
+export const cancelProgramInvite = async (programId: string, inviteId: number): Promise<void> => {
+  await getAuthenticatedHttpClient().delete(
+    `${getProgramsBaseUrl()}/${encodeURIComponent(programId)}/invites/${inviteId}/`,
+  );
+};
+
+export const downloadProgramMembersCsv = async (programId: string, search: string): Promise<Blob> => {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getProgramsBaseUrl()}/${encodeURIComponent(programId)}/members/csv/`,
+    { params: { search, export_language: getLocale() }, responseType: 'blob' },
+  );
+  return data as Blob;
 };
 
 // ── Enroll learner in program — POST /rwaq/api/programs/<key>/learners/ ────────
@@ -315,6 +339,26 @@ export const enrollLearnerInProgram = async (programId: string, username: string
     `${getProgramsBaseUrl()}/${programId}/learners/`,
     { username, reason },
   );
+};
+
+export interface ProgramBulkEnrollResult {
+  enrolled: { email: string }[];
+  already_enrolled: { email: string }[];
+  invited: { email: string }[];
+  notification_failures: { email: string }[];
+  failed: { email: string; reason: string }[];
+  course_failures: { email: string; course_id: string; reason: string }[];
+}
+
+export const bulkEnrollProgram = async (...args: [string, string, string, boolean, boolean]) => {
+  const [programId, emails, reason, autoEnroll, notify] = args;
+  const { data } = await getAuthenticatedHttpClient().post(
+    `${getProgramsBaseUrl()}/${encodeURIComponent(programId)}/bulk-enroll/`,
+    {
+      emails, reason, auto_enroll: autoEnroll, notify,
+    },
+  );
+  return data as ProgramBulkEnrollResult;
 };
 
 // ── Remove course from program — DELETE /rwaq/api/programs/<key>/courses/ ──────

@@ -30,6 +30,7 @@ import { useProgramDetail, useUpdateProgram } from './data/apiHooks';
 import CoursesTab from './courses-tab/CoursesTab';
 import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
+import ProgramEmailTab from './ProgramEmailTab';
 import RichTextEditor from '../generic/RichTextEditor';
 import {
   getDiscountPercent, getPriceWithVat, isPriceValid, isSalePriceValid,
@@ -48,6 +49,7 @@ const messages = defineMessages({
   tabCourses: { id: 'programs.detail.tab.courses', defaultMessage: 'Courses' },
   tabInstructors: { id: 'programs.detail.tab.instructors', defaultMessage: 'Instructors' },
   tabEnrollment: { id: 'programs.detail.tab.enrollment', defaultMessage: 'Enrollment' },
+  tabEmail: { id: 'programs.detail.tab.email', defaultMessage: 'Email' },
   sectionBasicInfo: { id: 'programs.detail.section.basic', defaultMessage: 'Basic Information' },
   sectionBasicSubtitle: { id: 'programs.detail.section.basic.sub', defaultMessage: 'Set the core details of your program' },
   sectionImage: { id: 'programs.detail.section.image', defaultMessage: 'Program Card Image' },
@@ -802,7 +804,11 @@ const ProgramDetailPage: React.FC = () => {
               programId={programId ?? ''}
               canEnroll={program?.canEnrollLearners ?? true}
               isSubscriptionProgram={program?.pricingCategory === 'is_part_of_subscription'}
+              isPaid={program?.pricingCategory === 'is_paid'}
             />
+          </Tab>
+          <Tab eventKey="email" title={intl.formatMessage(messages.tabEmail)}>
+            {activeTab === 'email' && <ProgramEmailTab programId={programId ?? ''} />}
           </Tab>
         </Tabs>
 

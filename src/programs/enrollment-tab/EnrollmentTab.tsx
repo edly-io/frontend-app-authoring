@@ -12,13 +12,23 @@ import {
 } from '@openedx/paragon';
 import { Add } from '@openedx/paragon/icons';
 import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
-import { useProgramEnrollments } from '../data/apiHooks';
+import { useCancelProgramInvite, useProgramEnrollments } from '../data/apiHooks';
+import { downloadProgramMembersCsv } from '../data/api';
 import AddLearnerModal from './AddLearnerModal';
+import BulkEnrollModal from './BulkEnrollModal';
 
 const messages = defineMessages({
   sectionTitle: { id: 'programs.enrollment.title', defaultMessage: 'Learner Enrollment' },
   sectionSubtitle: { id: 'programs.enrollment.subtitle', defaultMessage: 'Enroll learners into this program' },
   enrollLearnerBtn: { id: 'programs.enrollment.add-btn', defaultMessage: 'Enroll Learner' },
+  bulkEnrollBtn: { id: 'programs.enrollment.bulk-btn', defaultMessage: 'Bulk enroll' },
+  invited: { id: 'programs.enrollment.invited', defaultMessage: 'Invited' },
+  enrolled: { id: 'programs.enrollment.enrolled', defaultMessage: 'Enrolled' },
+  invitedCount: { id: 'programs.enrollment.invited-count', defaultMessage: '{count} invited' },
+  cancelInvite: { id: 'programs.enrollment.cancel-invite', defaultMessage: 'Cancel invite' },
+  cancelError: { id: 'programs.enrollment.cancel-error', defaultMessage: 'Could not cancel the invite.' },
+  downloadCsv: { id: 'programs.enrollment.download-csv', defaultMessage: 'Download CSV' },
+  downloadError: { id: 'programs.enrollment.download-error', defaultMessage: 'Could not download the CSV.' },
   searchPlaceholder: { id: 'programs.enrollment.search', defaultMessage: 'Search enrolled learners...' },
   loading: { id: 'programs.enrollment.loading', defaultMessage: 'Loading enrolled learners...' },
   emptyEnrollment: { id: 'programs.enrollment.empty', defaultMessage: 'No learners enrolled yet. Click \'+ Enroll Learner\' to begin.' },
@@ -40,27 +50,51 @@ interface EnrollmentTabProps {
   canEnroll?: boolean;
   /** True when the program's pricing category is is_part_of_subscription. Nobody enrolls learners into it here. */
   isSubscriptionProgram?: boolean;
+  isPaid?: boolean;
 }
 
 const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
-  programId, canEnroll = true, isSubscriptionProgram = false,
+  programId, canEnroll = true, isSubscriptionProgram = false, isPaid = false,
 }) => {
   const intl = useIntl();
   const [isModalOpen, openModal, closeModal] = useToggle(false);
+  const [isBulkOpen, openBulk, closeBulk] = useToggle(false);
   const [enrolledSearch, setEnrolledSearch] = useState('');
   const [enrolledPage, setEnrolledPage] = useState(1);
+  const [cancelError, setCancelError] = useState(false);
+  const [downloadError, setDownloadError] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const cancelInvite = useCancelProgramInvite();
 
   const { data, isLoading, isFetching } = useProgramEnrollments(
     programId,
     { page: enrolledPage, search: enrolledSearch },
   );
 
-  const enrolledIds = data?.results.map((l) => l.id) ?? [];
+  const enrolledIds = data?.results.filter((l) => l.status !== 'invited').map((l) => l.id) ?? [];
 
   const handleSearch = useCallback((q: string) => {
     setEnrolledSearch(q);
     setEnrolledPage(1);
   }, []);
+
+  const download = async () => {
+    setDownloadError(false);
+    setDownloading(true);
+    try {
+      const blob = await downloadProgramMembersCsv(programId, enrolledSearch);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'program-learners.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setDownloadError(true);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div className="mt-4">
@@ -106,6 +140,22 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
         ))}
       </div>
 
+      {!isSubscriptionProgram && canEnroll && (
+        <Button variant="outline-primary" size="sm" className="mb-3" onClick={openBulk}>
+          {intl.formatMessage(messages.bulkEnrollBtn)}
+        </Button>
+      )}
+      {isSubscriptionProgram && (
+        <OverlayTrigger
+          placement="top"
+          overlay={<Tooltip id="subscription-bulk-tooltip">{intl.formatMessage(messages.subscriptionEnrollNote)}</Tooltip>}
+        >
+          <Button variant="outline-primary" size="sm" className="disabled mb-3" aria-disabled="true">
+            {intl.formatMessage(messages.bulkEnrollBtn)}
+          </Button>
+        </OverlayTrigger>
+      )}
+
       <div className="mb-3">
         <SearchField
           onSubmit={handleSearch}
@@ -115,6 +165,12 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
           placeholder={intl.formatMessage(messages.searchPlaceholder)}
         />
       </div>
+      <p className="small">{intl.formatMessage(messages.invitedCount, { count: data?.invitedCount ?? 0 })}</p>
+      {cancelError && <p role="alert">{intl.formatMessage(messages.cancelError)}</p>}
+      {downloadError && <p role="alert">{intl.formatMessage(messages.downloadError)}</p>}
+      <Button variant="outline-primary" size="sm" disabled={downloading} onClick={download}>
+        {intl.formatMessage(messages.downloadCsv)}
+      </Button>
 
       {isLoading && (
         <div className="d-flex justify-content-center py-4">
@@ -157,8 +213,23 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
               <p className="mb-0 font-weight-bold">{learner.name}</p>
               <Stack direction="horizontal" gap={1} className="flex-wrap mt-1">
                 <Badge variant="light">{learner.email}</Badge>
+                <Badge variant="light">{intl.formatMessage(learner.status === 'invited' ? messages.invited : messages.enrolled)}</Badge>
               </Stack>
             </div>
+            {learner.status === 'invited' && learner.inviteId !== undefined && canEnroll && (
+              <Button
+                variant="outline-primary"
+                size="sm"
+                disabled={cancelInvite.isPending}
+                onClick={() => {
+                  setCancelError(false);
+                  const options = { onError: () => setCancelError(true) };
+                  cancelInvite.mutate({ programId, inviteId: learner.inviteId! }, options);
+                }}
+              >
+                {intl.formatMessage(messages.cancelInvite)}
+              </Button>
+            )}
           </div>
         ))}
       </div>
@@ -185,6 +256,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
         programId={programId}
         alreadyEnrolledIds={enrolledIds}
       />
+      <BulkEnrollModal isOpen={isBulkOpen} onClose={closeBulk} programId={programId} isPaid={isPaid} />
     </div>
   );
 };

@@ -90,10 +90,13 @@ export interface Learner {
   username: string;
   email: string;
   name: string;
+  status?: 'enrolled' | 'invited';
+  inviteId?: number;
 }
 
 export interface PaginatedLearners {
   results: Learner[];
   count: number;
   numPages: number;
+  invitedCount?: number;
 }
