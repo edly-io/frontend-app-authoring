@@ -11,6 +11,7 @@ import {
 import { useIntl } from '@edx/frontend-platform/i18n';
 import { useNavigate } from 'react-router-dom';
 import { useCreateInstructor } from '../../instructors/data/apiHooks';
+import LinkedUserPicker from '../../instructors/LinkedUserPicker';
 import messages from './messages';
 
 const CreateNewInstructorForm = ({ handleOnClickCancel }) => {
@@ -19,15 +20,16 @@ const CreateNewInstructorForm = ({ handleOnClickCancel }) => {
   const { mutateAsync: createInstructor, isPending } = useCreateInstructor();
 
   const validationSchema = Yup.object({
-    name: Yup.string().trim().required(intl.formatMessage(messages.instructorNameRequired)),
+    user: Yup.number().nullable().required(intl.formatMessage(messages.userRequired)),
   });
 
   const handleSubmit = async (values, { setStatus }) => {
     try {
-      const created = await createInstructor(values);
+      const created = await createInstructor({ user: values.user });
       navigate(`/instructors/${created.id}`);
     } catch (e) {
-      setStatus({ error: e.message || 'Failed to create instructor.' });
+      const userError = e?.response?.data?.user;
+      setStatus({ error: userError ? [].concat(userError).join(' ') : (e.message || 'Failed to create instructor.') });
     }
   };
 
@@ -36,16 +38,13 @@ const CreateNewInstructorForm = ({ handleOnClickCancel }) => {
       <h3 className="mb-3">{intl.formatMessage(messages.createNewInstructor)}</h3>
 
       <Formik
-        initialValues={{ name: '' }}
+        initialValues={{ user: null, userDetail: null }}
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
         {({
           values,
-          errors,
-          touched,
-          handleChange,
-          handleBlur,
+          setFieldValue,
           handleSubmit: formikSubmit,
           status,
         }) => (
@@ -54,20 +53,18 @@ const CreateNewInstructorForm = ({ handleOnClickCancel }) => {
               <Alert variant="danger" className="mb-3">{status.error}</Alert>
             )}
 
-            {/* Instructor Name */}
-            <Form.Group isInvalid={touched.name && !!errors.name}>
-              <Form.Label>{intl.formatMessage(messages.instructorNameLabel)}</Form.Label>
-              <Form.Control
-                name="name"
-                placeholder={intl.formatMessage(messages.instructorNamePlaceholder)}
-                value={values.name}
-                onChange={handleChange}
-                onBlur={handleBlur}
-              />
-              {touched.name && errors.name && (
-                <Form.Control.Feedback type="invalid">{errors.name}</Form.Control.Feedback>
-              )}
-            </Form.Group>
+            {/* The instructor is a user: their name and email show here and become the instructor's */}
+            <LinkedUserPicker
+              selected={values.userDetail}
+              onSelect={(option) => {
+                setFieldValue('user', option.id);
+                setFieldValue('userDetail', option);
+              }}
+              onClear={() => {
+                setFieldValue('user', null);
+                setFieldValue('userDetail', null);
+              }}
+            />
 
             <div className="d-flex justify-content-end gap-2 mt-3">
               <Button variant="tertiary" onClick={handleOnClickCancel}>
@@ -82,6 +79,7 @@ const CreateNewInstructorForm = ({ handleOnClickCancel }) => {
                   pending: intl.formatMessage(messages.pendingBtn),
                 }}
                 disabledStates={['pending']}
+                disabled={!values.user}
               />
             </div>
           </Form>
