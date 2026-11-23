@@ -26,6 +26,7 @@ const messages = defineMessages({
   enrolled: { id: 'programs.enrollment.enrolled', defaultMessage: 'Enrolled' },
   invitedCount: { id: 'programs.enrollment.invited-count', defaultMessage: '{count} invited' },
   cancelInvite: { id: 'programs.enrollment.cancel-invite', defaultMessage: 'Cancel invite' },
+  cancelInviteFor: { id: 'programs.enrollment.cancel-invite-for', defaultMessage: 'Cancel invite for {email}' },
   cancelError: { id: 'programs.enrollment.cancel-error', defaultMessage: 'Could not cancel the invite.' },
   courseEnrollmentFailed: { id: 'programs.enrollment.course-failed', defaultMessage: 'Course enrollment failed: {course}' },
   downloadCsv: { id: 'programs.enrollment.download-csv', defaultMessage: 'Download CSV' },
@@ -229,7 +230,7 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({
                 variant="outline-primary"
                 size="sm"
                 disabled={cancelInvite.isPending && cancelInvite.variables?.inviteId === learner.inviteId}
-                aria-label={`${intl.formatMessage(messages.cancelInvite)}: ${learner.email}`}
+                aria-label={intl.formatMessage(messages.cancelInviteFor, { email: learner.email })}
                 onClick={() => {
                   setCancelError(false);
                   const options = { onError: () => setCancelError(true) };

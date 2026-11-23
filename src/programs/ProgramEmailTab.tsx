@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ActionRow, Alert, AlertModal, Button, Form,
 } from '@openedx/paragon';
@@ -45,6 +45,7 @@ const ProgramEmailTab = ({ programId }: { programId: string }) => {
   const [editorKey, setEditorKey] = useState(0);
   const [recipients, setRecipients] = useState('myself');
   const [confirming, setConfirming] = useState(false);
+  const polling = useRef<{ programId: string; startedAt: number } | null>(null);
   const statusMessages = {
     queued: messages.queuedStatus,
     sending: messages.sendingStatus,
@@ -59,7 +60,16 @@ const ProgramEmailTab = ({ programId }: { programId: string }) => {
   const history = useQuery({
     queryKey: ['programEmailHistory', programId],
     queryFn: async () => (await getAuthenticatedHttpClient().get(`${base}/emails/`)).data as HistoryItem[],
-    refetchInterval: (query) => (query.state.data?.some((item) => item.status === 'queued' || item.status === 'sending') ? 5000 : false),
+    refetchInterval: (query) => {
+      if (!query.state.data?.some((item) => item.status === 'queued' || item.status === 'sending')) {
+        polling.current = null;
+        return false;
+      }
+      if (!polling.current || polling.current.programId !== programId) {
+        polling.current = { programId, startedAt: Date.now() };
+      }
+      return Date.now() - polling.current.startedAt < 5 * 60_000 ? 5000 : 60_000;
+    },
   });
   const send = useMutation({
     mutationFn: async () => getAuthenticatedHttpClient().post(`${base}/emails/`, { subject, body, recipients }),

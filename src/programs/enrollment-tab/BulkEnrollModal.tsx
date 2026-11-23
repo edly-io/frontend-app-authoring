@@ -42,21 +42,30 @@ const BulkEnrollModal: React.FC<Props> = ({
   const [autoEnroll, setAutoEnroll] = useState(false);
   const [notify, setNotify] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [result, setResult] = useState<ProgramBulkEnrollResult | null>(null);
   const mutation = useBulkEnrollProgram();
   const addressCount = new Set(emails.toLowerCase().split(/[,;\s]+/).filter(Boolean)).size;
 
   const close = () => {
-    setEmails(''); setReason(''); setAutoEnroll(false); setNotify(false); setError(''); setResult(null); onClose();
+    setEmails(''); setReason(''); setAutoEnroll(false); setNotify(false); setError(''); setFieldErrors({}); setResult(null); onClose();
   };
   const submit = async () => {
     setError('');
+    setFieldErrors({});
     try {
       setResult(await mutation.mutateAsync({
         programId, emails, reason: reason.trim(), autoEnroll, notify,
       }));
     } catch (err) {
-      setError(getApiErrorDetail(err) ?? intl.formatMessage(messages.error));
+      const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
+      const errors: Record<string, string> = {};
+      ['emails', 'reason'].forEach((field) => {
+        const value = data?.[field];
+        if (Array.isArray(value) && typeof value[0] === 'string') { [errors[field]] = value; }
+      });
+      setFieldErrors(errors);
+      if (!Object.keys(errors).length) { setError(getApiErrorDetail(err) ?? intl.formatMessage(messages.error)); }
     }
   };
   return (
@@ -82,16 +91,22 @@ const BulkEnrollModal: React.FC<Props> = ({
                 as="textarea"
                 rows={6}
                 value={emails}
+                isInvalid={!!fieldErrors.emails}
+                aria-invalid={!!fieldErrors.emails}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEmails(e.target.value)}
               />
+              <Form.Control.Feedback type="invalid">{fieldErrors.emails}</Form.Control.Feedback>
               <Form.Text>{intl.formatMessage(messages.help)}</Form.Text>
             </Form.Group>
             <Form.Group controlId="program-bulk-reason">
               <Form.Label>{intl.formatMessage(messages.reason)}</Form.Label>
               <Form.Control
                 value={reason}
+                isInvalid={!!fieldErrors.reason}
+                aria-invalid={!!fieldErrors.reason}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReason(e.target.value)}
               />
+              <Form.Control.Feedback type="invalid">{fieldErrors.reason}</Form.Control.Feedback>
             </Form.Group>
             <Form.Checkbox
               checked={autoEnroll}

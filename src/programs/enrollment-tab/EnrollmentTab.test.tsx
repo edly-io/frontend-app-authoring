@@ -128,4 +128,16 @@ describe('<EnrollmentTab />', () => {
     expect(await screen.findByText('Invitations remain pending and will not enroll learners automatically.')).toBeInTheDocument();
     expect(screen.getByText('No invitation email was sent.')).toBeInTheDocument();
   });
+
+  it('shows field errors next to the matching input', async () => {
+    mockBulkEnroll.mockRejectedValue({ response: { data: { emails: ['Invalid email'], reason: ['Reason too long'] } } });
+    render(<EnrollmentTab programId={programId} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Bulk enroll' }));
+    fireEvent.change(screen.getByLabelText('Email addresses'), { target: { value: 'bad' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enroll learners' }));
+    expect(await screen.findByText('Invalid email')).toBeInTheDocument();
+    expect(screen.getByText('Reason too long')).toBeInTheDocument();
+    expect(screen.getByLabelText('Email addresses')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByLabelText('Reason (optional)')).toHaveAttribute('aria-invalid', 'true');
+  });
 });
