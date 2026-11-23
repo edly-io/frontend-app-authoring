@@ -32,7 +32,7 @@ export interface Program {
   endDate?: string;
   image?: string;
   courses?: Course[];
-  /** 'is_free', 'is_paid' or 'is_part_of_subscription'. */
+  /** 'is_free', 'is_paid', 'is_part_of_subscription' or 'is_enrollment_code'. */
   pricingCategory?: string;
   /** Decimal strings, not numbers — avoids float rounding on money. */
   regularPrice?: string | null;
@@ -41,6 +41,10 @@ export interface Program {
   discountPercentage?: string | null;
   /** ISO 4217 code of the regular and sale prices. */
   currency?: string;
+  /** VAT rate in percent as a 2-decimal string (e.g. "15.00"), used for the price preview only. */
+  vatRate?: string | null;
+  /** Tax name from the API (e.g. "VAT"), "" when none. */
+  vatLabel?: string;
   /** False when the program is paid and the user is not a superadmin: only they enroll learners into it. */
   canEnrollLearners?: boolean;
 }
@@ -86,10 +90,14 @@ export interface Learner {
   username: string;
   email: string;
   name: string;
+  status?: 'enrolled' | 'invited';
+  inviteId?: number;
+  courseFailures?: string[];
 }
 
 export interface PaginatedLearners {
   results: Learner[];
   count: number;
   numPages: number;
+  invitedCount?: number;
 }

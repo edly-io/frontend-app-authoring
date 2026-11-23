@@ -3,6 +3,7 @@
 
 import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
+import { getLocale } from '@edx/frontend-platform/i18n';
 import type {
   Course,
   Instructor,
@@ -54,6 +55,8 @@ const toProgram = (d: any): Program => ({
   salePrice: d.sale_price ?? null,
   discountPercentage: d.discount_percentage ?? null,
   currency: d.currency ?? 'SAR',
+  vatRate: d.vat_rate ?? null,
+  vatLabel: d.vat_label ?? '',
   canEnrollLearners: d.can_enroll_learners ?? true,
 });
 
@@ -140,7 +143,10 @@ export const createProgram = async (input: Omit<Program, 'id'>): Promise<Program
     program_type: input.programType,
     batch: input.run,
   };
-  const { data } = await getAuthenticatedHttpClient().post(`${getProgramsBaseUrl()}/`, payload);
+  // The backend returns its validation messages in this language.
+  const { data } = await getAuthenticatedHttpClient().post(`${getProgramsBaseUrl()}/`, payload, {
+    headers: { 'Accept-Language': getLocale() },
+  });
   return toProgram(data);
 };
 
@@ -284,7 +290,7 @@ export const getProgramEnrollments = async (
 ): Promise<PaginatedLearners> => {
   const pageSize = 5;
   const { data } = await getAuthenticatedHttpClient().get(
-    `${getProgramsBaseUrl()}/${programId}/learners/`,
+    `${getProgramsBaseUrl()}/${encodeURIComponent(programId)}/members/`,
     {
       params: {
         page: params.page ?? 1,
@@ -296,10 +302,36 @@ export const getProgramEnrollments = async (
   const pagination = data.pagination ?? {};
   const count = pagination.count ?? 0;
   return {
-    results: (data.results ?? []).map(toUser),
+    results: (data.results ?? []).map((row: {
+      id: number; username: string; email: string; name: string; status: 'enrolled' | 'invited';
+      course_failures?: string[];
+    }) => ({
+      id: row.status === 'invited' ? `invite-${row.id}` : row.username,
+      username: row.username,
+      email: row.email,
+      name: row.name,
+      status: row.status,
+      inviteId: row.status === 'invited' ? row.id : undefined,
+      courseFailures: row.course_failures ?? [],
+    })),
     count,
     numPages: pagination.num_pages ?? (Math.ceil(count / pageSize) || 1),
+    invitedCount: data.invited_count ?? 0,
   };
+};
+
+export const cancelProgramInvite = async (programId: string, inviteId: number): Promise<void> => {
+  await getAuthenticatedHttpClient().delete(
+    `${getProgramsBaseUrl()}/${encodeURIComponent(programId)}/invites/${inviteId}/`,
+  );
+};
+
+export const downloadProgramMembersCsv = async (programId: string, search: string): Promise<Blob> => {
+  const { data } = await getAuthenticatedHttpClient().get(
+    `${getProgramsBaseUrl()}/${encodeURIComponent(programId)}/members/csv/`,
+    { params: { search, export_language: getLocale() }, responseType: 'blob' },
+  );
+  return data as Blob;
 };
 
 // ── Enroll learner in program — POST /rwaq/api/programs/<key>/learners/ ────────
@@ -309,6 +341,44 @@ export const enrollLearnerInProgram = async (programId: string, username: string
     `${getProgramsBaseUrl()}/${programId}/learners/`,
     { username, reason },
   );
+};
+
+export interface ProgramBulkEnrollResult {
+  enrolled: { email: string }[];
+  already_enrolled: { email: string }[];
+  invited: { email: string }[];
+  notification_failures: { email: string }[];
+  failed: { email: string; reason: string }[];
+  course_failures: { email: string; course_id: string; reason: string }[];
+}
+
+export const bulkEnrollProgram = async (...args: [string, string, string, boolean, boolean]) => {
+  const [programId, emails, reason, autoEnroll, notify] = args;
+  const { data } = await getAuthenticatedHttpClient().post(
+    `${getProgramsBaseUrl()}/${encodeURIComponent(programId)}/bulk-enroll/`,
+    {
+      emails, reason, auto_enroll: autoEnroll, notify,
+    },
+  );
+  // Only map indices to addresses when JavaScript and Python parsing agree.
+  const addresses = /^[\x20-\x7e\t\r\n]*$/.test(emails)
+    ? [...new Set(emails.toLowerCase().split(/[,;\s]+/).filter(Boolean))] : [];
+  const addressFor = (index: number) => addresses[index] ?? `#${index + 1}`;
+  const result = data as Omit<ProgramBulkEnrollResult, 'failed' | 'course_failures' | 'notification_failures'> & {
+    failed: { index: number; email?: string; reason: string }[];
+    course_failures: { index: number; email?: string; course_id: string; reason: string }[];
+    notification_failures: { index: number; email?: string }[];
+  };
+  return {
+    ...result,
+    failed: (result.failed ?? []).map((item) => ({ ...item, email: item.email ?? addressFor(item.index) })),
+    course_failures: (result.course_failures ?? []).map((item) => ({
+      ...item, email: item.email ?? addressFor(item.index),
+    })),
+    notification_failures: (result.notification_failures ?? []).map((item) => ({
+      ...item, email: item.email ?? addressFor(item.index),
+    })),
+  };
 };
 
 // ── Remove course from program — DELETE /rwaq/api/programs/<key>/courses/ ──────
@@ -322,6 +392,8 @@ export const removeCourseFromProgram = async (programId: string, courseId: strin
 // ── Error body: { detail: "..." } from a rejected request ─────────────────────
 /** The backend's `detail` message of a failed request, or null when there is none. */
 export const getApiErrorDetail = (err: unknown): string | null => {
-  const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
-  return typeof detail === 'string' && detail ? detail : null;
+  const data = (err as { response?: { data?: Record<string, unknown> } })?.response?.data;
+  if (typeof data?.detail === 'string' && data.detail) { return data.detail; }
+  const fieldError = Object.values(data ?? {}).find((value) => Array.isArray(value) && typeof value[0] === 'string');
+  return Array.isArray(fieldError) ? fieldError[0] : null;
 };

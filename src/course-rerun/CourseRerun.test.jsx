@@ -30,6 +30,17 @@ describe('<CourseRerun />', () => {
     expect(getAllByRole('button', { name: messages.cancelButton.defaultMessage }).length).toBe(2);
   });
 
+  it('leaves the slug field empty instead of copying the source course slug', async () => {
+    const { axiosMock } = initializeMocks();
+    axiosMock.onGet(getStudioHomeApiUrl()).reply(200, studioHomeMock);
+    axiosMock.onGet(/\/slug\/$/).reply(200, { slug: 'source-course-slug' });
+
+    const { findByPlaceholderText } = render(<CourseRerun />);
+    const slugInput = await findByPlaceholderText('e.g. introduction-to-computer-science');
+    await waitFor(() => expect(slugInput).toHaveValue(''));
+    expect(axiosMock.history.get.filter((req) => /\/slug\/$/.test(req.url))).toHaveLength(0);
+  });
+
   it('should navigate to /home on cancel button click', () => {
     const { getAllByRole } = render(<CourseRerun />);
     const cancelButton = getAllByRole('button', { name: messages.cancelButton.defaultMessage })[0];

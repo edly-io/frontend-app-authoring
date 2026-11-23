@@ -8,7 +8,9 @@ import SectionSubHeader from '../../generic/section-sub-header';
 import {
   getCoursePricing, setCoursePricing, CoursePricing, CoursePricingError, PricingCategory,
 } from './api';
-import { getDiscountPercent, isPriceValid, isSalePriceValid } from './validation';
+import {
+  getDiscountPercent, getPriceWithVat, isPriceValid, isSalePriceValid,
+} from './validation';
 import messages from './messages';
 
 interface PricingSectionProps {
@@ -32,6 +34,8 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
   const [regularPrice, setRegularPrice] = useState('');
   const [salePrice, setSalePrice] = useState('');
   const [currency, setCurrency] = useState('SAR');
+  const [vatRate, setVatRate] = useState<string | null>(null);
+  const [vatLabel, setVatLabel] = useState('');
   const [canEdit, setCanEdit] = useState(false);
   const [managedByAdmin, setManagedByAdmin] = useState(false);
   const [programName, setProgramName] = useState<string | null>(null);
@@ -39,6 +43,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [saved, setSaved] = useState(false);
+  const [removedCategories, setRemovedCategories] = useState<string[]>([]);
   const [loadFailed, setLoadFailed] = useState(false);
 
   const applyPricing = (pricing: CoursePricing) => {
@@ -47,6 +52,8 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
     setRegularPrice(pricing.regularPrice ?? '');
     setSalePrice(pricing.salePrice ?? '');
     setCurrency(pricing.currency ?? 'SAR');
+    setVatRate(pricing.vatRate);
+    setVatLabel(pricing.vatLabel);
     setCanEdit(pricing.canEdit);
     setManagedByAdmin(pricing.pricingManagedByAdmin);
     setProgramName(pricing.partOfProgram ? (pricing.partOfProgramName ?? pricing.partOfProgram) : null);
@@ -70,6 +77,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
 
   const showPriceFields = category === 'is_paid';
   const discountPercent = getDiscountPercent(regularPrice, salePrice);
+  const priceWithVat = getPriceWithVat(regularPrice, salePrice, vatRate);
   const isReadOnly = !canEdit;
   const isTypeLocked = isReadOnly || !!programName;
 
@@ -96,6 +104,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
     if (!category) { return; }
     setError('');
     setSaved(false);
+    setRemovedCategories([]);
     if (showPriceFields) {
       const errors = { regular_price: priceError(regularPrice), sale_price: salePriceError(regularPrice, salePrice) };
       setFieldErrors(errors);
@@ -112,6 +121,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
         salePrice: showPriceFields && salePrice.trim() !== '' ? salePrice.trim() : null,
       });
       applyPricing(pricing);
+      setRemovedCategories(pricing.removedCategories);
       setSaved(true);
     } catch (err) {
       logError(err);
@@ -168,6 +178,11 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
       )}
       {error && <Alert variant="danger" className="mb-3">{error}</Alert>}
       {saved && !error && <Alert variant="success" className="mb-3">{intl.formatMessage(messages.savedMsg)}</Alert>}
+      {saved && !error && removedCategories.length > 0 && (
+        <Alert variant="warning" className="mb-3">
+          {intl.formatMessage(messages.categoriesRemoved, { categories: removedCategories.join(', ') })}
+        </Alert>
+      )}
       {!category && !isTypeLocked && (
         <p className="small text-muted">{intl.formatMessage(messages.noTypeHint)}</p>
       )}
@@ -206,6 +221,13 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
             disabled={isSaving || isTypeLocked}
           >
             {intl.formatMessage(messages.categorySubscription)}
+          </Form.Radio>
+          <Form.Radio
+            value="is_enrollment_code"
+            description={intl.formatMessage(messages.categoryEnrollmentCodeDescription)}
+            disabled={isSaving || isTypeLocked}
+          >
+            {intl.formatMessage(messages.categoryEnrollmentCode)}
           </Form.Radio>
         </Form.RadioSet>
         {fieldErrors.pricing_category && (
@@ -256,6 +278,16 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
               <Form.Text muted>
                 {intl.formatMessage(messages.discountPercentage, { percentage: discountPercent })}
               </Form.Text>
+            )}
+            {priceWithVat && (
+              <p className="font-weight-bold mt-2 mb-0" data-testid="price-with-vat">
+                {intl.formatMessage(messages.priceWithVat, {
+                  amount: priceWithVat.amount,
+                  currency,
+                  rate: priceWithVat.rate,
+                  label: vatLabel.trim() || intl.formatMessage(messages.vatLabelFallback),
+                })}
+              </p>
             )}
           </Form.Group>
         </>

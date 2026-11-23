@@ -2,7 +2,7 @@ import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
 
 /** Mirrors rwaq_features.models.CoursePricing.PRICING_CATEGORY_CHOICES. */
-export type PricingCategory = 'is_free' | 'is_paid' | 'is_program_only' | 'is_part_of_subscription';
+export type PricingCategory = 'is_free' | 'is_paid' | 'is_program_only' | 'is_part_of_subscription' | 'is_enrollment_code';
 
 export interface CoursePricing {
   /** null when the course has no type yet (legacy courses). */
@@ -14,12 +14,18 @@ export interface CoursePricing {
   discountPercentage: string | null;
   /** ISO 4217 code of the regular and sale prices. */
   currency: string | null;
+  /** VAT rate in percent as a 2-decimal string (e.g. "15.00"), used for the price preview only. */
+  vatRate: string | null;
+  /** Tax name from the API (e.g. "VAT"), "" when none. */
+  vatLabel: string;
   pricingManagedByAdmin: boolean;
   /** program_key of the program the course is in, or null. */
   partOfProgram: string | null;
   partOfProgramName: string | null;
   /** false when the course type is locked for the current user. */
   canEdit: boolean;
+  /** Names of the categories the save removed. Only a switch to Enrollment code removes any. */
+  removedCategories: string[];
 }
 
 /** Error body of a rejected PUT. `field` names the input the error belongs to, when there is one. */
@@ -39,10 +45,13 @@ const toCoursePricing = (data: any): CoursePricing => ({
   salePrice: data.sale_price ?? null,
   discountPercentage: data.discount_percentage ?? null,
   currency: data.currency ?? null,
+  vatRate: data.vat_rate ?? null,
+  vatLabel: data.vat_label ?? '',
   pricingManagedByAdmin: data.pricing_managed_by_admin ?? false,
   partOfProgram: data.part_of_program ?? null,
   partOfProgramName: data.part_of_program_name ?? null,
   canEdit: data.can_edit ?? false,
+  removedCategories: data.removed_categories ?? [],
 });
 
 export const getCoursePricing = async (courseId: string): Promise<CoursePricing> => {

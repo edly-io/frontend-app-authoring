@@ -70,6 +70,10 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.programs.tab.type.subscription',
     defaultMessage: 'Part of Subscription',
   },
+  typeEnrollmentCode: {
+    id: 'course-authoring.studio-home.programs.tab.type.enrollment-code',
+    defaultMessage: 'Enrollment code',
+  },
   paginationInfo: {
     id: 'course-authoring.studio-home.programs.tab.pagination-info',
     defaultMessage: 'Showing {length} of {total}',
@@ -78,7 +82,7 @@ const messages = defineMessages({
 
 type SortOrder = 'az' | 'za';
 type StatusFilter = 'all' | 'draft' | 'active' | 'archived';
-type TypeFilter = 'all' | 'free' | 'paid' | 'subscription';
+type TypeFilter = 'all' | 'free' | 'paid' | 'subscription' | 'enrollment_code';
 
 const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
   const intl = useIntl();
@@ -116,6 +120,7 @@ const ProgramsTab: React.FC<{ showNewProgramContainer?: boolean }> = () => {
     { value: 'free', message: messages.typeFree },
     { value: 'paid', message: messages.typePaid },
     { value: 'subscription', message: messages.typeSubscription },
+    { value: 'enrollment_code', message: messages.typeEnrollmentCode },
   ];
 
   // Any change to the query has to reset to page 1 — staying on, say, page 5

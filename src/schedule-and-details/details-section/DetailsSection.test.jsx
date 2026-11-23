@@ -57,4 +57,24 @@ describe('<DetailsSection />', () => {
       getByRole('button', { name: messages.dropdownEmpty.defaultMessage }),
     ).toBeInTheDocument();
   });
+
+  it('shows the language name in the language Studio is using', () => {
+    const { getByRole } = render(
+      <IntlProvider locale="ar">
+        <DetailsSection {...props} language="en" />
+      </IntlProvider>,
+    );
+    expect(getByRole('button', { name: 'الإنجليزية' })).toBeInTheDocument();
+  });
+
+  it('falls back to the platform name when the code is not a valid language', () => {
+    const { getByRole } = render(
+      <RootWrapper
+        {...props}
+        language="not a code"
+        languageOptions={[['not a code', 'Custom name']]}
+      />,
+    );
+    expect(getByRole('button', { name: 'Custom name' })).toBeInTheDocument();
+  });
 });

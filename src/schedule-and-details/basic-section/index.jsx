@@ -47,7 +47,7 @@ const BasicSection = ({
       id="course-authoring.schedule.basic.promotion.title"
       defaultMessage="Course summary page {smallText}"
       values={{
-        smallText: <small>(for student enrollment and access)</small>,
+        smallText: <small>{intl.formatMessage(messages.basicPromotionSmallText)}</small>,
       }}
     />
   );

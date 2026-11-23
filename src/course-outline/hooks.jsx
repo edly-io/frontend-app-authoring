@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useToggle } from '@openedx/paragon';
 import { getConfig } from '@edx/frontend-platform';
+import { useIntl } from '@edx/frontend-platform/i18n';
 import { useQueryClient } from '@tanstack/react-query';
 
 import moment from 'moment';
@@ -66,8 +67,10 @@ import {
 import { useCreateCourseBlock } from './data/apiHooks';
 import { getCourseItem } from './data/api';
 import { containerComparisonQueryKeys } from '../container-comparison/data/apiHooks';
+import messages from './messages';
 
 const useCourseOutline = ({ courseId }) => {
+  const intl = useIntl();
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -121,11 +124,11 @@ const useCourseOutline = ({ courseId }) => {
   };
 
   const handleNewSectionSubmit = () => {
-    dispatch(addNewSectionQuery(courseStructure.id));
+    dispatch(addNewSectionQuery(courseStructure.id, intl.formatMessage(messages.defaultSectionName)));
   };
 
   const handleNewSubsectionSubmit = (sectionId) => {
-    dispatch(addNewSubsectionQuery(sectionId));
+    dispatch(addNewSubsectionQuery(sectionId, intl.formatMessage(messages.defaultSubsectionName)));
   };
 
   const getUnitUrl = (locator) => {
@@ -145,7 +148,7 @@ const useCourseOutline = ({ courseId }) => {
   };
 
   const handleNewUnitSubmit = (subsectionId) => {
-    dispatch(addNewUnitQuery(subsectionId, openUnitPage));
+    dispatch(addNewUnitQuery(subsectionId, openUnitPage, intl.formatMessage(messages.defaultUnitName)));
   };
 
   /**

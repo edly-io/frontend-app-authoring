@@ -12,6 +12,8 @@ import {
   addCourseToProgram,
   getPlatformUsers,
   enrollLearnerInProgram,
+  bulkEnrollProgram,
+  cancelProgramInvite,
   removeCourseFromProgram,
   getCourseTeam,
   getProgramEnrollments,
@@ -114,6 +116,32 @@ export const useEnrollLearner = () => {
   return useMutation({
     mutationFn: ({ programId, username, reason }: { programId: string; username: string; reason?: string }) => (
       enrollLearnerInProgram(programId, username, reason)
+    ),
+    onSuccess: (_, { programId }) => {
+      queryClient.invalidateQueries({ queryKey: ['programEnrollments', programId] });
+    },
+  });
+};
+
+export const useBulkEnrollProgram = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      programId, emails, reason, autoEnroll, notify,
+    }: {
+      programId: string; emails: string; reason: string; autoEnroll: boolean; notify: boolean;
+    }) => bulkEnrollProgram(programId, emails, reason, autoEnroll, notify),
+    onSuccess: (_, { programId }) => {
+      queryClient.invalidateQueries({ queryKey: ['programEnrollments', programId] });
+    },
+  });
+};
+
+export const useCancelProgramInvite = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ programId, inviteId }: { programId: string; inviteId: number }) => (
+      cancelProgramInvite(programId, inviteId)
     ),
     onSuccess: (_, { programId }) => {
       queryClient.invalidateQueries({ queryKey: ['programEnrollments', programId] });

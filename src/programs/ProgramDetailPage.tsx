@@ -30,8 +30,11 @@ import { useProgramDetail, useUpdateProgram } from './data/apiHooks';
 import CoursesTab from './courses-tab/CoursesTab';
 import InstructorsTab from './instructors-tab/InstructorsTab';
 import EnrollmentTab from './enrollment-tab/EnrollmentTab';
+import ProgramEmailTab from './ProgramEmailTab';
 import RichTextEditor from '../generic/RichTextEditor';
-import { getDiscountPercent, isPriceValid, isSalePriceValid } from '../schedule-and-details/pricing-section/validation';
+import {
+  getDiscountPercent, getPriceWithVat, isPriceValid, isSalePriceValid,
+} from '../schedule-and-details/pricing-section/validation';
 import './index.scss';
 
 const messages = defineMessages({
@@ -46,12 +49,14 @@ const messages = defineMessages({
   tabCourses: { id: 'programs.detail.tab.courses', defaultMessage: 'Courses' },
   tabInstructors: { id: 'programs.detail.tab.instructors', defaultMessage: 'Instructors' },
   tabEnrollment: { id: 'programs.detail.tab.enrollment', defaultMessage: 'Enrollment' },
+  tabEmail: { id: 'programs.detail.tab.email', defaultMessage: 'Email' },
   sectionBasicInfo: { id: 'programs.detail.section.basic', defaultMessage: 'Basic Information' },
   sectionBasicSubtitle: { id: 'programs.detail.section.basic.sub', defaultMessage: 'Set the core details of your program' },
   sectionImage: { id: 'programs.detail.section.image', defaultMessage: 'Program Card Image' },
   sectionImageSubtitle: { id: 'programs.detail.section.image.sub', defaultMessage: 'Upload an image to represent your program in listings' },
   sectionSummary: { id: 'programs.detail.section.summary', defaultMessage: 'Program Summary' },
   unsavedBannerMessage: { id: 'programs.detail.unsaved.message', defaultMessage: 'You have unsaved changes.' },
+  unsavedBannerHint: { id: 'programs.detail.unsaved.hint', defaultMessage: 'Save or discard before leaving.' },
   unsavedBannerDiscard: { id: 'programs.detail.unsaved.discard', defaultMessage: 'Discard changes' },
   unsavedBannerSave: { id: 'programs.detail.unsaved.save', defaultMessage: 'Save now' },
   fieldTitle: { id: 'programs.detail.field.title', defaultMessage: 'Program Title' },
@@ -66,6 +71,12 @@ const messages = defineMessages({
   fieldStartDate: { id: 'programs.detail.field.start-date', defaultMessage: 'Start Date' },
   fieldEndDate: { id: 'programs.detail.field.end-date', defaultMessage: 'End Date' },
   fieldStatus: { id: 'programs.detail.field.status', defaultMessage: 'Program Status' },
+  statusDraft: { id: 'programs.detail.status.draft', defaultMessage: 'Draft' },
+  statusActive: { id: 'programs.detail.status.active', defaultMessage: 'Active' },
+  statusArchived: { id: 'programs.detail.status.archived', defaultMessage: 'Archived' },
+  featuredBadge: { id: 'programs.detail.badge.featured', defaultMessage: 'Featured' },
+  startDatePlaceholder: { id: 'programs.detail.start-date.placeholder', defaultMessage: 'Select start date' },
+  endDatePlaceholder: { id: 'programs.detail.end-date.placeholder', defaultMessage: 'Select end date' },
   fieldFeatured: { id: 'programs.detail.field.featured', defaultMessage: 'Feature this program' },
   fieldFeaturedHint: { id: 'programs.detail.field.featured.hint', defaultMessage: 'Featured programs are highlighted in the program catalog.' },
   fieldPricingCategory: { id: 'programs.detail.field.pricing-category', defaultMessage: 'Pricing type' },
@@ -75,10 +86,14 @@ const messages = defineMessages({
   pricingPaidDescription: { id: 'programs.detail.field.pricing.paid.description', defaultMessage: 'Sold at the price set below.' },
   pricingSubscription: { id: 'programs.detail.field.pricing.subscription', defaultMessage: 'Part of Subscription' },
   pricingSubscriptionDescription: { id: 'programs.detail.field.pricing.subscription.description', defaultMessage: 'Learners reach this program through the Rwaq subscription. It has no price of its own.' },
-  fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price ({currency})' },
+  pricingEnrollmentCode: { id: 'programs.detail.field.pricing.enrollment-code', defaultMessage: 'Enrollment code' },
+  pricingEnrollmentCodeDescription: { id: 'programs.detail.field.pricing.enrollment-code.description', defaultMessage: 'A free, restricted program that learners can only join with an enrollment code.' },
+  fieldPrice: { id: 'programs.detail.field.price', defaultMessage: 'Price before VAT ({currency})' },
   fieldPriceHint: { id: 'programs.detail.field.price.hint', defaultMessage: 'Regular price shown on the marketing site.' },
-  fieldSalePrice: { id: 'programs.detail.field.sale-price', defaultMessage: 'Discounted Price / Sale Price ({currency})' },
+  fieldSalePrice: { id: 'programs.detail.field.sale-price', defaultMessage: 'Discounted Price / Sale Price before VAT ({currency})' },
   fieldDiscountPercentage: { id: 'programs.detail.field.discount-percentage', defaultMessage: '{percentage}% off' },
+  fieldPriceWithVat: { id: 'programs.detail.field.price-with-vat', defaultMessage: 'Learner pays {amount} {currency} including {rate}% {label}' },
+  fieldVatLabelFallback: { id: 'programs.detail.field.vat-label-fallback', defaultMessage: 'VAT' },
   fieldSalePriceHint: { id: 'programs.detail.field.sale-price.hint', defaultMessage: 'Optional. Leave empty when the program is not on sale.' },
   pricingCoursesNote: { id: 'programs.detail.field.pricing.courses-note', defaultMessage: 'Courses inside a paid program are not priced separately. The program is the sellable unit.' },
   errorPriceNotPositive: { id: 'programs.detail.field.price.error-not-positive', defaultMessage: 'Price must be greater than 0.' },
@@ -97,10 +112,26 @@ const messages = defineMessages({
   imageChange: { id: 'programs.detail.image.change', defaultMessage: 'Change Image' },
 });
 
+/**
+ * The form keeps dates as YYYY-MM-DD strings. They are read and written as local calendar days:
+ * `new Date('2027-10-01')` is UTC midnight and `toISOString()` converts back to UTC, so in a time zone
+ * ahead of UTC (Saudi Arabia, Pakistan) the picked day was saved as the day before.
+ */
+const fromDateString = (value: string): Date => {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+const toDateString = (date: Date): string => {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+};
+
 const STATUS_OPTIONS = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'active', label: 'Active' },
-  { value: 'archived', label: 'Archived' },
+  { value: 'draft', message: messages.statusDraft },
+  { value: 'active', message: messages.statusActive },
+  { value: 'archived', message: messages.statusArchived },
 ];
 
 const STATUS_BADGE_VARIANT: Record<string, string> = {
@@ -251,8 +282,11 @@ const ProgramDetailPage: React.FC = () => {
   };
 
   const discountPercent = getDiscountPercent(formik.values.regularPrice, formik.values.salePrice);
+  const priceWithVat = getPriceWithVat(formik.values.regularPrice, formik.values.salePrice, program?.vatRate);
   const statusBadgeVariant = STATUS_BADGE_VARIANT[formik.values.status ?? 'draft'] ?? 'secondary';
-  const statusLabel = STATUS_OPTIONS.find((o) => o.value === formik.values.status)?.label ?? 'Draft';
+  const statusMessage = STATUS_OPTIONS.find((option) => option.value === formik.values.status)?.message
+    ?? messages.statusDraft;
+  const statusLabel = intl.formatMessage(statusMessage);
 
   if (isLoading) {
     return (
@@ -291,7 +325,7 @@ const ProgramDetailPage: React.FC = () => {
               {formik.values.displayName || program.displayName}
               {formik.values.isFeatured && (
                 <Badge variant="primary" className="ml-2 align-middle" style={{ fontSize: '0.55em', verticalAlign: 'middle' }}>
-                  Featured
+                  {intl.formatMessage(messages.featuredBadge)}
                 </Badge>
               )}
             </h2>
@@ -315,7 +349,7 @@ const ProgramDetailPage: React.FC = () => {
             <div className="d-flex justify-content-between align-items-center">
               <span>
                 <strong>{intl.formatMessage(messages.unsavedBannerMessage)}</strong>
-                {' '}Save or discard before leaving.
+                {' '}{intl.formatMessage(messages.unsavedBannerHint)}
               </span>
               <Stack direction="horizontal" gap={2}>
                 <Button
@@ -467,9 +501,10 @@ const ProgramDetailPage: React.FC = () => {
                           <Form.Group>
                             <Form.Label>{intl.formatMessage(messages.fieldStartDate)}</Form.Label>
                             <DatePicker
-                              selected={formik.values.startDate ? new Date(formik.values.startDate) : null}
-                              onChange={(date) => formik.setFieldValue('startDate', date ? date.toISOString().split('T')[0] : '')}
-                              customInput={<DateInput placeholder="Select start date" />}
+                              selected={formik.values.startDate ? fromDateString(formik.values.startDate) : null}
+                              onChange={(date) => formik.setFieldValue('startDate', date ? toDateString(date) : '')}
+                              customInput={<DateInput />}
+                              placeholderText={intl.formatMessage(messages.startDatePlaceholder)}
                               dateFormat="MMMM d, yyyy"
                               popperPlacement="bottom-start"
                               showMonthDropdown
@@ -483,16 +518,18 @@ const ProgramDetailPage: React.FC = () => {
                           <Form.Group>
                             <Form.Label>{intl.formatMessage(messages.fieldEndDate)}</Form.Label>
                             <DatePicker
-                              selected={formik.values.endDate ? new Date(formik.values.endDate) : null}
-                              onChange={(date) => formik.setFieldValue('endDate', date ? date.toISOString().split('T')[0] : '')}
-                              customInput={<DateInput placeholder="Select end date" />}
+                              selected={formik.values.endDate ? fromDateString(formik.values.endDate) : null}
+                              onChange={(date) => formik.setFieldValue('endDate', date ? toDateString(date) : '')}
+                              customInput={<DateInput />}
+                              placeholderText={intl.formatMessage(messages.endDatePlaceholder)}
                               dateFormat="MMMM d, yyyy"
-                              minDate={formik.values.startDate ? new Date(formik.values.startDate) : undefined}
+                              isClearable
+                              minDate={formik.values.startDate ? fromDateString(formik.values.startDate) : undefined}
                               popperPlacement="bottom-start"
                               showMonthDropdown
                               showYearDropdown
                               dropdownMode="select"
-                              wrapperClassName="d-block mt-1"
+                              wrapperClassName="d-block mt-1 program-end-date"
                             />
                           </Form.Group>
                         </Col>
@@ -508,7 +545,7 @@ const ProgramDetailPage: React.FC = () => {
                           onChange={formik.handleChange}
                         >
                           {STATUS_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            <option key={opt.value} value={opt.value}>{intl.formatMessage(opt.message)}</option>
                           ))}
                         </Form.Control>
                       </Form.Group>
@@ -574,6 +611,12 @@ const ProgramDetailPage: React.FC = () => {
                           >
                             {intl.formatMessage(messages.pricingSubscription)}
                           </Form.Radio>
+                          <Form.Radio
+                            value="is_enrollment_code"
+                            description={intl.formatMessage(messages.pricingEnrollmentCodeDescription)}
+                          >
+                            {intl.formatMessage(messages.pricingEnrollmentCode)}
+                          </Form.Radio>
                         </Form.RadioSet>
                         {formik.touched.pricingCategory && formik.errors.pricingCategory && (
                           <Form.Control.Feedback type="invalid">
@@ -624,6 +667,17 @@ const ProgramDetailPage: React.FC = () => {
                               <Form.Text muted>
                                 {intl.formatMessage(messages.fieldDiscountPercentage, { percentage: discountPercent })}
                               </Form.Text>
+                            )}
+                            {priceWithVat && (
+                              <p className="font-weight-bold mt-2 mb-0" data-testid="price-with-vat">
+                                {intl.formatMessage(messages.fieldPriceWithVat, {
+                                  amount: priceWithVat.amount,
+                                  currency: program?.currency ?? 'SAR',
+                                  rate: priceWithVat.rate,
+                                  label: program?.vatLabel?.trim()
+                                    || intl.formatMessage(messages.fieldVatLabelFallback),
+                                })}
+                              </p>
                             )}
                           </Form.Group>
 
@@ -719,7 +773,7 @@ const ProgramDetailPage: React.FC = () => {
                     {/* Status + featured badges */}
                     <Stack direction="horizontal" gap={2} className="mb-4 flex-wrap">
                       <Badge variant={statusBadgeVariant as any}>{statusLabel}</Badge>
-                      {formik.values.isFeatured && <Badge variant="primary">Featured</Badge>}
+                      {formik.values.isFeatured && <Badge variant="primary">{intl.formatMessage(messages.featuredBadge)}</Badge>}
                     </Stack>
 
                     <SummaryField label={intl.formatMessage(messages.summaryOrg)} value={program.org} />
@@ -750,7 +804,11 @@ const ProgramDetailPage: React.FC = () => {
               programId={programId ?? ''}
               canEnroll={program?.canEnrollLearners ?? true}
               isSubscriptionProgram={program?.pricingCategory === 'is_part_of_subscription'}
+              isPaid={program?.pricingCategory === 'is_paid'}
             />
+          </Tab>
+          <Tab eventKey="email" title={intl.formatMessage(messages.tabEmail)}>
+            {activeTab === 'email' && <ProgramEmailTab programId={programId ?? ''} />}
           </Tab>
         </Tabs>
 

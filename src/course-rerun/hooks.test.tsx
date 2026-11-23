@@ -1,6 +1,5 @@
 import { renderHook } from '@testing-library/react';
 
-import { getCourseSlug } from '@src/generic/data/api';
 import { useCourseRerun } from './hooks';
 
 const mockDispatch = jest.fn();
@@ -29,16 +28,11 @@ jest.mock('@src/studio-home/data/thunks', () => ({
   fetchStudioHomeData: jest.fn(() => ({ type: 'home' })),
 }));
 
-jest.mock('@src/generic/data/api', () => ({
-  getCourseSlug: jest.fn(),
-}));
-
 describe('useCourseRerun', () => {
-  it('starts the rerun form with an empty slug and does not fetch the source slug', () => {
+  it('starts the rerun form with an empty slug', () => {
     const { result } = renderHook(() => useCourseRerun('course-v1:ORG+CS101+2025'));
 
     expect(result.current.initialFormValues.slug).toBe('');
     expect(result.current.initialFormValues.run).toBe('');
-    expect(getCourseSlug).not.toHaveBeenCalled();
   });
 });

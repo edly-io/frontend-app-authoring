@@ -4,13 +4,23 @@ import {
   Avatar, Card, Icon, Stack,
 } from '@openedx/paragon';
 import { ArrowForward } from '@openedx/paragon/icons';
+import { defineMessages, useIntl } from '@edx/frontend-platform/i18n';
 import type { InstructorProfile } from '../../../instructors/data/types';
+
+const messages = defineMessages({
+  courseCount: {
+    id: 'course-authoring.studio-home.instructors.card.course-count',
+    defaultMessage: '{count, plural, one {# course} other {# courses}}',
+    description: 'Number of courses taught by an instructor, shown on the instructor card.',
+  },
+});
 
 interface Props {
   instructor: InstructorProfile;
 }
 
 const InstructorCard: React.FC<Props> = ({ instructor }) => {
+  const intl = useIntl();
   const {
     id, name, image, courses,
   } = instructor;
@@ -29,7 +39,7 @@ const InstructorCard: React.FC<Props> = ({ instructor }) => {
               </Link>
             </Stack>
           )}
-          subtitle={`${courseCount} course${courseCount === 1 ? '' : 's'}`}
+          subtitle={intl.formatMessage(messages.courseCount, { count: courseCount })}
           actions={(
             <Stack direction="horizontal" gap={2} className="align-items-center">
               <Link to={`/instructors/${id}`}>

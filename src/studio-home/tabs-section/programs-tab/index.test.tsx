@@ -46,6 +46,14 @@ describe('ProgramsTab type filter', () => {
     expect(lastParams()).toMatchObject({ page: 1, pricing: 'paid' });
   });
 
+  it('sends the Enrollment code type', () => {
+    renderTab();
+    fireEvent.click(screen.getByText('All types'));
+    fireEvent.click(screen.getByText('Enrollment code'));
+
+    expect(lastParams()).toMatchObject({ page: 1, pricing: 'enrollment_code' });
+  });
+
   it('says no program matches the filter when a type has no results', () => {
     mockUseProgramsPage.mockReturnValue({ data: { results: [], count: 0, numPages: 1 }, isLoading: false });
     renderTab();

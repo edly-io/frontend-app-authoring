@@ -54,17 +54,6 @@ export async function createOrRerunCourse(courseData: Object): Promise<unknown> 
 }
 
 /**
- * Get the current slug for a course — the explicit slug if one was set
- * (migrated from the old platform, or entered on creation/rerun), otherwise
- * a fallback derived from the course key. Not used by the rerun form: a rerun
- * starts with an empty slug so it never copies the source course's slug.
- */
-export async function getCourseSlug(courseId: string): Promise<{ slug: string }> {
-  const { data } = await getAuthenticatedHttpClient().get(getCourseSlugUrl(courseId));
-  return camelCaseObject(data);
-}
-
-/**
  * Set/update a course's explicit slug. Called right after a course is
  * created or rerun, once the new course id is known — course creation itself
  * goes through core Studio's `course/` endpoint, which knows nothing about

@@ -41,13 +41,21 @@ const messages = defineMessages({
     id: 'course-authoring.schedule-section.pricing.category-subscription.description',
     defaultMessage: 'Learners reach this course through the Rwaq subscription. It has no price of its own.',
   },
+  categoryEnrollmentCode: {
+    id: 'course-authoring.schedule-section.pricing.category-enrollment-code',
+    defaultMessage: 'Enrollment code',
+  },
+  categoryEnrollmentCodeDescription: {
+    id: 'course-authoring.schedule-section.pricing.category-enrollment-code.description',
+    defaultMessage: 'A free, restricted course that learners can only join with an enrollment code.',
+  },
   noTypeHint: {
     id: 'course-authoring.schedule-section.pricing.no-type-hint',
     defaultMessage: 'This course has no type yet. Choose one and save.',
   },
   priceLabel: {
     id: 'course-authoring.schedule-section.pricing.price-label',
-    defaultMessage: 'Price ({currency})',
+    defaultMessage: 'Price before VAT ({currency})',
   },
   priceHint: {
     id: 'course-authoring.schedule-section.pricing.price-hint',
@@ -55,11 +63,21 @@ const messages = defineMessages({
   },
   discountLabel: {
     id: 'course-authoring.schedule-section.pricing.discount-label',
-    defaultMessage: 'Discounted Price / Sale Price ({currency})',
+    defaultMessage: 'Discounted Price / Sale Price before VAT ({currency})',
   },
   discountHint: {
     id: 'course-authoring.schedule-section.pricing.discount-hint',
     defaultMessage: 'Optional. Leave empty when the course is not on sale.',
+  },
+  priceWithVat: {
+    id: 'course-authoring.schedule-section.pricing.price-with-vat',
+    defaultMessage: 'Learner pays {amount} {currency} including {rate}% {label}',
+    description: 'Preview of the final price. The amount has 2 decimals, the rate is a plain number and the label is the tax name.',
+  },
+  vatLabelFallback: {
+    id: 'course-authoring.schedule-section.pricing.vat-label-fallback',
+    defaultMessage: 'VAT',
+    description: 'Tax name used in the price preview when the API sends no label.',
   },
   discountPercentage: {
     id: 'course-authoring.schedule-section.pricing.discount-percentage',
@@ -72,6 +90,10 @@ const messages = defineMessages({
   savingBtn: {
     id: 'course-authoring.schedule-section.pricing.saving-btn',
     defaultMessage: 'Saving…',
+  },
+  categoriesRemoved: {
+    id: 'course-authoring.schedule-section.pricing.categories-removed',
+    defaultMessage: 'An Enrollment code course cannot have categories, so these were removed: {categories}.',
   },
   savedMsg: {
     id: 'course-authoring.schedule-section.pricing.saved-msg',
