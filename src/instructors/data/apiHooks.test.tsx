@@ -1,8 +1,8 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, renderHook, waitFor } from '@testing-library/react';
-import { useLinkInstructorToCourse, useSearchInstructorUsers, useUnlinkInstructorFromCourse } from './apiHooks';
-import { linkInstructorToCourse, searchInstructorUsers, unlinkInstructorFromCourse } from './api';
+import { act, renderHook } from '@testing-library/react';
+import { useLinkInstructorToCourse, useUnlinkInstructorFromCourse } from './apiHooks';
+import { linkInstructorToCourse, unlinkInstructorFromCourse } from './api';
 
 jest.mock('./api');
 
@@ -30,31 +30,5 @@ describe('instructor link and unlink hooks', () => {
 
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['courseInstructors', 'course-v1:A+B+C'] });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['instructors'] });
-  });
-});
-
-describe('useSearchInstructorUsers', () => {
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      {children}
-    </QueryClientProvider>
-  );
-
-  beforeEach(() => jest.clearAllMocks());
-
-  it('does not call the API for an empty search', () => {
-    renderHook(() => useSearchInstructorUsers('  '), { wrapper });
-
-    expect(searchInstructorUsers).not.toHaveBeenCalled();
-  });
-
-  it('returns the users found for a term', async () => {
-    const rows = [{ id: 1, username: 'amina', name: 'Amina Khan' }];
-    (searchInstructorUsers as jest.Mock).mockResolvedValue(rows);
-
-    const { result } = renderHook(() => useSearchInstructorUsers('ami'), { wrapper });
-
-    await waitFor(() => expect(result.current.data).toEqual(rows));
-    expect(searchInstructorUsers).toHaveBeenCalledWith('ami');
   });
 });

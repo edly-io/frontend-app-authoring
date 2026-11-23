@@ -376,14 +376,14 @@ describe('<StudioHome />', () => {
         render(<StudioHome />, { path: '/home' });
 
         openForm('instructor');
-        const userSearch = screen.getByPlaceholderText('Search active users');
-        fireEvent.change(userSearch, { target: { value: 'Ada Lovelace' } });
-        expect(userSearch).toHaveValue('Ada Lovelace');
+        const instructorName = screen.getByPlaceholderText('e.g. Jane Doe');
+        fireEvent.change(instructorName, { target: { value: 'Ada Lovelace' } });
+        expect(instructorName).toHaveValue('Ada Lovelace');
 
         // Switching away unmounts the form, so coming back gives a pristine one.
         openForm('program');
         openForm('instructor');
-        expect(screen.getByPlaceholderText('Search active users')).toHaveValue('');
+        expect(screen.getByPlaceholderText('e.g. Jane Doe')).toHaveValue('');
       });
     });
   });

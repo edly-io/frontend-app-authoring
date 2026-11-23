@@ -8,17 +8,10 @@ import {
   getInstructorsPage,
   linkInstructorToCourse,
   removeCourseFromInstructor,
-  searchInstructorUsers,
   unlinkInstructorFromCourse,
   updateInstructor,
 } from './api';
 import type { InstructorDetailResponse, InstructorProfile } from './types';
-
-export const useSearchInstructorUsers = (term: string) => useQuery({
-  queryKey: ['instructorUsers', term],
-  queryFn: () => searchInstructorUsers(term),
-  enabled: term.trim().length > 0,
-});
 
 // Every instructor across all pages. For callers that need the whole list
 // rather than one page (e.g. the course "link an instructor" modal).
