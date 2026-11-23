@@ -10,7 +10,6 @@ import type {
   InstructorProfile,
   InstructorSummary,
   PaginatedInstructorProfiles,
-  UserOption,
 } from './types';
 
 const getInstructorsBaseUrl = () => `${getConfig().STUDIO_BASE_URL}/rwaq/api/instructors`;
@@ -49,8 +48,6 @@ const toInstructorProfile = (d: any): InstructorProfile => ({
   featuredVideo: d.featured_video ?? '',
   courses: d.courses?.map(toCourse) ?? [],
   organizations: d.organizations?.map(toOrganization) ?? [],
-  user: d.user ?? null,
-  userDetail: d.user_detail ?? null,
 });
 
 // ── List — GET /rwaq/api/instructors/ ─────────────────────────────────────────
@@ -115,11 +112,9 @@ export const getInstructorDetail = async (instructorId: string): Promise<Instruc
 };
 
 // ── Create — POST /rwaq/api/instructors/ ──────────────────────────────────────
-export const createInstructor = async (input: { user: number; name?: string }): Promise<InstructorProfile> => {
-  // The name comes from the linked user on the backend, so it is only sent when given.
+export const createInstructor = async (input: { name: string }): Promise<InstructorProfile> => {
   const { data } = await getAuthenticatedHttpClient().post(`${getInstructorsBaseUrl()}/`, {
-    user: input.user,
-    ...(input.name ? { name: input.name } : {}),
+    name: input.name,
   });
   return toInstructorProfile(data);
 };
@@ -137,7 +132,6 @@ export const updateInstructor = async (
   if (data.name !== undefined) { formData.append('name', data.name); }
   if (data.detail !== undefined) { formData.append('detail', data.detail ?? ''); }
   if (data.featuredVideo !== undefined) { formData.append('featured_video', data.featuredVideo ?? ''); }
-  if (data.user !== undefined) { formData.append('user', data.user === null ? '' : String(data.user)); }
   if (imageFile) { formData.append('image', imageFile); }
 
   // Intentionally not sent: courses (separate API)
@@ -147,11 +141,6 @@ export const updateInstructor = async (
     formData,
   );
   return toInstructorProfile(result);
-};
-
-export const searchInstructorUsers = async (term: string): Promise<UserOption[]> => {
-  const { data } = await getAuthenticatedHttpClient().get(`${getInstructorsBaseUrl()}/user-options/`, { params: { search: term } });
-  return data;
 };
 
 // ── Link course to instructor — POST /rwaq/api/instructors/<id>/courses/ ─────

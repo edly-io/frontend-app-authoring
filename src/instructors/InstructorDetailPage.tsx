@@ -22,7 +22,6 @@ import { LoadingSpinner } from '../generic/Loading';
 import { ToastContext } from '../generic/toast-context';
 import RichTextEditor from '../generic/RichTextEditor';
 import { useInstructorDetail, useUpdateInstructor } from './data/apiHooks';
-import LinkedUserPicker from './LinkedUserPicker';
 import InstructorCoursesTab from './courses-tab/InstructorCoursesTab';
 import './index.scss';
 
@@ -100,8 +99,6 @@ const InstructorDetailPage: React.FC = () => {
       detail: instructor?.detail ?? '',
       featuredVideo: instructor?.featuredVideo ?? '',
       image: instructor?.image ?? '',
-      user: instructor?.user ?? null,
-      userDetail: instructor?.userDetail ?? null,
     },
     enableReinitialize: true,
     validationSchema: Yup.object({
@@ -113,9 +110,6 @@ const InstructorDetailPage: React.FC = () => {
         setImageFile(null);
         showToast(intl.formatMessage(messages.savedSuccess));
       } catch (error) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const userError = (error as any)?.response?.data?.user;
-        if (userError) { formik.setFieldError('user', [].concat(userError).join(' ')); }
         showToast(extractErrorMessage(error) ?? intl.formatMessage(messages.savedError));
       }
     },
@@ -235,36 +229,19 @@ const InstructorDetailPage: React.FC = () => {
                   />
                   <Card.Section>
                     <Form>
-                      {/* Linked user: its name and email show read-only and become the instructor's name */}
-                      <LinkedUserPicker
-                        selected={formik.values.userDetail}
-                        error={formik.errors.user}
-                        onSelect={(option) => {
-                          formik.setFieldValue('user', option.id);
-                          formik.setFieldValue('userDetail', option);
-                          formik.setFieldValue('name', option.name);
-                        }}
-                        onClear={() => {
-                          formik.setFieldValue('user', null);
-                          formik.setFieldValue('userDetail', null);
-                        }}
-                      />
-
-                      {/* Name: editable only while no user is linked, otherwise it is the user's */}
-                      {!formik.values.userDetail && (
-                        <Form.Group isInvalid={!!formik.touched.name && !!formik.errors.name}>
-                          <Form.Label>{intl.formatMessage(messages.fieldName)}</Form.Label>
-                          <Form.Control
-                            name="name"
-                            value={formik.values.name}
-                            onChange={formik.handleChange}
-                            onBlur={formik.handleBlur}
-                          />
-                            {formik.touched.name && formik.errors.name && (
-                              <Form.Control.Feedback type="invalid">{formik.errors.name}</Form.Control.Feedback>
-                            )}
-                        </Form.Group>
-                      )}
+                      {/* Name */}
+                      <Form.Group isInvalid={!!formik.touched.name && !!formik.errors.name}>
+                        <Form.Label>{intl.formatMessage(messages.fieldName)}</Form.Label>
+                        <Form.Control
+                          name="name"
+                          value={formik.values.name}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                        />
+                        {formik.touched.name && formik.errors.name && (
+                          <Form.Control.Feedback type="invalid">{formik.errors.name}</Form.Control.Feedback>
+                        )}
+                      </Form.Group>
 
                       {/* Detail / bio */}
                       <Form.Group className="mb-4">
