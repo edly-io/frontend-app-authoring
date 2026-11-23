@@ -19,6 +19,12 @@ export interface InstructorProfile {
   featuredVideo?: string;
   courses?: Course[];
   organizations?: InstructorOrganization[];
+  user?: number | null;
+  userDetail?: { id: number; username: string; name: string; email?: string } | null;
+}
+
+export interface UserOption {
+  id: number; username: string; name: string; email?: string; linked?: boolean;
 }
 
 export interface PaginatedInstructorProfiles {
