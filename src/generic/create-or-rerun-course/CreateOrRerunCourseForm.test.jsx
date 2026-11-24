@@ -41,6 +41,7 @@ let store;
 ReactDOM.createPortal = jest.fn(node => node);
 
 const onClickCancelMock = jest.fn();
+const slugUrlPattern = /\/api\/v1\/courses\/.+\/slug\//;
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -64,6 +65,24 @@ const props = {
     run: '',
   },
   onClickCancel: onClickCancelMock,
+};
+
+const filledValues = {
+  displayName: 'Slug Course',
+  org: 'TestOrg',
+  number: 'CS101',
+  run: '2026',
+};
+
+// frontend-platform's http client interceptor adds `customAttributes.httpErrorResponseData` to
+// failed requests. The mock adapter bypasses it, so build the same error shape here.
+const slugConflictReply = () => {
+  const error = new Error('Request failed with status code 400');
+  error.customAttributes = {
+    httpStatus: 400,
+    httpErrorResponseData: JSON.stringify({ slug: ['course slug with this slug already exists.'] }),
+  };
+  return Promise.reject(error);
 };
 
 const mockStore = async () => {
@@ -95,6 +114,8 @@ describe('<CreateOrRerunCourseForm />', () => {
 
     store = initializeStore(initialState);
     axiosMock = new MockAdapter(getAuthenticatedHttpClient());
+    // The create thunk always reserves the slug first (typed or computed default).
+    axiosMock.onPut(slugUrlPattern).reply(200, { slug: 'reserved' });
   });
 
   it('renders form successfully', async () => {
@@ -295,6 +316,94 @@ describe('<CreateOrRerunCourseForm />', () => {
 
     await waitFor(() => {
       expect(screen.getByText(messages.disallowedCharsError.defaultMessage)).toBeInTheDocument();
+    });
+  });
+
+  describe('course slug', () => {
+    const slugInputPlaceholder = messages.courseSlugPlaceholder.defaultMessage;
+    const renderForm = async (initialValues) => {
+      render(<RootWrapper {...props} initialValues={initialValues} />);
+      await mockStore();
+    };
+
+    it('shows the generic help text while org, number and run are not all filled', async () => {
+      await renderForm({ ...filledValues, run: '' });
+      expect(screen.getByText(messages.courseSlugHelpText.defaultMessage)).toBeInTheDocument();
+    });
+
+    it('shows the computed slug in the help text when the slug is blank', async () => {
+      await renderForm(filledValues);
+      expect(screen.getByText('Leave blank to use course-v1-testorg-cs101-2026.')).toBeInTheDocument();
+    });
+
+    it('shows the typed slug in the help text', async () => {
+      await renderForm(filledValues);
+      fireEvent.change(screen.getByPlaceholderText(slugInputPlaceholder), { target: { value: 'my-slug' } });
+      await waitFor(() => {
+        expect(
+          screen.getByText('This slug will be used in WordPress URLs for this course: my-slug'),
+        ).toBeInTheDocument();
+      });
+      expect(screen.queryByText(/Leave blank to use/)).not.toBeInTheDocument();
+    });
+
+    it('reserves the computed default slug before creating the course when the slug is blank', async () => {
+      const user = userEvent.setup();
+      axiosMock.onPost(getCreateOrRerunCourseUrl()).reply(200, { url: '/course/' });
+      await renderForm(filledValues);
+      await user.click(await screen.findByRole('button', { name: messages.createButton.defaultMessage }));
+
+      await waitFor(() => expect(axiosMock.history.post).toHaveLength(1));
+      expect(axiosMock.history.put).toHaveLength(1);
+      expect(axiosMock.history.put[0].url).toContain('course-v1:TestOrg+CS101+2026/slug/');
+      expect(JSON.parse(axiosMock.history.put[0].data)).toEqual({ slug: 'course-v1-testorg-cs101-2026' });
+    });
+
+    it('shows the duplicate error naming the default slug and does not create the course when blank', async () => {
+      const user = userEvent.setup();
+      axiosMock.onPut(slugUrlPattern).reply(slugConflictReply);
+      await renderForm(filledValues);
+      await user.click(await screen.findByRole('button', { name: messages.createButton.defaultMessage }));
+
+      expect(await screen.findByText(
+        'The default slug course-v1-testorg-cs101-2026 is already used by another course. Enter a custom slug.',
+      )).toBeInTheDocument();
+      expect(axiosMock.history.post).toHaveLength(0);
+    });
+
+    it('shows the duplicate error naming the typed slug and does not create the course', async () => {
+      const user = userEvent.setup();
+      axiosMock.onPut(slugUrlPattern).reply(slugConflictReply);
+      await renderForm(filledValues);
+      fireEvent.change(screen.getByPlaceholderText(slugInputPlaceholder), { target: { value: 'taken-slug' } });
+      await user.click(await screen.findByRole('button', { name: messages.createButton.defaultMessage }));
+
+      expect(await screen.findByText(
+        'The slug taken-slug is already in use by another course. Please choose a different one.',
+      )).toBeInTheDocument();
+      expect(axiosMock.history.post).toHaveLength(0);
+    });
+
+    it('shows the save error and does not create the course when a typed slug fails otherwise', async () => {
+      const user = userEvent.setup();
+      axiosMock.onPut(slugUrlPattern).reply(500);
+      await renderForm(filledValues);
+      fireEvent.change(screen.getByPlaceholderText(slugInputPlaceholder), { target: { value: 'my-slug' } });
+      await user.click(await screen.findByRole('button', { name: messages.createButton.defaultMessage }));
+
+      expect(await screen.findByText(messages.slugSaveError.defaultMessage)).toBeInTheDocument();
+      expect(axiosMock.history.post).toHaveLength(0);
+    });
+
+    it('still creates the course when the default slug cannot be reserved for a non-conflict reason', async () => {
+      const user = userEvent.setup();
+      axiosMock.onPut(slugUrlPattern).reply(403);
+      axiosMock.onPost(getCreateOrRerunCourseUrl()).reply(200, { url: '/course/' });
+      await renderForm(filledValues);
+      await user.click(await screen.findByRole('button', { name: messages.createButton.defaultMessage }));
+
+      await waitFor(() => expect(axiosMock.history.post).toHaveLength(1));
+      expect(screen.queryByText(messages.slugSaveError.defaultMessage)).not.toBeInTheDocument();
     });
   });
 });
