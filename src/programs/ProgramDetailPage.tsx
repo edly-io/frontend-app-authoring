@@ -84,6 +84,7 @@ const messages = defineMessages({
   pricingPaid: { id: 'programs.detail.field.pricing.paid', defaultMessage: 'Paid' },
   pricingPaidDescription: { id: 'programs.detail.field.pricing.paid.description', defaultMessage: 'Sold at the price set below.' },
   pricingSubscription: { id: 'programs.detail.field.pricing.subscription', defaultMessage: 'Part of Subscription' },
+  subscriptionReadOnly: { id: 'programs.detail.field.pricing.subscription-read-only', defaultMessage: 'Only staff can change a subscription program type.', description: 'Explains why the program pricing type cannot be changed.' },
   pricingSubscriptionDescription: { id: 'programs.detail.field.pricing.subscription.description', defaultMessage: 'Learners reach this program through the {siteName} subscription. It has no price of its own.' },
   pricingEnrollmentCode: { id: 'programs.detail.field.pricing.enrollment-code', defaultMessage: 'Enrollment code' },
   pricingEnrollmentCodeDescription: { id: 'programs.detail.field.pricing.enrollment-code.description', defaultMessage: 'A free, restricted program that learners can only join with an enrollment code.' },
@@ -188,6 +189,7 @@ const ProgramDetailPage: React.FC = () => {
   const { mutateAsync: updateProgram, isPending: isSaving } = useUpdateProgram();
 
   const program = data?.program;
+  const subscriptionLocked = program?.canSetSubscription === false && program?.pricingCategory === 'is_part_of_subscription';
 
   const formik = useFormik({
     initialValues: {
@@ -231,7 +233,8 @@ const ProgramDetailPage: React.FC = () => {
       }
       activateAsFreeConfirmed.current = false;
       try {
-        await updateProgram({ programId: programId ?? '', data: values, imageFile });
+        const dataToSave = subscriptionLocked ? { ...values, pricingCategory: undefined } : values;
+        await updateProgram({ programId: programId ?? '', data: dataToSave, imageFile });
         setImageFile(null);
         showToast(intl.formatMessage(messages.savedSuccess));
       } catch (err) {
@@ -580,6 +583,7 @@ const ProgramDetailPage: React.FC = () => {
                         <Form.Label className="font-weight-bold">
                           {intl.formatMessage(messages.fieldPricingCategory)}
                         </Form.Label>
+                        {subscriptionLocked && <Alert variant="info">{intl.formatMessage(messages.subscriptionReadOnly)}</Alert>}
                         <Form.RadioSet
                           name="pricingCategory"
                           value={formik.values.pricingCategory || 'is_free'}
@@ -594,24 +598,29 @@ const ProgramDetailPage: React.FC = () => {
                             }
                           }}
                         >
-                          <Form.Radio value="is_free" description={intl.formatMessage(messages.pricingFreeDescription)}>
+                          <Form.Radio value="is_free" disabled={subscriptionLocked} description={intl.formatMessage(messages.pricingFreeDescription)}>
                             {intl.formatMessage(messages.pricingFree)}
                           </Form.Radio>
                           <Form.Radio
                             value="is_paid"
                             ref={pricingCategoryRef}
+                            disabled={subscriptionLocked}
                             description={intl.formatMessage(messages.pricingPaidDescription)}
                           >
                             {intl.formatMessage(messages.pricingPaid)}
                           </Form.Radio>
+                          {(program?.canSetSubscription !== false || subscriptionLocked) && (
                           <Form.Radio
                             value="is_part_of_subscription"
+                            disabled={subscriptionLocked}
                             description={intl.formatMessage(messages.pricingSubscriptionDescription, { siteName: getConfig().SITE_NAME || 'platform' })}
                           >
                             {intl.formatMessage(messages.pricingSubscription)}
                           </Form.Radio>
+                          )}
                           <Form.Radio
                             value="is_enrollment_code"
+                            disabled={subscriptionLocked}
                             description={intl.formatMessage(messages.pricingEnrollmentCodeDescription)}
                           >
                             {intl.formatMessage(messages.pricingEnrollmentCode)}

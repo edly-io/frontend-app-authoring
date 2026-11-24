@@ -24,6 +24,7 @@ export interface CoursePricing {
   partOfProgramName: string | null;
   /** false when the course type is locked for the current user. */
   canEdit: boolean;
+  canSetSubscription: boolean;
   /** Names of the categories the save removed. Only a switch to Enrollment code removes any. */
   removedCategories: string[];
 }
@@ -51,6 +52,7 @@ const toCoursePricing = (data: any): CoursePricing => ({
   partOfProgram: data.part_of_program ?? null,
   partOfProgramName: data.part_of_program_name ?? null,
   canEdit: data.can_edit ?? false,
+  canSetSubscription: data.can_set_subscription ?? true,
   removedCategories: data.removed_categories ?? [],
 });
 

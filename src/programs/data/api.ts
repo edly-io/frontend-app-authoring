@@ -51,6 +51,7 @@ const toProgram = (d: any): Program => ({
   image: d.card_image ?? '',
   courses: d.courses?.map(toCourse) ?? [],
   pricingCategory: d.pricing_category || 'is_free',
+  canSetSubscription: d.can_set_subscription ?? true,
   regularPrice: d.regular_price ?? null,
   salePrice: d.sale_price ?? null,
   discountPercentage: d.discount_percentage ?? null,
