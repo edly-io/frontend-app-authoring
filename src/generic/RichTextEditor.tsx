@@ -26,6 +26,7 @@ interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   editorKey?: string | number;
+  ariaLabel?: string;
 }
 
 const messages = defineMessages({
@@ -51,6 +52,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
   editorKey,
+  ariaLabel,
 }) => {
   const intl = useIntl();
   const isArabic = isRtl(intl.locale);
@@ -60,6 +62,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       initialValue={value}
       onEditorChange={onChange}
       init={{
+        iframe_aria_text: ariaLabel,
         plugins: 'lists link code autoresize hr charmap table embediframe',
         directionality: isArabic ? 'rtl' : 'ltr',
         toolbar: TOOLBAR,
@@ -95,6 +98,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
 RichTextEditor.defaultProps = {
   editorKey: undefined,
+  ariaLabel: undefined,
 };
 
 export default RichTextEditor;
