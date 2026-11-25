@@ -78,10 +78,11 @@ const CurriculumForm = ({
   // and a badge another curriculum already uses can't fill one here (one curriculum per badge).
   const { data: allBadges = [] } = useBadges();
   const { data: allCurriculums = [] } = useCurriculums();
-  // A course can be the knowledge check of only one learning path or course.
-  const otherKcIds = allCurriculums
-    .filter((other) => other.uuid !== curriculum?.uuid && other.knowledgeCheck)
-    .map((other) => other.knowledgeCheck!.courseId);
+  // A knowledge check course belongs to that one curriculum: it can't be a course or the knowledge check of
+  // another. The API refuses both; hiding them here just avoids a failed save.
+  const others = allCurriculums.filter((other) => other.uuid !== curriculum?.uuid);
+  const otherKcIds = others.flatMap((other) => (other.knowledgeCheck ? [other.knowledgeCheck.courseId] : []));
+  const otherCourseIds = others.flatMap((other) => other.courses.map((course) => course.courseId));
   const curriculumBadges = allBadges.filter((badge) =>
     badge.kind === 'curriculum'
     && badge.linkedCurriculums.every((linked) => linked.uuid === curriculum?.uuid)
@@ -357,7 +358,9 @@ const CurriculumForm = ({
                           <CoursePicker
                             id="curriculum-course-search"
                             label={intl.formatMessage(messages.addCourseLabel)}
-                            excludedCourseIds={values.knowledgeCheck ? [values.knowledgeCheck.id] : []}
+                            excludedCourseIds={values.knowledgeCheck
+                              ? [values.knowledgeCheck.id, ...otherKcIds]
+                              : otherKcIds}
                             addedCourseIds={courseIds}
                             error={errorFor('courses')}
                             onSelect={(course) =>
@@ -441,7 +444,7 @@ const CurriculumForm = ({
                             <CoursePicker
                               id="curriculum-knowledge-check-search"
                               label={intl.formatMessage(messages.knowledgeCheckCourseLabel)}
-                              excludedCourseIds={[...courseIds, ...otherKcIds]}
+                              excludedCourseIds={[...courseIds, ...otherKcIds, ...otherCourseIds]}
                               help={intl.formatMessage(kcHint)}
                               error={errorFor('knowledgeCheck')}
                               autoFocus={focusKcSearch}

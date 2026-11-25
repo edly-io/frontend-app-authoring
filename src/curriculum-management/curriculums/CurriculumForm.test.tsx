@@ -176,10 +176,20 @@ describe('<CurriculumForm />', () => {
     expect(axiosMock.history.post).toHaveLength(0);
   });
 
-  it('does not offer the knowledge check of another learning path as this one\'s knowledge check', async () => {
+  it('does not offer another learning path\'s knowledge check or courses as this one\'s knowledge check', async () => {
     const { user } = setup({}, rawCurriculums);
     await pickType(user, 'Learning path');
     await search(user, 'Knowledge check course', 'DRV');
+    expect(await screen.findByRole('button', { name: 'Add Earnings and payouts' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add Essentials check' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add Getting started' })).not.toBeInTheDocument();
+  });
+
+  it('does not offer another learning path\'s knowledge check as a course', async () => {
+    const { user } = setup({}, rawCurriculums);
+    await pickType(user, 'Learning path');
+    await search(user, 'Add a course', 'DRV');
+    // Another path's course can be shared; only its knowledge check is off limits.
     expect(await screen.findByRole('button', { name: 'Add Getting started' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Add Essentials check' })).not.toBeInTheDocument();
   });
