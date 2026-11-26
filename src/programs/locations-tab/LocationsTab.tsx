@@ -1,4 +1,6 @@
-import React, { useContext, useMemo, useState } from 'react';
+import React, {
+  useContext, useMemo, useRef, useState,
+} from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import {
@@ -253,6 +255,29 @@ const LocationsTab: React.FC<LocationsTabProps> = ({ programId }) => {
   const city = program?.city as ProgramCity | null | undefined;
 
   const [deleteTarget, setDeleteTarget] = useState<Location | null>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const newLocationButtonRef = useRef<HTMLButtonElement>(null);
+
+  const rememberFocus = () => {
+    returnFocusRef.current = document.activeElement as HTMLElement | null;
+  };
+
+  const restoreFocus = () => {
+    setTimeout(() => {
+      const target = returnFocusRef.current;
+      (target?.isConnected ? target : newLocationButtonRef.current)?.focus();
+    });
+  };
+
+  const closeLocationModal = () => {
+    closeModal();
+    restoreFocus();
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteTarget(null);
+    restoreFocus();
+  };
 
   const locations = locationsQuery.data?.results ?? [];
   const count = locationsQuery.data?.count ?? 0;
@@ -262,8 +287,14 @@ const LocationsTab: React.FC<LocationsTabProps> = ({ programId }) => {
     : null;
 
   const actions: LocationActions = {
-    onEdit: (location) => openModal(EDIT_MODAL, location.id),
-    onDelete: setDeleteTarget,
+    onEdit: (location) => {
+      rememberFocus();
+      openModal(EDIT_MODAL, location.id);
+    },
+    onDelete: (location) => {
+      rememberFocus();
+      setDeleteTarget(location);
+    },
     onAuditHistory: (location) => showView(AUDIT_LOG_VIEW, String(location.id)),
   };
 
@@ -282,12 +313,12 @@ const LocationsTab: React.FC<LocationsTabProps> = ({ programId }) => {
 
   const handleSaved = (saved: Location) => {
     const message = modal === EDIT_MODAL ? messages.updated : messages.created;
-    closeModal();
+    closeLocationModal();
     showToast(intl.formatMessage(message, { name: saved.name }));
   };
 
   const handleDeleted = (deleted: Location) => {
-    setDeleteTarget(null);
+    closeDeleteModal();
     showToast(intl.formatMessage(messages.deleted, { name: deleted.name }));
   };
 
@@ -347,7 +378,17 @@ const LocationsTab: React.FC<LocationsTabProps> = ({ programId }) => {
               <h2 className="h3 mb-1">{intl.formatMessage(messages.title)}</h2>
               <p className="text-muted mb-0 small">{intl.formatMessage(messages.description)}</p>
             </div>
-            <Button variant="primary" size="sm" iconBefore={Add} className="flex-shrink-0" onClick={() => openModal(NEW_MODAL)}>
+            <Button
+              ref={newLocationButtonRef}
+              variant="primary"
+              size="sm"
+              iconBefore={Add}
+              className="flex-shrink-0"
+              onClick={() => {
+                rememberFocus();
+                openModal(NEW_MODAL);
+              }}
+            >
               {intl.formatMessage(messages.newLocation)}
             </Button>
           </div>
@@ -368,7 +409,7 @@ const LocationsTab: React.FC<LocationsTabProps> = ({ programId }) => {
       {isLocationModalOpen && (
         <LocationModal
           key={editTarget?.id ?? NEW_MODAL}
-          onClose={closeModal}
+          onClose={closeLocationModal}
           location={editTarget}
           onSuccess={handleSaved}
           cityId={city?.id ?? null}
@@ -379,7 +420,7 @@ const LocationsTab: React.FC<LocationsTabProps> = ({ programId }) => {
       {deleteTarget && (
         <DeleteLocationModal
           location={deleteTarget}
-          onClose={() => setDeleteTarget(null)}
+          onClose={closeDeleteModal}
           onDeleted={handleDeleted}
         />
       )}

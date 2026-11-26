@@ -30,6 +30,10 @@ const messages = defineMessages({
   loading: { id: 'programs.enrollment.loading', defaultMessage: 'Loading enrolled learners...' },
   emptyEnrollment: { id: 'programs.enrollment.empty', defaultMessage: 'No learners enrolled yet. Click \'+ Enroll Learner\' to begin.' },
   noResults: { id: 'programs.enrollment.no-results', defaultMessage: 'No enrolled learners match your search.' },
+  resultsCount: {
+    id: 'programs.enrollment.results-count',
+    defaultMessage: '{count, plural, one {# enrolled learner} other {# enrolled learners}}',
+  },
   paginationLabel: { id: 'programs.enrollment.pagination', defaultMessage: 'Enrolled learner list pagination' },
   unenrollBtn: { id: 'programs.enrollment.unenroll-btn', defaultMessage: 'Unenroll' },
   confirmUnenrollTitle: { id: 'programs.enrollment.confirm-unenroll.title', defaultMessage: 'Unenroll Learner?' },
@@ -147,13 +151,18 @@ const EnrollmentTab: React.FC<EnrollmentTabProps> = ({ programId, canManage = tr
         </div>
         )}
 
-        {!isLoading && (!data || data.results.length === 0) && !isFetching && (
-        <p className="text-muted text-center py-4">
-          {enrolledSearch
-            ? intl.formatMessage(messages.noResults)
-            : intl.formatMessage(messages.emptyEnrollment)}
-        </p>
-        )}
+        <div role="status">
+          {!isLoading && (!data || data.results.length === 0) && !isFetching && (
+            <p className="text-muted text-center py-4">
+              {enrolledSearch
+                ? intl.formatMessage(messages.noResults)
+                : intl.formatMessage(messages.emptyEnrollment)}
+            </p>
+          )}
+          {!isLoading && !isFetching && !!data?.results.length && (
+            <span className="sr-only">{intl.formatMessage(messages.resultsCount, { count: data.count })}</span>
+          )}
+        </div>
 
         <div style={{ opacity: isFetching && !isLoading ? 0.4 : 1, transition: 'opacity 0.15s' }}>
           {!isLoading && data?.results.map((learner, index) => (

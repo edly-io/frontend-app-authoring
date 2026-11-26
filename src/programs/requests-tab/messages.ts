@@ -28,6 +28,14 @@ const messages = defineMessages({
   loadRequestsError: { id: 'programs.requests.loadError', defaultMessage: 'Failed to load requests' },
   updateRequestError: { id: 'programs.requests.updateError', defaultMessage: 'Failed to update request' },
   bulkApproveError: { id: 'programs.requests.bulkApprove.error', defaultMessage: 'Bulk approve failed' },
+  reviewStatus: {
+    id: 'programs.requests.review.status',
+    defaultMessage: 'Request from {name}: {status}.',
+  },
+  bulkApproveStatus: {
+    id: 'programs.requests.bulkApprove.status',
+    defaultMessage: '{count, plural, one {# request approved.} other {# requests approved.}}',
+  },
   bulkApprovePartial: {
     id: 'programs.requests.bulkApprove.partial',
     defaultMessage: 'Approved {approved}. {ignored} could not be approved.',
@@ -112,6 +120,10 @@ const messages = defineMessages({
   thresholdLabel: { id: 'programs.requests.threshold.label', defaultMessage: 'Leave threshold (days)' },
   thresholdDecrease: { id: 'programs.requests.threshold.decrease', defaultMessage: 'Decrease threshold' },
   thresholdIncrease: { id: 'programs.requests.threshold.increase', defaultMessage: 'Increase threshold' },
+  leaveThresholdInvalid: {
+    id: 'programs.requests.leaveThreshold.invalid',
+    defaultMessage: 'Enter a whole number of 0 or more days.',
+  },
   leaveThresholdHelp: {
     id: 'programs.requests.threshold.help',
     defaultMessage: 'Learners who go over this many days are flagged as at risk, and approving their leave shows a warning.',

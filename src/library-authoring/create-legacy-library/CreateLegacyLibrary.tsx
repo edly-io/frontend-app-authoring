@@ -94,7 +94,7 @@ export const CreateLegacyLibrary = ({
   return (
     <>
       {!showInModal && (<Header isHiddenMainMenu />)}
-      <Container size="xl" className="p-4 mt-3">
+      <Container as={showInModal ? 'div' : 'main'} id={showInModal ? undefined : 'main'} size="xl" className="p-4 mt-3">
         {!showInModal && (
           <SubHeader
             title={intl.formatMessage(legacyMessages.createLibrary)}

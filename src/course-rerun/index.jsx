@@ -44,7 +44,7 @@ const CourseRerun = () => {
   return (
     <>
       <Header isHiddenMainMenu />
-      <Container size="xl" className="small p-4 mt-3">
+      <Container as="main" id="main" size="xl" className="small p-4 mt-3">
         <section className="mb-4">
           <article>
             <section>

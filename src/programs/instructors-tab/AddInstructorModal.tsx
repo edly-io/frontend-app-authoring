@@ -22,6 +22,11 @@ const messages = defineMessages({
   addedBadge: { id: 'programs.instructors.modal.added', defaultMessage: 'Added' },
   cancelBtn: { id: 'programs.instructors.modal.cancel', defaultMessage: 'Cancel' },
   noResults: { id: 'programs.instructors.modal.no-results', defaultMessage: 'No instructors match your search.' },
+  resultsCount: {
+    id: 'programs.instructors.modal.results-count',
+    defaultMessage: '{count, plural, one {# instructor found} other {# instructors found}}',
+  },
+  addedStatus: { id: 'programs.instructors.modal.added-status', defaultMessage: '{name} added to {courseName}.' },
   loading: { id: 'programs.instructors.modal.loading', defaultMessage: 'Loading instructors...' },
   addError: { id: 'programs.instructors.modal.add-error', defaultMessage: 'Failed to add instructor. Please try again.' },
   paginationLabel: { id: 'programs.instructors.modal.pagination', defaultMessage: 'Instructor list pagination' },
@@ -44,6 +49,8 @@ const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [addingId, setAddingId] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [lastAddedUsername, setLastAddedUsername] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isFetching } = useInstructors(
@@ -56,16 +63,26 @@ const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
     listRef.current?.scrollIntoView({ block: 'nearest' });
   }, [currentPage]);
 
+  useEffect(() => {
+    if (lastAddedUsername && alreadyAddedUsernames.includes(lastAddedUsername)) {
+      document.getElementById(`added-instructor-${lastAddedUsername}`)?.focus();
+      setLastAddedUsername(null);
+    }
+  }, [lastAddedUsername, alreadyAddedUsernames]);
+
   const handleSearch = useCallback((q: string) => {
     setSearchQuery(q);
     setCurrentPage(1);
   }, []);
 
-  const handleAdd = async (username: string) => {
-    setAddingId(username);
+  const handleAdd = async (instructor: { username: string; name: string }) => {
+    setAddingId(instructor.username);
     setAddError(null);
+    setStatusMessage('');
     try {
-      await addInstructor({ courseId, username });
+      await addInstructor({ courseId, username: instructor.username });
+      setStatusMessage(intl.formatMessage(messages.addedStatus, { name: instructor.name, courseName }));
+      setLastAddedUsername(instructor.username);
     } catch (err: any) {
       setAddError(
         err?.response?.data?.detail ?? intl.formatMessage(messages.addError),
@@ -79,6 +96,7 @@ const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
     setSearchQuery('');
     setCurrentPage(1);
     setAddError(null);
+    setStatusMessage('');
     onClose();
   };
 
@@ -105,6 +123,7 @@ const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
       </ModalDialog.Header>
 
       <ModalDialog.Body>
+        <div role="status" className="sr-only">{statusMessage}</div>
         {addError && (
           <Alert variant="danger" className="mb-3">{addError}</Alert>
         )}
@@ -113,9 +132,14 @@ const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
             <Spinner animation="border" screenReaderText={intl.formatMessage(messages.loading)} />
           </div>
         )}
-        {!isLoading && (!data || data.results.length === 0) && !isFetching && (
-          <p className="text-muted text-center py-4">{intl.formatMessage(messages.noResults)}</p>
-        )}
+        <div role="status">
+          {!isLoading && (!data || data.results.length === 0) && !isFetching && (
+            <p className="text-muted text-center py-4">{intl.formatMessage(messages.noResults)}</p>
+          )}
+          {!isLoading && !isFetching && !!data?.results.length && (
+            <span className="sr-only">{intl.formatMessage(messages.resultsCount, { count: data.count })}</span>
+          )}
+        </div>
         <div ref={listRef} />
         <div style={{ opacity: isFetching && !isLoading ? 0.4 : 1, transition: 'opacity 0.15s' }}>
           {!isLoading && data?.results.map((instructor) => {
@@ -132,12 +156,14 @@ const AddInstructorModal: React.FC<AddInstructorModalProps> = ({
                   <p className="mb-0 small text-muted">{instructor.email}</p>
                 </div>
                 {isAdded ? (
-                  <Badge variant="success">{intl.formatMessage(messages.addedBadge)}</Badge>
+                  <Badge variant="success" id={`added-instructor-${instructor.username}`} tabIndex={-1}>
+                    {intl.formatMessage(messages.addedBadge)}
+                  </Badge>
                 ) : (
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={() => handleAdd(instructor.username)}
+                    onClick={() => handleAdd(instructor)}
                     disabled={isAdding || !!addingId}
                   >
                     {isAdding ? intl.formatMessage(messages.addingBtn) : intl.formatMessage(messages.addBtn)}

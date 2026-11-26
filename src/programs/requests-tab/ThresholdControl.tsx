@@ -12,18 +12,19 @@ interface ThresholdControlProps {
   id?: string;
   min?: number;
   disabled?: boolean;
+  error?: string;
 }
 
 /** Leave-threshold number field with − / + steppers, built on Paragon's Form.Control decorators. */
 const ThresholdControl = ({
-  value, onChange, id = 'leave-threshold', min = 0, disabled = false,
+  value, onChange, id = 'leave-threshold', min = 0, disabled = false, error = '',
 }: ThresholdControlProps) => {
   const intl = useIntl();
   const numeric = value === '' ? min : value;
   const step = (delta: number) => onChange(Math.max(min, numeric + delta));
 
   return (
-    <Form.Group controlId={id} className="mb-0">
+    <Form.Group controlId={id} className="mb-0" isInvalid={!!error}>
       <Form.Label>{intl.formatMessage(messages.thresholdLabel)}</Form.Label>
       <Form.Control
         type="number"
@@ -32,6 +33,7 @@ const ThresholdControl = ({
         inputMode="numeric"
         value={value}
         disabled={disabled}
+        aria-invalid={!!error}
         // className lands on Paragon's decorator wrapper, controlClassName on the <input>.
         className="requests-threshold"
         controlClassName="requests-threshold__input text-center"
@@ -60,6 +62,7 @@ const ThresholdControl = ({
           />
         )}
       />
+      {error && <Form.Control.Feedback type="invalid">{error}</Form.Control.Feedback>}
       <Form.Control.Feedback type="default">
         {intl.formatMessage(messages.leaveThresholdHelp)}
       </Form.Control.Feedback>

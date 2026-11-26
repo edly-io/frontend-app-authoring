@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { Formik } from 'formik';
+import { Formik, useFormikContext } from 'formik';
 import * as Yup from 'yup';
 import {
   Alert,
@@ -18,9 +18,33 @@ import {
 } from '../../programs/data/apiHooks';
 import messages from './messages';
 
+const FIELD_ORDER = ['displayName', 'org', 'cityId', 'programType', 'run'];
+
+const RequiredMark = () => <span className="text-danger ml-1" aria-hidden="true">*</span>;
+
+const FocusFirstError = ({ containerRef }) => {
+  const { isSubmitting, errors } = useFormikContext();
+  const wasSubmitting = useRef(false);
+  useEffect(() => {
+    if (wasSubmitting.current && !isSubmitting) {
+      const first = FIELD_ORDER.find((name) => errors[name]);
+      if (first) {
+        containerRef.current?.querySelector(`[name="${first}"]`)?.focus();
+      }
+    }
+    wasSubmitting.current = isSubmitting;
+  }, [isSubmitting, errors, containerRef]);
+  return null;
+};
+
+FocusFirstError.propTypes = {
+  containerRef: PropTypes.shape({ current: PropTypes.instanceOf(Element) }).isRequired,
+};
+
 const CreateNewProgramForm = ({ handleOnClickCancel }) => {
   const intl = useIntl();
   const navigate = useNavigate();
+  const containerRef = useRef(null);
   const { data: config } = useProgramsConfig();
   const { profile } = useProgramAccess();
   const isSuperAdmin = profile?.roles?.includes('super_admin') ?? false;
@@ -82,7 +106,7 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
   };
 
   return (
-    <div className="mb-4" data-testid="create-program-form">
+    <div className="mb-4" data-testid="create-program-form" ref={containerRef}>
       <h3 className="mb-3">{intl.formatMessage(messages.createNewProgram)}</h3>
 
       <Alert variant="warning" className="mb-4">
@@ -111,16 +135,20 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
           handleSubmit: formikSubmit,
           status,
         }) => (
-          <Form onSubmit={formikSubmit}>
+          <Form onSubmit={formikSubmit} noValidate>
+            <FocusFirstError containerRef={containerRef} />
+            <p className="small text-muted mb-3">{intl.formatMessage(messages.requiredNote)}</p>
             {status?.error && (
               <Alert variant="danger" className="mb-3">{status.error}</Alert>
             )}
 
             {/* Program Name */}
             <Form.Group isInvalid={touched.displayName && !!errors.displayName}>
-              <Form.Label>{intl.formatMessage(messages.programNameLabel)}</Form.Label>
+              <Form.Label>{intl.formatMessage(messages.programNameLabel)}<RequiredMark /></Form.Label>
               <Form.Control
                 name="displayName"
+                aria-required="true"
+                aria-invalid={Boolean(touched.displayName && errors.displayName)}
                 placeholder={intl.formatMessage(messages.programNamePlaceholder)}
                 value={values.displayName}
                 onChange={handleChange}
@@ -135,11 +163,14 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
             <Form.Group isInvalid={touched.org && !!errors.org}>
               <Form.Label>
                 {intl.formatMessage(messages.orgLabel)}
+                <RequiredMark />
                 <span className="text-muted small ml-1">(non-editable after creation)</span>
               </Form.Label>
               <Form.Control
                 as="select"
                 name="org"
+                aria-required="true"
+                aria-invalid={Boolean(touched.org && errors.org)}
                 value={values.org}
                 onChange={handleChange}
                 onBlur={handleBlur}
@@ -154,10 +185,12 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
 
             {isSuperAdmin && (
               <Form.Group isInvalid={touched.cityId && !!errors.cityId}>
-                <Form.Label>{intl.formatMessage(messages.cityLabel)}</Form.Label>
+                <Form.Label>{intl.formatMessage(messages.cityLabel)}<RequiredMark /></Form.Label>
                 <Form.Control
                   as="select"
                   name="cityId"
+                  aria-required="true"
+                  aria-invalid={Boolean(touched.cityId && errors.cityId)}
                   value={values.cityId}
                   onChange={handleChange}
                   onBlur={handleBlur}
@@ -177,11 +210,14 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
             <Form.Group isInvalid={touched.programType && !!errors.programType}>
               <Form.Label>
                 {intl.formatMessage(messages.programTypeLabel)}
+                <RequiredMark />
                 <span className="text-muted small ml-1">(non-editable after creation)</span>
               </Form.Label>
               <Form.Control
                 as="select"
                 name="programType"
+                aria-required="true"
+                aria-invalid={Boolean(touched.programType && errors.programType)}
                 value={values.programType}
                 onChange={handleChange}
                 onBlur={handleBlur}
@@ -198,10 +234,13 @@ const CreateNewProgramForm = ({ handleOnClickCancel }) => {
             <Form.Group isInvalid={touched.run && !!errors.run}>
               <Form.Label>
                 {intl.formatMessage(messages.programRunLabel)}
+                <RequiredMark />
                 <span className="text-muted small ml-1">(non-editable after creation)</span>
               </Form.Label>
               <Form.Control
                 name="run"
+                aria-required="true"
+                aria-invalid={Boolean(touched.run && errors.run)}
                 placeholder={intl.formatMessage(messages.programRunPlaceholder)}
                 value={values.run}
                 onChange={handleChange}

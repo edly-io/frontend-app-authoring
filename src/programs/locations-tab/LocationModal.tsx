@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import {
   Alert, Button, Form, StandardModal,
@@ -45,6 +45,8 @@ const LocationModal: React.FC<LocationModalProps> = ({
   const updateMutation = useUpdateLocation();
   const [form, setForm] = useState<LocationForm>(() => toForm(location));
   const [error, setError] = useState('');
+  const [nameError, setNameError] = useState('');
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const saving = createMutation.isPending || updateMutation.isPending;
 
   const handleChange = (field: keyof LocationForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,9 +59,11 @@ const LocationModal: React.FC<LocationModalProps> = ({
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      setError(intl.formatMessage(messages.modalNameRequired));
+      setNameError(intl.formatMessage(messages.modalNameRequired));
+      nameInputRef.current?.focus();
       return;
     }
+    setNameError('');
     setError('');
     try {
       onSuccess(await save());
@@ -94,14 +98,18 @@ const LocationModal: React.FC<LocationModalProps> = ({
         </div>
       )}
 
-      <Form.Group className="mb-3">
+      <Form.Group className="mb-3" controlId="location-name" isInvalid={!!nameError}>
         <Form.Label>{intl.formatMessage(messages.modalName)}</Form.Label>
         <Form.Control
+          ref={nameInputRef}
           value={form.name}
           onChange={handleChange('name')}
           placeholder={intl.formatMessage(messages.modalNamePlaceholder)}
+          aria-required="true"
+          aria-invalid={!!nameError}
           autoFocus
         />
+        {nameError && <Form.Control.Feedback type="invalid">{nameError}</Form.Control.Feedback>}
       </Form.Group>
 
       <Form.Group className="mb-3">

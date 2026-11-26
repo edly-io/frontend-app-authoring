@@ -25,6 +25,11 @@ const messages = defineMessages({
   enrolledBadge: { id: 'programs.enrollment.modal.enrolled', defaultMessage: 'Enrolled' },
   cancelBtn: { id: 'programs.enrollment.modal.cancel', defaultMessage: 'Cancel' },
   noResults: { id: 'programs.enrollment.modal.no-results', defaultMessage: 'No learners match your search.' },
+  resultsCount: {
+    id: 'programs.enrollment.modal.results-count',
+    defaultMessage: '{count, plural, one {# learner found} other {# learners found}}',
+  },
+  enrolledStatus: { id: 'programs.enrollment.modal.enrolled-status', defaultMessage: '{name} enrolled in the program.' },
   loading: { id: 'programs.enrollment.modal.loading', defaultMessage: 'Loading learners...' },
   enrollError: { id: 'programs.enrollment.modal.enroll-error', defaultMessage: 'Failed to enroll learner. Please try again.' },
   paginationLabel: { id: 'programs.enrollment.modal.pagination', defaultMessage: 'Learner list pagination' },
@@ -44,6 +49,8 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [enrollingId, setEnrollingId] = useState<string | null>(null);
   const [enrollError, setEnrollError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [lastEnrolledId, setLastEnrolledId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading, isFetching } = useLearners(
@@ -57,16 +64,26 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
     listRef.current?.scrollIntoView({ block: 'nearest' });
   }, [currentPage]);
 
+  useEffect(() => {
+    if (lastEnrolledId && enrolledIdSet?.has(lastEnrolledId)) {
+      document.getElementById(`enrolled-badge-${lastEnrolledId}`)?.focus();
+      setLastEnrolledId(null);
+    }
+  }, [lastEnrolledId, enrolledIdSet]);
+
   const handleSearch = useCallback((q: string) => {
     setSearchQuery(q);
     setCurrentPage(1);
   }, []);
 
-  const handleEnroll = async (username: string) => {
-    setEnrollingId(username);
+  const handleEnroll = async (learner: { id: string; username: string; name: string }) => {
+    setEnrollingId(learner.username);
     setEnrollError(null);
+    setStatusMessage('');
     try {
-      await enrollLearner({ programId, username });
+      await enrollLearner({ programId, username: learner.username });
+      setStatusMessage(intl.formatMessage(messages.enrolledStatus, { name: learner.name }));
+      setLastEnrolledId(learner.id);
     } catch (err: any) {
       setEnrollError(
         err?.response?.data?.detail ?? intl.formatMessage(messages.enrollError),
@@ -80,6 +97,7 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
     setSearchQuery('');
     setCurrentPage(1);
     setEnrollError(null);
+    setStatusMessage('');
     onClose();
   };
 
@@ -106,6 +124,7 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
       </ModalDialog.Header>
 
       <ModalDialog.Body>
+        <div role="status" className="sr-only">{statusMessage}</div>
         {enrollError && (
           <Alert variant="danger" className="mb-3">{enrollError}</Alert>
         )}
@@ -114,9 +133,14 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
             <Spinner animation="border" screenReaderText={intl.formatMessage(messages.loading)} />
           </div>
         )}
-        {!isLoading && (!data || data.results.length === 0) && !isFetching && (
-          <p className="text-muted text-center py-4">{intl.formatMessage(messages.noResults)}</p>
-        )}
+        <div role="status">
+          {!isLoading && (!data || data.results.length === 0) && !isFetching && (
+            <p className="text-muted text-center py-4">{intl.formatMessage(messages.noResults)}</p>
+          )}
+          {!isLoading && !isFetching && !!data?.results.length && (
+            <span className="sr-only">{intl.formatMessage(messages.resultsCount, { count: data.count })}</span>
+          )}
+        </div>
         <div ref={listRef} />
         <div style={{ opacity: isFetching && !isLoading ? 0.4 : 1, transition: 'opacity 0.15s' }}>
           {!isLoading && data?.results.map((learner) => {
@@ -139,12 +163,14 @@ const AddLearnerModal: React.FC<AddLearnerModalProps> = ({
                   <span className="program-member-row__email text-muted">{learner.email}</span>
                 </div>
                 {isEnrolled ? (
-                  <Badge variant="success">{intl.formatMessage(messages.enrolledBadge)}</Badge>
+                  <Badge variant="success" id={`enrolled-badge-${learner.id}`} tabIndex={-1}>
+                    {intl.formatMessage(messages.enrolledBadge)}
+                  </Badge>
                 ) : (
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={() => handleEnroll(learner.username)}
+                    onClick={() => handleEnroll(learner)}
                     disabled={isEnrolling || !!enrollingId}
                   >
                     {isEnrolling ? intl.formatMessage(messages.enrollingBtn) : intl.formatMessage(messages.enrollBtn)}

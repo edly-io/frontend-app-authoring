@@ -4,6 +4,7 @@ import classNames from 'classnames';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import CreatableSelectBase from 'react-select/creatable';
+import { components as selectComponents, InputProps } from 'react-select';
 import DatePicker from 'react-datepicker';
 import {
   Alert,
@@ -20,9 +21,11 @@ import {
   Tab,
   Tabs,
 } from '@openedx/paragon';
+import { Helmet } from 'react-helmet';
 import { useIntl, defineMessages } from '@edx/frontend-platform/i18n';
 import { StudioFooterSlot } from '@edx/frontend-component-footer';
 import Header from '../header';
+import getPageHeadTitle from '../generic/utils';
 import { LoadingSpinner } from '../generic/Loading';
 import PermissionDeniedAlert from '../generic/PermissionDeniedAlert';
 import { ToastContext } from '../generic/toast-context';
@@ -40,7 +43,9 @@ import CalendarTab from './calendar-tab/CalendarTab';
 import LocationsTab from './locations-tab/LocationsTab';
 import HolidaysTab from './holidays-tab/HolidaysTab';
 import RequestsTab from './requests-tab/RequestsTab';
-import { DEFAULT_PROGRAM_TAB, getActiveProgramTab, isProgramTabVisible } from './programTabs';
+import {
+  DEFAULT_PROGRAM_TAB, getActiveProgramTab, isProgramTabVisible, type ProgramTabKey,
+} from './programTabs';
 import './index.scss';
 
 const messages = defineMessages({
@@ -105,6 +110,21 @@ const messages = defineMessages({
   imageChange: { id: 'programs.detail.image.change', defaultMessage: 'Change Image' },
 });
 
+const TAB_TITLE_MESSAGES: Record<ProgramTabKey, typeof messages.tabDetails> = {
+  details: messages.tabDetails,
+  courses: messages.tabCourses,
+  instructors: messages.tabInstructors,
+  enrollment: messages.tabEnrollment,
+  feedback: messages.tabFeedback,
+  'trainee-results': messages.tabTraineeResults,
+  certificates: messages.tabCertificates,
+  calendar: messages.tabCalendar,
+  requests: messages.tabRequests,
+  attendance: messages.tabAttendance,
+  locations: messages.tabLocations,
+  holidays: messages.tabHolidays,
+};
+
 // ContentTagsCollapsible.d.ts globally augments react-select/base Props with taxonomy-specific
 // fields, which makes TypeScript require those props on every react-select usage in this project.
 // This cast is the recommended workaround noted in that file.
@@ -128,15 +148,19 @@ interface DateInputProps {
   value?: string;
   onClick?: () => void;
   placeholder?: string;
+  invalid?: boolean;
 }
 
 // Wraps react-datepicker's custom input in a Paragon Form.Control so it inherits the design system styling.
 // onChange is a no-op because react-datepicker manages the value; readOnly is intentionally omitted so
 // Paragon does not apply its greyed-out disabled styling.
 const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
-  ({ value, onClick, placeholder }, ref) => (
+  ({
+    value, onClick, placeholder, invalid,
+  }, ref) => (
     <Form.Control
       value={value ?? ''}
+      aria-invalid={invalid || undefined}
       onClick={onClick}
       onChange={() => {}}
       ref={ref as React.Ref<HTMLInputElement>}
@@ -145,6 +169,13 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
     />
   ),
 );
+
+const SAVE_ERROR_FIELD_IDS: Record<string, string> = {
+  displayName: 'program-title',
+  targetAudience: 'program-target-audience',
+  city: 'program-city',
+  endDate: 'program-end-date',
+};
 
 const RequiredMark: React.FC = () => {
   const intl = useIntl();
@@ -164,6 +195,16 @@ const SummaryField: React.FC<{ label: string; value: string; mono?: boolean }> =
     <p className="x-small text-uppercase text-muted font-weight-bold mb-1 letter-spacing-wider">{label}</p>
     <p className={`mb-0 ${mono ? 'text-monospace small' : ''}`}>{value}</p>
   </div>
+);
+
+const AudienceSelectInput = (props: InputProps) => (
+  <selectComponents.Input
+    {...props}
+    aria-describedby={classNames(
+      (props as unknown as Record<string, string>)['aria-describedby'],
+      'program-target-audience-help',
+    )}
+  />
 );
 
 // Defined outside the component so React doesn't see a new type on every render
@@ -267,6 +308,15 @@ const ProgramDetailPage: React.FC = () => {
     },
   });
 
+  const handleSave = async () => {
+    const errors = await formik.validateForm();
+    formik.handleSubmit();
+    const firstInvalid = Object.keys(SAVE_ERROR_FIELD_IDS).find((field) => errors[field]);
+    if (firstInvalid) {
+      document.getElementById(SAVE_ERROR_FIELD_IDS[firstInvalid])?.focus();
+    }
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -290,7 +340,7 @@ const ProgramDetailPage: React.FC = () => {
     return (
       <>
         <Header isHiddenMainMenu />
-        <Container id="main" size="xl" className="p-4 mt-3 d-flex justify-content-center">
+        <Container as="main" id="main" size="xl" className="p-4 mt-3 d-flex justify-content-center">
           <LoadingSpinner />
         </Container>
       </>
@@ -301,7 +351,7 @@ const ProgramDetailPage: React.FC = () => {
     return (
       <>
         <Header isHiddenMainMenu />
-        <Container id="main" size="xl" className="p-4 mt-3">
+        <Container as="main" id="main" size="xl" className="p-4 mt-3">
           <PermissionDeniedAlert />
         </Container>
       </>
@@ -312,7 +362,7 @@ const ProgramDetailPage: React.FC = () => {
     return (
       <>
         <Header isHiddenMainMenu />
-        <Container id="main" size="xl" className="p-4 mt-3">
+        <Container as="main" id="main" size="xl" className="p-4 mt-3">
           <Alert variant="danger">{intl.formatMessage(messages.notFound)}</Alert>
         </Container>
       </>
@@ -321,8 +371,13 @@ const ProgramDetailPage: React.FC = () => {
 
   return (
     <>
+      <Helmet>
+        <title>
+          {getPageHeadTitle(program.displayName, intl.formatMessage(TAB_TITLE_MESSAGES[activeTab]))}
+        </title>
+      </Helmet>
       <Header isHiddenMainMenu />
-      <Container id="main" size="xl" className="program-detail-page p-4 mt-3">
+      <Container as="main" id="main" size="xl" className="program-detail-page p-4 mt-3">
 
         {/* ── Page header ─────────────────────────────────────────────── */}
         <div className="program-page-header mb-4">
@@ -352,7 +407,7 @@ const ProgramDetailPage: React.FC = () => {
                 pending: intl.formatMessage(messages.saving),
               }}
               disabledStates={['pending']}
-              onClick={() => formik.handleSubmit()}
+              onClick={handleSave}
               variant="primary"
             />
           )}
@@ -378,7 +433,7 @@ const ProgramDetailPage: React.FC = () => {
                 <Button
                   variant="warning"
                   size="sm"
-                  onClick={() => formik.handleSubmit()}
+                  onClick={handleSave}
                   disabled={isSaving}
                 >
                   {intl.formatMessage(messages.unsavedBannerSave)}
@@ -419,6 +474,7 @@ const ProgramDetailPage: React.FC = () => {
 
                       {/* Program Title */}
                       <Form.Group
+                        controlId="program-title"
                         isInvalid={formik.touched.displayName && !!formik.errors.displayName}
                         className="mb-4"
                       >
@@ -426,6 +482,7 @@ const ProgramDetailPage: React.FC = () => {
                         <Form.Control
                           name="displayName"
                           aria-required="true"
+                          aria-invalid={Boolean(formik.touched.displayName && formik.errors.displayName)}
                           placeholder="e.g. Advanced Tax Assessment Program"
                           value={formik.values.displayName}
                           onChange={formik.handleChange}
@@ -446,13 +503,14 @@ const ProgramDetailPage: React.FC = () => {
                           as="textarea"
                           rows={3}
                           name="shortDescription"
+                          aria-describedby="program-short-description-hint"
                           placeholder="Brief summary shown in listings and cards..."
                           value={formik.values.shortDescription ?? ''}
                           onChange={formik.handleChange}
                           onBlur={formik.handleBlur}
                           readOnly={!capabilities.canEditProgram}
                         />
-                        <Form.Text muted>{intl.formatMessage(messages.fieldShortDescHint)}</Form.Text>
+                        <Form.Text muted id="program-short-description-hint">{intl.formatMessage(messages.fieldShortDescHint)}</Form.Text>
                       </Form.Group>
 
                       {/* Detailed Description */}
@@ -462,13 +520,14 @@ const ProgramDetailPage: React.FC = () => {
                           as="textarea"
                           rows={6}
                           name="longDescription"
+                          aria-describedby="program-long-description-hint"
                           placeholder="Comprehensive description for the program detail page..."
                           value={formik.values.longDescription ?? ''}
                           onChange={formik.handleChange}
                           onBlur={formik.handleBlur}
                           readOnly={!capabilities.canEditProgram}
                         />
-                        <Form.Text muted>{intl.formatMessage(messages.fieldDetailedDescHint)}</Form.Text>
+                        <Form.Text muted id="program-long-description-hint">{intl.formatMessage(messages.fieldDetailedDescHint)}</Form.Text>
                       </Form.Group>
 
                       {/* Target Audience — creatable, case-insensitive */}
@@ -480,6 +539,8 @@ const ProgramDetailPage: React.FC = () => {
                         <Form.Label>{intl.formatMessage(messages.fieldAudience)}<RequiredMark /></Form.Label>
                         <CreatableSelect
                           inputId="program-target-audience"
+                          aria-invalid={Boolean(formik.touched.targetAudience && formik.errors.targetAudience)}
+                          components={{ Input: AudienceSelectInput }}
                           isClearable
                           isDisabled={!capabilities.canEditProgram}
                           options={audienceOptions}
@@ -503,11 +564,11 @@ const ProgramDetailPage: React.FC = () => {
                           classNamePrefix="program-audience-select"
                         />
                         {formik.touched.targetAudience && formik.errors.targetAudience ? (
-                          <Form.Control.Feedback type="invalid">
+                          <Form.Control.Feedback type="invalid" id="program-target-audience-help">
                             {formik.errors.targetAudience}
                           </Form.Control.Feedback>
                         ) : (
-                          <Form.Text muted>{intl.formatMessage(messages.fieldAudienceHint)}</Form.Text>
+                          <Form.Text muted id="program-target-audience-help">{intl.formatMessage(messages.fieldAudienceHint)}</Form.Text>
                         )}
                       </Form.Group>
 
@@ -527,6 +588,11 @@ const ProgramDetailPage: React.FC = () => {
                             name="city"
                             required
                             aria-required="true"
+                            aria-invalid={Boolean(formik.touched.city && formik.errors.city)}
+                            aria-describedby={classNames({
+                              'program-city-loading': isCitiesLoading,
+                              'program-city-error': isCitiesError && cities.length === 0,
+                            }) || undefined}
                             value={formik.values.city ?? ''}
                             onChange={formik.handleChange}
                             onBlur={formik.handleBlur}
@@ -538,7 +604,7 @@ const ProgramDetailPage: React.FC = () => {
                             ))}
                           </Form.Control>
                         ) : (
-                          <Form.Control value={cityName} readOnly />
+                          <Form.Control value={cityName} readOnly aria-describedby="program-city-readonly" />
                         )}
                         {formik.touched.city && formik.errors.city && (
                           <Form.Control.Feedback type="invalid">
@@ -546,15 +612,15 @@ const ProgramDetailPage: React.FC = () => {
                           </Form.Control.Feedback>
                         )}
                         {isSuperAdmin && isCitiesLoading && (
-                          <Form.Text muted>{intl.formatMessage(messages.fieldCityLoading)}</Form.Text>
+                          <Form.Text muted id="program-city-loading">{intl.formatMessage(messages.fieldCityLoading)}</Form.Text>
                         )}
                         {isSuperAdmin && isCitiesError && cities.length === 0 && (
-                          <Form.Text className="text-danger">
+                          <Form.Text className="text-danger" id="program-city-error">
                             {intl.formatMessage(messages.fieldCityError)}
                           </Form.Text>
                         )}
                         {!isSuperAdmin && (
-                          <Form.Text muted>{intl.formatMessage(messages.fieldCityReadOnly)}</Form.Text>
+                          <Form.Text muted id="program-city-readonly">{intl.formatMessage(messages.fieldCityReadOnly)}</Form.Text>
                         )}
                       </Form.Group>
 
@@ -581,7 +647,10 @@ const ProgramDetailPage: React.FC = () => {
                           </Form.Group>
                         </Col>
                         <Col xs={12} md={6}>
-                          <Form.Group isInvalid={formik.touched.endDate && !!formik.errors.endDate}>
+                          <Form.Group
+                            controlId="program-end-date"
+                            isInvalid={formik.touched.endDate && !!formik.errors.endDate}
+                          >
                             <Form.Label>{intl.formatMessage(messages.fieldEndDate)}</Form.Label>
                             <DatePicker
                               selected={formik.values.endDate ? new Date(formik.values.endDate) : null}
@@ -589,7 +658,12 @@ const ProgramDetailPage: React.FC = () => {
                                 formik.setFieldValue('endDate', date ? date.toISOString().split('T')[0] : '');
                                 formik.setFieldTouched('endDate', true, false);
                               }}
-                              customInput={<DateInput placeholder="Select end date" />}
+                              customInput={(
+                                <DateInput
+                                  placeholder="Select end date"
+                                  invalid={Boolean(formik.touched.endDate && formik.errors.endDate)}
+                                />
+                              )}
                               disabled={!capabilities.canEditProgram}
                               dateFormat="MMMM d, yyyy"
                               minDate={formik.values.startDate ? new Date(formik.values.startDate) : undefined}

@@ -7,8 +7,8 @@ import {
   extractApiError,
   isLeaveStartDatePast,
   REQUEST_STATUS,
+  REQUEST_STATUS_LABELS,
   REQUEST_TYPE,
-  SectionHeading,
   SessionLeavesPanel,
   useIsBelowLg,
 } from '@edly-io/frontend-component-fbr';
@@ -73,12 +73,18 @@ const AdminRequestsView = ({ programId, lockedType }: AdminRequestsViewProps) =>
   const bulkMutation = useBulkApproveLeaves();
   const selection = usePendingSelection(requests, `${filterKey}:${pageIndex}`);
   const [actionError, setActionError] = useState('');
+  const [statusMessage, setStatusMessage] = useState('');
   const [noteTarget, setNoteTarget] = useState<NoteTarget | null>(null);
   const [bulkPastLeaves, setBulkPastLeaves] = useState<AdminRequest[] | null>(null);
 
   const applyReview = async (request: AdminRequest, state: string, reviewerNote = '') => {
+    setStatusMessage('');
     try {
       await reviewMutation.mutateAsync({ request, state, reviewerNote });
+      setStatusMessage(intl.formatMessage(messages.reviewStatus, {
+        name: request.submitter_name || request.submitter_email || '',
+        status: REQUEST_STATUS_LABELS[state] ?? state,
+      }));
     } catch (err) {
       setActionError(extractApiError(err as Error, intl.formatMessage(messages.updateRequestError)));
     }
@@ -134,6 +140,7 @@ const AdminRequestsView = ({ programId, lockedType }: AdminRequestsViewProps) =>
     try {
       const result = await bulkMutation.mutateAsync({ programKey: programId, leaveIds: [...selection.selectedIds] });
       selection.clear();
+      setStatusMessage(intl.formatMessage(messages.bulkApproveStatus, { count: result.approved_count }));
       if (result.ignored_count > 0) {
         setActionError(intl.formatMessage(messages.bulkApprovePartial, {
           approved: result.approved_count, ignored: result.ignored_count,
@@ -209,12 +216,13 @@ const AdminRequestsView = ({ programId, lockedType }: AdminRequestsViewProps) =>
 
   return (
     <div className="requests-view py-3">
+      <div role="status" className="sr-only">{statusMessage}</div>
       {actionError && (
         <Alert variant="danger" dismissible onClose={() => setActionError('')}>{actionError}</Alert>
       )}
 
       <div className="mb-5">
-        <SectionHeading>{intl.formatMessage(messages.sectionRequests)}</SectionHeading>
+        <h2 className="fbr-section-heading">{intl.formatMessage(messages.sectionRequests)}</h2>
         <RequestFiltersRow filters={filters} onChange={setFilters} />
 
         {isLeaves && selection.pendingIds.length > 0 && (
@@ -248,7 +256,7 @@ const AdminRequestsView = ({ programId, lockedType }: AdminRequestsViewProps) =>
       {isLeaves && (
         <>
           <div className="mb-5">
-            <SectionHeading>{intl.formatMessage(messages.sectionLeaveSummaries)}</SectionHeading>
+            <h2 className="fbr-section-heading">{intl.formatMessage(messages.sectionLeaveSummaries)}</h2>
             <LeaveUsagePanel programKey={programId} />
           </div>
           <SessionLeavesPanel programKey={programId} />

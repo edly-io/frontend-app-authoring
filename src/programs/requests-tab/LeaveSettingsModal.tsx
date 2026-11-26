@@ -19,7 +19,9 @@ const LeaveSettingsDialog = ({ programKey, onClose }: { programKey: string; onCl
   const [draft, setDraft] = useState<ThresholdValue | null>(null);
   const value = draft ?? savedThreshold ?? '';
   const saving = updateThreshold.isPending;
-  const canSave = savedThreshold !== null && !saving && value !== '' && value >= 0 && value !== savedThreshold;
+  const isValidValue = value !== '' && value >= 0 && Number.isInteger(value);
+  const valueError = draft !== null && !isValidValue ? intl.formatMessage(messages.leaveThresholdInvalid) : '';
+  const canSave = savedThreshold !== null && !saving && isValidValue && value !== savedThreshold;
 
   // Flags, at-risk counts and usage all derive from the threshold server-side; the hook refetches them.
   const handleSave = () => updateThreshold.mutate(
@@ -38,7 +40,7 @@ const LeaveSettingsDialog = ({ programKey, onClose }: { programKey: string; onCl
         </div>
       );
     }
-    return <ThresholdControl value={value} onChange={setDraft} disabled={saving} />;
+    return <ThresholdControl value={value} onChange={setDraft} disabled={saving} error={valueError} />;
   };
 
   return (
