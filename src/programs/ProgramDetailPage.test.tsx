@@ -102,7 +102,7 @@ describe('<ProgramDetailPage /> pricing', () => {
     renderPage({ canSetSubscription: false, pricingCategory: 'is_part_of_subscription' });
     expect(screen.getByRole('radio', { name: 'Part of Subscription' })).toBeChecked();
     screen.getAllByRole('radio').forEach((radio) => expect(radio).toBeDisabled());
-    expect(screen.getByText('Only staff can change a subscription program type.')).toBeInTheDocument();
+    expect(screen.getByText('Contact a platform administrator or staff member to change a subscription program type.')).toBeInTheDocument();
     saveProgram();
     await waitFor(() => expect(mockUpdateProgram).toHaveBeenCalledTimes(1));
     expect(mockUpdateProgram.mock.calls[0][0].data.pricingCategory).toBeUndefined();

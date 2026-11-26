@@ -84,7 +84,7 @@ const messages = defineMessages({
   pricingPaid: { id: 'programs.detail.field.pricing.paid', defaultMessage: 'Paid' },
   pricingPaidDescription: { id: 'programs.detail.field.pricing.paid.description', defaultMessage: 'Sold at the price set below.' },
   pricingSubscription: { id: 'programs.detail.field.pricing.subscription', defaultMessage: 'Part of Subscription' },
-  subscriptionReadOnly: { id: 'programs.detail.field.pricing.subscription-read-only', defaultMessage: 'Only staff can change a subscription program type.', description: 'Explains why the program pricing type cannot be changed.' },
+  subscriptionReadOnly: { id: 'programs.detail.field.pricing.subscription-read-only', defaultMessage: 'Contact a platform administrator or staff member to change a subscription program type.', description: 'Explains why the program pricing type cannot be changed.' },
   pricingSubscriptionDescription: { id: 'programs.detail.field.pricing.subscription.description', defaultMessage: 'Learners reach this program through the {siteName} subscription. It has no price of its own.' },
   pricingEnrollmentCode: { id: 'programs.detail.field.pricing.enrollment-code', defaultMessage: 'Enrollment code' },
   pricingEnrollmentCodeDescription: { id: 'programs.detail.field.pricing.enrollment-code.description', defaultMessage: 'A free, restricted program that learners can only join with an enrollment code.' },
@@ -609,7 +609,7 @@ const ProgramDetailPage: React.FC = () => {
                           >
                             {intl.formatMessage(messages.pricingPaid)}
                           </Form.Radio>
-                          {(program?.canSetSubscription !== false || subscriptionLocked) && (
+                          {((program?.canSetSubscription ?? true) || subscriptionLocked) && (
                           <Form.Radio
                             value="is_part_of_subscription"
                             disabled={subscriptionLocked}
