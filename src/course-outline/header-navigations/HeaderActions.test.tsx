@@ -10,6 +10,7 @@ import {
 import { CourseOutlineProvider, OutlineSidebarProvider } from '@src/course-outline';
 import { CourseAuthoringProvider } from '@src/CourseAuthoringContext';
 import { apiUrls } from '@src/course-categories/data/api';
+import { apiUrls as courseTagsApiUrls } from '@src/course-tags/data/api';
 import { apiUrls as publishHistoryApiUrls } from '@src/publish-history/data/api';
 import messages from './messages';
 import HeaderActions, { HeaderActionsProps } from './HeaderActions';
@@ -153,6 +154,58 @@ describe('<HeaderActions />', () => {
       await screen.findByRole('button', { name: messages.addButton.defaultMessage });
       await waitFor(() => expect(axiosMock.history.get.some(({ url }) => url === apiUrls.status('1'))).toBe(true));
       expect(screen.queryByRole('button', { name: categoriesButtonName })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('course tags button', () => {
+    it('sits right after Categories', async () => {
+      const { axiosMock } = initializeMocks();
+      axiosMock.onGet(apiUrls.status('1')).reply(200, { enabled: true, can_assign: true, can_manage: false });
+      axiosMock.onGet(courseTagsApiUrls.status('1')).reply(200, { enabled: true, can_assign: true });
+      renderComponent({ isReIndexShow: true, isDisabledReindexButton: false });
+
+      const tags = await screen.findByRole('button', { name: 'Tags' });
+      const categories = await screen.findByRole('button', { name: 'Categories' });
+      const reindex = screen.getByRole('button', { name: messages.reindexButton.defaultMessage });
+      expect(categories.compareDocumentPosition(tags) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(tags.compareDocumentPosition(reindex) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('is not rendered when the flag is off', async () => {
+      const { axiosMock } = initializeMocks();
+      axiosMock.onGet(courseTagsApiUrls.status('1')).reply(200, { enabled: false, can_assign: true });
+      renderComponent();
+
+      await screen.findByRole('button', { name: messages.addButton.defaultMessage });
+      await waitFor(() =>
+        expect(
+          axiosMock.history.get.some(({ url }) => url === courseTagsApiUrls.status('1')),
+        ).toBe(true)
+      );
+      expect(screen.queryByRole('button', { name: 'Tags' })).not.toBeInTheDocument();
+    });
+
+    it('is not rendered when the user cannot assign', async () => {
+      const { axiosMock } = initializeMocks();
+      axiosMock.onGet(courseTagsApiUrls.status('1')).reply(200, { enabled: true, can_assign: false });
+      renderComponent();
+
+      await screen.findByRole('button', { name: messages.addButton.defaultMessage });
+      await waitFor(() =>
+        expect(
+          axiosMock.history.get.some(({ url }) => url === courseTagsApiUrls.status('1')),
+        ).toBe(true)
+      );
+      expect(screen.queryByRole('button', { name: 'Tags' })).not.toBeInTheDocument();
+    });
+
+    it('does not affect the other buttons when its status request fails', async () => {
+      const { axiosMock } = initializeMocks();
+      axiosMock.onGet(courseTagsApiUrls.status('1')).reply(404);
+      renderComponent();
+
+      expect(await screen.findByRole('button', { name: messages.addButton.defaultMessage })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Tags' })).not.toBeInTheDocument();
     });
   });
 

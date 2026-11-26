@@ -13,6 +13,7 @@ import {
 } from '@openedx/paragon/icons';
 
 import { CourseCategoriesButton } from '@src/course-categories';
+import { CourseTagsButton } from '@src/course-tags';
 import { OutlinePageErrors, XBlockActions } from '@src/data/types';
 import { PublishHistoryButton } from '@src/publish-history';
 
@@ -71,6 +72,7 @@ const HeaderActions = ({
         </Button>
       </OverlayTrigger>
       <CourseCategoriesButton />
+      <CourseTagsButton />
       <PublishHistoryButton />
       {isReIndexShow && (
         <OverlayTrigger
