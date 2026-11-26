@@ -113,7 +113,7 @@ const ProgramEmailTab = ({ programId }: { programId: string }) => {
       )}
       <p>{intl.formatMessage(messages.body)}</p>
       <RichTextEditor
-        value={body}
+        value=""
         editorKey={editorKey}
         ariaLabel={intl.formatMessage(messages.body)}
         autoDirection
