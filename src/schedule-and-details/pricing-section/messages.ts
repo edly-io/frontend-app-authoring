@@ -39,7 +39,7 @@ const messages = defineMessages({
   },
   subscriptionReadOnly: {
     id: 'course-authoring.schedule-section.pricing.subscription-read-only',
-    defaultMessage: 'Only staff can change a subscription course type.',
+    defaultMessage: 'Contact a platform administrator or staff member to change a subscription course type.',
     description: 'Explains why the course pricing type cannot be changed.',
   },
   categorySubscriptionDescription: {

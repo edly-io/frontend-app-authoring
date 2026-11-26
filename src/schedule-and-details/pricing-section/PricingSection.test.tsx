@@ -58,7 +58,7 @@ describe('<PricingSection />', () => {
     await renderSection({ can_set_subscription: false, pricing_category: 'is_part_of_subscription' });
     expect(screen.getByRole('radio', { name: 'Part of Subscription' })).toBeChecked();
     screen.getAllByRole('radio').forEach((radio) => expect(radio).toBeDisabled());
-    expect(screen.getByText('Only staff can change a subscription course type.')).toBeInTheDocument();
+    expect(screen.getByText('Contact a platform administrator or staff member to change a subscription course type.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save course type' })).not.toBeInTheDocument();
     expect(axiosMock.history.put).toHaveLength(0);
   });
