@@ -28,6 +28,14 @@ const messages = defineMessages({
   loadRequestsError: { id: 'programs.requests.loadError', defaultMessage: 'Failed to load requests' },
   updateRequestError: { id: 'programs.requests.updateError', defaultMessage: 'Failed to update request' },
   bulkApproveError: { id: 'programs.requests.bulkApprove.error', defaultMessage: 'Bulk approve failed' },
+  reviewStatus: {
+    id: 'programs.requests.review.status',
+    defaultMessage: 'Request from {name}: {status}.',
+  },
+  bulkApproveStatus: {
+    id: 'programs.requests.bulkApprove.status',
+    defaultMessage: '{count, plural, one {# request approved.} other {# requests approved.}}',
+  },
   bulkApprovePartial: {
     id: 'programs.requests.bulkApprove.partial',
     defaultMessage: 'Approved {approved}. {ignored} could not be approved.',

@@ -25,6 +25,11 @@ const messages = defineMessages({
   addedBadge: { id: 'programs.courses.modal.added', defaultMessage: 'Added' },
   cancelBtn: { id: 'programs.courses.modal.cancel', defaultMessage: 'Cancel' },
   noResults: { id: 'programs.courses.modal.no-results', defaultMessage: 'No courses match your search.' },
+  resultsCount: {
+    id: 'programs.courses.modal.results-count',
+    defaultMessage: '{count, plural, one {# course found} other {# courses found}}',
+  },
+  addedStatus: { id: 'programs.courses.modal.added-status', defaultMessage: '{courseName} added to the program.' },
   loading: { id: 'programs.courses.modal.loading', defaultMessage: 'Loading courses...' },
   paginationLabel: { id: 'programs.courses.modal.pagination', defaultMessage: 'Course list pagination' },
   tabAdd: { id: 'programs.courses.modal.tab.add', defaultMessage: 'Add Course' },
@@ -57,40 +62,54 @@ interface CourseRowProps {
   course: Course;
   isAdded: boolean;
   isAdding: boolean;
-  onAdd: (id: string) => void;
+  onAdd: (course: Course) => void;
   intl: ReturnType<typeof useIntl>;
 }
 
 const AddCourseRow: React.FC<CourseRowProps> = ({
   course, isAdded, isAdding, onAdd, intl,
-}) => (
-  <div
-    className="d-flex justify-content-between align-items-center py-3"
-    style={{ borderBottom: '1px solid #dee2e6' }}
-  >
-    <div>
-      <p className="mb-1 font-weight-bold">{course.displayName}</p>
-      <p className="mb-0 small text-muted">
-        {course.org}
-        {' · '}
-        {course.run}
-        {course.targetAudience && <>{' · '}{course.targetAudience}</>}
-      </p>
+}) => {
+  const badgeRef = useRef<HTMLSpanElement>(null);
+  const addRequested = useRef(false);
+
+  useEffect(() => {
+    if (isAdding) {
+      addRequested.current = true;
+    } else if (addRequested.current && isAdded) {
+      addRequested.current = false;
+      badgeRef.current?.focus();
+    }
+  }, [isAdding, isAdded]);
+
+  return (
+    <div
+      className="d-flex justify-content-between align-items-center py-3"
+      style={{ borderBottom: '1px solid #dee2e6' }}
+    >
+      <div>
+        <p className="mb-1 font-weight-bold">{course.displayName}</p>
+        <p className="mb-0 small text-muted">
+          {course.org}
+          {' · '}
+          {course.run}
+          {course.targetAudience && <>{' · '}{course.targetAudience}</>}
+        </p>
+      </div>
+      {isAdded ? (
+        <Badge variant="success" ref={badgeRef} tabIndex={-1}>{intl.formatMessage(messages.addedBadge)}</Badge>
+      ) : (
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => onAdd(course)}
+          disabled={isAdding}
+        >
+          {isAdding ? intl.formatMessage(messages.addingBtn) : intl.formatMessage(messages.addBtn)}
+        </Button>
+      )}
     </div>
-    {isAdded ? (
-      <Badge variant="success">{intl.formatMessage(messages.addedBadge)}</Badge>
-    ) : (
-      <Button
-        variant="primary"
-        size="sm"
-        onClick={() => onAdd(course.id)}
-        disabled={isAdding}
-      >
-        {isAdding ? intl.formatMessage(messages.addingBtn) : intl.formatMessage(messages.addBtn)}
-      </Button>
-    )}
-  </div>
-);
+  );
+};
 
 const RerunCourseRow: React.FC<{ course: Course; intl: ReturnType<typeof useIntl> }> = ({
   course, intl,
@@ -132,7 +151,7 @@ const RerunCourseRow: React.FC<{ course: Course; intl: ReturnType<typeof useIntl
 interface TabPanelProps {
   programId: string;
   alreadyAddedIds: string[];
-  onAdd: (id: string) => void;
+  onAdd: (course: Course) => void;
   addingId: string | null;
   addError: string | null;
   filter: 'available' | 'rerun';
@@ -189,9 +208,14 @@ const CourseTabPanel: React.FC<TabPanelProps> = ({
           <Spinner animation="border" screenReaderText={intl.formatMessage(messages.loading)} />
         </div>
       )}
-      {!isLoading && (!data || data.results.length === 0) && !isFetching && (
-        <p className="text-muted text-center py-4">{intl.formatMessage(messages.noResults)}</p>
-      )}
+      <div role="status">
+        {!isLoading && (!data || data.results.length === 0) && !isFetching && (
+          <p className="text-muted text-center py-4">{intl.formatMessage(messages.noResults)}</p>
+        )}
+        {!isLoading && !isFetching && !!data?.results.length && (
+          <span className="sr-only">{intl.formatMessage(messages.resultsCount, { count: data.count })}</span>
+        )}
+      </div>
 
       <div ref={listRef} />
       <div style={{ opacity: isFetching && !isLoading ? 0.4 : 1, transition: 'opacity 0.15s' }}>
@@ -236,13 +260,16 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
   const intl = useIntl();
   const [addingId, setAddingId] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState('');
   const { mutateAsync: addCourse } = useAddCourseToProgram();
 
-  const handleAdd = async (courseId: string) => {
-    setAddingId(courseId);
+  const handleAdd = async (course: Course) => {
+    setAddingId(course.id);
     setAddError(null);
+    setStatusMessage('');
     try {
-      await addCourse({ programId, courseId });
+      await addCourse({ programId, courseId: course.id });
+      setStatusMessage(intl.formatMessage(messages.addedStatus, { courseName: course.displayName }));
     } catch (err: any) {
       const data = err?.response?.data;
       setAddError(
@@ -257,6 +284,7 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
 
   const handleClose = () => {
     setAddError(null);
+    setStatusMessage('');
     onClose();
   };
 
@@ -275,6 +303,7 @@ const AddCourseModal: React.FC<AddCourseModalProps> = ({
       </ModalDialog.Header>
 
       <ModalDialog.Body>
+        <div role="status" className="sr-only">{statusMessage}</div>
         <Tabs defaultActiveKey="add" id="add-course-tabs" className="mb-3">
           <Tab eventKey="add" title={intl.formatMessage(messages.tabAdd)}>
             <CourseTabPanel

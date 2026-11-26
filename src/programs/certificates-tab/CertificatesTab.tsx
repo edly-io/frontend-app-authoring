@@ -74,6 +74,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
   const [page, setPage] = useState(1);
   const [awardingScope, setAwardingScope] = useState<AwardingScope | null>(null);
   const [awardsView, setAwardsView] = useState<'list' | 'audit-log'>('list');
+  const [statusMessage, setStatusMessage] = useState('');
 
   // The server filters and pages the roster; KPIs always cover all of it.
   const {
@@ -156,6 +157,8 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
     if (scope !== 'bulk') {
       if (failedCount > 0 || awardedCount === 0) {
         showToast(intl.formatMessage(messages.awardError));
+      } else {
+        setStatusMessage(intl.formatMessage(messages.awardedOne));
       }
       return;
     }
@@ -176,6 +179,7 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
 
   const handleAward = (usernames: string[], scope: AwardingScope) => {
     setAwardingScope(scope);
+    setStatusMessage('');
     awardCertificates.mutate(usernames, {
       onSuccess: (result) => {
         clearSelection();
@@ -187,7 +191,9 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
   };
 
   const handleRevoke = (certificateNumber: string) => {
+    setStatusMessage('');
     revokeCertificate.mutate(certificateNumber, {
+      onSuccess: () => setStatusMessage(intl.formatMessage(messages.revokedStatus)),
       onError: () => showToast(intl.formatMessage(messages.revokeError)),
     });
   };
@@ -339,6 +345,8 @@ const CertificatesTab: React.FC<CertificatesTabProps> = ({ programId, programNam
           <CertificateConfigPanel programId={programId} isActive={isActive} issuedCount={kpis.awarded} />
         </Tab>
       </Tabs>
+
+      <div role="status" className="sr-only">{statusMessage}</div>
 
       <CertificateModal
         isOpen={isModalOpen}

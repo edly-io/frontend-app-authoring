@@ -51,6 +51,7 @@ const messages = defineMessages({
     defaultMessage: '{awarded} awarded, {failed} could not be awarded.',
   },
   awardError: { id: 'programs.certificates.toast.awardError', defaultMessage: 'Could not award the certificate. Please try again.' },
+  revokedStatus: { id: 'programs.certificates.status.revoked', defaultMessage: 'Certificate revoked.' },
   revokeError: { id: 'programs.certificates.toast.revokeError', defaultMessage: 'Could not revoke the certificate. Please try again.' },
   paginationLabel: { id: 'programs.certificates.pagination', defaultMessage: 'Trainee roster pages' },
 
