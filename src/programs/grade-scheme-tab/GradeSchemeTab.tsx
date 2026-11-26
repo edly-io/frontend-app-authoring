@@ -59,6 +59,8 @@ const messages = defineMessages({
   publishSuccess: { id: 'programs.scheme.publish-success', defaultMessage: 'Scheme published.' },
   unpublishSuccess: { id: 'programs.scheme.unpublish-success', defaultMessage: 'Scheme moved back to draft.' },
   genericError: { id: 'programs.scheme.generic-error', defaultMessage: 'Something went wrong. Please try again.' },
+  targetTotalNegative: { id: 'programs.scheme.target-total.negative', defaultMessage: 'Target total must be 0 or more.' },
+  saveNoSections: { id: 'programs.scheme.save.no-sections', defaultMessage: 'Add at least one section before saving.' },
   confirmDeleteSectionTitle: { id: 'programs.scheme.confirm-delete-section.title', defaultMessage: 'Delete section?' },
   confirmDeleteSectionDesc: {
     id: 'programs.scheme.confirm-delete-section.desc',
@@ -94,7 +96,17 @@ interface GradeSchemeTabProps {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getErrorDetail = (error: unknown): string | undefined => (error as any)?.response?.data?.detail;
+const getErrorDetail = (error: unknown): string | undefined => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (error as any)?.response?.data;
+  if (!data || typeof data !== 'object') {
+    return undefined;
+  }
+  if (typeof data.detail === 'string') {
+    return data.detail;
+  }
+  return Object.values(data).flat().find((value): value is string => typeof value === 'string');
+};
 
 const GradeSchemeTab: React.FC<GradeSchemeTabProps> = ({ program, programId = '', canManage = false }) => {
   const intl = useIntl();
@@ -114,6 +126,7 @@ const GradeSchemeTab: React.FC<GradeSchemeTabProps> = ({ program, programId = ''
   const [savedSignature, setSavedSignature] = useState<string | null>(null);
   const [savedName, setSavedName] = useState<string | null>(null);
   const [hasBeenCreated, setHasBeenCreated] = useState(false);
+  const [saveAttempted, setSaveAttempted] = useState(false);
 
   const [sectionPendingDeletion, setSectionPendingDeletion] = useState<EditableSection | null>(null);
   const [isPreviewOpen, openPreview, closePreview] = useToggle(false);
@@ -159,6 +172,13 @@ const GradeSchemeTab: React.FC<GradeSchemeTabProps> = ({ program, programId = ''
     : false;
   const isNameDirty = draft ? draft.name !== savedName : false;
   const hasUnsavedChanges = isTreeDirty || isNameDirty;
+
+  const targetTotalError = saveAttempted && draft && draft.targetTotal < 0
+    ? intl.formatMessage(messages.targetTotalNegative)
+    : '';
+  const noSectionsError = saveAttempted && draft?.sections.length === 0
+    ? intl.formatMessage(messages.saveNoSections)
+    : '';
 
   const validationErrors = draft ? validateSchemeDraft(draft) : [];
   const validationMessageByCode = {
@@ -206,6 +226,14 @@ const GradeSchemeTab: React.FC<GradeSchemeTabProps> = ({ program, programId = ''
     if (!draft) {
       return;
     }
+    if (draft.targetTotal < 0 || draft.sections.length === 0) {
+      setSaveAttempted(true);
+      if (draft.targetTotal < 0) {
+        document.getElementById('scheme-target-total')?.focus();
+      }
+      return;
+    }
+    setSaveAttempted(false);
     try {
       const result = await saveScheme.mutateAsync(toSaveSchemeInput(draft));
       const editable = toEditableScheme(result);
@@ -308,7 +336,10 @@ const GradeSchemeTab: React.FC<GradeSchemeTabProps> = ({ program, programId = ''
         onNameChange={(name) => setDraft((prev) => (prev ? { ...prev, name } : prev))}
         onNameCommit={handleNameCommit}
         onTargetTotalChange={(targetTotal) => setDraft((prev) => (prev ? { ...prev, targetTotal } : prev))}
+        targetTotalError={targetTotalError}
       />
+
+      {noSectionsError && <Alert variant="danger" className="mb-3">{noSectionsError}</Alert>}
 
       {validationErrors.length > 0 && status === 'draft' && draft.sections.length > 0 && (
         <Alert variant="warning" className="mb-3">

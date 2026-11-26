@@ -5,6 +5,10 @@ const messages = defineMessages({
     id: 'course-authoring.studio-home.new-program.title',
     defaultMessage: 'Create a new program',
   },
+  requiredNote: {
+    id: 'course-authoring.studio-home.new-program.required-note',
+    defaultMessage: 'Fields marked with * are required.',
+  },
   programNameLabel: {
     id: 'course-authoring.studio-home.new-program.name.label',
     defaultMessage: 'Program name',

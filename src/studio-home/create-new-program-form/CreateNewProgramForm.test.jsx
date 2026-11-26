@@ -33,7 +33,7 @@ jest.mock('../../programs/data/apiHooks', () => ({
 }));
 
 const fillRequiredFields = () => {
-  fireEvent.change(screen.getByLabelText('Program name'), {
+  fireEvent.change(screen.getByLabelText(/^Program name/), {
     target: { value: 'New Program' },
   });
   fireEvent.change(screen.getByLabelText(/Organization/), {
@@ -67,7 +67,7 @@ describe('<CreateNewProgramForm />', () => {
 
     render(<CreateNewProgramForm handleOnClickCancel={jest.fn()} />);
     fillRequiredFields();
-    fireEvent.change(screen.getByLabelText('City'), {
+    fireEvent.change(screen.getByLabelText(/^City/), {
       target: { value: '2' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Create' }));

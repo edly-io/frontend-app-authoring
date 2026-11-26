@@ -30,6 +30,7 @@ interface SchemeHeaderProps {
   onNameChange: (name: string) => void;
   onNameCommit: () => void;
   onTargetTotalChange: (targetTotal: number) => void;
+  targetTotalError?: string;
 }
 
 const SchemeHeader: React.FC<SchemeHeaderProps> = ({
@@ -43,6 +44,7 @@ const SchemeHeader: React.FC<SchemeHeaderProps> = ({
   onNameChange,
   onNameCommit,
   onTargetTotalChange,
+  targetTotalError = '',
 }) => {
   const intl = useIntl();
 
@@ -84,7 +86,7 @@ const SchemeHeader: React.FC<SchemeHeaderProps> = ({
             </Form.Group>
           </Col>
           <Col xs={6} md={3}>
-            <Form.Group className="mb-0">
+            <Form.Group className="mb-0" controlId="scheme-target-total" isInvalid={!!targetTotalError}>
               <Form.Label className="text-uppercase small text-muted fw-bold">
                 {intl.formatMessage(messages.targetTotalLabel)}
               </Form.Label>
@@ -96,7 +98,9 @@ const SchemeHeader: React.FC<SchemeHeaderProps> = ({
                 onChange={(e) => onTargetTotalChange(Number(e.target.value) || 0)}
                 onFocus={(e) => e.target.select()}
                 title={!isTreeEditable ? intl.formatMessage(messages.targetTotalLockedHint) : undefined}
+                aria-invalid={!!targetTotalError}
               />
+              {targetTotalError && <Form.Control.Feedback type="invalid">{targetTotalError}</Form.Control.Feedback>}
             </Form.Group>
           </Col>
           <Col xs={6} md={4}>

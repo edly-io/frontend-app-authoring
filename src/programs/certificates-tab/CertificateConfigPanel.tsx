@@ -283,10 +283,11 @@ const CertificateConfigPanel: React.FC<CertificateConfigPanelProps> = ({
             <Form.Label>{intl.formatMessage(messages.issuedByLabel)}</Form.Label>
             <Form.Control
               value={issuedBy}
+              aria-describedby="certificate-issued-by-help"
               onChange={(e) => setIssuedBy(e.target.value)}
               placeholder={intl.formatMessage(messages.issuedByPlaceholder)}
             />
-            <Form.Text>{intl.formatMessage(messages.issuedByHelp)}</Form.Text>
+            <Form.Text id="certificate-issued-by-help">{intl.formatMessage(messages.issuedByHelp)}</Form.Text>
           </Form.Group>
 
           <Form.Label className="mt-3">{intl.formatMessage(messages.signatoriesLabel)}</Form.Label>

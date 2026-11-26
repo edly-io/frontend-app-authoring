@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useIntl } from '@edx/frontend-platform/i18n';
 import {
   Badge, Button, Form, Icon, OverlayTrigger, Spinner, Tooltip,
@@ -26,10 +26,22 @@ const AttendanceSettingRow = ({
   const intl = useIntl();
   const updateSettings = useUpdateAttendanceSettings();
   const [draft, setDraft] = useState<number | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const value = draft ?? savedValue ?? 0;
   const isChanged = savedValue !== undefined && value !== savedValue;
+  const isOutOfRange = value < 0 || (max !== undefined && value > max);
+  const errorId = `${field}-error`;
+  let rangeError = '';
+  if (isOutOfRange) {
+    rangeError = max !== undefined
+      ? intl.formatMessage(messages.settingRangeError, { max })
+      : intl.formatMessage(messages.settingMinError);
+  }
 
-  const handleSave = () => updateSettings.mutate({ [field]: value }, { onSuccess: () => setDraft(null) });
+  const handleSave = () => updateSettings.mutate({ [field]: value }, {
+    onSuccess: () => setDraft(null),
+    onSettled: () => inputRef.current?.focus(),
+  });
 
   return (
     <div className="attendance-report__setting-row mb-2">
@@ -48,6 +60,7 @@ const AttendanceSettingRow = ({
       </div>
       <div className="attendance-report__setting-field">
         <Form.Control
+          ref={inputRef}
           type="number"
           min={0}
           max={max}
@@ -58,17 +71,28 @@ const AttendanceSettingRow = ({
           }}
           className="attendance-report__setting-input"
           aria-label={ariaLabel}
+          aria-invalid={isOutOfRange}
+          aria-describedby={rangeError ? errorId : undefined}
+          isInvalid={isOutOfRange}
           disabled={updateSettings.isPending}
         />
         <span>{unit}</span>
       </div>
       {isChanged && (
-        <Button variant="outline-primary" size="sm" onClick={handleSave} disabled={updateSettings.isPending}>
+        <Button
+          variant="outline-primary"
+          size="sm"
+          onClick={handleSave}
+          disabled={updateSettings.isPending || isOutOfRange}
+        >
           {updateSettings.isPending ? <Spinner animation="border" size="sm" /> : intl.formatMessage(messages.save)}
         </Button>
       )}
-      {updateSettings.isSuccess && <Badge variant="success">{intl.formatMessage(messages.settingSaved)}</Badge>}
-      {updateSettings.isError && <Badge variant="danger">{intl.formatMessage(messages.settingSaveError)}</Badge>}
+      {rangeError && <small id={errorId} className="text-danger">{rangeError}</small>}
+      <span role="status">
+        {updateSettings.isSuccess && <Badge variant="success">{intl.formatMessage(messages.settingSaved)}</Badge>}
+        {updateSettings.isError && <Badge variant="danger">{intl.formatMessage(messages.settingSaveError)}</Badge>}
+      </span>
     </div>
   );
 };

@@ -70,6 +70,8 @@ const messages = defineMessages({
   daysUnit: { id: 'programs.attendance.settings.unit.days', defaultMessage: 'days' },
   save: { id: 'programs.attendance.save', defaultMessage: 'Save' },
   settingSaved: { id: 'programs.attendance.settings.saved', defaultMessage: 'Saved' },
+  settingRangeError: { id: 'programs.attendance.settings.rangeError', defaultMessage: 'Enter a value from 0 to {max}.' },
+  settingMinError: { id: 'programs.attendance.settings.minError', defaultMessage: 'Enter 0 or more.' },
   settingSaveError: { id: 'programs.attendance.settings.saveError', defaultMessage: 'Failed to save.' },
   summaryTitle: { id: 'programs.attendance.summary.title', defaultMessage: 'Attendance Summary' },
   summaryIntro: {
