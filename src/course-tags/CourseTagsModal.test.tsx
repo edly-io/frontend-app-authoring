@@ -16,6 +16,7 @@ import {
   COURSE_ID,
   NIGHT,
   ROAD,
+  ROAD_SIGNS,
   manyTags,
   mockCourseTags,
   mockSuggestions,
@@ -133,11 +134,62 @@ describe('<CourseTagsModal />', () => {
 
     it('lists the suggestions and a Create option when there is no exact match', async () => {
       await renderModal();
-      mockSuggestions(axiosMock, 'road', [ROAD, NIGHT]);
+      mockSuggestions(axiosMock, 'road', [ROAD, ROAD_SIGNS]);
       await user().type(input(), 'road');
       await settle();
       const options = await screen.findAllByRole('option');
-      expect(options.map((option) => option.textContent)).toEqual([ROAD.name, NIGHT.name, 'Create "road"']);
+      expect(options.map((option) => option.textContent)).toEqual([ROAD.name, ROAD_SIGNS.name, 'Create "road"']);
+    });
+
+    it('drops suggestions that do not contain the typed text', async () => {
+      await renderModal();
+      mockSuggestions(axiosMock, 'road', [ROAD, NIGHT]);
+      await user().type(input(), 'road');
+      await settle();
+      await screen.findByRole('option', { name: ROAD.name });
+      expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([ROAD.name, 'Create "road"']);
+    });
+
+    it('keeps suggestions that contain the text ignoring case and accents, as the server matches', async () => {
+      await renderModal();
+      const cafe = { id: 6, name: 'Café Rules' };
+      mockSuggestions(axiosMock, 'cafe rules', [cafe]);
+      await user().type(input(), 'cafe rules');
+      await settle();
+      expect(await screen.findByRole('option', { name: cafe.name })).toBeInTheDocument();
+    });
+
+    it('never shows or assigns the previous search\'s tags while the next search loads', async () => {
+      await renderModal();
+      mockSuggestions(axiosMock, 'road', [ROAD, ROAD_SIGNS]);
+      axiosMock.onPost(apiUrls.courseTags(COURSE_ID)).replyOnce(201, ROAD);
+      const u = user();
+      await u.type(input(), 'road');
+      await settle();
+      await u.click(await screen.findByRole('option', { name: ROAD.name }));
+      await screen.findByRole('list', { name: 'Tags of this course' });
+      // The next search never answers, so only the previous results could be on screen.
+      axiosMock.onGet(apiUrls.suggestions(COURSE_ID, 'zq')).reply(() => new Promise(() => {}));
+      axiosMock.onPost(apiUrls.courseTags(COURSE_ID)).replyOnce(201, { id: 9, name: 'zq' });
+      await u.type(input(), 'zq');
+      const optionNames = () => screen.getAllByRole('option').map((option) => option.textContent);
+      expect(optionNames()).toEqual(['Create "zq"']); // during the debounce
+      await act(async () => {
+        jest.advanceTimersByTime(SUGGESTION_DEBOUNCE_MS);
+      });
+      await waitFor(() =>
+        expect(suggestionRequests().map(({ url }) => url))
+          .toContain(apiUrls.suggestions(COURSE_ID, 'zq'))
+      );
+      expect(optionNames()).toEqual(['Create "zq"']); // while the request is pending
+      expect(screen.queryByText(ROAD_SIGNS.name)).not.toBeInTheDocument();
+      await u.keyboard('{ArrowDown}{Enter}');
+      await waitFor(() =>
+        expect(requestsOf(axiosMock, 'post')).toEqual([
+          [apiUrls.courseTags(COURSE_ID), { name: ROAD.name }],
+          [apiUrls.courseTags(COURSE_ID), { name: 'zq' }],
+        ])
+      );
     });
 
     it('offers no Create option when an exact match (any case or spacing) is suggested', async () => {
@@ -152,7 +204,7 @@ describe('<CourseTagsModal />', () => {
 
     it('offers no Create option when the exact match is already assigned', async () => {
       await renderModal([ROAD]);
-      mockSuggestions(axiosMock, 'road safety', []);
+      mockSuggestions(axiosMock, 'ROAD SAFETY', []);
       await user().type(input(), 'ROAD SAFETY');
       await settle();
       await screen.findByText('No matching tags.');
@@ -161,11 +213,11 @@ describe('<CourseTagsModal />', () => {
 
     it('does not offer a suggestion that is already assigned', async () => {
       await renderModal([ROAD]);
-      mockSuggestions(axiosMock, 'road', [ROAD, NIGHT]);
+      mockSuggestions(axiosMock, 'road', [ROAD, ROAD_SIGNS]);
       await user().type(input(), 'road');
       await settle();
       const options = await screen.findAllByRole('option');
-      expect(options.map((option) => option.textContent)).toEqual([NIGHT.name, 'Create "road"']);
+      expect(options.map((option) => option.textContent)).toEqual([ROAD_SIGNS.name, 'Create "road"']);
     });
 
     it('renders markup in tag names as text, in suggestions, Create and chips', async () => {
@@ -187,6 +239,16 @@ describe('<CourseTagsModal />', () => {
       await settle();
       expect(await screen.findByText('Suggestions could not be loaded.')).toBeInTheDocument();
       expect(screen.getByRole('option', { name: 'Create "road"' })).toBeInTheDocument();
+    });
+
+    it('shows only the error, not "No matching tags.", when the suggestions fail for an assigned name', async () => {
+      await renderModal([ROAD]);
+      axiosMock.onGet(apiUrls.suggestions(COURSE_ID, 'road safety')).reply(403);
+      await user().type(input(), 'road safety');
+      await settle();
+      expect(await screen.findByText('Suggestions could not be loaded.')).toBeInTheDocument();
+      expect(screen.queryByText('No matching tags.')).not.toBeInTheDocument();
+      expect(screen.queryByRole('option')).not.toBeInTheDocument();
     });
 
     it('limits the input to 100 characters', async () => {
@@ -229,10 +291,10 @@ describe('<CourseTagsModal />', () => {
 
     it('assigns the active option on Enter', async () => {
       await renderModal();
-      mockSuggestions(axiosMock, 'a', [AIRPORT, NIGHT]);
+      mockSuggestions(axiosMock, 'i', [AIRPORT, NIGHT]);
       axiosMock.onPost(apiUrls.courseTags(COURSE_ID)).reply(201, NIGHT);
       const u = user();
-      await u.type(input(), 'a');
+      await u.type(input(), 'i');
       await settle();
       await screen.findAllByRole('option');
       await u.keyboard('{ArrowDown}{ArrowDown}{Enter}');
@@ -245,9 +307,9 @@ describe('<CourseTagsModal />', () => {
 
     it('does nothing on Enter with several options and none active', async () => {
       await renderModal();
-      mockSuggestions(axiosMock, 'a', [AIRPORT, NIGHT]);
+      mockSuggestions(axiosMock, 'i', [AIRPORT, NIGHT]);
       const u = user();
-      await u.type(input(), 'a');
+      await u.type(input(), 'i');
       await settle();
       await screen.findAllByRole('option');
       await u.keyboard('{Enter}');
@@ -264,6 +326,40 @@ describe('<CourseTagsModal />', () => {
       await screen.findByRole('option', { name: 'Create "zzz"' });
       await u.keyboard('{Enter}');
       await waitFor(() => expect(requestsOf(axiosMock, 'post')).toHaveLength(1));
+    });
+
+    it('assigns the tag named exactly as typed on Enter with none active', async () => {
+      await renderModal();
+      mockSuggestions(axiosMock, 'ROAD SAFETY', [ROAD]);
+      axiosMock.onPost(apiUrls.courseTags(COURSE_ID)).reply(201, ROAD);
+      const u = user();
+      await u.type(input(), 'ROAD SAFETY');
+      await settle();
+      await screen.findByRole('option', { name: ROAD.name });
+      expect(screen.getAllByRole('option')).toHaveLength(1); // no Create: the tag exists
+      await u.keyboard('{Enter}');
+      await waitFor(() =>
+        expect(requestsOf(axiosMock, 'post')).toEqual([
+          [apiUrls.courseTags(COURSE_ID), { name: ROAD.name }],
+        ])
+      );
+    });
+
+    it('prefers the exact match on Enter among other suggestions', async () => {
+      await renderModal();
+      const road = { id: 5, name: 'Road' };
+      mockSuggestions(axiosMock, 'road', [ROAD, road, ROAD_SIGNS]);
+      axiosMock.onPost(apiUrls.courseTags(COURSE_ID)).reply(201, road);
+      const u = user();
+      await u.type(input(), 'road');
+      await settle();
+      await screen.findByRole('option', { name: road.name });
+      await u.keyboard('{Enter}');
+      await waitFor(() =>
+        expect(requestsOf(axiosMock, 'post')).toEqual([
+          [apiUrls.courseTags(COURSE_ID), { name: road.name }],
+        ])
+      );
     });
 
     it('does nothing on Enter with blank text', async () => {
@@ -301,7 +397,7 @@ describe('<CourseTagsModal />', () => {
   });
 
   describe('keyboard and ARIA', () => {
-    const openList = async (term = 'a') => {
+    const openList = async (term = 'i') => {
       await renderModal();
       mockSuggestions(axiosMock, term, [AIRPORT, NIGHT]);
       const u = user();
@@ -345,7 +441,7 @@ describe('<CourseTagsModal />', () => {
 
     it('wraps from the last option to the first on ArrowDown', async () => {
       const u = await openList();
-      const options = screen.getAllByRole('option'); // Airport, Night driving, Create "a"
+      const options = screen.getAllByRole('option'); // Airport, Night driving, Create "i"
       await u.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}');
       expect(input()).toHaveAttribute('aria-activedescendant', options[0].id);
     });
@@ -441,6 +537,19 @@ describe('<CourseTagsModal />', () => {
       expect(input()).toBeDisabled();
       expect(screen.getByText('This course has the maximum of 100 tags. Remove one to add another.'))
         .toBeInTheDocument();
+      expect(screen.getByText(/maximum of 100 tags/).closest('[tabindex]')).not.toHaveFocus();
+    });
+
+    it('moves focus from the field to the explanation when the 100th tag is assigned', async () => {
+      await renderModal(manyTags(99));
+      mockSuggestions(axiosMock, 'zzz', []);
+      axiosMock.onPost(apiUrls.courseTags(COURSE_ID)).reply(201, { id: 9, name: 'zzz' });
+      const u = user();
+      await u.type(input(), 'zzz');
+      await settle();
+      await u.click(await screen.findByRole('option', { name: 'Create "zzz"' }));
+      await waitFor(() => expect(input()).toBeDisabled());
+      expect(screen.getByText(/maximum of 100 tags/).closest('[tabindex="-1"]')).toHaveFocus();
     });
 
     it('keeps the field enabled at 99', async () => {

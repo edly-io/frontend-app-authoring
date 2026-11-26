@@ -7,6 +7,7 @@ export const COURSE_ID = 'course-v1:Uber+101+2026';
 export const ROAD = { id: 1, name: 'Road safety' };
 export const NIGHT = { id: 2, name: 'Night driving' };
 export const AIRPORT = { id: 3, name: 'Airport' };
+export const ROAD_SIGNS = { id: 4, name: 'Road signs' };
 
 /** Answer the course's assigned tags. */
 export const mockCourseTags = (axiosMock: MockAdapter, assigned: { id: number; name: string; }[] = []) => {

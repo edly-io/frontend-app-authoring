@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { debounce } from 'lodash';
@@ -17,6 +18,7 @@ export const SUGGESTION_DEBOUNCE_MS = 300;
 
 const INPUT_ID = 'course-tags-search';
 const LISTBOX_ID = 'course-tags-suggestions';
+const HINT_ID = 'course-tags-hint';
 const optionId = (index: number) => `${LISTBOX_ID}-option-${index}`;
 
 /** One pickable row of the dropdown: an existing tag, or "Create" with the text typed. */
@@ -34,10 +36,22 @@ interface TagTypeaheadProps {
   inputRef: React.RefObject<HTMLInputElement>;
 }
 
+/** Normalised, lower case and without accents, for a substring match. */
+const foldForMatch = (text: string) =>
+  normalizeTagName(text).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase();
+
+/**
+ * Whether `name` contains `text` the way the API matches suggestions (`name__icontains`): ignoring case and, as
+ * MySQL's default collation does, accents. Erring wide only lets a near match through, never an unrelated tag.
+ */
+const containsText = (name: string, text: string) => foldForMatch(name).includes(foldForMatch(text));
+
 /**
  * A combobox for adding tags: as the author types, existing tags containing the text are suggested (debounced),
  * and a last "Create" option adds the text as a new tag unless a tag with that name already exists. Arrow keys
- * move through the options, Enter picks, Escape closes the list; picking clears the field and keeps focus in it.
+ * move through the options; Enter picks the active option, or with none active the tag named exactly as typed
+ * (or Create when it is the only option); Escape closes the list. Picking clears the field and keeps focus in it.
  */
 const TagTypeahead = ({
   courseId,
@@ -56,13 +70,26 @@ const TagTypeahead = ({
   const debouncedSetTerm = useMemo(() => debounce(setTerm, SUGGESTION_DEBOUNCE_MS), []);
   useEffect(() => () => debouncedSetTerm.cancel(), [debouncedSetTerm]);
 
+  // Reaching the limit disables the field the author just picked from, which drops focus to <body>; move it to
+  // the hint that explains why instead. Not on mount: a dialog opened at the limit keeps its usual focus.
+  const wasDisabled = useRef(disabled);
+  useEffect(() => {
+    const focused = document.activeElement;
+    if (disabled && !wasDisabled.current && (focused === inputRef.current || focused === document.body)) {
+      document.getElementById(HINT_ID)?.focus();
+    }
+    wasDisabled.current = disabled;
+  }, [disabled]);
+
   const { data: suggestions = [], isFetching, isError } = useTagSuggestions(courseId, term);
   const typed = normalizeTagName(input);
   const assignedIds = new Set(assigned.map(({ id }) => id));
-  // The server already leaves out the course's tags; this also drops one assigned since the last fetch.
+  // The server already leaves out the course's tags; this also drops one assigned since the last fetch. While the
+  // next term is debounced or loading, the previous term's results are still shown (`keepPreviousData`): keep
+  // only those that match the text typed now, so a stale tag is never shown or picked.
   const tagOptions: Option[] = typed ?
     suggestions
-      .filter(({ id }) => !assignedIds.has(id))
+      .filter(({ id, name }) => !assignedIds.has(id) && containsText(name, typed))
       .map(({ id, name }) => ({ kind: 'tag', name, key: `tag-${id}` })) :
     [];
   const exists = [...tagOptions, ...assigned].some(({ name }) => isSameTagName(name, typed));
@@ -72,7 +99,8 @@ const TagTypeahead = ({
   const showList = isOpen && !!typed && !disabled;
   const active = showList && activeIndex >= 0 && activeIndex < options.length ? activeIndex : -1;
 
-  const announcement = showList && term && !isFetching && !isError ?
+  // Announced only once the results are for the text typed now.
+  const announcement = showList && term === typed && !isFetching && !isError ?
     intl.formatMessage(messages.searchResultCount, { count: tagOptions.length }) :
     '';
 
@@ -105,8 +133,11 @@ const TagTypeahead = ({
         if (!showList) {
           return;
         }
+        const exactMatch = options.find(({ kind, name }) => kind === 'tag' && isSameTagName(name, typed));
         if (active >= 0) {
           pick(options[active]);
+        } else if (exactMatch) {
+          pick(exactMatch);
         } else if (options.length === 1 && options[0].kind === 'create') {
           pick(options[0]);
         }
@@ -148,7 +179,8 @@ const TagTypeahead = ({
         }}
         onKeyDown={handleKeyDown}
       />
-      {hint && <Form.Text>{hint}</Form.Text>}
+      {/* Focusable from script only, so focus can land here when the field gets disabled. */}
+      {hint && <Form.Text id={HINT_ID} tabIndex={-1}>{hint}</Form.Text>}
       {/* Always mounted, so screen readers pick up changes to its text. */}
       <div role="status" className="sr-only">{announcement}</div>
       {/* Always mounted, so the input's aria-controls always points at an element. */}
@@ -165,7 +197,8 @@ const TagTypeahead = ({
             {intl.formatMessage(messages.suggestionsError)}
           </li>
         )}
-        {showList && options.length === 0 && !isFetching && (
+        {/* Not with the error (nothing is known to match or not), nor before the results for this text are in. */}
+        {showList && !isError && options.length === 0 && term === typed && !isFetching && (
           <li role="presentation" className="px-3 py-2 small text-gray-700">
             {intl.formatMessage(messages.noMatches)}
           </li>

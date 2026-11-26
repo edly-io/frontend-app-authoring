@@ -18,6 +18,14 @@ let axiosMock;
 
 const mockStatus = (status: object) => axiosMock.onGet(apiUrls.status(COURSE_ID)).reply(200, status);
 
+/**
+ * The first render of the button, and of the dialog, pays a one-off warm-up (about ten times a later render), which
+ * under a loaded parallel run can exceed `findBy`'s default 1 s. Wait longer, but stay under Jest's 5 s test timeout
+ * so a real failure still reports what is missing.
+ */
+const FIRST_RENDER = { timeout: 4000 };
+const findTagsButton = () => screen.findByRole('button', { name: 'Tags' }, FIRST_RENDER);
+
 describe('<CourseTagsButton />', () => {
   beforeEach(() => {
     ({ axiosMock } = initializeMocks());
@@ -27,13 +35,13 @@ describe('<CourseTagsButton />', () => {
   it('shows the button when the flag is on and the user can assign', async () => {
     mockStatus({ enabled: true, can_assign: true });
     render(<CourseTagsButton />);
-    expect(await screen.findByRole('button', { name: 'Tags' })).toBeInTheDocument();
+    expect(await findTagsButton()).toBeInTheDocument();
   });
 
   it('requests the status of this course', async () => {
     mockStatus({ enabled: true, can_assign: true });
     render(<CourseTagsButton />);
-    await screen.findByRole('button', { name: 'Tags' });
+    await findTagsButton();
     expect(axiosMock.history.get.map(({ url }) => url)).toContain(
       'http://localhost:18010/api/uber/course_tags/v1/status/?course_id=course-v1%3AUber%2B101%2B2026',
     );
@@ -63,7 +71,7 @@ describe('<CourseTagsButton />', () => {
   it('does not load the course tags until the dialog opens', async () => {
     mockStatus({ enabled: true, can_assign: true });
     render(<CourseTagsButton />);
-    await screen.findByRole('button', { name: 'Tags' });
+    await findTagsButton();
     expect(axiosMock.history.get).toHaveLength(1);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
@@ -72,8 +80,8 @@ describe('<CourseTagsButton />', () => {
     const open = jest.spyOn(window, 'open').mockImplementation(() => null);
     mockStatus({ enabled: true, can_assign: true });
     render(<CourseTagsButton />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Tags' }));
-    expect(await screen.findByRole('dialog', { name: 'Course tags' })).toBeInTheDocument();
+    await userEvent.click(await findTagsButton());
+    expect(await screen.findByRole('dialog', { name: 'Course tags' }, FIRST_RENDER)).toBeInTheDocument();
     expect(open).not.toHaveBeenCalled();
     // The dialog has a header cross and a footer Close button, both named Close.
     await userEvent.click(screen.getAllByRole('button', { name: 'Close' })[1]);
@@ -84,8 +92,8 @@ describe('<CourseTagsButton />', () => {
   it('fetches the course tags when the dialog opens', async () => {
     mockStatus({ enabled: true, can_assign: true });
     render(<CourseTagsButton />);
-    await userEvent.click(await screen.findByRole('button', { name: 'Tags' }));
-    expect(await screen.findByText('This course has no tags yet.')).toBeInTheDocument();
+    await userEvent.click(await findTagsButton());
+    expect(await screen.findByText('This course has no tags yet.', undefined, FIRST_RENDER)).toBeInTheDocument();
     expect(axiosMock.history.get.map(({ url }) => url)).toContain(apiUrls.courseTags(COURSE_ID));
   });
 });

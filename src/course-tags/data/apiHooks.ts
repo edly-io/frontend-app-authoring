@@ -46,7 +46,8 @@ export const useCourseTags = (courseId: string) =>
 
 /**
  * Tags matching `term` for the course's picker; nothing is fetched for an empty term. The previous results stay
- * shown while the next ones load, so the dropdown doesn't flicker as the author types.
+ * shown while the next ones load, so the dropdown doesn't flicker as the author types; `TagTypeahead` keeps only
+ * those that still contain the text typed.
  */
 export const useTagSuggestions = (courseId: string, term: string) =>
   useQuery({
