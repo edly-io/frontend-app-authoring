@@ -72,7 +72,7 @@ const PagesAndResources = ({ courseId }) => {
 
   return (
     <PagesAndResourcesProvider courseId={courseId}>
-      <main className="container container-mw-md px-3">
+      <div className="container container-mw-md px-3">
         <div className="d-flex justify-content-between my-4 my-md-5 align-items-center">
           <h3 className="m-0">{intl.formatMessage(messages.heading)}</h3>
           <Hyperlink
@@ -104,7 +104,7 @@ const PagesAndResources = ({ courseId }) => {
               </>
             )
         }
-      </main>
+      </div>
     </PagesAndResourcesProvider>
   );
 };

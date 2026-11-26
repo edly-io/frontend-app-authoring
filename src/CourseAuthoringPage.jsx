@@ -64,7 +64,7 @@ const CourseAuthoringPage = ({ courseId, children }) => {
           />
         )
         )}
-      {children}
+      <main id="main">{children}</main>
       {!inProgress && !isEditor && <StudioFooterSlot />}
     </div>
   );

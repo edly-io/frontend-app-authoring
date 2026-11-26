@@ -10,6 +10,7 @@ import {
   AttachmentLink, CollapsibleText, EmptyValue, RequestStatusBadge, Submitter,
 } from './RequestCells';
 import type { AdminRequest } from './data/types';
+import rowActionMessages from '../common/messages';
 import messages from './messages';
 
 export interface RequestRowOptions extends RequestActionHandlers {
@@ -25,11 +26,28 @@ interface RowProps {
 
 const auditLogPath = (request: AdminRequest) => `?view=audit-log&record_id=${request.id}`;
 
-export const HistoryLink = ({ request, label }: { request: AdminRequest; label: string }) => (
-  <Button as={Link} variant="outline-primary" size="sm" className="text-nowrap" to={auditLogPath(request)}>
-    {label}
-  </Button>
+const requestName = (request: AdminRequest) => (
+  [request.submitter_name || request.submitter_email, request.created && formatDateTime(request.created)]
+    .filter(Boolean)
+    .join(', ')
 );
+
+export const HistoryLink = ({ request, intl }: { request: AdminRequest; intl: IntlShape }) => {
+  const label = intl.formatMessage(messages.history);
+  const name = requestName(request);
+  return (
+    <Button
+      as={Link}
+      variant="outline-primary"
+      size="sm"
+      className="text-nowrap"
+      to={auditLogPath(request)}
+      aria-label={name ? intl.formatMessage(rowActionMessages.rowAction, { action: label, name }) : undefined}
+    >
+      {label}
+    </Button>
+  );
+};
 
 /** DataTable columns for the admin requests table. */
 export const buildRequestColumns = (intl: IntlShape, options: RequestRowOptions) => [
@@ -77,7 +95,7 @@ export const buildRequestColumns = (intl: IntlShape, options: RequestRowOptions)
   {
     Header: intl.formatMessage(messages.columnAuditLog),
     id: 'audit-log',
-    Cell: ({ row }: RowProps) => <HistoryLink request={row.original} label={intl.formatMessage(messages.history)} />,
+    Cell: ({ row }: RowProps) => <HistoryLink request={row.original} intl={intl} />,
   },
   {
     Header: intl.formatMessage(messages.columnActions),
@@ -104,7 +122,7 @@ export const RequestCards = ({ requests, options, intl }: RequestCardsProps) => 
         subtitle={request.created ? formatDateTime(request.created) : null}
         footer={(
           <div className="requests-view__card-actions w-100">
-            <HistoryLink request={request} label={intl.formatMessage(messages.history)} />
+            <HistoryLink request={request} intl={intl} />
             <RequestActions request={request} {...options} isBusy={options.isRequestBusy(request)} />
           </div>
         )}

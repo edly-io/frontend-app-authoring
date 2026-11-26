@@ -8,7 +8,6 @@ import {
   isLeaveStartDatePast,
   REQUEST_STATUS,
   REQUEST_TYPE,
-  SectionHeading,
   SessionLeavesPanel,
   useIsBelowLg,
 } from '@edly-io/frontend-component-fbr';
@@ -214,7 +213,7 @@ const AdminRequestsView = ({ programId, lockedType }: AdminRequestsViewProps) =>
       )}
 
       <div className="mb-5">
-        <SectionHeading>{intl.formatMessage(messages.sectionRequests)}</SectionHeading>
+        <h2 className="fbr-section-heading">{intl.formatMessage(messages.sectionRequests)}</h2>
         <RequestFiltersRow filters={filters} onChange={setFilters} />
 
         {isLeaves && selection.pendingIds.length > 0 && (
@@ -248,7 +247,7 @@ const AdminRequestsView = ({ programId, lockedType }: AdminRequestsViewProps) =>
       {isLeaves && (
         <>
           <div className="mb-5">
-            <SectionHeading>{intl.formatMessage(messages.sectionLeaveSummaries)}</SectionHeading>
+            <h2 className="fbr-section-heading">{intl.formatMessage(messages.sectionLeaveSummaries)}</h2>
             <LeaveUsagePanel programKey={programId} />
           </div>
           <SessionLeavesPanel programKey={programId} />

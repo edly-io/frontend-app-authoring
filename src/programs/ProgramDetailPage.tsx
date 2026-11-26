@@ -20,9 +20,11 @@ import {
   Tab,
   Tabs,
 } from '@openedx/paragon';
+import { Helmet } from 'react-helmet';
 import { useIntl, defineMessages } from '@edx/frontend-platform/i18n';
 import { StudioFooterSlot } from '@edx/frontend-component-footer';
 import Header from '../header';
+import getPageHeadTitle from '../generic/utils';
 import { LoadingSpinner } from '../generic/Loading';
 import PermissionDeniedAlert from '../generic/PermissionDeniedAlert';
 import { ToastContext } from '../generic/toast-context';
@@ -40,7 +42,9 @@ import CalendarTab from './calendar-tab/CalendarTab';
 import LocationsTab from './locations-tab/LocationsTab';
 import HolidaysTab from './holidays-tab/HolidaysTab';
 import RequestsTab from './requests-tab/RequestsTab';
-import { DEFAULT_PROGRAM_TAB, getActiveProgramTab, isProgramTabVisible } from './programTabs';
+import {
+  DEFAULT_PROGRAM_TAB, getActiveProgramTab, isProgramTabVisible, type ProgramTabKey,
+} from './programTabs';
 import './index.scss';
 
 const messages = defineMessages({
@@ -104,6 +108,21 @@ const messages = defineMessages({
   imageUploadHint: { id: 'programs.detail.image.hint', defaultMessage: 'Recommended: 1280×720px · JPG or PNG' },
   imageChange: { id: 'programs.detail.image.change', defaultMessage: 'Change Image' },
 });
+
+const TAB_TITLE_MESSAGES: Record<ProgramTabKey, typeof messages.tabDetails> = {
+  details: messages.tabDetails,
+  courses: messages.tabCourses,
+  instructors: messages.tabInstructors,
+  enrollment: messages.tabEnrollment,
+  feedback: messages.tabFeedback,
+  'trainee-results': messages.tabTraineeResults,
+  certificates: messages.tabCertificates,
+  calendar: messages.tabCalendar,
+  requests: messages.tabRequests,
+  attendance: messages.tabAttendance,
+  locations: messages.tabLocations,
+  holidays: messages.tabHolidays,
+};
 
 // ContentTagsCollapsible.d.ts globally augments react-select/base Props with taxonomy-specific
 // fields, which makes TypeScript require those props on every react-select usage in this project.
@@ -290,7 +309,7 @@ const ProgramDetailPage: React.FC = () => {
     return (
       <>
         <Header isHiddenMainMenu />
-        <Container id="main" size="xl" className="p-4 mt-3 d-flex justify-content-center">
+        <Container as="main" id="main" size="xl" className="p-4 mt-3 d-flex justify-content-center">
           <LoadingSpinner />
         </Container>
       </>
@@ -301,7 +320,7 @@ const ProgramDetailPage: React.FC = () => {
     return (
       <>
         <Header isHiddenMainMenu />
-        <Container id="main" size="xl" className="p-4 mt-3">
+        <Container as="main" id="main" size="xl" className="p-4 mt-3">
           <PermissionDeniedAlert />
         </Container>
       </>
@@ -312,7 +331,7 @@ const ProgramDetailPage: React.FC = () => {
     return (
       <>
         <Header isHiddenMainMenu />
-        <Container id="main" size="xl" className="p-4 mt-3">
+        <Container as="main" id="main" size="xl" className="p-4 mt-3">
           <Alert variant="danger">{intl.formatMessage(messages.notFound)}</Alert>
         </Container>
       </>
@@ -321,8 +340,13 @@ const ProgramDetailPage: React.FC = () => {
 
   return (
     <>
+      <Helmet>
+        <title>
+          {getPageHeadTitle(program.displayName, intl.formatMessage(TAB_TITLE_MESSAGES[activeTab]))}
+        </title>
+      </Helmet>
       <Header isHiddenMainMenu />
-      <Container id="main" size="xl" className="program-detail-page p-4 mt-3">
+      <Container as="main" id="main" size="xl" className="program-detail-page p-4 mt-3">
 
         {/* ── Page header ─────────────────────────────────────────────── */}
         <div className="program-page-header mb-4">

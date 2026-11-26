@@ -198,7 +198,7 @@ const StudioHome = () => {
   return (
     <>
       <Header isHiddenMainMenu />
-      <Container size="xl" className="p-4 mt-3">
+      <Container as="main" id="main" size="xl" className="p-4 mt-3">
         <section className="mb-4">
           <article className="studio-home-sub-header">
             <section>

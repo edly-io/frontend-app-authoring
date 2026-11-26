@@ -75,7 +75,7 @@ export const LibraryUnitPage = () => {
             size: undefined,
           }}
         />
-        <Container className="px-0 mt-4 mb-5 library-authoring-page bg-white">
+        <Container as="main" id="main" className="px-0 mt-4 mb-5 library-authoring-page bg-white">
           <div className="px-4 bg-light-200 border-bottom mb-2">
             <SubHeader
               title={<SubHeaderTitle title={<ContainerEditableTitle containerId={containerId} />} />}

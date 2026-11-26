@@ -23,7 +23,7 @@ const AccessibilityPage = () => {
         </title>
       </Helmet>
       <Header isHiddenMainMenu />
-      <Container size="xl" classNamae="px-4">
+      <Container as="main" id="main" size="xl" classNamae="px-4">
         <AccessibilityBody
           {...{ email: ACCESSIBILITY_EMAIL, communityAccessibilityLink: COMMUNITY_ACCESSIBILITY_LINK }}
         />

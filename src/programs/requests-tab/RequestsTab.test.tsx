@@ -88,7 +88,7 @@ describe('<RequestsTab />', () => {
 
   it("opens a request's history from its History link", async () => {
     renderTab('requests/leaves');
-    fireEvent.click(await screen.findByRole('link', { name: 'History' }));
+    fireEvent.click(await screen.findByRole('link', { name: /^History/ }));
     expect(await screen.findByTestId('audit-log-table')).toHaveTextContent('Audit Log 1');
   });
 

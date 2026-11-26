@@ -31,9 +31,11 @@ const ProgramCard: React.FC<Props> = ({ program }) => {
         <Card.Header
           size="sm"
           title={(
-            <Link to={`/programs/${id}`} className="card-item-title">
-              {displayName || id}
-            </Link>
+            <h2 className="card-item-title m-0">
+              <Link to={`/programs/${id}`} className="card-item-title">
+                {displayName || id}
+              </Link>
+            </h2>
           )}
           subtitle={`${org} / ${programType} / ${run}`}
           actions={(

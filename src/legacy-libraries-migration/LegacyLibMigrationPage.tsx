@@ -172,7 +172,7 @@ export const LegacyLibMigrationPage = () => {
         </title>
       </Helmet>
       <Header isHiddenMainMenu />
-      <div className="legacy-library-migration-page">
+      <main id="main" className="legacy-library-migration-page">
         <Layout
           xs={[{ span: 12 }, { span: 12 }]}
           lg={[{ span: 9 }, { span: 3 }]}
@@ -252,7 +252,7 @@ export const LegacyLibMigrationPage = () => {
             <LegacyMigrationHelpSidebar />
           </Layout.Element>
         </Layout>
-      </div>
+      </main>
       <ExitModal
         isExitModalOpen={isExitModalOpen}
         closeExitModal={closeExitModal}

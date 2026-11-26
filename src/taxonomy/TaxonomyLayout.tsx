@@ -27,7 +27,7 @@ export const TaxonomyLayout = () => {
             onDismiss={() => setAlertError(null)}
           />
         )}
-        <Outlet />
+        <main id="main"><Outlet /></main>
         <StudioFooterSlot />
         {toastMessage && (
           <Toast

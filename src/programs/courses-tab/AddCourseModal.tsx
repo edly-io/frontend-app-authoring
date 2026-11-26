@@ -38,6 +38,11 @@ const messages = defineMessages({
     defaultMessage: "These courses are already assigned to another program. Create a rerun in Studio — the new run will appear in the Add Course tab once it's created.",
   },
   rerunBtn: { id: 'programs.courses.modal.rerun', defaultMessage: 'Rerun in Studio →' },
+  rerunBtnLabel: {
+    id: 'programs.courses.modal.rerun.label',
+    defaultMessage: 'Rerun in Studio: {courseName} (opens in a new tab)',
+    description: 'Accessible name for the rerun link of one course.',
+  },
   inProgramBadge: { id: 'programs.courses.modal.in-program', defaultMessage: 'In: {programName}' },
 });
 
@@ -116,6 +121,7 @@ const RerunCourseRow: React.FC<{ course: Course; intl: ReturnType<typeof useIntl
         href={course.cmsRerunUrl}
         target="_blank"
         rel="noopener noreferrer"
+        aria-label={intl.formatMessage(messages.rerunBtnLabel, { courseName: course.displayName })}
       >
         {intl.formatMessage(messages.rerunBtn)}
       </Button>
