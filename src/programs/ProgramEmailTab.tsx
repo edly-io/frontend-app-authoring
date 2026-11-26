@@ -116,6 +116,7 @@ const ProgramEmailTab = ({ programId }: { programId: string }) => {
         value={body}
         editorKey={editorKey}
         ariaLabel={intl.formatMessage(messages.body)}
+        autoDirection
         onChange={(value) => { setConfirming(false); setBody(value); if (send.isSuccess) { send.reset(); } }}
       />
       <Button

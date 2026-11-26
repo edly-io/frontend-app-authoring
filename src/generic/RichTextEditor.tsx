@@ -27,6 +27,8 @@ interface RichTextEditorProps {
   onChange: (value: string) => void;
   editorKey?: string | number;
   ariaLabel?: string;
+  /** Let each paragraph take its direction from its own text, for content that mixes Arabic and English. */
+  autoDirection?: boolean;
 }
 
 const messages = defineMessages({
@@ -53,6 +55,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   onChange,
   editorKey,
   ariaLabel,
+  autoDirection,
 }) => {
   const intl = useIntl();
   const isArabic = isRtl(intl.locale);
@@ -65,6 +68,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         iframe_aria_text: ariaLabel,
         plugins: 'lists link code autoresize hr charmap table embediframe',
         directionality: isArabic ? 'rtl' : 'ltr',
+        ...(autoDirection ? { forced_root_block_attrs: { dir: 'auto' } } : {}),
         toolbar: TOOLBAR,
         menubar: false,
         branding: false,
@@ -85,6 +89,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         // Register 'html-source' as a text button matching the course editor's 'HTML' label.
         // The code plugin is kept in plugins so mceCodeEditor command is available.
         setup: (editor) => {
+          if (autoDirection) {
+            editor.on('init', () => editor.getBody().setAttribute('dir', 'auto'));
+          }
           editor.ui.registry.addButton('html-source', {
             text: 'HTML',
             tooltip: intl.formatMessage(messages.sourceCode),
@@ -99,6 +106,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 RichTextEditor.defaultProps = {
   editorKey: undefined,
   ariaLabel: undefined,
+  autoDirection: false,
 };
 
 export default RichTextEditor;

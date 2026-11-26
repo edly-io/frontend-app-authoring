@@ -95,7 +95,7 @@ const BulkEnrollModal: React.FC<Props> = ({
                 aria-invalid={!!fieldErrors.emails}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEmails(e.target.value)}
               />
-              <Form.Control.Feedback type="invalid">{fieldErrors.emails}</Form.Control.Feedback>
+              {fieldErrors.emails && <Form.Control.Feedback type="invalid">{fieldErrors.emails}</Form.Control.Feedback>}
               <Form.Text>{intl.formatMessage(messages.help)}</Form.Text>
             </Form.Group>
             <Form.Group controlId="program-bulk-reason">
@@ -106,20 +106,24 @@ const BulkEnrollModal: React.FC<Props> = ({
                 aria-invalid={!!fieldErrors.reason}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setReason(e.target.value)}
               />
-              <Form.Control.Feedback type="invalid">{fieldErrors.reason}</Form.Control.Feedback>
+              {fieldErrors.reason && <Form.Control.Feedback type="invalid">{fieldErrors.reason}</Form.Control.Feedback>}
             </Form.Group>
-            <Form.Checkbox
-              checked={autoEnroll}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAutoEnroll(e.target.checked)}
-            >
-              {intl.formatMessage(messages.autoEnroll)}
-            </Form.Checkbox>
-            <Form.Checkbox
-              checked={notify}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotify(e.target.checked)}
-            >
-              {intl.formatMessage(messages.notify)}
-            </Form.Checkbox>
+            <div className="mb-2">
+              <Form.Checkbox
+                checked={autoEnroll}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAutoEnroll(e.target.checked)}
+              >
+                {intl.formatMessage(messages.autoEnroll)}
+              </Form.Checkbox>
+            </div>
+            <div>
+              <Form.Checkbox
+                checked={notify}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotify(e.target.checked)}
+              >
+                {intl.formatMessage(messages.notify)}
+              </Form.Checkbox>
+            </div>
           </>
         )}
         {result && (
