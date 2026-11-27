@@ -44,6 +44,25 @@ describe('<PricingSection />', () => {
     expect(screen.getByText('Offered only through the one program it is added to.')).toBeInTheDocument();
   });
 
+  it.each([true, undefined])('shows subscription when permission is %s', async (permission) => {
+    await renderSection({ can_set_subscription: permission });
+    expect(screen.getByRole('radio', { name: 'Part of Subscription' })).toBeEnabled();
+  });
+
+  it('hides subscription when permission is false', async () => {
+    await renderSection({ can_set_subscription: false });
+    expect(screen.queryByRole('radio', { name: 'Part of Subscription' })).not.toBeInTheDocument();
+  });
+
+  it('locks an existing subscription and cannot submit it', async () => {
+    await renderSection({ can_set_subscription: false, pricing_category: 'is_part_of_subscription' });
+    expect(screen.getByRole('radio', { name: 'Part of Subscription' })).toBeChecked();
+    screen.getAllByRole('radio').forEach((radio) => expect(radio).toBeDisabled());
+    expect(screen.getByText('Contact a platform administrator or staff member to change a subscription course type.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save course type' })).not.toBeInTheDocument();
+    expect(axiosMock.history.put).toHaveLength(0);
+  });
+
   it('shows the price fields only for Paid', async () => {
     await renderSection();
     expect(screen.queryByLabelText('Price before VAT (SAR)')).not.toBeInTheDocument();

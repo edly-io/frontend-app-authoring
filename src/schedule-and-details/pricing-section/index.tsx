@@ -39,6 +39,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
   const [vatRate, setVatRate] = useState<string | null>(null);
   const [vatLabel, setVatLabel] = useState('');
   const [canEdit, setCanEdit] = useState(false);
+  const [canSetSubscription, setCanSetSubscription] = useState(true);
   const [managedByAdmin, setManagedByAdmin] = useState(false);
   const [programName, setProgramName] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -57,6 +58,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
     setVatRate(pricing.vatRate);
     setVatLabel(pricing.vatLabel);
     setCanEdit(pricing.canEdit);
+    setCanSetSubscription(pricing.canSetSubscription);
     setManagedByAdmin(pricing.pricingManagedByAdmin);
     setProgramName(pricing.partOfProgram ? (pricing.partOfProgramName ?? pricing.partOfProgram) : null);
   };
@@ -81,7 +83,8 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
   const discountPercent = getDiscountPercent(regularPrice, salePrice);
   const priceWithVat = getPriceWithVat(regularPrice, salePrice, vatRate);
   const isReadOnly = !canEdit;
-  const isTypeLocked = isReadOnly || !!programName;
+  const subscriptionLocked = !canSetSubscription && savedCategory === 'is_part_of_subscription';
+  const isTypeLocked = isReadOnly || !!programName || subscriptionLocked;
 
   const priceError = (value: string) => (
     isPriceValid(value) ? undefined : intl.formatMessage(messages.errorPriceNotPositive)
@@ -173,6 +176,9 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
       {isReadOnly && managedByAdmin && (
         <Alert variant="info" className="mb-3">{intl.formatMessage(messages.managedByAdmin, { siteName })}</Alert>
       )}
+      {subscriptionLocked && (
+        <Alert variant="info" className="mb-3">{intl.formatMessage(messages.subscriptionReadOnly)}</Alert>
+      )}
       {programName && (
         <Alert variant="info" className="mb-3">
           {intl.formatMessage(messages.partOfProgram, { program: programName })}
@@ -217,6 +223,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
           >
             {intl.formatMessage(messages.categoryProgramOnly)}
           </Form.Radio>
+          {(canSetSubscription || subscriptionLocked) && (
           <Form.Radio
             value="is_part_of_subscription"
             description={intl.formatMessage(messages.categorySubscriptionDescription, { siteName })}
@@ -224,6 +231,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({ courseId }) => {
           >
             {intl.formatMessage(messages.categorySubscription)}
           </Form.Radio>
+          )}
           <Form.Radio
             value="is_enrollment_code"
             description={intl.formatMessage(messages.categoryEnrollmentCodeDescription)}

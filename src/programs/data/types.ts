@@ -34,6 +34,7 @@ export interface Program {
   courses?: Course[];
   /** 'is_free', 'is_paid', 'is_part_of_subscription' or 'is_enrollment_code'. */
   pricingCategory?: string;
+  canSetSubscription?: boolean;
   /** Decimal strings, not numbers — avoids float rounding on money. */
   regularPrice?: string | null;
   salePrice?: string | null;
