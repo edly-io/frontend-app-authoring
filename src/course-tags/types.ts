@@ -6,7 +6,10 @@ export interface CourseTagsStatus {
   canAssign: boolean;
 }
 
-/** A tag. The id is its stable identifier; the name is unique ignoring case and may be any text. */
+/**
+ * A tag. The id is its stable identifier. The name is stored normalised (trimmed, inner whitespace collapsed), is 1
+ * to 100 characters of any kind, and is unique ignoring case.
+ */
 export interface Tag {
   id: number;
   name: string;

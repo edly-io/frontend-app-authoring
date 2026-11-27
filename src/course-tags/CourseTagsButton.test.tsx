@@ -1,4 +1,5 @@
 import userEvent from '@testing-library/user-event';
+import { logError } from '@edx/frontend-platform/logging';
 import {
   initializeMocks,
   render,
@@ -12,6 +13,11 @@ import { COURSE_ID, mockCourseTags } from './testHelpers';
 
 jest.mock('@src/CourseAuthoringContext', () => ({
   useCourseAuthoringContext: () => ({ courseId: 'course-v1:Uber+101+2026' }),
+}));
+
+jest.mock('@edx/frontend-platform/logging', () => ({
+  ...jest.requireActual('@edx/frontend-platform/logging'),
+  logError: jest.fn(),
 }));
 
 let axiosMock;
@@ -61,11 +67,26 @@ describe('<CourseTagsButton />', () => {
     expect(screen.queryByRole('button', { name: 'Tags' })).not.toBeInTheDocument();
   });
 
-  it.each([404, 403, 500])('is hidden when the status request fails with %s', async (code) => {
+  it.each([404, 403])('is hidden when the status request fails with %s, without logging', async (code) => {
     axiosMock.onGet(apiUrls.status(COURSE_ID)).reply(code);
     render(<CourseTagsButton />);
-    await waitFor(() => expect(axiosMock.history.get.length).toBeGreaterThan(0));
+    await waitFor(() => expect(axiosMock.history.get).toHaveLength(1));
     expect(screen.queryByRole('button', { name: 'Tags' })).not.toBeInTheDocument();
+    expect(logError).not.toHaveBeenCalled();
+  });
+
+  describe('when the status request keeps failing with a 5xx', () => {
+    // React Query retries a 5xx three times with a backoff of 1 + 2 + 4 s; run that on fake time.
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+
+    it('shows the button once the retries are spent, and logs the failure', async () => {
+      axiosMock.onGet(apiUrls.status(COURSE_ID)).reply(500);
+      render(<CourseTagsButton />);
+      await waitFor(() => expect(axiosMock.history.get).toHaveLength(4), { timeout: 10000 });
+      expect(await findTagsButton()).toBeInTheDocument();
+      expect(logError).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('does not load the course tags until the dialog opens', async () => {
@@ -83,8 +104,8 @@ describe('<CourseTagsButton />', () => {
     await userEvent.click(await findTagsButton());
     expect(await screen.findByRole('dialog', { name: 'Course tags' }, FIRST_RENDER)).toBeInTheDocument();
     expect(open).not.toHaveBeenCalled();
-    // The dialog has a header cross and a footer Close button, both named Close.
-    await userEvent.click(screen.getAllByRole('button', { name: 'Close' })[1]);
+    // The dialog has a header cross and a footer button, both named Close; click the footer one, which shows the text.
+    await userEvent.click(screen.getByText('Close', { selector: 'button' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     open.mockRestore();
   });

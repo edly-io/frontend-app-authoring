@@ -1,5 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { act } from 'react';
+import { logError } from '@edx/frontend-platform/logging';
 import { initializeMocks, makeWrapper } from '@src/testUtils';
 
 import { apiUrls } from './api';
@@ -11,6 +12,11 @@ import {
   useTagSuggestions,
   useUnassignTag,
 } from './apiHooks';
+
+jest.mock('@edx/frontend-platform/logging', () => ({
+  ...jest.requireActual('@edx/frontend-platform/logging'),
+  logError: jest.fn(),
+}));
 
 const COURSE_ID = 'course-v1:Uber+101+2026';
 const OTHER_COURSE_ID = 'course-v1:Uber+202+2026';
@@ -39,26 +45,55 @@ describe('course tags hooks', () => {
       expect(result.current).toEqual({ enabled: true, canAssign: true });
     });
 
-    it.each([403, 404, 500])('stays all false on a %s, hiding the button', async (code) => {
+    it.each([403, 404])('stays all false on a %s, hiding the button, without a retry or a log', async (code) => {
       axiosMock.onGet(apiUrls.status(COURSE_ID)).reply(code);
       const { result } = renderHook(() => useCourseTagsStatus(COURSE_ID), { wrapper: wrapper() });
-      await waitFor(() => expect(axiosMock.history.get.length).toBeGreaterThan(0));
+      await waitFor(() =>
+        expect(queryClient.getQueryState(courseTagQueryKeys.status(COURSE_ID))?.status).toBe('error')
+      );
       expect(result.current).toEqual({ enabled: false, canAssign: false });
+      expect(axiosMock.history.get).toHaveLength(1);
+      expect(logError).not.toHaveBeenCalled();
     });
 
-    it('does not retry a 4xx', async () => {
-      axiosMock.onGet(apiUrls.status(COURSE_ID)).reply(404);
-      renderHook(() => useCourseTagsStatus(COURSE_ID), { wrapper: wrapper() });
-      await waitFor(() => expect(axiosMock.history.get).toHaveLength(1));
-      expect(axiosMock.history.get).toHaveLength(1);
-    });
+    describe('on fake time', () => {
+      // React Query retries a 5xx three times with a backoff of 1 + 2 + 4 s, and drops unused data after gcTime.
+      beforeEach(() => jest.useFakeTimers());
+      afterEach(() => jest.useRealTimers());
 
-    it('is fetched once per course: a second mount reuses the cached status', async () => {
-      axiosMock.onGet(apiUrls.status(COURSE_ID)).reply(200, { enabled: true, can_assign: true });
-      const first = renderHook(() => useCourseTagsStatus(COURSE_ID), { wrapper: wrapper() });
-      await waitFor(() => expect(first.result.current.enabled).toBe(true));
-      renderHook(() => useCourseTagsStatus(COURSE_ID), { wrapper: wrapper() });
-      expect(axiosMock.history.get).toHaveLength(1);
+      it('retries a 5xx', async () => {
+        axiosMock.onGet(apiUrls.status(COURSE_ID)).replyOnce(500);
+        axiosMock.onGet(apiUrls.status(COURSE_ID)).reply(200, { enabled: true, can_assign: true });
+        const { result } = renderHook(() => useCourseTagsStatus(COURSE_ID), { wrapper: wrapper() });
+        await waitFor(() => expect(result.current.enabled).toBe(true), { timeout: 3000 });
+        expect(axiosMock.history.get).toHaveLength(2);
+        expect(logError).not.toHaveBeenCalled();
+      });
+
+      it('allows everything after the retries of a 5xx are spent, so the button shows, and logs it', async () => {
+        axiosMock.onGet(apiUrls.status(COURSE_ID)).reply(500);
+        const { result } = renderHook(() => useCourseTagsStatus(COURSE_ID), { wrapper: wrapper() });
+        await waitFor(() => expect(result.current.enabled).toBe(true), { timeout: 10000 });
+        expect(result.current).toEqual({ enabled: true, canAssign: true });
+        expect(axiosMock.history.get).toHaveLength(4);
+        expect(logError).toHaveBeenCalledTimes(1);
+      });
+
+      it('is fetched once per course and session: a later mount reuses it, even after 5 minutes unused', async () => {
+        axiosMock.onGet(apiUrls.status(COURSE_ID)).reply(200, { enabled: true, can_assign: true });
+        const first = renderHook(() => useCourseTagsStatus(COURSE_ID), { wrapper: wrapper() });
+        await waitFor(() => expect(first.result.current.enabled).toBe(true));
+        first.unmount();
+        await act(async () => {
+          jest.advanceTimersByTime(10 * 60_000); // past React Query's default gcTime of 5 minutes
+        });
+        const second = renderHook(() => useCourseTagsStatus(COURSE_ID), { wrapper: wrapper() });
+        expect(second.result.current).toEqual({ enabled: true, canAssign: true }); // from the cache, at once
+        await act(async () => {
+          jest.runOnlyPendingTimers(); // let a refetch, if any, go out
+        });
+        expect(axiosMock.history.get).toHaveLength(1);
+      });
     });
   });
 
@@ -159,6 +194,17 @@ describe('course tags hooks', () => {
       });
       expect(queryClient.getQueryData(courseTagQueryKeys.courseTags(COURSE_ID))).toHaveLength(1);
       expect(isInvalidated(courseTagQueryKeys.suggestions(COURSE_ID, 'a'))).toBeFalsy();
+    });
+
+    it('unassign treats a 404 (the tag no longer exists) as removed', async () => {
+      seed();
+      axiosMock.onDelete(apiUrls.courseTag(COURSE_ID, 2)).reply(404, { detail: 'Tag not found.' });
+      const { result } = renderHook(() => useUnassignTag(COURSE_ID), { wrapper: wrapper() });
+      await act(async () => {
+        await result.current.mutateAsync(2);
+      });
+      expect(queryClient.getQueryData(courseTagQueryKeys.courseTags(COURSE_ID))).toEqual([]);
+      expect(isInvalidated(courseTagQueryKeys.suggestions(COURSE_ID, 'a'))).toBe(true);
     });
 
     it('a failed unassign changes no cache', async () => {

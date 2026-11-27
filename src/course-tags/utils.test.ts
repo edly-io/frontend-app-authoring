@@ -5,6 +5,8 @@ import {
   TAG_NAME_MAX_LENGTH,
   getAssignErrorMessage,
   getUnassignErrorMessage,
+  isExpectedAssignError,
+  isExpectedUnassignError,
   isSameTagName,
   normalizeTagName,
 } from './utils';
@@ -56,10 +58,34 @@ describe('course tags utils', () => {
       ['a 400 without a code', failure(400, { name: ['bad'] })],
       ['a prototype key as code', failure(400, { code: 'constructor' })],
       ['a non-string code', failure(400, { code: 5 })],
+      ['a 404', failure(404, { detail: 'Course not found.' })],
+    ])('uses the message without "Try again" for %s, which would fail the same way', (_, error) => {
+      expect(getAssignErrorMessage(error, intl)).toBe('The tag could not be added.');
+    });
+
+    it.each([
       ['a 500', failure(500, { code: 'too_many_tags' })],
       ['a network error', new Error('Network Error')],
-    ])('falls back to the generic message for %s', (_, error) => {
+    ])('asks to try again after %s', (_, error) => {
       expect(getAssignErrorMessage(error, intl)).toBe('The tag could not be added. Try again.');
+    });
+  });
+
+  describe('isExpectedAssignError', () => {
+    it.each([
+      ['a 403', failure(403)],
+      ['a known 400 code', failure(400, { name_code: 'name_blank' })],
+    ])('is true for %s', (_, error) => {
+      expect(isExpectedAssignError(error)).toBe(true);
+    });
+
+    it.each([
+      ['an unknown 400 code', failure(400, { code: 'brand_new' })],
+      ['a 404', failure(404)],
+      ['a 500', failure(500)],
+      ['a network error', new Error('Network Error')],
+    ])('is false for %s', (_, error) => {
+      expect(isExpectedAssignError(error)).toBe(false);
     });
   });
 
@@ -68,8 +94,23 @@ describe('course tags utils', () => {
       expect(getUnassignErrorMessage(failure(403), intl)).toBe('You don\'t have permission to make this change.');
     });
 
-    it.each([404, 500])('uses the generic message for a %s', (status) => {
-      expect(getUnassignErrorMessage(failure(status), intl)).toBe('The tag could not be removed. Try again.');
+    it('uses the message without "Try again" for another 4xx', () => {
+      expect(getUnassignErrorMessage(failure(400), intl)).toBe('The tag could not be removed.');
+    });
+
+    it.each([
+      ['a 500', failure(500)],
+      ['a network error', new Error('Network Error')],
+    ])('asks to try again after %s', (_, error) => {
+      expect(getUnassignErrorMessage(error, intl)).toBe('The tag could not be removed. Try again.');
+    });
+  });
+
+  describe('isExpectedUnassignError', () => {
+    it('is true only for a 403', () => {
+      expect(isExpectedUnassignError(failure(403))).toBe(true);
+      expect(isExpectedUnassignError(failure(400))).toBe(false);
+      expect(isExpectedUnassignError(failure(500))).toBe(false);
     });
   });
 });

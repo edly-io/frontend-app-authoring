@@ -14,8 +14,9 @@ import { useCourseTagsStatus } from './data/apiHooks';
 import messages from './messages';
 
 /**
- * Course outline header button that opens the course tags dialog. Hidden unless the `uber_course_tags.enabled`
- * flag is on and the user has write access to the course.
+ * Course outline header button that opens the course tags dialog. Shown when the `uber_course_tags.enabled` flag is
+ * on and the user has write access to the course. Also shown when the status fails to load for a reason other than
+ * a 403 or a 404 (see `useCourseTagsStatus`), so the dialog can report the problem.
  */
 const CourseTagsButton = () => {
   const intl = useIntl();

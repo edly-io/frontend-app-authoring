@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useIntl } from '@edx/frontend-platform/i18n';
+import { logError } from '@edx/frontend-platform/logging';
 import {
   ActionRow,
   Alert,
@@ -20,6 +21,8 @@ import {
   MAX_TAGS_PER_COURSE,
   getAssignErrorMessage,
   getUnassignErrorMessage,
+  isExpectedAssignError,
+  isExpectedUnassignError,
 } from './utils';
 import './CourseTags.scss';
 
@@ -27,7 +30,12 @@ interface CourseTagsBodyProps {
   courseId: string;
 }
 
-/** The tag field, the "n/100" counter, and the course's tags as removable chips. */
+/**
+ * The tag field, the "n/100" counter, and the course's tags as removable chips.
+ *
+ * One change at a time: a pick or a chip's cross is ignored while an assign or a removal is still saving, so a
+ * double click sends one request, and every failure shows its own error until the author's next change.
+ */
 const CourseTagsBody = ({ courseId }: CourseTagsBodyProps) => {
   const intl = useIntl();
   const tagsQuery = useCourseTags(courseId);
@@ -36,6 +44,9 @@ const CourseTagsBody = ({ courseId }: CourseTagsBodyProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   /** The tag being removed: once its chip is gone, focus goes back to the field instead of falling to <body>. */
   const removing = useRef<number>();
+  /** An assign or a removal is saving. A ref, so a second click in the same tick sees it too. */
+  const saving = useRef(false);
+  const [error, setError] = useState<string>();
 
   useEffect(() => {
     if (removing.current !== undefined && tagsQuery.data?.every(({ id }) => id !== removing.current)) {
@@ -53,12 +64,19 @@ const CourseTagsBody = ({ courseId }: CourseTagsBodyProps) => {
 
   const tags = tagsQuery.data;
   const atLimit = tags.length >= MAX_TAGS_PER_COURSE;
-  let error: string | undefined;
-  if (assign.isError) {
-    error = getAssignErrorMessage(assign.error, intl);
-  } else if (unassign.isError) {
-    error = getUnassignErrorMessage(unassign.error, intl);
-  }
+
+  /** Start a change unless one is saving; returns false when ignored. */
+  const startChange = () => {
+    if (saving.current) {
+      return false;
+    }
+    saving.current = true;
+    setError(undefined);
+    return true;
+  };
+  const endChange = () => {
+    saving.current = false;
+  };
 
   return (
     <>
@@ -69,9 +87,21 @@ const CourseTagsBody = ({ courseId }: CourseTagsBodyProps) => {
         disabled={atLimit}
         hint={atLimit ? intl.formatMessage(messages.limitReached, { max: MAX_TAGS_PER_COURSE }) : undefined}
         inputRef={inputRef}
-        onPick={(name) => {
-          unassign.reset();
-          assign.mutate(name);
+        onPick={(name, onAssigned) => {
+          if (!startChange()) {
+            return false;
+          }
+          assign.mutate(name, {
+            onSuccess: onAssigned,
+            onError: (assignError) => {
+              setError(getAssignErrorMessage(assignError, intl));
+              if (!isExpectedAssignError(assignError)) {
+                logError(assignError);
+              }
+            },
+            onSettled: endChange,
+          });
+          return true;
         }}
       />
       <div className="d-flex justify-content-end mb-2">
@@ -98,14 +128,20 @@ const CourseTagsBody = ({ courseId }: CourseTagsBodyProps) => {
                   iconAfter={Close}
                   iconAfterAlt={intl.formatMessage(messages.removeAria, { name })}
                   onIconAfterClick={() => {
+                    if (!startChange()) {
+                      return;
+                    }
                     removing.current = id;
-                    assign.reset();
                     unassign.mutate(id, {
-                      onError: () => {
-                        if (removing.current === id) {
-                          removing.current = undefined;
+                      onError: (unassignError) => {
+                        // The chip stays, and so does focus on its cross.
+                        removing.current = undefined;
+                        setError(getUnassignErrorMessage(unassignError, intl));
+                        if (!isExpectedUnassignError(unassignError)) {
+                          logError(unassignError);
                         }
                       },
+                      onSettled: endChange,
                     });
                   }}
                 >

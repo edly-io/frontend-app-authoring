@@ -28,11 +28,15 @@ interface TagTypeaheadProps {
   courseId: string;
   /** The course's tags: never offered, and an exact match among them hides "Create". */
   assigned: Tag[];
-  /** The course is at its tag limit: the field is disabled and `hint` explains why. */
+  /** Disables the field and hides the list; give a `hint` that says why. */
   disabled: boolean;
+  /** Shown under the field; when the field becomes disabled while focused, focus moves here. */
   hint?: string;
-  /** Called with the name to assign: an existing tag's name, or the normalised text typed. */
-  onPick: (name: string) => void;
+  /**
+   * Called with the name to assign: an existing tag's name, or the normalised text typed. Call `onAssigned` once
+   * the tag is assigned, which clears the field. Return false to ignore the pick (e.g. a change is still saving).
+   */
+  onPick: (name: string, onAssigned: () => void) => boolean;
   inputRef: React.RefObject<HTMLInputElement>;
 }
 
@@ -51,7 +55,8 @@ const containsText = (name: string, text: string) => foldForMatch(name).includes
  * A combobox for adding tags: as the author types, existing tags containing the text are suggested (debounced),
  * and a last "Create" option adds the text as a new tag unless a tag with that name already exists. Arrow keys
  * move through the options; Enter picks the active option, or with none active the tag named exactly as typed
- * (or Create when it is the only option); Escape closes the list. Picking clears the field and keeps focus in it.
+ * (or Create when it is the only option); Escape closes the list. Picking closes the list and keeps focus in the field,
+ * which is cleared once the tag is assigned (a failed assign keeps the text, to fix or retry).
  */
 const TagTypeahead = ({
   courseId,
@@ -65,7 +70,9 @@ const TagTypeahead = ({
   const [input, setInput] = useState('');
   const [term, setTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
+  // The active option by key, not by index: results that arrive between an arrow key and Enter move the options,
+  // and Enter must still pick the option that was highlighted (or none when it is gone).
+  const [activeKey, setActiveKey] = useState<string>();
   // Created once; don't recreate per keystroke.
   const debouncedSetTerm = useMemo(() => debounce(setTerm, SUGGESTION_DEBOUNCE_MS), []);
   useEffect(() => () => debouncedSetTerm.cancel(), [debouncedSetTerm]);
@@ -76,7 +83,9 @@ const TagTypeahead = ({
   useEffect(() => {
     const focused = document.activeElement;
     if (disabled && !wasDisabled.current && (focused === inputRef.current || focused === document.body)) {
-      document.getElementById(HINT_ID)?.focus();
+      // After React finishes this commit: the blur it fires updates Form.Control's own state, which would otherwise
+      // re-render it in the middle of these effects (React warns about that under act in tests).
+      queueMicrotask(() => document.getElementById(HINT_ID)?.focus());
     }
     wasDisabled.current = disabled;
   }, [disabled]);
@@ -97,7 +106,7 @@ const TagTypeahead = ({
     [...tagOptions, { kind: 'create', name: typed, key: 'create' }] :
     tagOptions;
   const showList = isOpen && !!typed && !disabled;
-  const active = showList && activeIndex >= 0 && activeIndex < options.length ? activeIndex : -1;
+  const active = showList ? options.findIndex(({ key }) => key === activeKey) : -1;
 
   // Announced only once the results are for the text typed now.
   const announcement = showList && term === typed && !isFetching && !isError ?
@@ -105,11 +114,20 @@ const TagTypeahead = ({
     '';
 
   const pick = (option: Option) => {
-    debouncedSetTerm.cancel();
-    setInput('');
-    setTerm('');
-    setActiveIndex(-1);
-    onPick(option.name);
+    const pickedFrom = input;
+    const accepted = onPick(option.name, () => {
+      // Unless the author has typed something else meanwhile.
+      if (inputRef.current?.value === pickedFrom) {
+        debouncedSetTerm.cancel();
+        setInput('');
+        setTerm('');
+      }
+    });
+    if (!accepted) {
+      return;
+    }
+    setIsOpen(false);
+    setActiveKey(undefined);
     // The picked option disappears with the list; keep focus in the field so the author can add another.
     inputRef.current?.focus();
   };
@@ -125,7 +143,7 @@ const TagTypeahead = ({
         setIsOpen(true);
         const step = event.key === 'ArrowDown' ? 1 : -1;
         const from = active === -1 && step === -1 ? 0 : active;
-        setActiveIndex((from + step + options.length) % options.length);
+        setActiveKey(options[(from + step + options.length) % options.length].key);
         break;
       }
       case 'Enter': {
@@ -148,7 +166,7 @@ const TagTypeahead = ({
           // Close the list only; the dialog itself closes on the next Escape.
           event.stopPropagation();
           setIsOpen(false);
-          setActiveIndex(-1);
+          setActiveKey(undefined);
         }
         break;
       default:
@@ -167,6 +185,7 @@ const TagTypeahead = ({
         aria-expanded={showList}
         aria-controls={LISTBOX_ID}
         aria-activedescendant={active >= 0 ? optionId(active) : undefined}
+        aria-describedby={hint ? HINT_ID : undefined}
         value={input}
         maxLength={TAG_NAME_MAX_LENGTH}
         disabled={disabled}
@@ -174,7 +193,7 @@ const TagTypeahead = ({
         onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
           setInput(event.target.value);
           setIsOpen(true);
-          setActiveIndex(-1);
+          setActiveKey(undefined);
           debouncedSetTerm(normalizeTagName(event.target.value));
         }}
         onKeyDown={handleKeyDown}
