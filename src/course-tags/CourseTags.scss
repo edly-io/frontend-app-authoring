@@ -1,0 +1,61 @@
+// Scoped to the course tags dialog (src/course-tags).
+.course-tags-modal {
+  // The suggestions list scrolls instead of pushing the chips far down.
+  .course-tags-suggestions {
+    max-height: 16rem;
+    overflow-y: auto;
+  }
+
+  .course-tags-option {
+    cursor: pointer;
+    min-width: 0;
+
+    &:hover,
+    &.active {
+      background-color: var(--pgn-color-light-300);
+    }
+  }
+
+  // A chip never grows past its row; its label then truncates long names with an ellipsis.
+  .course-tags-chip-item {
+    max-width: 100%;
+
+    .pgn__chip {
+      max-width: calc(100% - 2 * var(--pgn-spacing-chip-margin-base));
+    }
+
+    .pgn__chip__label {
+      min-width: 0;
+    }
+
+    // The 24px remove button gets a 44px hit area without changing the chip's look.
+    .pgn__chip__icon-after.btn-icon {
+      position: relative;
+
+      &::after {
+        content: "";
+        position: absolute;
+        inset: -.625rem;
+      }
+    }
+  }
+
+  // Large screens: with up to 100 chips, only the chip list scrolls, so the field stays in view.
+  @media (width >= 768px) and (height >= 45rem) {
+    .course-tags-list {
+      max-height: min(22rem, calc(80vh - 22rem));
+      overflow-y: auto;
+    }
+  }
+
+  // Phones and small tablets, where the dialog is fullscreen: 44px touch targets.
+  @media (width < 768px) {
+    .btn:not(.btn-icon) {
+      min-height: 2.75rem;
+    }
+
+    .course-tags-option {
+      min-height: 2.75rem;
+    }
+  }
+}
